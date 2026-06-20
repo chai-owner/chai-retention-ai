@@ -65,9 +65,56 @@ function Onboarding() {
   });
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
+  const [segments, setSegments] = useState<Segment[]>([
+    { name: "", min: "", max: "" },
+  ]);
 
   const questions = industryQuestions[form.model] ?? defaultQuestions;
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const updateSegment = (i: number, k: keyof Segment, v: string) =>
+    setSegments((s) => s.map((seg, idx) => (idx === i ? { ...seg, [k]: v } : seg)));
+  const addSegment = () =>
+    setSegments((s) => (s.length < MAX_SEGMENTS ? [...s, { name: "", min: "", max: "" }] : s));
+  const removeSegment = (i: number) =>
+    setSegments((s) => (s.length > 1 ? s.filter((_, idx) => idx !== i) : s));
+
+  // Per-segment validation + cross-segment overlap detection.
+  const segmentErrors = useMemo(() => {
+    const errs = segments.map(() => "");
+    const parsed = segments.map((seg) => ({
+      name: seg.name.trim(),
+      min: seg.min.trim() === "" ? NaN : Number(seg.min),
+      max: seg.max.trim() === "" ? NaN : Number(seg.max),
+    }));
+
+    parsed.forEach((p, i) => {
+      if (!p.name) errs[i] = "Give this segment a name.";
+      else if (Number.isNaN(p.min) || Number.isNaN(p.max)) errs[i] = "Enter a numeric value range.";
+      else if (p.min < 0 || p.max < 0) errs[i] = "Values can't be negative.";
+      else if (p.max <= p.min) errs[i] = "The upper value must be greater than the lower value.";
+    });
+
+    // Overlap check across all valid ranges.
+    for (let i = 0; i < parsed.length; i++) {
+      if (errs[i]) continue;
+      for (let j = i + 1; j < parsed.length; j++) {
+        if (errs[j]) continue;
+        const a = parsed[i];
+        const b = parsed[j];
+        if (a.min < b.max && b.min < a.max) {
+          const overlap = `Range overlaps with "${segments[j].name.trim() || `segment ${j + 1}`}".`;
+          errs[i] = errs[i] || overlap;
+          errs[j] = errs[j] || `Range overlaps with "${segments[i].name.trim() || `segment ${i + 1}`}".`;
+        }
+      }
+    }
+    return errs;
+  }, [segments]);
+
+  const segmentsValid = segmentErrors.every((e) => e === "");
+  const canContinue = step === 1 ? segmentsValid : true;
+
 
   function finish() {
     setSubmitting(true);
