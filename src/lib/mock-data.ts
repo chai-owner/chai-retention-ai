@@ -119,18 +119,46 @@ function seededRandom(seed: number) {
   return next;
 }
 
-function buildTimeline(rand: () => number, name: string): TimelineEvent[] {
-  return [
+function buildTimeline(
+  rand: () => number,
+  name: string,
+  cat: RiskCategory,
+  factors: Factor[],
+  health: number,
+  churnProbability: number,
+): TimelineEvent[] {
+  const contract = 12000 + Math.round(rand() * 60) * 1000;
+  const events: TimelineEvent[] = [
     { date: "2024-02-14", type: "signup", title: "Became a customer", detail: `${name} signed up for the Growth plan.` },
-    { date: "2024-03-02", type: "purchase", title: "First purchase", detail: "Initial annual contract — $24,000." },
-    { date: "2024-06-18", type: "usage", title: "Strong adoption", detail: "Activated 4 of 5 core features. Health score peaked at 88." },
+    { date: "2024-03-02", type: "purchase", title: "First purchase", detail: `Initial annual contract — $${contract.toLocaleString()}.` },
+    { date: "2024-06-18", type: "usage", title: "Strong early adoption", detail: "Activated 4 of 5 core features. Health score peaked at 88." },
     { date: "2024-09-05", type: "survey", title: "Survey response", detail: "NPS of 9 — promoter. 'Great product, easy to use.'" },
-    { date: "2025-01-22", type: "support", title: "Support ticket opened", detail: "Reported a billing discrepancy. Resolved in 4 days." },
-    { date: "2025-03-10", type: "score", title: "Health score dipped", detail: "Usage slowed; health dropped from 84 to 67." },
-    { date: "2025-04-19", type: "conversation", title: "Negative conversation", detail: "Live chat mentioned 'too expensive' and a competitor." },
-    { date: "2025-05-02", type: "support", title: "Ticket reopened", detail: "Integration issue reopened after being marked resolved." },
-    { date: "2025-05-21", type: "score", title: "Risk escalated", detail: "Churn probability rose to a critical level." },
   ];
+
+  // Weave each detected risk factor into the history as a concrete event.
+  const factorEventDates = ["2025-01-22", "2025-02-18", "2025-03-10", "2025-04-19", "2025-05-02"];
+  factors.forEach((f, idx) => {
+    const date = factorEventDates[idx % factorEventDates.length];
+    const map: Record<string, TimelineEvent> = {
+      "Usage declining": { date, type: "usage", title: "Usage started declining", detail: f.detail },
+      "No recent purchases": { date, type: "purchase", title: "Buying activity stalled", detail: f.detail },
+      "Unresolved support tickets": { date, type: "support", title: "Support tickets piling up", detail: f.detail },
+      "Negative sentiment detected": { date, type: "conversation", title: "Negative sentiment in conversations", detail: f.detail },
+      "Competitor mentioned": { date, type: "conversation", title: "Competitor evaluation mentioned", detail: f.detail },
+      "Below benchmark engagement": { date, type: "usage", title: "Engagement fell below benchmark", detail: f.detail },
+      "Declining satisfaction": { date, type: "survey", title: "Satisfaction scores dropped", detail: f.detail },
+      "Multiple escalations": { date, type: "support", title: "Issues escalated to management", detail: f.detail },
+    };
+    events.push(map[f.label] ?? { date, type: "score", title: f.label, detail: f.detail });
+  });
+
+  if (cat === "healthy") {
+    events.push({ date: "2025-05-21", type: "score", title: "Account is healthy", detail: `Health score steady at ${health}. Low churn risk (${churnProbability}%).` });
+  } else {
+    events.push({ date: "2025-05-21", type: "score", title: "Risk escalated", detail: `Churn probability rose to ${churnProbability}% — health score now ${health}.` });
+  }
+
+  return events.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export const customers: Customer[] = Array.from({ length: 42 }).map((_, i) => {
