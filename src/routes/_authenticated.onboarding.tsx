@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
+import { saveProfile } from "@/lib/profile.functions";
 
 interface Segment {
   name: string;
@@ -10,7 +12,7 @@ interface Segment {
   max: string;
 }
 
-export const Route = createFileRoute("/onboarding")({
+export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({ meta: [{ title: "Get started — ChAi" }] }),
   component: Onboarding,
 });
@@ -47,8 +49,10 @@ const MAX_SEGMENTS = 4;
 
 function Onboarding() {
   const navigate = useNavigate();
+  const persistProfile = useServerFn(saveProfile);
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+
 
   const [form, setForm] = useState({
     company: "",
@@ -119,7 +123,7 @@ function Onboarding() {
 
   function finish() {
     setSubmitting(true);
-    profileStore.save({
+    const payload = {
       company: form.company,
       industry: form.industry,
       model: form.model,
@@ -128,6 +132,11 @@ function Onboarding() {
       disengagement: form.disengagement,
       tracked,
       channels,
+    };
+    profileStore.save(payload);
+    // Persist to the user's account so it follows them across devices.
+    persistProfile({ data: payload }).catch(() => {
+      // Non-blocking: localStorage already holds the profile.
     });
     setTimeout(() => navigate({ to: "/app/dashboard" }), 1600);
   }

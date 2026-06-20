@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/app/data")({
+export const Route = createFileRoute("/_authenticated/app/data")({
   head: () => ({ meta: [{ title: "Data & Integrations — ChAi" }] }),
   component: DataPage,
 });

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Users,
@@ -11,9 +12,12 @@ import {
   Menu,
   X,
   BadgeCheck,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AskChAi } from "@/components/ask-chai";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfileSync } from "@/lib/use-profile-sync";
 
 const nav = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -28,8 +32,19 @@ const nav = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  useProfileSync();
+
+  async function handleSignOut() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
 
   return (
+
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <aside
@@ -67,7 +82,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="border-t border-sidebar-border p-3">
+        <div className="space-y-2 border-t border-sidebar-border p-3">
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+          >
+            <LogOut className="h-[18px] w-[18px]" />
+            Sign out
+          </button>
           <div className="rounded-lg bg-accent/60 p-3">
             <p className="text-xs font-medium text-accent-foreground">Demo workspace</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -75,6 +97,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </p>
           </div>
         </div>
+
       </aside>
 
       {/* Mobile overlay */}

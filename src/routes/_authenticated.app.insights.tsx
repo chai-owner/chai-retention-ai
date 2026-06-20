@@ -5,7 +5,7 @@ import { PageHeader, Card } from "@/components/ui/chai";
 import { benchmarks, customers, formatCurrency } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/app/insights")({
+export const Route = createFileRoute("/_authenticated/app/insights")({
   head: () => ({ meta: [{ title: "Insights & Benchmarks — ChAi" }] }),
   component: Insights,
 });

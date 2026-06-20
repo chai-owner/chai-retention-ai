@@ -24,7 +24,7 @@ import {
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/app/customers/$id")({
+export const Route = createFileRoute("/_authenticated/app/customers/$id")({
   head: () => ({ meta: [{ title: "Customer Detail — ChAi" }] }),
   loader: ({ params }) => {
     const customer = getCustomer(params.id);
