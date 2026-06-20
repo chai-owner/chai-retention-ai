@@ -39,11 +39,11 @@ export const getProfile = createServerFn({ method: "GET" })
       company: data.company,
       industry: data.industry,
       model: data.model,
-      segments: data.segments,
+      segments: (data.segments ?? []) as unknown as ProfileSegment[],
       successActions: data.success_actions,
       disengagement: data.disengagement,
-      tracked: data.tracked,
-      channels: data.channels,
+      tracked: (data.tracked ?? {}) as unknown as Record<string, boolean>,
+      channels: (data.channels ?? []) as unknown as string[],
       onboarded: data.onboarded,
     };
   });
