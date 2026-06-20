@@ -82,7 +82,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="border-t border-sidebar-border p-3">
+        <div className="space-y-2 border-t border-sidebar-border p-3">
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+          >
+            <LogOut className="h-[18px] w-[18px]" />
+            Sign out
+          </button>
           <div className="rounded-lg bg-accent/60 p-3">
             <p className="text-xs font-medium text-accent-foreground">Demo workspace</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -90,6 +97,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </p>
           </div>
         </div>
+
       </aside>
 
       {/* Mobile overlay */}
