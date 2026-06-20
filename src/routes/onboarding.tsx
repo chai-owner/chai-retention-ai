@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2 } from "lucide-react";
+import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface Segment {
+  name: string;
+  min: string;
+  max: string;
+}
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({ meta: [{ title: "Get started — Chai" }] }),
@@ -34,7 +40,9 @@ const defaultQuestions = [
   "Do you track customer satisfaction?",
 ];
 
-const steps = ["Business", "How you work", "What to track", "Interactions"];
+const steps = ["Business", "Segments", "How you work", "What to track", "Interactions"];
+
+const MAX_SEGMENTS = 4;
 
 function Onboarding() {
   const navigate = useNavigate();
@@ -57,9 +65,56 @@ function Onboarding() {
   });
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
+  const [segments, setSegments] = useState<Segment[]>([
+    { name: "", min: "", max: "" },
+  ]);
 
   const questions = industryQuestions[form.model] ?? defaultQuestions;
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const updateSegment = (i: number, k: keyof Segment, v: string) =>
+    setSegments((s) => s.map((seg, idx) => (idx === i ? { ...seg, [k]: v } : seg)));
+  const addSegment = () =>
+    setSegments((s) => (s.length < MAX_SEGMENTS ? [...s, { name: "", min: "", max: "" }] : s));
+  const removeSegment = (i: number) =>
+    setSegments((s) => (s.length > 1 ? s.filter((_, idx) => idx !== i) : s));
+
+  // Per-segment validation + cross-segment overlap detection.
+  const segmentErrors = useMemo(() => {
+    const errs = segments.map(() => "");
+    const parsed = segments.map((seg) => ({
+      name: seg.name.trim(),
+      min: seg.min.trim() === "" ? NaN : Number(seg.min),
+      max: seg.max.trim() === "" ? NaN : Number(seg.max),
+    }));
+
+    parsed.forEach((p, i) => {
+      if (!p.name) errs[i] = "Give this segment a name.";
+      else if (Number.isNaN(p.min) || Number.isNaN(p.max)) errs[i] = "Enter a numeric value range.";
+      else if (p.min < 0 || p.max < 0) errs[i] = "Values can't be negative.";
+      else if (p.max <= p.min) errs[i] = "The upper value must be greater than the lower value.";
+    });
+
+    // Overlap check across all valid ranges.
+    for (let i = 0; i < parsed.length; i++) {
+      if (errs[i]) continue;
+      for (let j = i + 1; j < parsed.length; j++) {
+        if (errs[j]) continue;
+        const a = parsed[i];
+        const b = parsed[j];
+        if (a.min < b.max && b.min < a.max) {
+          const overlap = `Range overlaps with "${segments[j].name.trim() || `segment ${j + 1}`}".`;
+          errs[i] = errs[i] || overlap;
+          errs[j] = errs[j] || `Range overlaps with "${segments[i].name.trim() || `segment ${i + 1}`}".`;
+        }
+      }
+    }
+    return errs;
+  }, [segments]);
+
+  const segmentsValid = segmentErrors.every((e) => e === "");
+  const canContinue = step === 1 ? segmentsValid : true;
+
 
   function finish() {
     setSubmitting(true);
@@ -163,6 +218,85 @@ function Onboarding() {
               {step === 1 && (
                 <div className="space-y-4">
                   <div>
+                    <h2 className="text-xl font-semibold">Define your customer segments</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Group customers by the average revenue they bring per month. Add up to {MAX_SEGMENTS} segments — ranges can't overlap.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {segments.map((seg, i) => (
+                      <div key={i} className="rounded-xl border border-border p-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-muted-foreground">Segment {i + 1}</span>
+                          {segments.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeSegment(i)}
+                              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-danger"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Remove
+                            </button>
+                          )}
+                        </div>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <Field label="Segment name">
+                            <input
+                              className={inputCls}
+                              value={seg.name}
+                              onChange={(e) => updateSegment(i, "name", e.target.value)}
+                              placeholder="e.g. Premium"
+                            />
+                          </Field>
+                          <div className="grid grid-cols-2 gap-3">
+                            <Field label="Min / month ($)">
+                              <input
+                                type="number"
+                                min="0"
+                                inputMode="numeric"
+                                className={inputCls}
+                                value={seg.min}
+                                onChange={(e) => updateSegment(i, "min", e.target.value)}
+                                placeholder="0"
+                              />
+                            </Field>
+                            <Field label="Max / month ($)">
+                              <input
+                                type="number"
+                                min="0"
+                                inputMode="numeric"
+                                className={inputCls}
+                                value={seg.max}
+                                onChange={(e) => updateSegment(i, "max", e.target.value)}
+                                placeholder="500"
+                              />
+                            </Field>
+                          </div>
+                        </div>
+                        {segmentErrors[i] && (
+                          <p className="mt-2 flex items-center gap-1.5 text-xs text-danger">
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {segmentErrors[i]}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {segments.length < MAX_SEGMENTS && (
+                    <button
+                      type="button"
+                      onClick={addSegment}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent/40"
+                    >
+                      <Plus className="h-4 w-4" /> Add segment
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="space-y-4">
+                  <div>
                     <h2 className="text-xl font-semibold">How a healthy customer behaves</h2>
                     <p className="mt-1 text-sm text-muted-foreground">There are no wrong answers — describe it in your own words.</p>
                   </div>
@@ -187,7 +321,7 @@ function Onboarding() {
                 </div>
               )}
 
-              {step === 2 && (
+              {step === 3 && (
                 <div className="space-y-4">
                   <div>
                     <h2 className="text-xl font-semibold">What you're already tracking</h2>
@@ -221,7 +355,7 @@ function Onboarding() {
                 </div>
               )}
 
-              {step === 3 && (
+              {step === 4 && (
                 <div className="space-y-4">
                   <div>
                     <h2 className="text-xl font-semibold">How customers interact with you</h2>
@@ -264,7 +398,8 @@ function Onboarding() {
                 {step < steps.length - 1 ? (
                   <button
                     onClick={() => setStep((s) => s + 1)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    disabled={!canContinue}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Continue <ArrowRight className="h-4 w-4" />
                   </button>
