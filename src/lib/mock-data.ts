@@ -189,7 +189,7 @@ export const customers: Customer[] = Array.from({ length: 42 }).map((_, i) => {
     lastActivity: `${Math.round(1 + rand() * 80)} days ago`,
     factors,
     recommendations: recs,
-    timeline: buildTimeline(rand, name),
+    timeline: buildTimeline(rand, name, cat, factors, health, churnProbability),
   };
 });
 
