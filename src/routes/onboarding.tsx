@@ -10,7 +10,7 @@ interface Segment {
 }
 
 export const Route = createFileRoute("/onboarding")({
-  head: () => ({ meta: [{ title: "Get started — Chai" }] }),
+  head: () => ({ meta: [{ title: "Get started — ChAi" }] }),
   component: Onboarding,
 });
 
@@ -128,7 +128,7 @@ function Onboarding() {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-warm text-primary-foreground">
             <Sparkles className="h-4 w-4" />
           </span>
-          <span className="text-lg font-semibold">Chai</span>
+          <span className="text-lg font-semibold">ChAi</span>
         </Link>
         <Link to="/app/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
           Skip to demo
@@ -165,7 +165,7 @@ function Onboarding() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <h2 className="mt-4 text-xl font-semibold">Building your retention engine…</h2>
               <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                Chai is learning how your business works and generating your customer health model.
+                ChAi is learning how your business works and generating your customer health model.
               </p>
             </div>
           ) : (
@@ -174,7 +174,7 @@ function Onboarding() {
                 <div className="space-y-4">
                   <div>
                     <h2 className="text-xl font-semibold">Tell us about your business</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">This teaches Chai how you operate.</p>
+                    <p className="mt-1 text-sm text-muted-foreground">This teaches ChAi how you operate.</p>
                   </div>
                   <Field label="Company name">
                     <input className={inputCls} value={form.company} onChange={(e) => update("company", e.target.value)} placeholder="Northwind Labs" />
@@ -381,7 +381,7 @@ function Onboarding() {
                   </div>
                   <div className="rounded-lg bg-accent/40 p-4 text-sm text-muted-foreground">
                     <p className="font-medium text-foreground">You're all set.</p>
-                    Chai will build a {form.model} retention framework, score your customers' health, and surface who's at risk — all in plain English.
+                    ChAi will build a {form.model} retention framework, score your customers' health, and surface who's at risk — all in plain English.
                   </div>
                 </div>
               )}

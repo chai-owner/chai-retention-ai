@@ -1,4 +1,4 @@
-// Central mock data + helpers powering the Chai demo experience.
+// Central mock data + helpers powering the ChAi demo experience.
 // All numbers are illustrative sample data for a fictional company.
 
 export type RiskCategory = "healthy" | "watch" | "at-risk" | "critical";

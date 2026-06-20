@@ -35,7 +35,7 @@ import {
 } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/app/dashboard")({
-  head: () => ({ meta: [{ title: "Executive Dashboard — Chai" }] }),
+  head: () => ({ meta: [{ title: "Executive Dashboard — ChAi" }] }),
   component: Dashboard,
 });
 

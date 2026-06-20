@@ -1,4 +1,4 @@
-// Dataset templates that define which fields Chai expects for each kind of
+// Dataset templates that define which fields ChAi expects for each kind of
 // upload, which are mandatory, and sample rows used to generate downloadable
 // CSV / Excel example files.
 
