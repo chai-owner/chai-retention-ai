@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Users,
@@ -11,9 +12,12 @@ import {
   Menu,
   X,
   BadgeCheck,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AskChAi } from "@/components/ask-chai";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfileSync } from "@/lib/use-profile-sync";
 
 const nav = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
