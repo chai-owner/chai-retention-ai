@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,6 +13,7 @@ import {
   X,
   BadgeCheck,
   LogOut,
+  LogIn,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AskChAi } from "@/components/ask-chai";
@@ -31,10 +32,19 @@ const nav = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   useProfileSync();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
+      setSignedIn(!!session),
+    );
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -42,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
+
 
   return (
 
@@ -83,20 +94,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="space-y-2 border-t border-sidebar-border p-3">
-          <button
-            onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
-          >
-            <LogOut className="h-[18px] w-[18px]" />
-            Sign out
-          </button>
+          {signedIn ? (
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+              Sign out
+            </button>
+          ) : (
+            <Link
+              to="/auth"
+              className="flex w-full items-center gap-3 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              <LogIn className="h-[18px] w-[18px]" />
+              Sign in to get started
+            </Link>
+          )}
           <div className="rounded-lg bg-accent/60 p-3">
-            <p className="text-xs font-medium text-accent-foreground">Demo workspace</p>
+            <p className="text-xs font-medium text-accent-foreground">
+              {signedIn ? "Demo workspace" : "You're exploring the demo"}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">
               Sample data for Northwind Labs. Nothing here is real customer data.
             </p>
           </div>
         </div>
+
 
       </aside>
 
