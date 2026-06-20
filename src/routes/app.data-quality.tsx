@@ -1,0 +1,223 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  ArrowLeft,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  Trash2,
+  FileSpreadsheet,
+  ShieldCheck,
+} from "lucide-react";
+import { toast } from "sonner";
+import { PageHeader, Card, StatCard } from "@/components/ui/chai";
+import {
+  useUploads,
+  uploadsStore,
+  overallScore,
+  type UploadRecord,
+  type QualityFinding,
+} from "@/lib/uploads-store";
+import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+export const Route = createFileRoute("/app/data-quality")({
+  head: () => ({ meta: [{ title: "Data Quality — Chai" }] }),
+  component: DataQualityPage,
+});
+
+function scoreTone(v: number) {
+  return v >= 80 ? "success" : v >= 60 ? "warning" : v >= 40 ? "caution" : "danger";
+}
+function scoreBar(v: number) {
+  return v >= 80 ? "bg-success" : v >= 60 ? "bg-warning" : v >= 40 ? "bg-caution" : "bg-danger";
+}
+function scoreChip(v: number) {
+  return v >= 80
+    ? "bg-success/10 text-success border-success/20"
+    : v >= 60
+      ? "bg-warning/15 text-warning-foreground border-warning/30"
+      : v >= 40
+        ? "bg-caution/10 text-caution border-caution/20"
+        : "bg-danger/10 text-danger border-danger/20";
+}
+
+function FindingIcon({ level }: { level: QualityFinding["level"] }) {
+  if (level === "critical") return <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" />;
+  if (level === "warning") return <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-caution" />;
+  return <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />;
+}
+
+function DataQualityPage() {
+  const uploads = useUploads();
+
+  const avg = uploads.length
+    ? Math.round(uploads.reduce((s, u) => s + overallScore(u), 0) / uploads.length)
+    : 0;
+  const totalRows = uploads.reduce((s, u) => s + u.rows, 0);
+  const needsAttention = uploads.filter((u) => overallScore(u) < 60).length;
+
+  function handleDelete(u: UploadRecord) {
+    uploadsStore.remove(u.id);
+    toast.success("Upload deleted", { description: `${u.fileName} and its data were removed from Chai.` });
+  }
+
+  return (
+    <div>
+      <Link
+        to="/app/data"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back to Data & Integrations
+      </Link>
+
+      <PageHeader
+        title="Data Quality Engine"
+        description="Every file you upload is scored for reliability and completeness. Review each upload's quality, see what's missing, and delete data you no longer want in Chai."
+      />
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Average quality" value={`${avg}%`} icon={ShieldCheck} tone={scoreTone(avg)} />
+        <StatCard label="Total uploads" value={uploads.length} icon={FileSpreadsheet} />
+        <StatCard label="Need attention" value={needsAttention} icon={AlertTriangle} tone={needsAttention ? "caution" : "success"} hint="Uploads scoring below 60%" />
+      </div>
+
+      <div className="mt-6 space-y-5">
+        {uploads.map((u) => {
+          const score = overallScore(u);
+          return (
+            <Card key={u.id}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+                    <FileSpreadsheet className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold">{u.fileName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {u.datasetLabel} · {u.rows.toLocaleString()} rows · {u.sizeKb} KB · {u.uploadedAt}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={cn("rounded-full border px-3 py-1 text-sm font-semibold", scoreChip(score))}>
+                    {score}% quality
+                  </span>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-danger/40 hover:text-danger"
+                      >
+                        <Trash2 className="h-4 w-4" /> Delete
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this upload?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This permanently removes <span className="font-medium text-foreground">{u.fileName}</span> and all{" "}
+                          {u.rows.toLocaleString()} rows of data it contributed to Chai. This can't be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(u)}
+                          className="bg-danger text-danger-foreground hover:bg-danger/90"
+                        >
+                          Delete data
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-6 lg:grid-cols-2">
+                {/* Scores + field checks */}
+                <div>
+                  <div className="flex gap-3">
+                    <div className="flex-1 rounded-lg bg-secondary/60 p-3 text-center">
+                      <p className="text-xl font-semibold">{u.reliability}%</p>
+                      <p className="text-xs text-muted-foreground">Reliability</p>
+                    </div>
+                    <div className="flex-1 rounded-lg bg-secondary/60 p-3 text-center">
+                      <p className="text-xl font-semibold">{u.completeness}%</p>
+                      <p className="text-xs text-muted-foreground">Completeness</p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-xs font-medium text-muted-foreground">Field completeness</p>
+                  <div className="mt-2 space-y-2.5">
+                    {u.fieldChecks.map((f) => (
+                      <div key={f.field}>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5 font-mono">
+                            {f.field}
+                            <span
+                              className={cn(
+                                "rounded px-1 py-px text-[10px] font-medium",
+                                f.mandatory ? "bg-danger/10 text-danger" : "bg-secondary text-muted-foreground",
+                              )}
+                            >
+                              {f.mandatory ? "Required" : "Optional"}
+                            </span>
+                          </span>
+                          <span className={cn("tabular-nums", f.mandatory && f.fill < 100 ? "text-danger" : "text-muted-foreground")}>
+                            {f.fill}%
+                          </span>
+                        </div>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
+                          <div className={cn("h-full rounded-full", scoreBar(f.fill))} style={{ width: `${f.fill}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Findings */}
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">What Chai found</p>
+                  <ul className="mt-2 space-y-2.5">
+                    {u.findings.map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <FindingIcon level={f.level} />
+                        <span className="text-muted-foreground">{f.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+
+        {uploads.length === 0 && (
+          <Card>
+            <div className="py-12 text-center">
+              <FileSpreadsheet className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="mt-3 font-medium">No uploads yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Upload a file on the Data & Integrations page to see its quality here.
+              </p>
+              <Link
+                to="/app/data"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Go to Data & Integrations
+              </Link>
+            </div>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
