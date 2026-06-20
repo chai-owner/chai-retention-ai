@@ -65,9 +65,25 @@ function scoreChip(v: number) {
 function DataPage() {
   const [dragging, setDragging] = useState(false);
   const uploads = useUploads();
+  const profile = useProfile();
   const avgQuality = uploads.length
     ? Math.round(uploads.reduce((s, u) => s + overallScore(u), 0) / uploads.length)
     : 0;
+
+  const personalized = useMemo(
+    () => personalizeDatasets(profile, datasetSchemas),
+    [profile],
+  );
+  const requiredSets = personalized.filter((d) => d.required);
+  const optionalSets = personalized.filter((d) => !d.required);
+
+  // Match uploads to dataset keys so we can flag what's still missing.
+  const uploadedLabels = useMemo(
+    () => new Set(uploads.map((u) => u.datasetLabel.toLowerCase())),
+    [uploads],
+  );
+  const isMissing = (d: PersonalizedDataset) =>
+    !uploadedLabels.has(d.label.toLowerCase());
 
   function deleteUpload(u: UploadRecord) {
     uploadsStore.remove(u.id);
