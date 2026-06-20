@@ -46,7 +46,9 @@ const statusIcon = {
 };
 
 function Insights() {
+  const [expanded, setExpanded] = useState<string | null>(null);
   return (
+
     <div>
       <PageHeader
         title="Insights & Benchmarks"
