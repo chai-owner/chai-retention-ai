@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          channels: Json
+          company: string
+          created_at: string
+          disengagement: string
+          id: string
+          industry: string
+          model: string
+          onboarded: boolean
+          segments: Json
+          success_actions: string
+          tracked: Json
+          updated_at: string
+        }
+        Insert: {
+          channels?: Json
+          company?: string
+          created_at?: string
+          disengagement?: string
+          id: string
+          industry?: string
+          model?: string
+          onboarded?: boolean
+          segments?: Json
+          success_actions?: string
+          tracked?: Json
+          updated_at?: string
+        }
+        Update: {
+          channels?: Json
+          company?: string
+          created_at?: string
+          disengagement?: string
+          id?: string
+          industry?: string
+          model?: string
+          onboarded?: boolean
+          segments?: Json
+          success_actions?: string
+          tracked?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
