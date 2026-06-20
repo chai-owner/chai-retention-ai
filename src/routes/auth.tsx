@@ -14,7 +14,11 @@ export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — ChAi" }] }),
   beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: search.redirect ?? "/app/dashboard" });
+    if (data.user) {
+      throw search.redirect
+        ? redirect({ href: search.redirect })
+        : redirect({ to: "/app/dashboard" });
+    }
   },
   component: AuthPage,
 });
