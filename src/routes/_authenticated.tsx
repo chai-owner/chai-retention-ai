@@ -9,8 +9,14 @@ export const Route = createFileRoute("/_authenticated")({
     // public demo without signing in. Everything else still requires login.
     const isDemo = location.pathname.startsWith("/app");
 
-    const { data, error } = await supabase.auth.getUser();
-    const user = error ? null : data.user;
+    let user = null;
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      user = error ? null : data.user;
+    } catch {
+      // If getUser() throws (network, init issue, etc.), treat as unauthenticated.
+      user = null;
+    }
 
     if (!user) {
       if (isDemo) return { user: null };
