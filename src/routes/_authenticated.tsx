@@ -5,12 +5,19 @@ import { getProfile } from "@/lib/profile.functions";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
+    // The /app/* pages run on sample data, so anyone can explore them as a
+    // public demo without signing in. Everything else still requires login.
+    const isDemo = location.pathname.startsWith("/app");
+
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    const user = error ? null : data.user;
+
+    if (!user) {
+      if (isDemo) return { user: null };
       throw redirect({ to: "/auth", search: { redirect: location.href } });
     }
 
-    // Force users who haven't finished onboarding into the onboarding flow.
+    // Force signed-in users who haven't finished onboarding into the flow.
     if (location.pathname !== "/onboarding") {
       try {
         const profile = await getProfile();
@@ -23,7 +30,7 @@ export const Route = createFileRoute("/_authenticated")({
       }
     }
 
-    return { user: data.user };
+    return { user };
   },
   component: () => <Outlet />,
 });
