@@ -8,17 +8,12 @@ export const Route = createFileRoute("/_authenticated")({
     // The /app/* pages run on sample data, so anyone can explore them as a
     // public demo without signing in. Everything else still requires login.
     const isDemo = location.pathname.startsWith("/app");
-    console.log("[_authenticated beforeLoad] pathname:", location.pathname, "isDemo:", isDemo);
 
     const { data, error } = await supabase.auth.getUser();
     const user = error ? null : data.user;
-    console.log("[_authenticated beforeLoad] user:", user ? user.id : null, "error:", error?.message);
 
     if (!user) {
-      if (isDemo) {
-        console.log("[_authenticated beforeLoad] allowing demo without auth");
-        return { user: null };
-      }
+      if (isDemo) return { user: null };
       throw redirect({ to: "/auth", search: { redirect: location.href } });
     }
 
