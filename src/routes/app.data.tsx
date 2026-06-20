@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/data")({
   head: () => ({ meta: [{ title: "Data & Integrations — Chai" }] }),
-  component: DataPage;
+  component: DataPage,
 });
 
 function barColor(v: number) {
