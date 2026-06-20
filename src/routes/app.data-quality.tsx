@@ -119,9 +119,12 @@ function DataQualityPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={cn("rounded-full border px-2.5 py-0.5 text-xs font-semibold", scoreChip(score))}>
-                    {score}%
-                  </span>
+                  <div className="text-right">
+                    <span className={cn("rounded-full border px-2.5 py-0.5 text-xs font-semibold", scoreChip(score))}>
+                      {score}%
+                    </span>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">Quality</p>
+                  </div>
                   <ChevronDown
                     className={cn(
                       "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
