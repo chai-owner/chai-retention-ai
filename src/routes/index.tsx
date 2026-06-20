@@ -10,6 +10,9 @@ import {
   BarChart3,
   MessageSquare,
 } from "lucide-react";
+import dashboardShot from "@/assets/screenshots/dashboard-shot.png.asset.json";
+import customersShot from "@/assets/screenshots/customers-shot.png.asset.json";
+import insightsShot from "@/assets/screenshots/insights-shot.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
