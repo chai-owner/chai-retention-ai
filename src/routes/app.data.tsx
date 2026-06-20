@@ -128,56 +128,42 @@ function DataPage() {
         </div>
       </Card>
 
-      {/* Example templates */}
+      {/* Example templates — personalized to the onboarding profile */}
       <Card className="mt-6">
-        <h3 className="font-semibold">Download an example file</h3>
+        <h3 className="font-semibold">What to upload for your business</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Not sure how to format your data? Download a ready-made template for each dataset. Fields marked{" "}
-          <span className="font-medium text-danger">Required</span> must be filled in; the rest are optional but improve accuracy.
+          {profile
+            ? `Tailored to your ${profile.model} business and how you defined success. Required datasets matter most for your retention model.`
+            : "Download a ready-made template for each dataset. Complete onboarding to tailor these to your business."}
         </p>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {datasetSchemas.map((s) => (
-            <div key={s.key} className="rounded-xl border border-border p-4">
-              <p className="text-sm font-semibold">{s.label}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {s.fields.map((f) => (
-                  <span
-                    key={f.name}
-                    title={f.description}
-                    className={cn(
-                      "rounded-md border px-1.5 py-0.5 font-mono text-[11px]",
-                      f.mandatory
-                        ? "border-danger/30 bg-danger/10 text-danger"
-                        : "border-border bg-secondary text-muted-foreground",
-                    )}
-                  >
-                    {f.name}
-                    {f.mandatory && " *"}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                <span className="text-danger">*</span> required field
-              </p>
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => downloadCsvTemplate(s)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
-                >
-                  <Download className="h-3.5 w-3.5" /> CSV
-                </button>
-                <button
-                  onClick={() => downloadExcelTemplate(s)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
-                >
-                  <FileDown className="h-3.5 w-3.5" /> Excel
-                </button>
-              </div>
+
+        {requiredSets.length > 0 && (
+          <div className="mt-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Required for your business
+            </p>
+            <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {requiredSets.map((s) => (
+                <DatasetCard key={s.key} dataset={s} missing={isMissing(s)} />
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {optionalSets.length > 0 && (
+          <div className="mt-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Optional / recommended
+            </p>
+            <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {optionalSets.map((s) => (
+                <DatasetCard key={s.key} dataset={s} missing={false} />
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
+
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Upload */}
