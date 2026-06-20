@@ -23,6 +23,8 @@ import {
   downloadCsvTemplate,
   downloadExcelTemplate,
 } from "@/lib/data-schemas";
+import { useProfile } from "@/lib/profile-store";
+import { personalizeDatasets, type PersonalizedDataset } from "@/lib/personalize-data";
 import {
   useUploads,
   uploadsStore,
