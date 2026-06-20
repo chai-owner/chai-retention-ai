@@ -59,7 +59,7 @@ const priorityChip: Record<string, string> = {
 };
 
 function CustomerDetail() {
-  const { customer: c } = Route.useLoaderData();
+  const { customer: c } = Route.useLoaderData() as { customer: Customer };
   const cat = categoryFromHealth(c.health);
   const sentimentLabel = c.sentiment >= 60 ? "Positive" : c.sentiment >= 40 ? "Neutral" : "Negative";
 
