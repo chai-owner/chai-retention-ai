@@ -150,9 +150,7 @@ function Onboarding() {
           </span>
           <span className="text-lg font-semibold">ChAi</span>
         </Link>
-        <Link to="/app/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
-          Skip to demo
-        </Link>
+        <span className="text-sm text-muted-foreground">Let's set you up</span>
       </header>
 
       <div className="mx-auto max-w-2xl px-4 pb-16">
