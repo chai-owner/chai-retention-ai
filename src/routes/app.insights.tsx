@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ArrowUpRight, ArrowDownRight, Minus, Sparkles, MessageSquareWarning } from "lucide-react";
+import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowUpRight, ArrowDownRight, Minus, Sparkles, MessageSquareWarning, ChevronDown } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { benchmarks, customers, formatCurrency } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -9,20 +10,25 @@ export const Route = createFileRoute("/app/insights")({
   component: Insights,
 });
 
+type RecCustomer = { id: string; name: string; segment: string; health: number; saved: number };
+
 // Aggregate the top recommendations across all at-risk customers.
 const recAgg = (() => {
-  const map = new Map<string, { title: string; count: number; saved: number; priority: string }>();
+  const map = new Map<string, { title: string; count: number; saved: number; priority: string; customers: RecCustomer[] }>();
   customers
     .filter((c) => c.health < 60)
     .forEach((c) =>
       c.recommendations.forEach((r) => {
-        const cur = map.get(r.title) ?? { title: r.title, count: 0, saved: 0, priority: r.priority };
+        const cur = map.get(r.title) ?? { title: r.title, count: 0, saved: 0, priority: r.priority, customers: [] };
         cur.count += 1;
         cur.saved += r.revenueSaved;
+        cur.customers.push({ id: c.id, name: c.name, segment: c.segment, health: c.health, saved: r.revenueSaved });
         map.set(r.title, cur);
       }),
     );
-  return [...map.values()].sort((a, b) => b.saved - a.saved);
+  return [...map.values()]
+    .map((r) => ({ ...r, customers: r.customers.sort((a, b) => b.saved - a.saved) }))
+    .sort((a, b) => b.saved - a.saved);
 })();
 
 const sentimentSignals = [
