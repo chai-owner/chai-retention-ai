@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -7,6 +8,7 @@ import {
   Trash2,
   FileSpreadsheet,
   ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, Card, StatCard } from "@/components/ui/chai";
@@ -59,6 +61,7 @@ function FindingIcon({ level }: { level: QualityFinding["level"] }) {
 
 function DataQualityPage() {
   const uploads = useUploads();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const avg = uploads.length
     ? Math.round(uploads.reduce((s, u) => s + overallScore(u), 0) / uploads.length)
@@ -69,6 +72,10 @@ function DataQualityPage() {
   function handleDelete(u: UploadRecord) {
     uploadsStore.remove(u.id);
     toast.success("Upload deleted", { description: `${u.fileName} and its data were removed from Chai.` });
+  }
+
+  function toggle(id: string) {
+    setExpandedId((prev) => (prev === id ? null : id));
   }
 
   return (
@@ -91,111 +98,131 @@ function DataQualityPage() {
         <StatCard label="Need attention" value={needsAttention} icon={AlertTriangle} tone={needsAttention ? "caution" : "success"} hint="Uploads scoring below 60%" />
       </div>
 
-      <div className="mt-6 space-y-5">
+      <div className="mt-6 space-y-3">
         {uploads.map((u) => {
           const score = overallScore(u);
+          const isOpen = expandedId === u.id;
           return (
-            <Card key={u.id}>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
-                    <FileSpreadsheet className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="font-semibold">{u.fileName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {u.datasetLabel} · {u.rows.toLocaleString()} rows · {u.sizeKb} KB · {u.uploadedAt}
-                    </p>
-                  </div>
+            <Card key={u.id} className="overflow-hidden">
+              {/* Collapsed row — clickable to expand */}
+              <button
+                onClick={() => toggle(u.id)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/30"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+                  <FileSpreadsheet className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{u.fileName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {u.datasetLabel} · {u.rows.toLocaleString()} rows · {u.sizeKb} KB · {u.uploadedAt}
+                  </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={cn("rounded-full border px-3 py-1 text-sm font-semibold", scoreChip(score))}>
-                    {score}% quality
+                  <span className={cn("rounded-full border px-2.5 py-0.5 text-xs font-semibold", scoreChip(score))}>
+                    {score}%
                   </span>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-danger/40 hover:text-danger"
-                      >
-                        <Trash2 className="h-4 w-4" /> Delete
-                      </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this upload?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This permanently removes <span className="font-medium text-foreground">{u.fileName}</span> and all{" "}
-                          {u.rows.toLocaleString()} rows of data it contributed to Chai. This can't be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(u)}
-                          className="bg-danger text-danger-foreground hover:bg-danger/90"
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                      isOpen && "rotate-180"
+                    )}
+                  />
+                  {/* Stop propagation so clicking Delete doesn't expand the card */}
+                  <span
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0"
+                  >
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-danger/40 hover:text-danger"
                         >
-                          Delete data
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this upload?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This permanently removes <span className="font-medium text-foreground">{u.fileName}</span> and all{" "}
+                            {u.rows.toLocaleString()} rows of data it contributed to Chai. This can't be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(u)}
+                            className="bg-danger text-danger-foreground hover:bg-danger/90"
+                          >
+                            Delete data
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </span>
                 </div>
-              </div>
+              </button>
 
-              <div className="mt-5 grid gap-6 lg:grid-cols-2">
-                {/* Scores + field checks */}
-                <div>
-                  <div className="flex gap-3">
-                    <div className="flex-1 rounded-lg bg-secondary/60 p-3 text-center">
-                      <p className="text-xl font-semibold">{u.reliability}%</p>
-                      <p className="text-xs text-muted-foreground">Reliability</p>
-                    </div>
-                    <div className="flex-1 rounded-lg bg-secondary/60 p-3 text-center">
-                      <p className="text-xl font-semibold">{u.completeness}%</p>
-                      <p className="text-xs text-muted-foreground">Completeness</p>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-xs font-medium text-muted-foreground">Field completeness</p>
-                  <div className="mt-2 space-y-2.5">
-                    {u.fieldChecks.map((f) => (
-                      <div key={f.field}>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="flex items-center gap-1.5 font-mono">
-                            {f.field}
-                            <span
-                              className={cn(
-                                "rounded px-1 py-px text-[10px] font-medium",
-                                f.mandatory ? "bg-danger/10 text-danger" : "bg-secondary text-muted-foreground",
-                              )}
-                            >
-                              {f.mandatory ? "Required" : "Optional"}
-                            </span>
-                          </span>
-                          <span className={cn("tabular-nums", f.mandatory && f.fill < 100 ? "text-danger" : "text-muted-foreground")}>
-                            {f.fill}%
-                          </span>
+              {/* Expanded detail */}
+              {isOpen && (
+                <div className="border-t border-border px-4 pb-5 pt-4">
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    {/* Scores + field checks */}
+                    <div>
+                      <div className="flex gap-3">
+                        <div className="flex-1 rounded-lg bg-secondary/60 p-3 text-center">
+                          <p className="text-xl font-semibold">{u.reliability}%</p>
+                          <p className="text-xs text-muted-foreground">Reliability</p>
                         </div>
-                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
-                          <div className={cn("h-full rounded-full", scoreBar(f.fill))} style={{ width: `${f.fill}%` }} />
+                        <div className="flex-1 rounded-lg bg-secondary/60 p-3 text-center">
+                          <p className="text-xl font-semibold">{u.completeness}%</p>
+                          <p className="text-xs text-muted-foreground">Completeness</p>
                         </div>
                       </div>
-                    ))}
+                      <p className="mt-4 text-xs font-medium text-muted-foreground">Field completeness</p>
+                      <div className="mt-2 space-y-2.5">
+                        {u.fieldChecks.map((f) => (
+                          <div key={f.field}>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="flex items-center gap-1.5 font-mono">
+                                {f.field}
+                                <span
+                                  className={cn(
+                                    "rounded px-1 py-px text-[10px] font-medium",
+                                    f.mandatory ? "bg-danger/10 text-danger" : "bg-secondary text-muted-foreground",
+                                  )}
+                                >
+                                  {f.mandatory ? "Required" : "Optional"}
+                                </span>
+                              </span>
+                              <span className={cn("tabular-nums", f.mandatory && f.fill < 100 ? "text-danger" : "text-muted-foreground")}>
+                                {f.fill}%
+                              </span>
+                            </div>
+                            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
+                              <div className={cn("h-full rounded-full", scoreBar(f.fill))} style={{ width: `${f.fill}%` }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Findings */}
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">What Chai found</p>
+                      <ul className="mt-2 space-y-2.5">
+                        {u.findings.map((f, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm">
+                            <FindingIcon level={f.level} />
+                            <span className="text-muted-foreground">{f.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
-
-                {/* Findings */}
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">What Chai found</p>
-                  <ul className="mt-2 space-y-2.5">
-                    {u.findings.map((f, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <FindingIcon level={f.level} />
-                        <span className="text-muted-foreground">{f.text}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+              )}
             </Card>
           );
         })}
