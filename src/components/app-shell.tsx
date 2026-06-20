@@ -10,6 +10,7 @@ import {
   Sparkles,
   Menu,
   X,
+  BadgeCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AskChai } from "@/components/ask-chai";
@@ -18,6 +19,7 @@ const nav = [
   { to: "/app/dashboard", label: "Executive Dashboard", icon: LayoutDashboard },
   { to: "/app/customers", label: "Customer Risk Center", icon: Users },
   { to: "/app/data", label: "Data & Integrations", icon: Database },
+  { to: "/app/data-quality", label: "Data Quality", icon: BadgeCheck },
   { to: "/app/planner", label: "Intelligence Planner", icon: ClipboardList },
   { to: "/app/insights", label: "Insights & Benchmarks", icon: Lightbulb },
   { to: "/app/trust", label: "Trust & Compliance", icon: ShieldCheck },
@@ -46,7 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="flex-1 space-y-1 px-3 py-2">
           {nav.map((item) => {
-            const active = pathname.startsWith(item.to);
+            const active = pathname === item.to || pathname.startsWith(item.to + "/");
             return (
               <Link
                 key={item.to}
