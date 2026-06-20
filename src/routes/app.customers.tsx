@@ -25,6 +25,7 @@ const filters: { key: RiskCategory | "all"; label: string }[] = [
 ];
 
 function Customers() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RiskCategory | "all">("all");
 
