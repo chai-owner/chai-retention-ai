@@ -94,20 +94,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="space-y-2 border-t border-sidebar-border p-3">
-          <button
-            onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
-          >
-            <LogOut className="h-[18px] w-[18px]" />
-            Sign out
-          </button>
+          {signedIn ? (
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+              Sign out
+            </button>
+          ) : (
+            <Link
+              to="/auth"
+              className="flex w-full items-center gap-3 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              <LogIn className="h-[18px] w-[18px]" />
+              Sign in to get started
+            </Link>
+          )}
           <div className="rounded-lg bg-accent/60 p-3">
-            <p className="text-xs font-medium text-accent-foreground">Demo workspace</p>
+            <p className="text-xs font-medium text-accent-foreground">
+              {signedIn ? "Demo workspace" : "You're exploring the demo"}
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">
               Sample data for Northwind Labs. Nothing here is real customer data.
             </p>
           </div>
         </div>
+
 
       </aside>
 
