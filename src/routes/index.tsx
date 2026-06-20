@@ -142,12 +142,12 @@ function Landing() {
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1 hover:shadow-md">
                 <img
                   src={dashboardShot.url}
-                  alt="ChAi Executive Dashboard showing health scores and churn risk overview"
+                  alt="ChAi Dashboard showing health scores and churn risk overview"
                   className="w-full object-cover"
                   loading="lazy"
                 />
               </div>
-              <p className="px-1 text-sm font-medium">Executive Dashboard</p>
+              <p className="px-1 text-sm font-medium">Dashboard</p>
               <p className="px-1 text-xs text-muted-foreground">Health scores, revenue at risk, and key metrics at a glance.</p>
             </div>
             <div className="space-y-3">

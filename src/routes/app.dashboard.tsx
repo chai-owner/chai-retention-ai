@@ -35,7 +35,7 @@ import {
 } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/app/dashboard")({
-  head: () => ({ meta: [{ title: "Executive Dashboard — ChAi" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
   component: Dashboard,
 });
 
@@ -52,7 +52,7 @@ function Dashboard() {
   return (
     <div>
       <PageHeader
-        title="Executive Dashboard"
+        title="Dashboard"
         description="A 30-second snapshot of how healthy your customer base is, who's at risk, and how much revenue is on the line."
       />
 

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { AskChAi } from "@/components/ask-chai";
 
 const nav = [
-  { to: "/app/dashboard", label: "Executive Dashboard", icon: LayoutDashboard },
+  { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/customers", label: "Customer Risk Center", icon: Users },
   { to: "/app/data", label: "Data & Integrations", icon: Database },
   { to: "/app/data-quality", label: "Data Quality", icon: BadgeCheck },
