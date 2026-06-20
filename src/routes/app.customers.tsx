@@ -94,9 +94,18 @@ function Customers() {
               {rows.map((c) => {
                 const cat = categoryFromHealth(c.health);
                 return (
-                  <tr key={c.id} className="border-b border-border/60 last:border-0 hover:bg-accent/40">
+                  <tr
+                    key={c.id}
+                    onClick={() => navigate({ to: "/app/customers/$id", params: { id: c.id } })}
+                    className="cursor-pointer border-b border-border/60 last:border-0 hover:bg-accent/40"
+                  >
                     <td className="px-4 py-3">
-                      <Link to="/app/customers/$id" params={{ id: c.id }} className="block">
+                      <Link
+                        to="/app/customers/$id"
+                        params={{ id: c.id }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="block"
+                      >
                         <p className="font-medium text-foreground hover:text-primary">{c.name}</p>
                         <p className="text-xs text-muted-foreground">{c.segment}</p>
                       </Link>
