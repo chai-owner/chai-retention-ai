@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,6 +13,7 @@ import {
   X,
   BadgeCheck,
   LogOut,
+  LogIn,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AskChAi } from "@/components/ask-chai";
@@ -31,10 +32,19 @@ const nav = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   useProfileSync();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
+      setSignedIn(!!session),
+    );
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -42,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
+
 
   return (
 
