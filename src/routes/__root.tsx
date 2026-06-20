@@ -78,14 +78,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Chai — Your AI Customer Retention Analyst" },
+      { title: "ChAi — Your AI Customer Retention Analyst" },
       {
         name: "description",
         content:
-          "Chai is an AI retention analyst that scores customer health, predicts churn, and gives plain-English recommendations to keep more revenue.",
+          "ChAi is an AI retention analyst that scores customer health, predicts churn, and gives plain-English recommendations to keep more revenue.",
       },
-      { name: "author", content: "Chai" },
-      { property: "og:title", content: "Chai — Your AI Customer Retention Analyst" },
+      { name: "author", content: "ChAi" },
+      { property: "og:title", content: "ChAi — Your AI Customer Retention Analyst" },
       {
         property: "og:description",
         content:

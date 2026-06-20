@@ -6,7 +6,7 @@ import { plannerMetrics } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/planner")({
-  head: () => ({ meta: [{ title: "Intelligence Planner — Chai" }] }),
+  head: () => ({ meta: [{ title: "Intelligence Planner — ChAi" }] }),
   component: Planner,
 });
 
@@ -37,7 +37,7 @@ function Planner() {
     <div>
       <PageHeader
         title="Customer Intelligence Planner"
-        description="Chai teaches you what to measure. For each metric, see why it matters and how it predicts churn, then tell us where you stand."
+        description="ChAi teaches you what to measure. For each metric, see why it matters and how it predicts churn, then tell us where you stand."
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">

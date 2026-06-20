@@ -43,7 +43,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/data")({
-  head: () => ({ meta: [{ title: "Data & Integrations — Chai" }] }),
+  head: () => ({ meta: [{ title: "Data & Integrations — ChAi" }] }),
   component: DataPage,
 });
 
@@ -69,7 +69,7 @@ function DataPage() {
 
   function deleteUpload(u: UploadRecord) {
     uploadsStore.remove(u.id);
-    toast.success("Upload deleted", { description: `${u.fileName} and its data were removed from Chai.` });
+    toast.success("Upload deleted", { description: `${u.fileName} and its data were removed from ChAi.` });
   }
 
 
@@ -77,7 +77,7 @@ function DataPage() {
     <div>
       <PageHeader
         title="Data & Integrations"
-        description="Bring your customer, transaction and support data into Chai. We'll check how ready it is and map it for you."
+        description="Bring your customer, transaction and support data into ChAi. We'll check how ready it is and map it for you."
       />
 
       {/* Readiness */}
@@ -86,7 +86,7 @@ function DataPage() {
           <div>
             <h3 className="font-semibold">Data readiness assessment</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Like a consultant, Chai checks what you're tracking and what's missing.
+              Like a consultant, ChAi checks what you're tracking and what's missing.
             </p>
           </div>
           <div className="flex items-center gap-3 rounded-lg bg-accent/50 px-4 py-2">
@@ -175,7 +175,7 @@ function DataPage() {
             onDrop={(e) => {
               e.preventDefault();
               setDragging(false);
-              toast.success("File received", { description: "Chai is mapping your fields and checking data quality." });
+              toast.success("File received", { description: "ChAi is mapping your fields and checking data quality." });
             }}
             className={cn(
               "mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-colors",
@@ -241,7 +241,7 @@ function DataPage() {
           <div>
             <h3 className="font-semibold">Upload history</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Every file you've imported. Delete an upload to remove its data from Chai.
+              Every file you've imported. Delete an upload to remove its data from ChAi.
             </p>
           </div>
           <Link to="/app/data-quality" className="hidden text-sm font-medium text-primary hover:underline sm:inline">
@@ -324,7 +324,7 @@ function DataPage() {
       <Card className="mt-6">
         <h3 className="font-semibold">Intelligent field mapping</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Chai automatically matches your columns to the fields it needs. Review and correct anything below.
+          ChAi automatically matches your columns to the fields it needs. Review and correct anything below.
         </p>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">

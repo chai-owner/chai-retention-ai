@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/app/data-quality")({
-  head: () => ({ meta: [{ title: "Data Quality — Chai" }] }),
+  head: () => ({ meta: [{ title: "Data Quality — ChAi" }] }),
   component: DataQualityPage,
 });
 
@@ -71,7 +71,7 @@ function DataQualityPage() {
 
   function handleDelete(u: UploadRecord) {
     uploadsStore.remove(u.id);
-    toast.success("Upload deleted", { description: `${u.fileName} and its data were removed from Chai.` });
+    toast.success("Upload deleted", { description: `${u.fileName} and its data were removed from ChAi.` });
   }
 
   function toggle(id: string) {
@@ -89,7 +89,7 @@ function DataQualityPage() {
 
       <PageHeader
         title="Data Quality Engine"
-        description="Every file you upload is scored for reliability and completeness. Review each upload's quality, see what's missing, and delete data you no longer want in Chai."
+        description="Every file you upload is scored for reliability and completeness. Review each upload's quality, see what's missing, and delete data you no longer want in ChAi."
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -149,7 +149,7 @@ function DataQualityPage() {
                           <AlertDialogTitle>Delete this upload?</AlertDialogTitle>
                           <AlertDialogDescription>
                             This permanently removes <span className="font-medium text-foreground">{u.fileName}</span> and all{" "}
-                            {u.rows.toLocaleString()} rows of data it contributed to Chai. This can't be undone.
+                            {u.rows.toLocaleString()} rows of data it contributed to ChAi. This can't be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -213,7 +213,7 @@ function DataQualityPage() {
 
                     {/* Findings */}
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground">What Chai found</p>
+                      <p className="text-xs font-medium text-muted-foreground">What ChAi found</p>
                       <ul className="mt-2 space-y-2.5">
                         {u.findings.map((f, i) => (
                           <li key={i} className="flex items-start gap-2 text-sm">

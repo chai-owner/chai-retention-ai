@@ -14,13 +14,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Chai — Your AI Customer Retention Analyst" },
+      { title: "ChAi — Your AI Customer Retention Analyst" },
       {
         name: "description",
         content:
-          "Chai scores customer health, predicts churn, explains why customers leave, and recommends what to do next — in plain English, no analytics expertise required.",
+          "ChAi scores customer health, predicts churn, explains why customers leave, and recommends what to do next — in plain English, no analytics expertise required.",
       },
-      { property: "og:title", content: "Chai — Your AI Customer Retention Analyst" },
+      { property: "og:title", content: "ChAi — Your AI Customer Retention Analyst" },
       {
         property: "og:description",
         content: "Understand customer health, spot churn risk, and keep more revenue.",
@@ -40,8 +40,8 @@ const features = [
 ];
 
 const steps = [
-  { n: "01", title: "Teach Chai your business", desc: "A short guided wizard learns how you operate and what a healthy customer looks like." },
-  { n: "02", title: "Bring your data", desc: "Upload CSVs or connect your support tools. Chai maps the fields and checks data quality for you." },
+  { n: "01", title: "Teach ChAi your business", desc: "A short guided wizard learns how you operate and what a healthy customer looks like." },
+  { n: "02", title: "Bring your data", desc: "Upload CSVs or connect your support tools. ChAi maps the fields and checks data quality for you." },
   { n: "03", title: "Get your retention plan", desc: "Health scores, risk flags, root causes and recommendations — ready in minutes." },
 ];
 
@@ -55,7 +55,7 @@ function Landing() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-warm text-primary-foreground">
               <Sparkles className="h-4 w-4" />
             </span>
-            <span className="text-lg font-semibold tracking-tight">Chai</span>
+            <span className="text-lg font-semibold tracking-tight">ChAi</span>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/app/dashboard" className="hidden text-sm font-medium text-muted-foreground hover:text-foreground sm:block">
@@ -83,7 +83,7 @@ function Landing() {
             <span className="font-display italic font-normal text-primary">already worked so hard</span> to win.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Chai is an AI retention analyst that understands customer health, predicts who's about to leave,
+            ChAi is an AI retention analyst that understands customer health, predicts who's about to leave,
             explains why, and tells you what to do — all in plain English. No analytics team required.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -151,7 +151,7 @@ function Landing() {
             Meet your retention analyst
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-primary-foreground/90">
-            Teach Chai about your business and see your customer health in minutes.
+            Teach ChAi about your business and see your customer health in minutes.
           </p>
           <Link
             to="/onboarding"
@@ -168,7 +168,7 @@ function Landing() {
             <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-warm text-primary-foreground">
               <Sparkles className="h-3 w-3" />
             </span>
-            <span className="font-semibold text-foreground">Chai</span>
+            <span className="font-semibold text-foreground">ChAi</span>
           </div>
           <p>Customer intelligence & retention, in plain English.</p>
         </div>

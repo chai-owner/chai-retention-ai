@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/customers/")({
-  head: () => ({ meta: [{ title: "Customer Risk Center — Chai" }] }),
+  head: () => ({ meta: [{ title: "Customer Risk Center — ChAi" }] }),
   component: Customers,
 });
 

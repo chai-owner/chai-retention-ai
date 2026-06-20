@@ -13,7 +13,7 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AskChai } from "@/components/ask-chai";
+import { AskChAi } from "@/components/ask-chai";
 
 const nav = [
   { to: "/app/dashboard", label: "Executive Dashboard", icon: LayoutDashboard },
@@ -43,7 +43,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-warm text-primary-foreground">
               <Sparkles className="h-4 w-4" />
             </span>
-            <span className="text-lg font-semibold tracking-tight">Chai</span>
+            <span className="text-lg font-semibold tracking-tight">ChAi</span>
           </Link>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-2">
@@ -107,7 +107,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">{children}</main>
       </div>
 
-      <AskChai />
+      <AskChAi />
     </div>
   );
 }

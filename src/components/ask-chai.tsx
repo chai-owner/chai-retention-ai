@@ -51,13 +51,13 @@ function answerFor(q: string) {
   );
 }
 
-export function AskChai() {
+export function AskChAi() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      text: "Hi, I'm Chai — your AI retention analyst. Ask me anything about your customers, churn risk, or what to do next.",
+      text: "Hi, I'm ChAi — your AI retention analyst. Ask me anything about your customers, churn risk, or what to do next.",
     },
   ]);
 
@@ -76,7 +76,7 @@ export function AskChai() {
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-gradient-warm px-4 py-3 text-sm font-medium text-primary-foreground shadow-card transition-transform hover:scale-105"
         >
           <Sparkles className="h-4 w-4" />
-          Ask Chai
+          Ask ChAi
         </button>
       )}
 
@@ -85,7 +85,7 @@ export function AskChai() {
           <div className="flex items-center justify-between border-b border-border bg-gradient-warm px-4 py-3 text-primary-foreground">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
-              <span className="text-sm font-semibold">Ask Chai</span>
+              <span className="text-sm font-semibold">Ask ChAi</span>
             </div>
             <button onClick={() => setOpen(false)} aria-label="Close assistant">
               <X className="h-4 w-4" />

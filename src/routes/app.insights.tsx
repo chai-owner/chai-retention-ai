@@ -6,7 +6,7 @@ import { benchmarks, customers, formatCurrency } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/insights")({
-  head: () => ({ meta: [{ title: "Insights & Benchmarks — Chai" }] }),
+  head: () => ({ meta: [{ title: "Insights & Benchmarks — ChAi" }] }),
   component: Insights,
 });
 
@@ -52,7 +52,7 @@ function Insights() {
     <div>
       <PageHeader
         title="Insights & Benchmarks"
-        description="Chai turns your data into prioritized actions and shows how you compare to similar businesses."
+        description="ChAi turns your data into prioritized actions and shows how you compare to similar businesses."
       />
 
       {/* Recommendations */}
@@ -148,7 +148,7 @@ function Insights() {
             <h3 className="font-semibold">Customer interaction intelligence</h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Phrases Chai detected in support conversations that signal churn risk.
+            Phrases ChAi detected in support conversations that signal churn risk.
           </p>
           <div className="mt-4 space-y-2">
             {sentimentSignals.map((s) => (

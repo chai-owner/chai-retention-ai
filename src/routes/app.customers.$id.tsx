@@ -25,7 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/customers/$id")({
-  head: () => ({ meta: [{ title: "Customer Detail — Chai" }] }),
+  head: () => ({ meta: [{ title: "Customer Detail — ChAi" }] }),
   loader: ({ params }) => {
     const customer = getCustomer(params.id);
     if (!customer) throw notFound();
@@ -93,7 +93,7 @@ function CustomerDetail() {
             <h3 className="font-semibold">Why this customer is at risk</h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Chai analyzed usage, purchases, support and conversations. Here's what's driving the risk.
+            ChAi analyzed usage, purchases, support and conversations. Here's what's driving the risk.
           </p>
           <div className="mt-4 space-y-4">
             {c.factors.map((f) => (
