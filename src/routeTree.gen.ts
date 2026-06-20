@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppTrustRouteImport } from './routes/app.trust'
 import { Route as AppPlannerRouteImport } from './routes/app.planner'
 import { Route as AppInsightsRouteImport } from './routes/app.insights'
 import { Route as AppDataRouteImport } from './routes/app.data'
@@ -32,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTrustRoute = AppTrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPlannerRoute = AppPlannerRouteImport.update({
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/app/data': typeof AppDataRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/planner': typeof AppPlannerRoute
+  '/app/trust': typeof AppTrustRoute
   '/app/': typeof AppIndexRoute
   '/app/customers/$id': typeof AppCustomersIdRoute
 }
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/app/data': typeof AppDataRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/planner': typeof AppPlannerRoute
+  '/app/trust': typeof AppTrustRoute
   '/app': typeof AppIndexRoute
   '/app/customers/$id': typeof AppCustomersIdRoute
 }
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/app/data': typeof AppDataRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/planner': typeof AppPlannerRoute
+  '/app/trust': typeof AppTrustRoute
   '/app/': typeof AppIndexRoute
   '/app/customers/$id': typeof AppCustomersIdRoute
 }
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/app/data'
     | '/app/insights'
     | '/app/planner'
+    | '/app/trust'
     | '/app/'
     | '/app/customers/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/app/data'
     | '/app/insights'
     | '/app/planner'
+    | '/app/trust'
     | '/app'
     | '/app/customers/$id'
   id:
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/app/data'
     | '/app/insights'
     | '/app/planner'
+    | '/app/trust'
     | '/app/'
     | '/app/customers/$id'
   fileRoutesById: FileRoutesById
@@ -159,6 +171,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/trust': {
+      id: '/app/trust'
+      path: '/trust'
+      fullPath: '/app/trust'
+      preLoaderRoute: typeof AppTrustRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/planner': {
@@ -224,6 +243,7 @@ interface AppRouteChildren {
   AppDataRoute: typeof AppDataRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppPlannerRoute: typeof AppPlannerRoute
+  AppTrustRoute: typeof AppTrustRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -233,6 +253,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDataRoute: AppDataRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppPlannerRoute: AppPlannerRoute,
+  AppTrustRoute: AppTrustRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
