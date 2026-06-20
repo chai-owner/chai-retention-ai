@@ -40,7 +40,9 @@ const defaultQuestions = [
   "Do you track customer satisfaction?",
 ];
 
-const steps = ["Business", "How you work", "What to track", "Interactions"];
+const steps = ["Business", "Segments", "How you work", "What to track", "Interactions"];
+
+const MAX_SEGMENTS = 4;
 
 function Onboarding() {
   const navigate = useNavigate();
