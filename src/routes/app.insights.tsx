@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ArrowUpRight, ArrowDownRight, Minus, Sparkles, MessageSquareWarning } from "lucide-react";
+import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowUpRight, ArrowDownRight, Minus, Sparkles, MessageSquareWarning, ChevronDown } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { benchmarks, customers, formatCurrency } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -9,20 +10,25 @@ export const Route = createFileRoute("/app/insights")({
   component: Insights,
 });
 
+type RecCustomer = { id: string; name: string; segment: string; health: number; saved: number };
+
 // Aggregate the top recommendations across all at-risk customers.
 const recAgg = (() => {
-  const map = new Map<string, { title: string; count: number; saved: number; priority: string }>();
+  const map = new Map<string, { title: string; count: number; saved: number; priority: string; customers: RecCustomer[] }>();
   customers
     .filter((c) => c.health < 60)
     .forEach((c) =>
       c.recommendations.forEach((r) => {
-        const cur = map.get(r.title) ?? { title: r.title, count: 0, saved: 0, priority: r.priority };
+        const cur = map.get(r.title) ?? { title: r.title, count: 0, saved: 0, priority: r.priority, customers: [] };
         cur.count += 1;
         cur.saved += r.revenueSaved;
+        cur.customers.push({ id: c.id, name: c.name, segment: c.segment, health: c.health, saved: r.revenueSaved });
         map.set(r.title, cur);
       }),
     );
-  return [...map.values()].sort((a, b) => b.saved - a.saved);
+  return [...map.values()]
+    .map((r) => ({ ...r, customers: r.customers.sort((a, b) => b.saved - a.saved) }))
+    .sort((a, b) => b.saved - a.saved);
 })();
 
 const sentimentSignals = [
@@ -40,7 +46,9 @@ const statusIcon = {
 };
 
 function Insights() {
+  const [expanded, setExpanded] = useState<string | null>(null);
   return (
+
     <div>
       <PageHeader
         title="Insights & Benchmarks"
@@ -57,19 +65,52 @@ function Insights() {
         </div>
         <p className="mt-1 text-xs text-muted-foreground">Ranked by total revenue you could save across your at-risk accounts.</p>
         <div className="mt-4 space-y-3">
-          {recAgg.map((r, i) => (
-            <div key={r.title} className="flex items-center gap-4 rounded-lg border border-border p-4">
-              <span className="font-display text-2xl italic text-muted-foreground">{i + 1}</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{r.title}</p>
-                <p className="text-xs text-muted-foreground">Applies to {r.count} customers · {r.priority} priority</p>
+          {recAgg.map((r, i) => {
+            const isOpen = expanded === r.title;
+            return (
+              <div key={r.title} className="rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setExpanded(isOpen ? null : r.title)}
+                  className="flex w-full items-center gap-4 p-4 text-left"
+                >
+                  <span className="font-display text-2xl italic text-muted-foreground">{i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{r.title}</p>
+                    <p className="text-xs text-muted-foreground">Applies to {r.count} customers · {r.priority} priority</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-success">{formatCurrency(r.saved)}</p>
+                    <p className="text-[11px] text-muted-foreground">est. saved</p>
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
+                </button>
+                {isOpen && (
+                  <div className="border-t border-border p-4 pt-3">
+                    <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Customers this applies to
+                    </p>
+                    <div className="space-y-1.5">
+                      {r.customers.map((c) => (
+                        <Link
+                          key={c.id}
+                          to="/app/customers/$id"
+                          params={{ id: c.id }}
+                          className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 hover:bg-secondary"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">{c.name}</p>
+                            <p className="text-[11px] text-muted-foreground">{c.segment} · health {c.health}</p>
+                          </div>
+                          <span className="ml-3 shrink-0 text-xs font-semibold text-success">{formatCurrency(c.saved)}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-success">{formatCurrency(r.saved)}</p>
-                <p className="text-[11px] text-muted-foreground">est. saved</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
 
