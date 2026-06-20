@@ -1,22 +1,48 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   UploadCloud,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Info,
   FileSpreadsheet,
   Link2,
+  Download,
+  FileDown,
+  Trash2,
+  ArrowRight,
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import {
   dataReadiness,
   readinessOverall,
-  dataQuality,
   fieldMappings,
   integrations,
 } from "@/lib/mock-data";
+import {
+  datasetSchemas,
+  downloadCsvTemplate,
+  downloadExcelTemplate,
+} from "@/lib/data-schemas";
+import {
+  useUploads,
+  uploadsStore,
+  overallScore,
+  type UploadRecord,
+} from "@/lib/uploads-store";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/data")({
@@ -26,6 +52,15 @@ export const Route = createFileRoute("/app/data")({
 
 function barColor(v: number) {
   return v >= 75 ? "bg-success" : v >= 50 ? "bg-warning" : v >= 35 ? "bg-caution" : "bg-danger";
+}
+function scoreChip(v: number) {
+  return v >= 80
+    ? "bg-success/10 text-success border-success/20"
+    : v >= 60
+      ? "bg-warning/15 text-warning-foreground border-warning/30"
+      : v >= 40
+        ? "bg-caution/10 text-caution border-caution/20"
+        : "bg-danger/10 text-danger border-danger/20";
 }
 
 function DataPage() {
