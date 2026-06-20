@@ -20,6 +20,7 @@ import {
   categoryFromHealth,
   formatCurrency,
   type TimelineEvent,
+  type Customer,
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
