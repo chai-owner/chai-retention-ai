@@ -49,8 +49,10 @@ const MAX_SEGMENTS = 4;
 
 function Onboarding() {
   const navigate = useNavigate();
+  const persistProfile = useServerFn(saveProfile);
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+
 
   const [form, setForm] = useState({
     company: "",
