@@ -65,6 +65,16 @@ function scoreChip(v: number) {
 
 function DataPage() {
   const [dragging, setDragging] = useState(false);
+  const uploads = useUploads();
+  const avgQuality = uploads.length
+    ? Math.round(uploads.reduce((s, u) => s + overallScore(u), 0) / uploads.length)
+    : 0;
+
+  function deleteUpload(u: UploadRecord) {
+    uploadsStore.remove(u.id);
+    toast.success("Upload deleted", { description: `${u.fileName} and its data were removed from Chai.` });
+  }
+
 
   return (
     <div>
