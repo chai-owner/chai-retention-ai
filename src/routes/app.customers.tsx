@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Search, ArrowUpDown } from "lucide-react";
 import { PageHeader, HealthBadge, ScoreBar } from "@/components/ui/chai";
 import {
