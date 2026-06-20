@@ -10,7 +10,7 @@ interface Segment {
   max: string;
 }
 
-export const Route = createFileRoute("/onboarding")({
+export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({ meta: [{ title: "Get started — ChAi" }] }),
   component: Onboarding,
 });

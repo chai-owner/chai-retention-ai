@@ -11,7 +11,7 @@ import {
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/app/customers/")({
+export const Route = createFileRoute("/_authenticated/app/customers/")({
   head: () => ({ meta: [{ title: "Customer Risk Center — ChAi" }] }),
   component: Customers,
 });

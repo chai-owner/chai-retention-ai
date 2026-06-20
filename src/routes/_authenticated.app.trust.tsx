@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { PageHeader, StatCard, Card } from "@/components/ui/chai";
 
-export const Route = createFileRoute("/app/trust")({
+export const Route = createFileRoute("/_authenticated/app/trust")({
   head: () => ({ meta: [{ title: "Trust & Compliance — ChAi" }] }),
   component: Trust,
 });

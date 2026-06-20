@@ -34,7 +34,7 @@ import {
   categoryFromHealth,
 } from "@/lib/mock-data";
 
-export const Route = createFileRoute("/app/dashboard")({
+export const Route = createFileRoute("/_authenticated/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
   component: Dashboard,
 });

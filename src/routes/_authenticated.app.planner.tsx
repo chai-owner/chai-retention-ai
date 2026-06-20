@@ -5,7 +5,7 @@ import { PageHeader, Card } from "@/components/ui/chai";
 import { plannerMetrics } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/app/planner")({
+export const Route = createFileRoute("/_authenticated/app/planner")({
   head: () => ({ meta: [{ title: "Intelligence Planner — ChAi" }] }),
   component: Planner,
 });
