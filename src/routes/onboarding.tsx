@@ -242,7 +242,7 @@ function Onboarding() {
                 </div>
               )}
 
-              {step === 2 && (
+              {step === 3 && (
                 <div className="space-y-4">
                   <div>
                     <h2 className="text-xl font-semibold">What you're already tracking</h2>
