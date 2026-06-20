@@ -398,3 +398,66 @@ function DataPage() {
     </div>
   );
 }
+
+function DatasetCard({ dataset, missing }: { dataset: PersonalizedDataset; missing: boolean }) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border p-4",
+        missing ? "border-danger/40 bg-danger/5" : "border-border",
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold">{dataset.label}</p>
+        {dataset.required && missing && (
+          <span className="shrink-0 rounded-full border border-danger/30 bg-danger/10 px-2 py-0.5 text-[10px] font-semibold text-danger">
+            Not uploaded
+          </span>
+        )}
+      </div>
+      <p className="mt-0.5 text-xs text-muted-foreground">{dataset.description}</p>
+
+      {dataset.reasons.length > 0 && (
+        <p className="mt-2 rounded-lg bg-accent/50 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+          <span className="font-medium text-foreground">Why ChAi needs this: </span>
+          {dataset.reasons.join(" ")}
+        </p>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {dataset.fields.map((f) => (
+          <span
+            key={f.name}
+            title={f.description}
+            className={cn(
+              "rounded-md border px-1.5 py-0.5 font-mono text-[11px]",
+              f.mandatory
+                ? "border-danger/30 bg-danger/10 text-danger"
+                : "border-border bg-secondary text-muted-foreground",
+            )}
+          >
+            {f.name}
+            {f.mandatory && " *"}
+          </span>
+        ))}
+      </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        <span className="text-danger">*</span> required field
+      </p>
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={() => downloadCsvTemplate(dataset)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+        >
+          <Download className="h-3.5 w-3.5" /> CSV
+        </button>
+        <button
+          onClick={() => downloadExcelTemplate(dataset)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+        >
+          <FileDown className="h-3.5 w-3.5" /> Excel
+        </button>
+      </div>
+    </div>
+  );
+}
