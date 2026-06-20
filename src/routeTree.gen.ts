@@ -17,6 +17,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppTrustRouteImport } from './routes/app.trust'
 import { Route as AppPlannerRouteImport } from './routes/app.planner'
 import { Route as AppInsightsRouteImport } from './routes/app.insights'
+import { Route as AppDataQualityRouteImport } from './routes/app.data-quality'
 import { Route as AppDataRouteImport } from './routes/app.data'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppCustomersRouteImport } from './routes/app.customers'
@@ -63,6 +64,11 @@ const AppInsightsRoute = AppInsightsRouteImport.update({
   path: '/insights',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDataQualityRoute = AppDataQualityRouteImport.update({
+  id: '/data-quality',
+  path: '/data-quality',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDataRoute = AppDataRouteImport.update({
   id: '/data',
   path: '/data',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/dashboard': typeof AppDashboardRoute
   '/app/data': typeof AppDataRoute
+  '/app/data-quality': typeof AppDataQualityRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/planner': typeof AppPlannerRoute
   '/app/trust': typeof AppTrustRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/data': typeof AppDataRoute
+  '/app/data-quality': typeof AppDataQualityRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/planner': typeof AppPlannerRoute
   '/app/trust': typeof AppTrustRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/app/customers': typeof AppCustomersRouteWithChildren
   '/app/dashboard': typeof AppDashboardRoute
   '/app/data': typeof AppDataRoute
+  '/app/data-quality': typeof AppDataQualityRoute
   '/app/insights': typeof AppInsightsRoute
   '/app/planner': typeof AppPlannerRoute
   '/app/trust': typeof AppTrustRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/app/customers'
     | '/app/dashboard'
     | '/app/data'
+    | '/app/data-quality'
     | '/app/insights'
     | '/app/planner'
     | '/app/trust'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/app/dashboard'
     | '/app/data'
+    | '/app/data-quality'
     | '/app/insights'
     | '/app/planner'
     | '/app/trust'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/app/customers'
     | '/app/dashboard'
     | '/app/data'
+    | '/app/data-quality'
     | '/app/insights'
     | '/app/planner'
     | '/app/trust'
@@ -244,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInsightsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/data-quality': {
+      id: '/app/data-quality'
+      path: '/data-quality'
+      fullPath: '/app/data-quality'
+      preLoaderRoute: typeof AppDataQualityRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/data': {
       id: '/app/data'
       path: '/data'
@@ -300,6 +319,7 @@ interface AppRouteChildren {
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppDataRoute: typeof AppDataRoute
+  AppDataQualityRoute: typeof AppDataQualityRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppPlannerRoute: typeof AppPlannerRoute
   AppTrustRoute: typeof AppTrustRoute
@@ -310,6 +330,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCustomersRoute: AppCustomersRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppDataRoute: AppDataRoute,
+  AppDataQualityRoute: AppDataQualityRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppPlannerRoute: AppPlannerRoute,
   AppTrustRoute: AppTrustRoute,
