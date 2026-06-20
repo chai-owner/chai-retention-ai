@@ -123,7 +123,7 @@ function Onboarding() {
 
   function finish() {
     setSubmitting(true);
-    profileStore.save({
+    const payload = {
       company: form.company,
       industry: form.industry,
       model: form.model,
@@ -132,6 +132,11 @@ function Onboarding() {
       disengagement: form.disengagement,
       tracked,
       channels,
+    };
+    profileStore.save(payload);
+    // Persist to the user's account so it follows them across devices.
+    persistProfile({ data: payload }).catch(() => {
+      // Non-blocking: localStorage already holds the profile.
     });
     setTimeout(() => navigate({ to: "/app/dashboard" }), 1600);
   }
