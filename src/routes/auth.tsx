@@ -85,7 +85,7 @@ function AuthPage() {
       setLoading(false);
       return;
     }
-    navigate({ to: "/app/dashboard" });
+    goToDest();
   }
 
   return (
