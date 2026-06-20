@@ -113,6 +113,57 @@ function DataPage() {
         </div>
       </Card>
 
+      {/* Example templates */}
+      <Card className="mt-6">
+        <h3 className="font-semibold">Download an example file</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Not sure how to format your data? Download a ready-made template for each dataset. Fields marked{" "}
+          <span className="font-medium text-danger">Required</span> must be filled in; the rest are optional but improve accuracy.
+        </p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {datasetSchemas.map((s) => (
+            <div key={s.key} className="rounded-xl border border-border p-4">
+              <p className="text-sm font-semibold">{s.label}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {s.fields.map((f) => (
+                  <span
+                    key={f.name}
+                    title={f.description}
+                    className={cn(
+                      "rounded-md border px-1.5 py-0.5 font-mono text-[11px]",
+                      f.mandatory
+                        ? "border-danger/30 bg-danger/10 text-danger"
+                        : "border-border bg-secondary text-muted-foreground",
+                    )}
+                  >
+                    {f.name}
+                    {f.mandatory && " *"}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                <span className="text-danger">*</span> required field
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => downloadCsvTemplate(s)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+                >
+                  <Download className="h-3.5 w-3.5" /> CSV
+                </button>
+                <button
+                  onClick={() => downloadExcelTemplate(s)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+                >
+                  <FileDown className="h-3.5 w-3.5" /> Excel
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Upload */}
         <Card>
@@ -146,34 +197,131 @@ function DataPage() {
           </div>
         </Card>
 
-        {/* Data quality */}
+        {/* Data quality summary */}
         <Card>
-          <h3 className="font-semibold">Data quality engine</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Automatic checks on your most recent import.</p>
-          <div className="mt-4 flex gap-3">
-            <div className="flex-1 rounded-lg bg-secondary/60 p-3 text-center">
-              <p className="text-xl font-semibold text-foreground">{dataQuality.reliability}%</p>
-              <p className="text-xs text-muted-foreground">Reliability</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="font-semibold">Data quality engine</h3>
+              <p className="mt-1 text-xs text-muted-foreground">Average quality across all your uploads.</p>
             </div>
-            <div className="flex-1 rounded-lg bg-secondary/60 p-3 text-center">
-              <p className="text-xl font-semibold text-foreground">{dataQuality.completeness}%</p>
-              <p className="text-xs text-muted-foreground">Completeness</p>
-            </div>
+            <span className={cn("rounded-full border px-3 py-1 text-sm font-semibold", scoreChip(avgQuality))}>
+              {avgQuality}%
+            </span>
           </div>
-          <ul className="mt-4 space-y-2">
-            {dataQuality.findings.map((f, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm">
-                {f.level === "warning" ? (
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-caution" />
-                ) : (
-                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                )}
-                <span className="text-muted-foreground">{f.text}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-4 space-y-2">
+            {uploads.slice(0, 3).map((u) => {
+              const score = overallScore(u);
+              return (
+                <div key={u.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{u.fileName}</p>
+                    <p className="text-[11px] text-muted-foreground">{u.datasetLabel} · {u.uploadedAt}</p>
+                  </div>
+                  <span className={cn("ml-3 shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium", scoreChip(score))}>
+                    {score}%
+                  </span>
+                </div>
+              );
+            })}
+            {uploads.length === 0 && (
+              <p className="rounded-lg bg-secondary/50 px-3 py-4 text-center text-sm text-muted-foreground">
+                No uploads yet — add a file to see its quality.
+              </p>
+            )}
+          </div>
+          <Link
+            to="/app/data-quality"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          >
+            View All Uploads <ArrowRight className="h-4 w-4" />
+          </Link>
         </Card>
       </div>
+
+      {/* Upload history */}
+      <Card className="mt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold">Upload history</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Every file you've imported. Delete an upload to remove its data from Chai.
+            </p>
+          </div>
+          <Link to="/app/data-quality" className="hidden text-sm font-medium text-primary hover:underline sm:inline">
+            View All Uploads
+          </Link>
+        </div>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                <th className="py-2 pr-4 font-medium">File</th>
+                <th className="py-2 pr-4 font-medium">Dataset</th>
+                <th className="hidden py-2 pr-4 font-medium sm:table-cell">Rows</th>
+                <th className="hidden py-2 pr-4 font-medium md:table-cell">Uploaded</th>
+                <th className="py-2 pr-4 font-medium">Quality</th>
+                <th className="py-2 text-right font-medium">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {uploads.map((u) => {
+                const score = overallScore(u);
+                return (
+                  <tr key={u.id} className="border-b border-border/60 last:border-0">
+                    <td className="py-2.5 pr-4">
+                      <span className="flex items-center gap-2 font-medium">
+                        <FileSpreadsheet className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        {u.fileName}
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-4 text-muted-foreground">{u.datasetLabel}</td>
+                    <td className="hidden py-2.5 pr-4 tabular-nums text-muted-foreground sm:table-cell">{u.rows.toLocaleString()}</td>
+                    <td className="hidden py-2.5 pr-4 text-muted-foreground md:table-cell">{u.uploadedAt}</td>
+                    <td className="py-2.5 pr-4">
+                      <span className={cn("inline-block rounded-full border px-2 py-0.5 text-xs font-medium", scoreChip(score))}>
+                        {score}%
+                      </span>
+                    </td>
+                    <td className="py-2.5 text-right">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            aria-label={`Delete ${u.fileName}`}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-danger/40 hover:text-danger"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this upload?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This permanently removes <span className="font-medium text-foreground">{u.fileName}</span> and all{" "}
+                              {u.rows.toLocaleString()} rows it contributed. This can't be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteUpload(u)}
+                              className="bg-danger text-danger-foreground hover:bg-danger/90"
+                            >
+                              Delete data
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {uploads.length === 0 && (
+            <p className="py-8 text-center text-sm text-muted-foreground">No uploads yet.</p>
+          )}
+        </div>
+      </Card>
 
       {/* Field mapping */}
       <Card className="mt-6">
