@@ -8,10 +8,13 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
   head: () => ({ meta: [{ title: "Sign in — ChAi" }] }),
-  beforeLoad: async () => {
+  beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/app/dashboard" });
+    if (data.user) throw redirect({ to: search.redirect ?? "/app/dashboard" });
   },
   component: AuthPage,
 });
