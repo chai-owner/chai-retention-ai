@@ -107,12 +107,16 @@ const recPool: Recommendation[] = [
 ];
 
 function seededRandom(seed: number) {
-  let s = seed % 2147483647;
+  // Scramble the seed so small, similar seeds don't produce similar streams.
+  let s = (seed * 2654435761) % 2147483647;
   if (s <= 0) s += 2147483646;
-  return () => {
+  const next = () => {
     s = (s * 16807) % 2147483647;
     return (s - 1) / 2147483646;
   };
+  // Warm up to escape the low-value start region of the LCG.
+  for (let i = 0; i < 12; i++) next();
+  return next;
 }
 
 function buildTimeline(rand: () => number, name: string): TimelineEvent[] {
