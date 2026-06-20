@@ -28,16 +28,23 @@ const inputCls =
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { redirect: redirectTo } = Route.useSearch();
+  const dest = redirectTo ?? "/app/dashboard";
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
+  function goToDest() {
+    if (redirectTo) navigate({ href: redirectTo });
+    else navigate({ to: "/app/dashboard" });
+  }
+
   async function handleGoogle() {
     setLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/app/dashboard",
+      redirect_uri: window.location.origin + dest,
     });
     if (result.error) {
       toast.error("Couldn't sign in with Google. Please try again.");
@@ -45,8 +52,9 @@ function AuthPage() {
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/app/dashboard" });
+    goToDest();
   }
+
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
