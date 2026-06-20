@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { profileStore } from "@/lib/profile-store";
 
 interface Segment {
   name: string;
@@ -118,6 +119,16 @@ function Onboarding() {
 
   function finish() {
     setSubmitting(true);
+    profileStore.save({
+      company: form.company,
+      industry: form.industry,
+      model: form.model,
+      segments,
+      successActions: form.successActions,
+      disengagement: form.disengagement,
+      tracked,
+      channels,
+    });
     setTimeout(() => navigate({ to: "/app/dashboard" }), 1600);
   }
 
