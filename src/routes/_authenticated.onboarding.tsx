@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
+import { saveProfile } from "@/lib/profile.functions";
 
 interface Segment {
   name: string;
