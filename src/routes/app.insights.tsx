@@ -65,19 +65,52 @@ function Insights() {
         </div>
         <p className="mt-1 text-xs text-muted-foreground">Ranked by total revenue you could save across your at-risk accounts.</p>
         <div className="mt-4 space-y-3">
-          {recAgg.map((r, i) => (
-            <div key={r.title} className="flex items-center gap-4 rounded-lg border border-border p-4">
-              <span className="font-display text-2xl italic text-muted-foreground">{i + 1}</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{r.title}</p>
-                <p className="text-xs text-muted-foreground">Applies to {r.count} customers · {r.priority} priority</p>
+          {recAgg.map((r, i) => {
+            const isOpen = expanded === r.title;
+            return (
+              <div key={r.title} className="rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setExpanded(isOpen ? null : r.title)}
+                  className="flex w-full items-center gap-4 p-4 text-left"
+                >
+                  <span className="font-display text-2xl italic text-muted-foreground">{i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{r.title}</p>
+                    <p className="text-xs text-muted-foreground">Applies to {r.count} customers · {r.priority} priority</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-success">{formatCurrency(r.saved)}</p>
+                    <p className="text-[11px] text-muted-foreground">est. saved</p>
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
+                </button>
+                {isOpen && (
+                  <div className="border-t border-border p-4 pt-3">
+                    <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Customers this applies to
+                    </p>
+                    <div className="space-y-1.5">
+                      {r.customers.map((c) => (
+                        <Link
+                          key={c.id}
+                          to="/app/customers/$id"
+                          params={{ id: c.id }}
+                          className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 hover:bg-secondary"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">{c.name}</p>
+                            <p className="text-[11px] text-muted-foreground">{c.segment} · health {c.health}</p>
+                          </div>
+                          <span className="ml-3 shrink-0 text-xs font-semibold text-success">{formatCurrency(c.saved)}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-success">{formatCurrency(r.saved)}</p>
-                <p className="text-[11px] text-muted-foreground">est. saved</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
 
