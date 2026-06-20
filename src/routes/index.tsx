@@ -128,9 +128,58 @@ function Landing() {
         </div>
       </section>
 
-      {/* Steps */}
-      <section className="border-y border-border bg-secondary/40">
+      {/* Product shots */}
+      <section className="overflow-hidden border-y border-border bg-secondary/40">
         <div className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight">See it in action</h2>
+            <p className="mt-3 text-muted-foreground">
+              A clean, focused workspace that turns raw data into retention intelligence.
+            </p>
+          </div>
+          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-3">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1 hover:shadow-md">
+                <img
+                  src={dashboardShot.url}
+                  alt="ChAi Executive Dashboard showing health scores and churn risk overview"
+                  className="w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <p className="px-1 text-sm font-medium">Executive Dashboard</p>
+              <p className="px-1 text-xs text-muted-foreground">Health scores, revenue at risk, and key metrics at a glance.</p>
+            </div>
+            <div className="space-y-3">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1 hover:shadow-md">
+                <img
+                  src={customersShot.url}
+                  alt="ChAi Customer Risk Center showing at-risk accounts and health scores"
+                  className="w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <p className="px-1 text-sm font-medium">Customer Risk Center</p>
+              <p className="px-1 text-xs text-muted-foreground">Spot who is about to leave and how much revenue is on the line.</p>
+            </div>
+            <div className="space-y-3 md:col-span-2 lg:col-span-1">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1 hover:shadow-md">
+                <img
+                  src={insightsShot.url}
+                  alt="ChAi Insights and Benchmarks showing recommendations and customer lists"
+                  className="w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <p className="px-1 text-sm font-medium">Insights & Benchmarks</p>
+              <p className="px-1 text-xs text-muted-foreground">Prioritized recommendations ranked by expected revenue saved.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Steps */}
+      <section className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-semibold tracking-tight">Up and running in three steps</h2>
           </div>
