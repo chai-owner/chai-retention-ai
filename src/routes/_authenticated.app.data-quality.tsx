@@ -19,6 +19,7 @@ import {
   type UploadRecord,
   type QualityFinding,
 } from "@/lib/uploads-store";
+import { dataReadiness, readinessOverall } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
