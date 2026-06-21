@@ -254,15 +254,13 @@ function DatasetRow({ dataset, uploaded }: { dataset: PersonalizedDataset; uploa
       </div>
 
       <button
-        onClick={() =>
-          toast.success(`Upload ${dataset.label}`, {
-            description: "Demo mode — choose a CSV or Excel file to import this dataset.",
-          })
-        }
+        onClick={() => setWizardOpen(true)}
         className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
       >
         <Upload className="h-3.5 w-3.5" /> Upload {dataset.label}
       </button>
+
+      <UploadWizard dataset={dataset} open={wizardOpen} onOpenChange={setWizardOpen} />
     </div>
   );
 }
