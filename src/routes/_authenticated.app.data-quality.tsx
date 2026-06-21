@@ -1,5 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { dataReadiness, readinessOverall } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -16,13 +15,6 @@ function barColor(v: number) {
 function DataQualityPage() {
   return (
     <div>
-      <Link
-        to="/app/data"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Data & Integrations
-      </Link>
-
       <PageHeader
         title="Data Quality Engine"
         description="Review your data readiness and identify gaps that could affect retention insights."
