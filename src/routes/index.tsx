@@ -11,10 +11,10 @@ import {
   MessageSquare,
 } from "lucide-react";
 import heroDashboard from "@/assets/hero-dashboard.jpg";
-import dashMetricsShot from "@/assets/screenshots/dash-metrics.png.asset.json";
-import customersShot from "@/assets/screenshots/customers.png.asset.json";
-import insightsShot from "@/assets/screenshots/insights.png.asset.json";
-import plannerShot from "@/assets/screenshots/planner.png.asset.json";
+import dashMetricsShot from "@/assets/screenshots/dash-3d.jpg.asset.json";
+import customersShot from "@/assets/screenshots/customers-3d.jpg.asset.json";
+import insightsShot from "@/assets/screenshots/insights-3d.jpg.asset.json";
+import plannerShot from "@/assets/screenshots/planner-3d.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -202,11 +202,12 @@ function Landing() {
                   </ul>
                 </div>
                 <div className={i % 2 === 1 ? "lg:order-1" : ""}>
-                  <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card transition-transform hover:-translate-y-1">
+                  <div className="relative">
+                    <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-warm opacity-20 blur-2xl" />
                     <img
                       src={s.img}
                       alt={`${s.eyebrow} — ${s.title}`}
-                      className="w-full object-cover"
+                      className="w-full rounded-2xl border border-border shadow-card transition-transform hover:-translate-y-1"
                       loading="lazy"
                     />
                   </div>
