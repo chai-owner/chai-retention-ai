@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -9,7 +9,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
-import { fieldMappings, integrations } from "@/lib/mock-data";
+import { integrations } from "@/lib/mock-data";
+import { UploadWizard } from "@/components/upload-wizard";
 import { datasetSchemas } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
 import { personalizeDatasets, type PersonalizedDataset } from "@/lib/personalize-data";
