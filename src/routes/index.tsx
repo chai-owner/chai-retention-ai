@@ -10,9 +10,12 @@ import {
   BarChart3,
   MessageSquare,
 } from "lucide-react";
-import dashboardShot from "@/assets/screenshots/dashboard-shot.png.asset.json";
-import customersShot from "@/assets/screenshots/customers-shot.png.asset.json";
-import insightsShot from "@/assets/screenshots/insights-shot.png.asset.json";
+import heroDashboard from "@/assets/hero-dashboard.jpg";
+import dashMetricsShot from "@/assets/screenshots/dash-metrics.png.asset.json";
+import dashTrendShot from "@/assets/screenshots/dash-trend.png.asset.json";
+import customersShot from "@/assets/screenshots/customers.png.asset.json";
+import insightsShot from "@/assets/screenshots/insights.png.asset.json";
+import plannerShot from "@/assets/screenshots/planner.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
