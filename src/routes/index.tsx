@@ -111,34 +111,46 @@ function Landing() {
 
       {/* Hero */}
       <section className="bg-gradient-hero">
-        <div className="mx-auto max-w-6xl px-4 py-20 text-center lg:px-6 lg:py-28">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 text-xs font-medium text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            AI Retention Analyst, on demand
-          </span>
-          <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
-            Keep the customers you{" "}
-            <span className="font-display italic font-normal text-primary">already worked so hard</span> to win.
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            ChAi is an AI retention analyst that understands customer health, predicts who's about to leave,
-            explains why, and tells you what to do — all in plain English. No analytics team required.
-          </p>
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              to="/onboarding"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-primary/90"
-            >
-              Start free <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/app/dashboard"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              Explore the live demo
-            </Link>
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 lg:grid-cols-2 lg:px-6 lg:py-28">
+          <div className="text-center lg:text-left">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 text-xs font-medium text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              AI Retention Analyst, on demand
+            </span>
+            <h1 className="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+              Keep the customers you{" "}
+              <span className="font-display italic font-normal text-primary">already worked so hard</span> to win.
+            </h1>
+            <p className="mt-6 max-w-xl text-lg text-muted-foreground lg:mx-0">
+              ChAi is an AI retention analyst that understands customer health, predicts who's about to leave,
+              explains why, and tells you what to do — all in plain English. No analytics team required.
+            </p>
+            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
+              <Link
+                to="/onboarding"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-primary/90"
+              >
+                Start free <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/app/dashboard"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-medium transition-colors hover:bg-accent"
+              >
+                Explore the live demo
+              </Link>
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">No credit card. Sample data included so you can look around.</p>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">No credit card. Sample data included so you can look around.</p>
+          <div className="relative">
+            <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-warm opacity-20 blur-2xl" />
+            <img
+              src={heroDashboard}
+              alt="ChAi customer retention dashboard with health scores, retention trend and at-risk customers"
+              width={1280}
+              height={1024}
+              className="w-full rounded-2xl border border-border shadow-card"
+            />
+          </div>
         </div>
       </section>
 
@@ -163,7 +175,7 @@ function Landing() {
         </div>
       </section>
 
-      {/* Product shots */}
+      {/* Product showcase — screenshots next to selling points */}
       <section className="overflow-hidden border-y border-border bg-secondary/40">
         <div className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
           <div className="mx-auto max-w-2xl text-center">
@@ -172,46 +184,40 @@ function Landing() {
               A clean, focused workspace that turns raw data into retention intelligence.
             </p>
           </div>
-          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-3">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1 hover:shadow-md">
-                <img
-                  src={dashboardShot.url}
-                  alt="ChAi Dashboard showing health scores and churn risk overview"
-                  className="w-full object-cover"
-                  loading="lazy"
-                />
+          <div className="mt-16 space-y-20">
+            {showcase.map((s, i) => (
+              <div key={s.title} className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
+                <div className={i % 2 === 1 ? "lg:order-2" : ""}>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">{s.eyebrow}</p>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-tight">{s.title}</h3>
+                  <p className="mt-3 text-muted-foreground">{s.desc}</p>
+                  <ul className="mt-5 space-y-2.5">
+                    {s.points.map((p) => (
+                      <li key={p} className="flex items-center gap-2.5 text-sm">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-primary">
+                          <ArrowRight className="h-3 w-3" />
+                        </span>
+                        {p}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className={i % 2 === 1 ? "lg:order-1" : ""}>
+                  <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card transition-transform hover:-translate-y-1">
+                    <img
+                      src={s.img}
+                      alt={`${s.eyebrow} — ${s.title}`}
+                      className="w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
               </div>
-              <p className="px-1 text-sm font-medium">Dashboard</p>
-              <p className="px-1 text-xs text-muted-foreground">Health scores, revenue at risk, and key metrics at a glance.</p>
-            </div>
-            <div className="space-y-3">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1 hover:shadow-md">
-                <img
-                  src={customersShot.url}
-                  alt="ChAi Customer Risk Center showing at-risk accounts and health scores"
-                  className="w-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <p className="px-1 text-sm font-medium">Customer Risk Center</p>
-              <p className="px-1 text-xs text-muted-foreground">Spot who is about to leave and how much revenue is on the line.</p>
-            </div>
-            <div className="space-y-3 md:col-span-2 lg:col-span-1">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1 hover:shadow-md">
-                <img
-                  src={insightsShot.url}
-                  alt="ChAi Insights and Benchmarks showing recommendations and customer lists"
-                  className="w-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <p className="px-1 text-sm font-medium">Insights & Benchmarks</p>
-              <p className="px-1 text-xs text-muted-foreground">Prioritized recommendations ranked by expected revenue saved.</p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
+
 
       {/* Steps */}
       <section className="border-y border-border bg-secondary/40">
