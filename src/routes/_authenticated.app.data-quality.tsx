@@ -15,13 +15,6 @@ function barColor(v: number) {
 function DataQualityPage() {
   return (
     <div>
-      <Link
-        to="/app/data"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Data & Integrations
-      </Link>
-
       <PageHeader
         title="Data Quality Engine"
         description="Review your data readiness and identify gaps that could affect retention insights."
