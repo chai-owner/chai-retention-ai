@@ -202,11 +202,12 @@ function Landing() {
                   </ul>
                 </div>
                 <div className={i % 2 === 1 ? "lg:order-1" : ""}>
-                  <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card transition-transform hover:-translate-y-1">
+                  <div className="relative">
+                    <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-warm opacity-20 blur-2xl" />
                     <img
                       src={s.img}
                       alt={`${s.eyebrow} — ${s.title}`}
-                      className="w-full object-cover"
+                      className="w-full rounded-2xl border border-border shadow-card transition-transform hover:-translate-y-1"
                       loading="lazy"
                     />
                   </div>
