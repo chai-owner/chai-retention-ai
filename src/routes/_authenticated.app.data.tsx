@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -9,7 +9,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
-import { fieldMappings, integrations } from "@/lib/mock-data";
+import { integrations } from "@/lib/mock-data";
+import { UploadWizard } from "@/components/upload-wizard";
 import { datasetSchemas } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
 import { personalizeDatasets, type PersonalizedDataset } from "@/lib/personalize-data";
@@ -177,49 +178,8 @@ function DataPage() {
         </div>
       </Card>
 
-      {/* Field mapping */}
-      <Card className="mt-6">
-        <h3 className="font-semibold">Intelligent field mapping</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          ChAi automatically matches your columns to the fields it needs. Review and correct anything below.
-        </p>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                <th className="py-2 pr-4 font-medium">Your column</th>
-                <th className="py-2 pr-4 font-medium">Mapped to</th>
-                <th className="py-2 font-medium">Confidence</th>
-              </tr>
-            </thead>
-            <tbody>
-              {fieldMappings.map((m) => (
-                <tr key={m.source} className="border-b border-border/60 last:border-0">
-                  <td className="py-2.5 pr-4 font-mono text-xs text-muted-foreground">{m.source}</td>
-                  <td className="py-2.5 pr-4 font-medium">{m.target}</td>
-                  <td className="py-2.5">
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium",
-                        m.confidence >= 90
-                          ? "bg-success/10 text-success"
-                          : m.confidence >= 80
-                            ? "bg-warning/15 text-warning-foreground"
-                            : "bg-caution/10 text-caution",
-                      )}
-                    >
-                      {m.confidence >= 90 && <CheckCircle2 className="h-3 w-3" />}
-                      {m.confidence}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
       {/* Integrations */}
+
       <Card className="mt-6">
         <h3 className="font-semibold">Connect your support tools</h3>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -253,6 +213,7 @@ function DataPage() {
 }
 
 function DatasetRow({ dataset, uploaded }: { dataset: PersonalizedDataset; uploaded: boolean }) {
+  const [wizardOpen, setWizardOpen] = useState(false);
   return (
     <div className="flex flex-col gap-3 py-4 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
@@ -293,15 +254,13 @@ function DatasetRow({ dataset, uploaded }: { dataset: PersonalizedDataset; uploa
       </div>
 
       <button
-        onClick={() =>
-          toast.success(`Upload ${dataset.label}`, {
-            description: "Demo mode — choose a CSV or Excel file to import this dataset.",
-          })
-        }
+        onClick={() => setWizardOpen(true)}
         className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
       >
         <Upload className="h-3.5 w-3.5" /> Upload {dataset.label}
       </button>
+
+      <UploadWizard dataset={dataset} open={wizardOpen} onOpenChange={setWizardOpen} />
     </div>
   );
 }
