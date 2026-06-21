@@ -44,6 +44,9 @@ function scoreTone(v: number) {
 function scoreBar(v: number) {
   return v >= 80 ? "bg-success" : v >= 60 ? "bg-warning" : v >= 40 ? "bg-caution" : "bg-danger";
 }
+function barColor(v: number) {
+  return v >= 75 ? "bg-success" : v >= 50 ? "bg-warning" : v >= 35 ? "bg-caution" : "bg-danger";
+}
 function scoreChip(v: number) {
   return v >= 80
     ? "bg-success/10 text-success border-success/20"
