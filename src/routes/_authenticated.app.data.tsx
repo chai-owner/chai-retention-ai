@@ -213,6 +213,7 @@ function DataPage() {
 }
 
 function DatasetRow({ dataset, uploaded }: { dataset: PersonalizedDataset; uploaded: boolean }) {
+  const [wizardOpen, setWizardOpen] = useState(false);
   return (
     <div className="flex flex-col gap-3 py-4 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
