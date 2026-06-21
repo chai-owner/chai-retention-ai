@@ -45,6 +45,37 @@ const features = [
   { icon: ShieldCheck, title: "Trust & compliance", desc: "A GDPR-first control center so you can upload customer data with confidence." },
 ];
 
+const showcase = [
+  {
+    img: dashMetricsShot.url,
+    eyebrow: "Executive dashboard",
+    title: "Your whole customer base, in one glance",
+    desc: "Total customers, who's healthy, who's at risk, and exactly how much revenue is on the line — a 30-second snapshot for any stakeholder.",
+    points: ["Live health & risk counts", "Revenue at risk, quantified", "Retention opportunity surfaced"],
+  },
+  {
+    img: customersShot.url,
+    eyebrow: "Customer Risk Center",
+    title: "Know precisely who to call today",
+    desc: "Every account ranked by churn risk, with the highest-value, riskiest customers floated to the top so your team never wastes a save.",
+    points: ["Sorted by risk × revenue", "Per-customer health scores", "Filter by Critical, At-risk, Watch"],
+  },
+  {
+    img: insightsShot.url,
+    eyebrow: "Insights & Benchmarks",
+    title: "Recommendations ranked by revenue saved",
+    desc: "ChAi turns raw data into prioritized actions and shows how your retention compares to similar businesses.",
+    points: ["Actions ranked by $ impact", "Plain-English root causes", "Industry benchmarking"],
+  },
+  {
+    img: plannerShot.url,
+    eyebrow: "Intelligence Planner",
+    title: "Learn what to measure — and why",
+    desc: "For each metric, see why it matters, how it predicts churn, and where you stand. Prediction accuracy improves as you track more.",
+    points: ["Guided metric coaching", "Healthy benchmarks per metric", "Accuracy that grows with you"],
+  },
+];
+
 const steps = [
   { n: "01", title: "Teach ChAi your business", desc: "A short guided wizard learns how you operate and what a healthy customer looks like." },
   { n: "02", title: "Bring your data", desc: "Upload CSVs or connect your support tools. ChAi maps the fields and checks data quality for you." },
