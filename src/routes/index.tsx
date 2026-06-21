@@ -11,10 +11,10 @@ import {
   MessageSquare,
 } from "lucide-react";
 import heroDashboard from "@/assets/hero-dashboard.jpg";
-import dashMetricsShot from "@/assets/screenshots/dash-metrics.png.asset.json";
-import customersShot from "@/assets/screenshots/customers.png.asset.json";
-import insightsShot from "@/assets/screenshots/insights.png.asset.json";
-import plannerShot from "@/assets/screenshots/planner.png.asset.json";
+import dashMetricsShot from "@/assets/screenshots/dash-3d.jpg.asset.json";
+import customersShot from "@/assets/screenshots/customers-3d.jpg.asset.json";
+import insightsShot from "@/assets/screenshots/insights-3d.jpg.asset.json";
+import plannerShot from "@/assets/screenshots/planner-3d.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
