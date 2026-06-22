@@ -136,6 +136,7 @@ function Onboarding() {
       disengagement: form.disengagement,
       tracked,
       channels,
+      metricWeights,
     };
     profileStore.save(payload);
     // Persist to the user's account so it follows them across devices.
