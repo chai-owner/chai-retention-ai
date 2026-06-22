@@ -29,6 +29,7 @@ const statusStyle: Record<Status, string> = {
 
 function Planner() {
   const [selections, setSelections] = useState<Record<string, Status>>({});
+  const weights = useMetricWeights();
 
   const tracked = Object.values(selections).filter((s) => s === "tracking").length;
   const total = plannerMetrics.length;
@@ -38,8 +39,9 @@ function Planner() {
     <div>
       <PageHeader
         title="Customer Intelligence Planner"
-        description="ChAi teaches you what to measure. For each metric, see why it matters and how it predicts churn, then tell us where you stand."
+        description="ChAi teaches you what to measure. Each metric's weight comes from the importance you set during onboarding — it determines how much that metric moves your customer health score."
       />
+
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <Card>
