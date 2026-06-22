@@ -85,26 +85,17 @@ function Planner() {
                 <p className="mb-3 text-center text-xs font-bold text-foreground">Segment Average</p>
                 <div className="flex items-stretch gap-2">
                   {averages.map((a) => {
+                    const b = m.benchmarkScore ?? 60;
                     const tone =
-                      a.avg >= 75 ? "success" : a.avg >= 55 ? "warning" : a.avg >= 35 ? "caution" : "danger";
+                      a.avg >= b ? "success" : a.avg >= b - 20 ? "caution" : "danger";
                     const bgClass =
                       tone === "success"
                         ? "bg-success/10 border-success/20"
-                        : tone === "warning"
-                          ? "bg-warning/15 border-warning/30"
-                          : tone === "caution"
-                            ? "bg-caution/10 border-caution/20"
-                            : "bg-danger/10 border-danger/20";
-                    const barClass =
-                      tone === "success"
-                        ? "bg-success"
-                        : tone === "warning"
-                          ? "bg-warning"
-                          : tone === "caution"
-                            ? "bg-caution"
-                            : "bg-danger";
+                        : tone === "caution"
+                          ? "bg-caution/10 border-caution/20"
+                          : "bg-danger/10 border-danger/20";
                     const textClass =
-                      a.avg >= 70 ? "text-success" : a.avg >= 40 ? "text-caution" : "text-danger";
+                      a.avg >= b ? "text-success" : a.avg >= b - 20 ? "text-caution" : "text-danger";
                     return (
                       <div
                         key={a.segment}
@@ -116,9 +107,6 @@ function Planner() {
                           </span>
                         </div>
                         <span className={`my-1 text-lg font-bold tabular-nums ${textClass}`}>{a.avg}</span>
-                        <div className="h-1 w-full overflow-hidden rounded-full bg-secondary/50">
-                          <div className={`h-full rounded-full ${barClass}`} style={{ width: `${a.avg}%` }} />
-                        </div>
                       </div>
                     );
                   })}
