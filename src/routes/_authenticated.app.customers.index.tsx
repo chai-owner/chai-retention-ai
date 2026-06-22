@@ -37,7 +37,7 @@ function Customers() {
       const matchesQuery = c.name.toLowerCase().includes(query.toLowerCase());
       return matchesFilter && matchesQuery;
     });
-  }, [query, filter]);
+  }, [query, filter, sortedByRisk]);
 
   return (
     <div>
