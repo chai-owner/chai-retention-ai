@@ -24,15 +24,12 @@ import {
 } from "recharts";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
 import {
-  executive,
-  healthDistribution,
   retentionTrend,
-  segmentRevenue,
-  sortedByRisk,
   riskMeta,
   formatCurrency,
   categoryFromHealth,
 } from "@/lib/mock-data";
+import { useScoredData } from "@/lib/use-scored-data";
 
 export const Route = createFileRoute("/_authenticated/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
