@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/app/customers/$id")({
   loader: ({ params }) => {
     const customer = getCustomer(params.id);
     if (!customer) throw notFound();
-    return { customer };
+    return { id: params.id };
   },
   component: CustomerDetail,
   notFoundComponent: () => (
