@@ -47,7 +47,9 @@ const statusIcon = {
 };
 
 function Insights() {
+  const { customers } = useScoredData();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const recAgg = useMemo(() => aggregateRecs(customers), [customers]);
   return (
 
     <div>
