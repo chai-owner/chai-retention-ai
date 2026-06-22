@@ -77,6 +77,7 @@ export interface Customer {
   revenue: number;
   sentiment: number;
   lastActivity: string;
+  subScores?: Record<string, number>;
   factors: Factor[];
   recommendations: Recommendation[];
   timeline: TimelineEvent[];
