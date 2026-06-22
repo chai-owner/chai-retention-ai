@@ -64,14 +64,27 @@ function Planner() {
       </div>
 
       <div className="space-y-4">
-        {plannerMetrics.map((m) => (
+        {plannerMetrics.map((m) => {
+          const level = weights[m.name] ?? 3;
+          const pct = Math.round((level / 5) * 100);
+          return (
           <Card key={m.name}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="lg:max-w-2xl">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-semibold">{m.name}</h3>
                   <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">{m.category}</span>
                 </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-[11px] font-medium text-muted-foreground">Weight</span>
+                  <div className="h-1.5 w-32 overflow-hidden rounded-full bg-secondary">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                    {IMPORTANCE_LABELS[level - 1]}
+                  </span>
+                </div>
+
                 <p className="mt-1.5 text-sm text-muted-foreground">{m.why}</p>
                 <div className="mt-3 grid gap-3 text-xs sm:grid-cols-3">
                   <div>
