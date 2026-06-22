@@ -3,12 +3,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Search, ArrowUpDown } from "lucide-react";
 import { PageHeader, HealthBadge, ScoreBar } from "@/components/ui/chai";
 import {
-  sortedByRisk,
   categoryFromHealth,
   formatCurrency,
   riskMeta,
   type RiskCategory,
 } from "@/lib/mock-data";
+import { useScoredData } from "@/lib/use-scored-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/customers/")({
