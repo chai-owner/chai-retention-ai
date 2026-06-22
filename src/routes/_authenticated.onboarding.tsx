@@ -44,7 +44,7 @@ const defaultQuestions = [
   "Do you track customer satisfaction?",
 ];
 
-const steps = ["Business", "Segments", "How you work", "What to track", "Interactions"];
+const steps = ["Business", "Segments", "How you work", "What to track", "What matters", "Interactions"];
 
 const MAX_SEGMENTS = 4;
 
