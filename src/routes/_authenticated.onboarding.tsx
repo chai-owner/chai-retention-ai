@@ -5,6 +5,7 @@ import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCir
 import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
+import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
 
 interface Segment {
   name: string;
