@@ -81,9 +81,9 @@ function Planner() {
                   </div>
                 </div>
               </div>
-              <div className="lg:w-72 lg:shrink-0">
-                <p className="mb-2.5 text-[11px] font-medium text-muted-foreground">Segment average</p>
-                <div className="flex gap-2">
+              <div className="lg:w-80 lg:shrink-0">
+                <p className="mb-3 text-center text-xs font-bold text-foreground">Segment Average</p>
+                <div className="flex items-stretch gap-2">
                   {averages.map((a) => {
                     const tone =
                       a.avg >= 75 ? "success" : a.avg >= 55 ? "warning" : a.avg >= 35 ? "caution" : "danger";
@@ -104,19 +104,17 @@ function Planner() {
                             ? "bg-caution"
                             : "bg-danger";
                     const textClass =
-                      tone === "success"
-                        ? "text-success"
-                        : tone === "warning"
-                          ? "text-warning-foreground"
-                          : tone === "caution"
-                            ? "text-caution-foreground"
-                            : "text-danger";
+                      a.avg >= 70 ? "text-success" : a.avg >= 40 ? "text-caution" : "text-danger";
                     return (
                       <div
                         key={a.segment}
-                        className={`flex flex-1 flex-col items-center rounded-lg border px-2 py-2.5 ${bgClass}`}
+                        className={`flex flex-1 flex-col items-center rounded-lg border px-2 py-3 ${bgClass}`}
                       >
-                        <span className="text-[10px] font-medium text-muted-foreground">{a.segment}</span>
+                        <div className="flex min-h-[2rem] items-center justify-center">
+                          <span className="text-center text-[10px] font-medium leading-tight text-muted-foreground">
+                            {a.segment}
+                          </span>
+                        </div>
                         <span className={`my-1 text-lg font-bold tabular-nums ${textClass}`}>{a.avg}</span>
                         <div className="h-1 w-full overflow-hidden rounded-full bg-secondary/50">
                           <div className={`h-full rounded-full ${barClass}`} style={{ width: `${a.avg}%` }} />
