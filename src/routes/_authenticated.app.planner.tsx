@@ -2,7 +2,8 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ClipboardList, TrendingUp } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
-import { plannerMetrics } from "@/lib/mock-data";
+import { plannerMetrics, IMPORTANCE_LABELS } from "@/lib/mock-data";
+import { useMetricWeights } from "@/lib/use-scored-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/planner")({
