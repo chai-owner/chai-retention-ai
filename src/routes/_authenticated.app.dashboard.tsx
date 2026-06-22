@@ -44,6 +44,7 @@ const COLORS: Record<string, string> = {
 };
 
 function Dashboard() {
+  const { executive, healthDistribution, segmentRevenue, sortedByRisk } = useScoredData();
   const topRisk = sortedByRisk.slice(0, 5);
 
   return (
