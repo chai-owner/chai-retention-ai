@@ -1,39 +1,34 @@
-import { useState } from "react";
+import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ClipboardList, TrendingUp } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { plannerMetrics, IMPORTANCE_LABELS } from "@/lib/mock-data";
-import { useMetricWeights } from "@/lib/use-scored-data";
-import { cn } from "@/lib/utils";
+import { useMetricWeights, useScoredData } from "@/lib/use-scored-data";
 
 export const Route = createFileRoute("/_authenticated/app/planner")({
   head: () => ({ meta: [{ title: "Intelligence Planner — ChAi" }] }),
   component: Planner,
 });
 
-type Status = "tracking" | "upload" | "help" | "na";
-
-const statusOptions: { key: Status; label: string }[] = [
-  { key: "tracking", label: "Already tracking" },
-  { key: "upload", label: "Can upload" },
-  { key: "help", label: "Need help" },
-  { key: "na", label: "Not relevant" },
-];
-
-const statusStyle: Record<Status, string> = {
-  tracking: "bg-success text-success-foreground border-success",
-  upload: "bg-warning text-warning-foreground border-warning",
-  help: "bg-caution text-caution-foreground border-caution",
-  na: "bg-secondary text-secondary-foreground border-border",
-};
-
 function Planner() {
-  const [selections, setSelections] = useState<Record<string, Status>>({});
   const weights = useMetricWeights();
+  const { customers } = useScoredData();
 
-  const tracked = Object.values(selections).filter((s) => s === "tracking").length;
   const total = plannerMetrics.length;
-  const accuracy = Math.min(96, 48 + Math.round((tracked / total) * 48));
+
+  // Average sub-score per metric, broken down by customer segment.
+  const segmentAverages = useMemo(() => {
+    const segments = Array.from(new Set(customers.map((c) => c.segment)));
+    const byMetric: Record<string, { segment: string; avg: number }[]> = {};
+    for (const m of plannerMetrics) {
+      byMetric[m.name] = segments.map((seg) => {
+        const inSeg = customers.filter((c) => c.segment === seg);
+        const sum = inSeg.reduce((s, c) => s + (c.subScores?.[m.name] ?? 0), 0);
+        return { segment: seg, avg: inSeg.length ? Math.round(sum / inSeg.length) : 0 };
+      });
+    }
+    return byMetric;
+  }, [customers]);
 
   return (
     <div>
@@ -42,7 +37,6 @@ function Planner() {
         description="ChAi teaches you what to measure. Each metric's weight comes from the importance you set during onboarding — it determines how much that metric moves your customer health score."
       />
 
-
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <Card>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -50,23 +44,13 @@ function Planner() {
           </div>
           <p className="mt-2 text-2xl font-semibold">{total}</p>
         </Card>
-        <Card>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <TrendingUp className="h-4 w-4" /> You're tracking
-          </div>
-          <p className="mt-2 text-2xl font-semibold">{tracked} / {total}</p>
-        </Card>
-        <Card>
-          <div className="text-sm text-muted-foreground">Expected prediction accuracy</div>
-          <p className="mt-2 text-2xl font-semibold text-primary">{accuracy}%</p>
-          <p className="text-xs text-muted-foreground">Improves as you track more.</p>
-        </Card>
       </div>
 
       <div className="space-y-4">
         {plannerMetrics.map((m) => {
           const level = weights[m.name] ?? 3;
           const pct = Math.round((level / 5) * 100);
+          const averages = segmentAverages[m.name] ?? [];
           return (
           <Card key={m.name}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -86,14 +70,10 @@ function Planner() {
                 </div>
 
                 <p className="mt-1.5 text-sm text-muted-foreground">{m.why}</p>
-                <div className="mt-3 grid gap-3 text-xs sm:grid-cols-3">
+                <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
                   <div>
                     <p className="font-medium text-foreground">How it predicts churn</p>
                     <p className="mt-0.5 text-muted-foreground">{m.churn}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Measure</p>
-                    <p className="mt-0.5 text-muted-foreground">{m.cadence}</p>
                   </div>
                   <div>
                     <p className="font-medium text-foreground">Healthy benchmark</p>
@@ -101,21 +81,19 @@ function Planner() {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-1.5 lg:w-52 lg:shrink-0 lg:justify-end">
-                {statusOptions.map((s) => (
-                  <button
-                    key={s.key}
-                    onClick={() => setSelections((prev) => ({ ...prev, [m.name]: s.key }))}
-                    className={cn(
-                      "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
-                      selections[m.name] === s.key
-                        ? statusStyle[s.key]
-                        : "border-border bg-card text-muted-foreground hover:bg-accent",
-                    )}
-                  >
-                    {s.label}
-                  </button>
-                ))}
+              <div className="lg:w-56 lg:shrink-0">
+                <p className="mb-2 text-[11px] font-medium text-muted-foreground">Segment average</p>
+                <div className="space-y-1.5">
+                  {averages.map((a) => (
+                    <div key={a.segment} className="flex items-center gap-2">
+                      <span className="w-24 shrink-0 text-[11px] text-muted-foreground">{a.segment}</span>
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${a.avg}%` }} />
+                      </div>
+                      <span className="w-7 shrink-0 text-right text-[11px] font-medium tabular-nums">{a.avg}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </Card>
