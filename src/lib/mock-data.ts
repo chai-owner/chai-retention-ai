@@ -77,6 +77,7 @@ export interface Customer {
   revenue: number;
   sentiment: number;
   lastActivity: string;
+  subScores?: Record<string, number>;
   factors: Factor[];
   recommendations: Recommendation[];
   timeline: TimelineEvent[];
@@ -161,76 +162,198 @@ function buildTimeline(
   return events.sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export const customers: Customer[] = Array.from({ length: 42 }).map((_, i) => {
-  const rand = seededRandom(i * 97 + 13);
+// ---- Metric importance weights (set during onboarding) ----
+// The eight core metrics the customer health score is built from. These match
+// the Customer Intelligence Planner metric set.
+export const METRIC_NAMES = [
+  "Login frequency",
+  "Feature adoption",
+  "Days since last purchase",
+  "Average order value",
+  "Support ticket volume",
+  "Resolution time",
+  "CSAT / NPS",
+  "Contract renewal date",
+] as const;
+
+export type MetricName = (typeof METRIC_NAMES)[number];
+export type MetricWeights = Record<string, number>;
+
+// Importance scale: 1 (Unimportant) → 5 (Critical).
+export const IMPORTANCE_LABELS = ["Unimportant", "Low", "Moderate", "High", "Critical"];
+
+// Sensible defaults used until the user sets their own importance in onboarding.
+export const DEFAULT_METRIC_WEIGHTS: MetricWeights = {
+  "Login frequency": 5,
+  "Feature adoption": 4,
+  "CSAT / NPS": 4,
+  "Support ticket volume": 3,
+  "Days since last purchase": 3,
+  "Contract renewal date": 3,
+  "Resolution time": 2,
+  "Average order value": 2,
+};
+
+interface BaseCustomer {
+  id: string;
+  name: string;
+  contact: string;
+  segment: string;
+  revenue: number;
+  sentiment: number;
+  lastActivity: string;
+  subScores: Record<string, number>;
+  seed: number;
+}
+
+// Per-customer raw metric sub-scores (0–100). The final health score is a
+// weighted blend of these using the user's importance weights.
+const baseCustomers: BaseCustomer[] = Array.from({ length: 42 }).map((_, i) => {
+  const rand = seededRandom(i * 131 + 7);
   const name = `${firstNames[i % firstNames.length]} ${suffixes[(i * 3) % suffixes.length]}`;
-  const health = Math.round(18 + rand() * 78);
-  const cat = categoryFromHealth(health);
-  const risk = Math.round(100 - health + (rand() * 12 - 6));
-  const churnProbability = Math.min(96, Math.max(3, Math.round((100 - health) * 0.9 + rand() * 10)));
-  const revenue = Math.round((4 + rand() * 96) * 1000);
-  const sentiment = Math.round(20 + rand() * 75);
-  const nFactors = cat === "healthy" ? 1 : cat === "watch" ? 2 : 3;
-  const factors = [...factorPool].sort(() => rand() - 0.5).slice(0, nFactors);
-  const recs = [...recPool].sort(() => rand() - 0.5).slice(0, cat === "healthy" ? 1 : 3).map((r) => ({
-    ...r,
-    revenueSaved: Math.round(revenue * (0.2 + rand() * 0.5)),
-  }));
+  const subScores: Record<string, number> = {};
+  for (const m of METRIC_NAMES) subScores[m] = Math.round(8 + rand() * 90);
   return {
     id: `cus_${(1000 + i).toString()}`,
     name,
     contact: `${["jordan", "casey", "morgan", "riley", "sam", "alex"][i % 6]}@${name.split(" ")[0].toLowerCase()}.com`,
     segment: segments[i % segments.length],
-    health,
-    risk: Math.max(2, Math.min(99, risk)),
-    churnProbability,
-    revenue,
-    sentiment,
+    revenue: Math.round((4 + rand() * 96) * 1000),
+    sentiment: Math.round(20 + rand() * 75),
     lastActivity: `${Math.round(1 + rand() * 80)} days ago`,
-    factors,
-    recommendations: recs,
-    timeline: buildTimeline(rand, name, cat, factors, health, churnProbability),
+    subScores,
+    seed: i,
   };
 });
 
-export const sortedByRisk = [...customers].sort((a, b) => b.risk - a.risk);
+// Weighted average of a customer's sub-scores using the importance weights.
+export function weightedHealth(subScores: Record<string, number>, weights: MetricWeights): number {
+  let num = 0;
+  let den = 0;
+  for (const m of METRIC_NAMES) {
+    const w = weights[m] ?? 0;
+    num += (subScores[m] ?? 50) * w;
+    den += w;
+  }
+  return den > 0 ? Math.round(num / den) : 50;
+}
+
+// Produce the fully-scored customer list for a given set of importance weights.
+export function scoreCustomers(weights: MetricWeights): Customer[] {
+  return baseCustomers.map((b) => {
+    const rand = seededRandom(b.seed * 97 + 13);
+    const health = weightedHealth(b.subScores, weights);
+    const cat = categoryFromHealth(health);
+    const risk = Math.max(2, Math.min(99, Math.round(100 - health + (rand() * 12 - 6))));
+    const churnProbability = Math.min(96, Math.max(3, Math.round((100 - health) * 0.9 + rand() * 10)));
+    const nFactors = cat === "healthy" ? 1 : cat === "watch" ? 2 : 3;
+    const factors = [...factorPool].sort(() => rand() - 0.5).slice(0, nFactors);
+    const recommendations = [...recPool]
+      .sort(() => rand() - 0.5)
+      .slice(0, cat === "healthy" ? 1 : 3)
+      .map((r) => ({ ...r, revenueSaved: Math.round(b.revenue * (0.2 + rand() * 0.5)) }));
+    return {
+      id: b.id,
+      name: b.name,
+      contact: b.contact,
+      segment: b.segment,
+      health,
+      risk,
+      churnProbability,
+      revenue: b.revenue,
+      sentiment: b.sentiment,
+      lastActivity: b.lastActivity,
+      subScores: b.subScores,
+      factors,
+      recommendations,
+      timeline: buildTimeline(rand, b.name, cat, factors, health, churnProbability),
+    };
+  });
+}
+
+export interface ScoredDataset {
+  customers: Customer[];
+  sortedByRisk: Customer[];
+  totalRevenue: number;
+  revenueAtRisk: number;
+  executive: {
+    totalCustomers: number;
+    healthy: number;
+    watch: number;
+    atRisk: number;
+    critical: number;
+    predictedMonthlyChurn: number;
+    predictedRevenueLoss: number;
+    revenueAtRisk: number;
+    retentionOpportunity: number;
+  };
+  healthDistribution: { name: string; value: number; key: RiskCategory }[];
+  segmentRevenue: { segment: string; revenue: number; atRisk: number }[];
+}
+
+// Build all aggregate / executive metrics from a scored customer list.
+export function buildDataset(weights: MetricWeights): ScoredDataset {
+  const scored = scoreCustomers(weights);
+  const sorted = [...scored].sort((a, b) => b.risk - a.risk);
+  const counts = scored.reduce(
+    (acc, c) => {
+      acc[categoryFromHealth(c.health)] += 1;
+      return acc;
+    },
+    { healthy: 0, watch: 0, "at-risk": 0, critical: 0 } as Record<RiskCategory, number>,
+  );
+  const totalRevenue = scored.reduce((s, c) => s + c.revenue, 0);
+  const revenueAtRisk = scored
+    .filter((c) => c.health < 55)
+    .reduce((s, c) => s + Math.round(c.revenue * (c.churnProbability / 100)), 0);
+
+  return {
+    customers: scored,
+    sortedByRisk: sorted,
+    totalRevenue,
+    revenueAtRisk,
+    executive: {
+      totalCustomers: scored.length,
+      healthy: counts.healthy,
+      watch: counts.watch,
+      atRisk: counts["at-risk"],
+      critical: counts.critical,
+      predictedMonthlyChurn: Math.round(counts["at-risk"] * 0.4 + counts.critical * 0.7),
+      predictedRevenueLoss: revenueAtRisk,
+      revenueAtRisk,
+      retentionOpportunity: Math.round(revenueAtRisk * 0.62),
+    },
+    healthDistribution: [
+      { name: "Healthy", value: counts.healthy, key: "healthy" as RiskCategory },
+      { name: "Watch", value: counts.watch, key: "watch" as RiskCategory },
+      { name: "At risk", value: counts["at-risk"], key: "at-risk" as RiskCategory },
+      { name: "Critical", value: counts.critical, key: "critical" as RiskCategory },
+    ],
+    segmentRevenue: segments.map((seg) => ({
+      segment: seg,
+      revenue: scored.filter((c) => c.segment === seg).reduce((s, c) => s + c.revenue, 0),
+      atRisk: scored
+        .filter((c) => c.segment === seg && c.health < 55)
+        .reduce((s, c) => s + Math.round(c.revenue * (c.churnProbability / 100)), 0),
+    })),
+  };
+}
+
+// Default (sensible-weights) dataset — used for SSR, loaders and any
+// non-reactive consumers. Reactive views use the useScoredData() hook.
+const defaultDataset = buildDataset(DEFAULT_METRIC_WEIGHTS);
+
+export const customers = defaultDataset.customers;
+export const sortedByRisk = defaultDataset.sortedByRisk;
+export const totalRevenue = defaultDataset.totalRevenue;
+export const revenueAtRisk = defaultDataset.revenueAtRisk;
+export const executive = defaultDataset.executive;
+export const healthDistribution = defaultDataset.healthDistribution;
+export const segmentRevenue = defaultDataset.segmentRevenue;
 
 export function getCustomer(id: string) {
   return customers.find((c) => c.id === id);
 }
-
-// ---- Aggregate / executive metrics ----
-const counts = customers.reduce(
-  (acc, c) => {
-    acc[categoryFromHealth(c.health)] += 1;
-    return acc;
-  },
-  { healthy: 0, watch: 0, "at-risk": 0, critical: 0 } as Record<RiskCategory, number>,
-);
-
-export const totalRevenue = customers.reduce((s, c) => s + c.revenue, 0);
-export const revenueAtRisk = customers
-  .filter((c) => c.health < 55)
-  .reduce((s, c) => s + Math.round(c.revenue * (c.churnProbability / 100)), 0);
-
-export const executive = {
-  totalCustomers: customers.length,
-  healthy: counts.healthy,
-  watch: counts.watch,
-  atRisk: counts["at-risk"],
-  critical: counts.critical,
-  predictedMonthlyChurn: Math.round((counts["at-risk"] * 0.4 + counts.critical * 0.7)),
-  predictedRevenueLoss: revenueAtRisk,
-  revenueAtRisk,
-  retentionOpportunity: Math.round(revenueAtRisk * 0.62),
-};
-
-export const healthDistribution = [
-  { name: "Healthy", value: counts.healthy, key: "healthy" as RiskCategory },
-  { name: "Watch", value: counts.watch, key: "watch" as RiskCategory },
-  { name: "At risk", value: counts["at-risk"], key: "at-risk" as RiskCategory },
-  { name: "Critical", value: counts.critical, key: "critical" as RiskCategory },
-];
 
 export const retentionTrend = [
   { month: "Dec", retention: 91, churn: 9 },
@@ -240,14 +363,6 @@ export const retentionTrend = [
   { month: "Apr", retention: 86, churn: 14 },
   { month: "May", retention: 87, churn: 13 },
 ];
-
-export const segmentRevenue = segments.map((seg) => ({
-  segment: seg,
-  revenue: customers.filter((c) => c.segment === seg).reduce((s, c) => s + c.revenue, 0),
-  atRisk: customers
-    .filter((c) => c.segment === seg && c.health < 55)
-    .reduce((s, c) => s + Math.round(c.revenue * (c.churnProbability / 100)), 0),
-}));
 
 // ---- Data readiness ----
 export const dataReadiness = [

@@ -1,53 +1,57 @@
-# Personalize uploaded data based on onboarding
+# Weighted Customer Health from Onboarding
 
-Right now onboarding collects rich answers (business model, what counts as success, etc.) but throws them all away on finish. The Data page then shows the same fixed list of datasets and fields to everyone. This plan persists the onboarding profile and makes the Data page adapt its required/recommended datasets and fields to that profile.
+Make the Customer Health score depend on how important each metric is to the user. The user rates the 8 core metrics on an "Unimportant → Critical" progress bar during onboarding; those ratings become weights that recompute every customer's health score and are shown on the Intelligence Planner.
 
-## What the user will see
+## The 8 metrics (shared everywhere)
+Login frequency, Feature adoption, Days since last purchase, Average order value, Support ticket volume, Resolution time, CSAT / NPS, Contract renewal date — the existing `plannerMetrics` set.
 
-- After completing onboarding, their answers are remembered (survives reload).
-- On the Data & Integrations page, datasets are split into **Required for your business** and **Optional / recommended**, driven by their business model and how they defined success.
-- Each required dataset shows a short "Why ChAi needs this" note tied to their answers (e.g. *"You said renewals signal success — upload Transactions so we can track them"*).
-- Certain fields get promoted to required based on the profile (e.g. SaaS → `logins`/`features_used` on Product usage; Ecommerce → repeat-purchase fields; success = renewals → `transaction_date`/`amount`).
-- If a needed dataset hasn't been uploaded yet, it's highlighted with an explanation of why it matters for them.
+## 1. Onboarding — new "What matters most" step
+- Insert a new step (e.g. after "What to track") titled **"How much each metric matters"**.
+- One row per metric showing the metric name + short description, with a **progress-bar slider** on a 5-level scale:
 
-## How it works
+```text
+Unimportant  ──●────────────  Critical
+   1       2     3     4      5
+```
 
-### 1. Persist the onboarding profile (localStorage)
-Create `src/lib/profile-store.ts` following the existing `uploads-store.ts` pattern (`useSyncExternalStore` + a module store), but backed by `localStorage`:
-- `OnboardingProfile` type capturing the fields that matter for personalization: `company`, `industry`, `model`, `segments`, `successActions`, `disengagement`, `tracked` (the toggled questions), `channels`.
-- `profileStore` with `getSnapshot`, `subscribe`, `save(profile)`, and `clear()`. Read/write `localStorage` key `chai.onboarding.profile`, guarded for SSR (`typeof window`).
-- `useProfile()` hook returning the current profile (or `null` if onboarding never completed).
-- A sensible default/fallback profile so the Data page still works in demo mode when nothing is stored.
+- Each metric defaults to a **sensible importance** (see defaults below) so the bars start pre-filled.
+- Levels map to labels: Unimportant, Low, Moderate, High, Critical.
+- Save the chosen levels into the onboarding profile as `metricWeights` (metric name → 1–5).
 
-### 2. Save answers at the end of onboarding
-In `src/routes/onboarding.tsx`, in `finish()`, call `profileStore.save({...form, segments, tracked, channels})` before navigating to the dashboard. No UI changes to the onboarding steps themselves.
+## 2. Health score = weighted blend
+- Give each demo customer a **per-metric sub-score** (0–100) for all 8 metrics (deterministic from the existing seeded RNG).
+- Health score = weighted average of sub-scores using the user's importance weights:
+  `health = Σ(subScore[m] × weight[m]) / Σ(weight[m])`, rounded.
+- Risk, churn probability, and risk category derive from this recomputed health (same formulas already used).
+- When no onboarding weights are saved, use **baked-in defaults** so the demo still looks reasonable.
 
-### 3. Derive personalized schema requirements
-Add a pure helper, `src/lib/personalize-data.ts`:
-- `personalizeDatasets(profile, schemas)` → returns each `DatasetSchema` annotated with:
-  - `required: boolean` — whether this dataset is needed for the profile.
-  - `reason: string` — plain-language "why" tied to the answers.
-  - `fields` with possibly-promoted `mandatory` flags.
-- Rules (driven by **business model** and **what counts as success**):
-  - `customers` is always required (core list).
-  - Model-based: SaaS/Subscription/Membership → `usage` required (logins, features_used promoted); Ecommerce/Marketplace → `transactions` required (repeat-purchase emphasis); Insurance/Telecom/Financial Services → `transactions` required (renewals/claims); etc. A lookup map keyed by `model` with a default.
-  - Success-based: scan `successActions` + `disengagement` text (and `tracked` toggles) for keywords — "renew"/"purchase"/"buy" → require `transactions`; "login"/"engage"/"adoption"/"feature" → require `usage`; "satisf"/"nps"/"csat"/"survey" → require `surveys`; "support"/"ticket"/"complaint" → require `support`.
-  - Each rule contributes a human-readable `reason`; reasons are merged per dataset.
+### Default importance weights
+Engagement & satisfaction weighted highest:
+- Login frequency: Critical (5)
+- Feature adoption: High (4)
+- CSAT / NPS: High (4)
+- Support ticket volume: Moderate (3)
+- Days since last purchase: Moderate (3)
+- Contract renewal date: Moderate (3)
+- Resolution time: Low (2)
+- Average order value: Low (2)
 
-### 4. Update the Data page UI
-In `src/routes/app.data.tsx`:
-- Read `useProfile()`, compute `personalizeDatasets(...)`.
-- Replace the single "Download an example file" grid with two groups: **Required for your business** (with the per-dataset "Why ChAi needs this" note and a "missing" highlight if not yet in `uploads`) and **Optional / recommended**.
-- Keep existing download buttons, field chips, and `*` required styling; required-by-profile fields render with the same danger styling.
-- Add a small contextual line referencing the profile (e.g. *"Tailored to your {model} business and how you defined success."*) with a graceful fallback when no profile exists.
+## 3. Intelligence Planner — show each metric's weight
+- For every metric card, display its current **weight/importance** (the saved level, or the default) — e.g. a small badge "Importance: Critical" plus a mini progress bar matching the onboarding control.
+- Add a short note that importance is set during onboarding and drives the health score.
 
-## Technical notes
-- Pure presentation + a localStorage-backed store; no backend, matching the current demo. No Lovable Cloud.
-- SSR-safe: the store returns `null`/default during server render and hydrates on the client (same approach as `uploads-store`).
-- No changes to CSV/Excel template generation — promoted-mandatory fields still export fine.
+## Technical details
+- **`src/lib/profile-store.ts`**: add `metricWeights?: Record<string, number>` to `OnboardingProfile`.
+- **`src/lib/mock-data.ts`**:
+  - Export `DEFAULT_METRIC_WEIGHTS` and the metric-name list.
+  - Generate a `subScores: Record<string, number>` per base customer using the seeded RNG (replaces the single random `health`).
+  - Add a pure `scoreCustomers(weights)` that returns the customer array with `health/risk/churnProbability/category/timeline` computed from `subScores` × weights.
+  - Keep a default-weighted `customers`/`sortedByRisk` export (using `DEFAULT_METRIC_WEIGHTS`) for SSR and any non-reactive use.
+- **New hook** `useScoredCustomers()` (in mock-data or a small new file): reads `useProfile()`, picks `metricWeights` or defaults, memoizes `scoreCustomers(weights)`. SSR-safe (profile is null on server → defaults).
+- **Consuming routes** switch from the static `customers`/`sortedByRisk`/derived aggregates to the hook so scores react to saved weights: dashboard, customers index, customer detail, insights, and any health-distribution/at-risk aggregates. Aggregates (`healthDistribution`, counts, at-risk lists) become derived from the scored set inside those components.
+- **`src/routes/_authenticated.onboarding.tsx`**: add the new step to `steps`, render the slider rows, manage `metricWeights` state initialized to defaults, include it in the `finish()` payload.
+- **`src/routes/_authenticated.app.planner.tsx`**: read weights via `useProfile()` (fallback defaults) and render the importance badge + bar per card.
 
-## Files
-- Add `src/lib/profile-store.ts`
-- Add `src/lib/personalize-data.ts`
-- Edit `src/routes/onboarding.tsx` (save profile in `finish()`)
-- Edit `src/routes/app.data.tsx` (personalized dataset sections + reasons)
+## Out of scope
+- No backend schema changes; weights ride along in the existing localStorage + `saveProfile` profile payload.
+- No new fonts or visual redesign; reuse existing tokens and the `chai` UI primitives.

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, ArrowDownRight, Minus, Sparkles, MessageSquareWarning, ChevronDown } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
-import { benchmarks, customers, formatCurrency } from "@/lib/mock-data";
+import { benchmarks, formatCurrency, type Customer } from "@/lib/mock-data";
+import { useScoredData } from "@/lib/use-scored-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/insights")({
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/app/insights")({
 type RecCustomer = { id: string; name: string; segment: string; health: number; saved: number };
 
 // Aggregate the top recommendations across all at-risk customers.
-const recAgg = (() => {
+function aggregateRecs(customers: Customer[]) {
   const map = new Map<string, { title: string; count: number; saved: number; priority: string; customers: RecCustomer[] }>();
   customers
     .filter((c) => c.health < 60)
@@ -29,7 +30,7 @@ const recAgg = (() => {
   return [...map.values()]
     .map((r) => ({ ...r, customers: r.customers.sort((a, b) => b.saved - a.saved) }))
     .sort((a, b) => b.saved - a.saved);
-})();
+}
 
 const sentimentSignals = [
   { phrase: "Too expensive", type: "Pricing complaint", count: 7 },
@@ -46,7 +47,9 @@ const statusIcon = {
 };
 
 function Insights() {
+  const { customers } = useScoredData();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const recAgg = useMemo(() => aggregateRecs(customers), [customers]);
   return (
 
     <div>

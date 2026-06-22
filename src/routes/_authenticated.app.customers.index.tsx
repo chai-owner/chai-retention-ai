@@ -3,12 +3,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Search, ArrowUpDown } from "lucide-react";
 import { PageHeader, HealthBadge, ScoreBar } from "@/components/ui/chai";
 import {
-  sortedByRisk,
   categoryFromHealth,
   formatCurrency,
   riskMeta,
   type RiskCategory,
 } from "@/lib/mock-data";
+import { useScoredData } from "@/lib/use-scored-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/customers/")({
@@ -26,6 +26,7 @@ const filters: { key: RiskCategory | "all"; label: string }[] = [
 
 function Customers() {
   const navigate = useNavigate();
+  const { sortedByRisk } = useScoredData();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RiskCategory | "all">("all");
 
@@ -36,7 +37,7 @@ function Customers() {
       const matchesQuery = c.name.toLowerCase().includes(query.toLowerCase());
       return matchesFilter && matchesQuery;
     });
-  }, [query, filter]);
+  }, [query, filter, sortedByRisk]);
 
   return (
     <div>

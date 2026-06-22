@@ -22,6 +22,7 @@ import {
   type TimelineEvent,
   type Customer,
 } from "@/lib/mock-data";
+import { useScoredData } from "@/lib/use-scored-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/customers/$id")({
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/app/customers/$id")({
   loader: ({ params }) => {
     const customer = getCustomer(params.id);
     if (!customer) throw notFound();
-    return { customer };
+    return { id: params.id };
   },
   component: CustomerDetail,
   notFoundComponent: () => (
@@ -59,7 +60,9 @@ const priorityChip: Record<string, string> = {
 };
 
 function CustomerDetail() {
-  const { customer: c } = Route.useLoaderData() as { customer: Customer };
+  const { id } = Route.useLoaderData() as { id: string };
+  const { customers } = useScoredData();
+  const c = (customers.find((x) => x.id === id) ?? customers[0]) as Customer;
   const cat = categoryFromHealth(c.health);
   const sentimentLabel = c.sentiment >= 60 ? "Positive" : c.sentiment >= 40 ? "Neutral" : "Negative";
 

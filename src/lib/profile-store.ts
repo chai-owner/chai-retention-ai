@@ -19,6 +19,8 @@ export interface OnboardingProfile {
   disengagement: string;
   tracked: Record<string, boolean>;
   channels: string[];
+  // Importance (1–5) the user assigns to each health metric during onboarding.
+  metricWeights?: Record<string, number>;
 }
 
 const STORAGE_KEY = "chai.onboarding.profile";

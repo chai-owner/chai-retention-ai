@@ -5,6 +5,7 @@ import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCir
 import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
+import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
 
 interface Segment {
   name: string;
@@ -43,7 +44,7 @@ const defaultQuestions = [
   "Do you track customer satisfaction?",
 ];
 
-const steps = ["Business", "Segments", "How you work", "What to track", "Interactions"];
+const steps = ["Business", "Segments", "How you work", "What to track", "What matters", "Interactions"];
 
 const MAX_SEGMENTS = 4;
 
@@ -70,6 +71,9 @@ function Onboarding() {
   });
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
+  const [metricWeights, setMetricWeights] = useState<Record<string, number>>(
+    () => ({ ...DEFAULT_METRIC_WEIGHTS }),
+  );
   const [segments, setSegments] = useState<Segment[]>([
     { name: "", min: "", max: "" },
   ]);
@@ -132,6 +136,7 @@ function Onboarding() {
       disengagement: form.disengagement,
       tracked,
       channels,
+      metricWeights,
     };
     profileStore.save(payload);
     // Persist to the user's account so it follows them across devices.
@@ -375,6 +380,51 @@ function Onboarding() {
 
               {step === 4 && (
                 <div className="space-y-4">
+                  <div>
+                    <h2 className="text-xl font-semibold">How much each metric matters</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Slide each metric from Unimportant to Critical. ChAi weights your customer health score by what matters most to you.
+                    </p>
+                  </div>
+                  <div className="space-y-4">
+                    {plannerMetrics.map((m) => {
+                      const level = metricWeights[m.name] ?? 3;
+                      return (
+                        <div key={m.name} className="rounded-xl border border-border p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium">{m.name}</p>
+                              <p className="mt-0.5 text-xs text-muted-foreground">{m.why}</p>
+                            </div>
+                            <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                              {IMPORTANCE_LABELS[level - 1]}
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min={1}
+                            max={5}
+                            step={1}
+                            value={level}
+                            onChange={(e) =>
+                              setMetricWeights((w) => ({ ...w, [m.name]: Number(e.target.value) }))
+                            }
+                            className="mt-3 w-full accent-primary"
+                          />
+                          <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                            <span>Unimportant</span>
+                            <span>Critical</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {step === 5 && (
+                <div className="space-y-4">
+
                   <div>
                     <h2 className="text-xl font-semibold">How customers interact with you</h2>
                     <p className="mt-1 text-sm text-muted-foreground">Pick all that apply — these become churn signals.</p>
