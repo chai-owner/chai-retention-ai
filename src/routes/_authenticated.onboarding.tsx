@@ -71,6 +71,9 @@ function Onboarding() {
   });
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
+  const [metricWeights, setMetricWeights] = useState<Record<string, number>>(
+    () => ({ ...DEFAULT_METRIC_WEIGHTS }),
+  );
   const [segments, setSegments] = useState<Segment[]>([
     { name: "", min: "", max: "" },
   ]);
