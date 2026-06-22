@@ -119,7 +119,8 @@ function Planner() {
               </div>
             </div>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
