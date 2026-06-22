@@ -22,6 +22,7 @@ import {
   type TimelineEvent,
   type Customer,
 } from "@/lib/mock-data";
+import { useScoredData } from "@/lib/use-scored-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/customers/$id")({
