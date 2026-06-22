@@ -81,18 +81,49 @@ function Planner() {
                   </div>
                 </div>
               </div>
-              <div className="lg:w-56 lg:shrink-0">
-                <p className="mb-2 text-[11px] font-medium text-muted-foreground">Segment average</p>
-                <div className="space-y-1.5">
-                  {averages.map((a) => (
-                    <div key={a.segment} className="flex items-center gap-2">
-                      <span className="w-24 shrink-0 text-[11px] text-muted-foreground">{a.segment}</span>
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${a.avg}%` }} />
+              <div className="lg:w-72 lg:shrink-0">
+                <p className="mb-2.5 text-[11px] font-medium text-muted-foreground">Segment average</p>
+                <div className="flex gap-2">
+                  {averages.map((a) => {
+                    const tone =
+                      a.avg >= 75 ? "success" : a.avg >= 55 ? "warning" : a.avg >= 35 ? "caution" : "danger";
+                    const bgClass =
+                      tone === "success"
+                        ? "bg-success/10 border-success/20"
+                        : tone === "warning"
+                          ? "bg-warning/15 border-warning/30"
+                          : tone === "caution"
+                            ? "bg-caution/10 border-caution/20"
+                            : "bg-danger/10 border-danger/20";
+                    const barClass =
+                      tone === "success"
+                        ? "bg-success"
+                        : tone === "warning"
+                          ? "bg-warning"
+                          : tone === "caution"
+                            ? "bg-caution"
+                            : "bg-danger";
+                    const textClass =
+                      tone === "success"
+                        ? "text-success"
+                        : tone === "warning"
+                          ? "text-warning-foreground"
+                          : tone === "caution"
+                            ? "text-caution-foreground"
+                            : "text-danger";
+                    return (
+                      <div
+                        key={a.segment}
+                        className={`flex flex-1 flex-col items-center rounded-lg border px-2 py-2.5 ${bgClass}`}
+                      >
+                        <span className="text-[10px] font-medium text-muted-foreground">{a.segment}</span>
+                        <span className={`my-1 text-lg font-bold tabular-nums ${textClass}`}>{a.avg}</span>
+                        <div className="h-1 w-full overflow-hidden rounded-full bg-secondary/50">
+                          <div className={`h-full rounded-full ${barClass}`} style={{ width: `${a.avg}%` }} />
+                        </div>
                       </div>
-                      <span className="w-7 shrink-0 text-right text-[11px] font-medium tabular-nums">{a.avg}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
