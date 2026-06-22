@@ -380,15 +380,23 @@ function Onboarding() {
 
               {step === 4 && (
                 <div className="space-y-4">
-                  <div>
+                   <div>
                     <h2 className="text-xl font-semibold">How much each metric matters</h2>
                     <p className="mt-1 text-sm text-muted-foreground">
                       Slide each metric from Unimportant to Critical. ChAi weights your customer health score by what matters most to you.
                     </p>
+                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+                      <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                      <span>
+                        These are <span className="font-medium text-foreground">recommended weights</span> based on your industry and the company information you entered. Adjust any metric to fit your priorities.
+                      </span>
+                    </div>
                   </div>
                   <div className="space-y-4">
                     {plannerMetrics.map((m) => {
                       const level = metricWeights[m.name] ?? 3;
+                      const recommended = DEFAULT_METRIC_WEIGHTS[m.name] ?? 3;
+                      const isRecommended = level === recommended;
                       return (
                         <div key={m.name} className="rounded-xl border border-border p-4">
                           <div className="flex items-center justify-between gap-3">
@@ -396,9 +404,26 @@ function Onboarding() {
                               <p className="text-sm font-medium">{m.name}</p>
                               <p className="mt-0.5 text-xs text-muted-foreground">{m.why}</p>
                             </div>
-                            <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
-                              {IMPORTANCE_LABELS[level - 1]}
-                            </span>
+                            <div className="flex shrink-0 flex-col items-end gap-1">
+                              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                                {IMPORTANCE_LABELS[level - 1]}
+                              </span>
+                              {isRecommended ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                                  <Sparkles className="h-2.5 w-2.5" /> Recommended
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setMetricWeights((w) => ({ ...w, [m.name]: recommended }))
+                                  }
+                                  className="text-[10px] text-primary underline-offset-2 hover:underline"
+                                >
+                                  Reset to recommended
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <input
                             type="range"
