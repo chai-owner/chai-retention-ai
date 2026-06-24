@@ -26,13 +26,8 @@ function DataPage() {
     [profile],
   );
 
-  // Match uploads to dataset keys so we can flag what's still missing.
-  const uploadedLabels = useMemo(
-    () => new Set(uploads.map((u) => u.datasetLabel.toLowerCase())),
-    [uploads],
-  );
-  const isUploaded = (d: PersonalizedDataset) =>
-    uploadedLabels.has(d.label.toLowerCase());
+
+
 
   // Most recent upload date per dataset label.
   const lastUploadByLabel = useMemo(() => {
