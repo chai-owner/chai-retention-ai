@@ -101,11 +101,15 @@ function Planner() {
                             {a.segment}
                           </span>
                         </div>
-                        <span className={`my-1 text-lg font-bold tabular-nums ${textClass}`}>{a.avg}</span>
+                        <span className={`my-1 text-lg font-bold tabular-nums ${textClass}`}>{metricActualValue(m, a.avg)}</span>
                       </div>
                     );
                   })}
                 </div>
+                <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                  <span className="font-medium text-foreground">Healthy benchmark:</span> {m.benchmark}
+                </p>
+
               </div>
             </div>
           </Card>
