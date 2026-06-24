@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Building2, CheckCircle2, Link2, Upload } from "lucide-react";
+import { Building2, Link2, Upload } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { integrations, crmIntegrations } from "@/lib/mock-data";
 import { UploadWizard } from "@/components/upload-wizard";
@@ -26,13 +26,8 @@ function DataPage() {
     [profile],
   );
 
-  // Match uploads to dataset keys so we can flag what's still missing.
-  const uploadedLabels = useMemo(
-    () => new Set(uploads.map((u) => u.datasetLabel.toLowerCase())),
-    [uploads],
-  );
-  const isUploaded = (d: PersonalizedDataset) =>
-    uploadedLabels.has(d.label.toLowerCase());
+
+
 
   // Most recent upload date per dataset label.
   const lastUploadByLabel = useMemo(() => {
@@ -66,7 +61,7 @@ function DataPage() {
 
         <div className="mt-5 divide-y divide-border border-y border-border">
           {personalized.map((s) => (
-            <DatasetRow key={s.key} dataset={s} uploaded={isUploaded(s)} lastUpload={lastUpload(s)} />
+            <DatasetRow key={s.key} dataset={s} lastUpload={lastUpload(s)} />
           ))}
         </div>
       </Card>
@@ -136,25 +131,29 @@ function DataPage() {
   );
 }
 
-function DatasetRow({ dataset, uploaded, lastUpload }: { dataset: PersonalizedDataset; uploaded: boolean; lastUpload?: string }) {
+function DatasetRow({ dataset, lastUpload }: { dataset: PersonalizedDataset; lastUpload?: string }) {
   const [wizardOpen, setWizardOpen] = useState(false);
+
+  const recencyColor = (date: string) => {
+    const days = (Date.now() - new Date(date.replace(" ", "T")).getTime()) / 86400000;
+    if (days <= 30) return "text-success";
+    if (days <= 90) return "text-warning";
+    return "text-danger";
+  };
+
   return (
     <div className="flex flex-col gap-3 py-4 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-semibold">{dataset.label}</p>
-          {uploaded && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-success/20 bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
-              <CheckCircle2 className="h-3 w-3" /> Uploaded
-            </span>
-          )}
           {lastUpload && (
-            <span className="text-[11px] text-muted-foreground">
+            <span className={cn("text-[11px] italic", recencyColor(lastUpload))}>
               Last uploaded on {lastUpload}
             </span>
           )}
         </div>
         <p className="mt-0.5 text-xs text-muted-foreground">{dataset.description}</p>
+
 
         <div className="mt-2 flex flex-wrap gap-1.5">
           {dataset.fields.map((f) => (
