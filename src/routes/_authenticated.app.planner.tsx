@@ -70,16 +70,11 @@ function Planner() {
                 </div>
 
                 <p className="mt-1.5 text-sm text-muted-foreground">{m.why}</p>
-                <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
-                  <div>
-                    <p className="font-medium text-foreground">How it predicts churn</p>
-                    <p className="mt-0.5 text-muted-foreground">{m.churn}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Healthy benchmark</p>
-                    <p className="mt-0.5 text-muted-foreground">{m.benchmark}</p>
-                  </div>
+                <div className="mt-3 text-xs">
+                  <p className="font-medium text-foreground">How it predicts churn</p>
+                  <p className="mt-0.5 text-muted-foreground">{m.churn}</p>
                 </div>
+
               </div>
               <div className="lg:w-80 lg:shrink-0">
                 <p className="mb-3 text-center text-xs font-bold text-foreground">Segment Average</p>
