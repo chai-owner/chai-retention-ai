@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import {
   Users,
   HeartPulse,
@@ -7,7 +8,17 @@ import {
   DollarSign,
   Target,
   ArrowRight,
+  Database,
+  UploadCloud,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useUploads, overallScore } from "@/lib/uploads-store";
 import {
   PieChart,
   Pie,
