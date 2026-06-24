@@ -62,18 +62,19 @@ ${subScoreLines}
 Detected risk factors:
 ${factorLines}
 
-Produce:
-- riskLevel: one of Low, Medium, High, Critical
-- probability: your own 0-100 churn probability estimate over the next 90 days
+Return ONLY a JSON object (no markdown, no code fences) with exactly these keys:
+- riskLevel: one of "Low", "Medium", "High", "Critical"
+- probability: number 0-100 (your churn probability estimate over the next 90 days)
 - summary: 1-2 sentences explaining the risk in plain language
-- topDrivers: 2-4 short bullet phrases naming what's driving the risk
-- recommendedActions: 2-3 concrete actions, each with a brief "why"`;
+- topDrivers: array of 2-4 short bullet phrases naming what's driving the risk
+- recommendedActions: array of 2-3 objects, each with "action" and "why"`;
 
-    const { output } = await generateText({
+    const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
-      output: Output.object({ schema: RiskOutput }),
       prompt,
     });
 
-    return output;
+    const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    const parsed = RiskOutput.parse(JSON.parse(jsonText));
+    return parsed;
   });
