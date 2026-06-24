@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   HeartPulse,
@@ -13,6 +16,8 @@ import {
   UserPlus,
   TrendingUp,
   Sparkles,
+  Loader2,
+  Brain,
 } from "lucide-react";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
 import {
@@ -22,8 +27,10 @@ import {
   type TimelineEvent,
   type Customer,
 } from "@/lib/mock-data";
+import { assessCustomerRisk, type RiskAssessment } from "@/lib/ai.functions";
 import { useScoredData } from "@/lib/use-scored-data";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/app/customers/$id")({
   head: () => ({ meta: [{ title: "Customer Detail — ChAi" }] }),
@@ -85,6 +92,9 @@ function CustomerDetail() {
         <StatCard label="Revenue value" value={formatCurrency(c.revenue)} icon={DollarSign} />
         <StatCard label="Sentiment" value={sentimentLabel} icon={Smile} tone={c.sentiment >= 60 ? "success" : c.sentiment >= 40 ? "warning" : "danger"} hint={`Score ${c.sentiment}/100`} />
       </div>
+
+      <AiRiskAssessment customer={c} />
+
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Root cause */}
@@ -175,3 +185,126 @@ function CustomerDetail() {
     </div>
   );
 }
+
+const riskTone: Record<RiskAssessment["riskLevel"], string> = {
+  Low: "bg-success/10 text-success border-success/20",
+  Medium: "bg-warning/15 text-warning-foreground border-warning/30",
+  High: "bg-caution/10 text-caution border-caution/20",
+  Critical: "bg-danger/10 text-danger border-danger/20",
+};
+
+function AiRiskAssessment({ customer }: { customer: Customer }) {
+  const assess = useServerFn(assessCustomerRisk);
+  const [result, setResult] = useState<RiskAssessment | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const run = async () => {
+    setLoading(true);
+    try {
+      const res = await assess({
+        data: {
+          name: customer.name,
+          segment: customer.segment,
+          health: customer.health,
+          churnProbability: customer.churnProbability,
+          revenue: customer.revenue,
+          sentiment: customer.sentiment,
+          lastActivity: customer.lastActivity,
+          factors: customer.factors.map((f) => ({ label: f.label, detail: f.detail, weight: f.weight })),
+          subScores: customer.subScores,
+        },
+      });
+      setResult(res);
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't generate the AI assessment", {
+        description: "Please try again in a moment.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="mt-6 border-primary/30">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Brain className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="font-semibold">AI Risk Assessment</h3>
+            <p className="text-xs text-muted-foreground">
+              Lovable AI reviews this account's signals and predicts churn risk with recommended next steps.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={run}
+          disabled={loading}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+          {result ? "Re-run analysis" : "Generate assessment"}
+        </button>
+      </div>
+
+      {!result && !loading && (
+        <p className="mt-4 rounded-lg bg-accent/40 p-3 text-xs text-muted-foreground">
+          Click “Generate assessment” to get an AI-written churn prediction for this customer.
+        </p>
+      )}
+
+      {loading && !result && (
+        <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Analyzing this customer's data…
+        </p>
+      )}
+
+      {result && (
+        <div className="mt-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold", riskTone[result.riskLevel])}>
+              {result.riskLevel} risk
+            </span>
+            <span className="text-sm font-medium">
+              {result.probability}% <span className="font-normal text-muted-foreground">churn probability (90 days)</span>
+            </span>
+          </div>
+
+          <p className="text-sm text-muted-foreground">{result.summary}</p>
+
+          {result.topDrivers.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-foreground">Top drivers</p>
+              <ul className="mt-1.5 space-y-1">
+                {result.topDrivers.map((d, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-danger" /> {d}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {result.recommendedActions.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-foreground">Recommended actions</p>
+              <div className="mt-2 space-y-2">
+                {result.recommendedActions.map((a, i) => (
+                  <div key={i} className="rounded-lg border border-border p-3">
+                    <p className="text-sm font-medium">{a.action}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{a.why}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p className="text-[11px] text-muted-foreground">Generated by Lovable AI · estimates, not guarantees.</p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
