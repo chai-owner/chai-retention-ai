@@ -11,6 +11,7 @@ import {
   Target,
   ArrowRight,
   Database,
+  Sparkles,
 } from "lucide-react";
 import {
   Select,
