@@ -407,6 +407,13 @@ export const integrations = [
   { name: "Freshdesk", category: "Support", desc: "Pull ticket history, resolution data and satisfaction.", status: "available" },
 ];
 
+// ---- CRM integrations ----
+export const crmIntegrations = [
+  { name: "Salesforce", category: "CRM", desc: "Sync accounts, opportunities, renewal stages and owner activity.", status: "available" },
+  { name: "HubSpot", category: "CRM", desc: "Import contacts, deals, lifecycle stages and engagement history.", status: "available" },
+  { name: "Zoho CRM", category: "CRM", desc: "Pull accounts, deals, pipeline stages and contact touchpoints.", status: "available" },
+];
+
 // ---- Data quality findings ----
 export const dataQuality = {
   reliability: 78,
