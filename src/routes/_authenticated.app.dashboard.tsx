@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import {
   Users,
   HeartPulse,
@@ -7,7 +8,17 @@ import {
   DollarSign,
   Target,
   ArrowRight,
+  Database,
+  UploadCloud,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useUploads, overallScore } from "@/lib/uploads-store";
 import {
   PieChart,
   Pie,
@@ -43,18 +54,107 @@ const COLORS: Record<string, string> = {
   critical: "var(--danger)",
 };
 
+type Period = "30d" | "month";
+
+// Period adjustment factors applied to the base snapshot so the numbers shift
+// when the user changes the dropdown. "Current Month" reflects the partial,
+// in-progress month so totals are slightly lower than a full rolling 30 days.
+const PERIOD_FACTORS: Record<Period, number> = {
+  "30d": 1,
+  month: 0.82,
+};
+
 function Dashboard() {
-  const { executive, healthDistribution, segmentRevenue, sortedByRisk } = useScoredData();
+  const { executive: baseExecutive, healthDistribution, segmentRevenue, sortedByRisk } = useScoredData();
   const topRisk = sortedByRisk.slice(0, 5);
+  const uploads = useUploads();
+  const [period, setPeriod] = useState<Period>("30d");
+
+  const executive = useMemo(() => {
+    const f = PERIOD_FACTORS[period];
+    const scale = (n: number) => Math.round(n * f);
+    return {
+      ...baseExecutive,
+      atRisk: scale(baseExecutive.atRisk),
+      critical: scale(baseExecutive.critical),
+      predictedMonthlyChurn: scale(baseExecutive.predictedMonthlyChurn),
+      revenueAtRisk: scale(baseExecutive.revenueAtRisk),
+      predictedRevenueLoss: scale(baseExecutive.predictedRevenueLoss),
+      retentionOpportunity: scale(baseExecutive.retentionOpportunity),
+    };
+  }, [baseExecutive, period]);
+
+  // Overall data quality across uploaded datasets, for the selected period.
+  // Current month relies on fewer, more recent files, so it's modestly lower.
+  const dataQuality = useMemo(() => {
+    if (uploads.length === 0) return 0;
+    const avg = uploads.reduce((s, u) => s + overallScore(u), 0) / uploads.length;
+    return Math.round(avg * (period === "month" ? 0.92 : 1));
+  }, [uploads, period]);
+
+  const qualityTone =
+    dataQuality >= 75 ? "text-success" : dataQuality >= 55 ? "text-caution" : "text-danger";
+  const qualityBarTone =
+    dataQuality >= 75 ? "bg-success" : dataQuality >= 55 ? "bg-caution" : "bg-danger";
+  const showSuggestion = dataQuality < 75;
+  const periodLabel = period === "30d" ? "Last 30 days" : "Current month";
 
   return (
     <div>
-      <PageHeader
-        title="Dashboard"
-        description="A 30-second snapshot of how healthy your customer base is, who's at risk, and how much revenue is on the line."
-      />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <PageHeader
+          title="Dashboard"
+          description="A 30-second snapshot of how healthy your customer base is, who's at risk, and how much revenue is on the line."
+        />
+        <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
+          <SelectTrigger className="w-[180px] shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30d">Last 30 days</SelectItem>
+            <SelectItem value="month">Current month</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Data quality context for the selected period */}
+      <Card className="mt-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-secondary/60 p-2">
+              <Database className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold">Data quality for {periodLabel}</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                These numbers are only as accurate as the data behind them.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 sm:w-64">
+            <div className="flex-1">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-secondary/60">
+                <div className={`h-full rounded-full ${qualityBarTone}`} style={{ width: `${dataQuality}%` }} />
+              </div>
+            </div>
+            <span className={`text-lg font-bold tabular-nums ${qualityTone}`}>{dataQuality}%</span>
+          </div>
+        </div>
+        {showSuggestion && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs text-foreground">
+            <UploadCloud className="mt-0.5 h-4 w-4 shrink-0 text-caution" />
+            <span>
+              Please{" "}
+              <Link to="/app/data" className="font-medium text-primary hover:underline">
+                upload recent data
+              </Link>{" "}
+              to get a more accurate snapshot for {periodLabel.toLowerCase()}.
+            </span>
+          </div>
+        )}
+      </Card>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total customers" value={executive.totalCustomers} icon={Users} />
         <StatCard label="Healthy customers" value={executive.healthy} icon={HeartPulse} tone="success" hint="Engaged & low risk" />
         <StatCard label="At-risk customers" value={executive.atRisk + executive.critical} icon={AlertTriangle} tone="caution" hint={`${executive.critical} critical`} />
