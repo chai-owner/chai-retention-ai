@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Building2, CheckCircle2, Link2, Upload } from "lucide-react";
+import { Building2, Link2, Upload } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { integrations, crmIntegrations } from "@/lib/mock-data";
 import { UploadWizard } from "@/components/upload-wizard";
@@ -66,7 +66,7 @@ function DataPage() {
 
         <div className="mt-5 divide-y divide-border border-y border-border">
           {personalized.map((s) => (
-            <DatasetRow key={s.key} dataset={s} uploaded={isUploaded(s)} lastUpload={lastUpload(s)} />
+            <DatasetRow key={s.key} dataset={s} lastUpload={lastUpload(s)} />
           ))}
         </div>
       </Card>
@@ -136,7 +136,7 @@ function DataPage() {
   );
 }
 
-function DatasetRow({ dataset, uploaded, lastUpload }: { dataset: PersonalizedDataset; uploaded: boolean; lastUpload?: string }) {
+function DatasetRow({ dataset, lastUpload }: { dataset: PersonalizedDataset; lastUpload?: string }) {
   const [wizardOpen, setWizardOpen] = useState(false);
 
   const recencyColor = (date: string) => {
