@@ -281,11 +281,17 @@ function Dashboard() {
                 key={c.id}
                 to="/app/customers/$id"
                 params={{ id: c.id }}
-                className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-accent/50"
+                className="flex items-start justify-between gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent/50"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{c.name}</p>
                   <p className="text-xs text-muted-foreground">{formatCurrency(c.revenue)} · {c.churnProbability}% churn risk</p>
+                  {riskSummaries[c.id] && (
+                    <p className="mt-1 flex items-start gap-1 text-xs text-foreground/80">
+                      <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                      <span>{riskSummaries[c.id]}</span>
+                    </p>
+                  )}
                 </div>
                 <HealthBadge category={categoryFromHealth(c.health)} />
               </Link>
