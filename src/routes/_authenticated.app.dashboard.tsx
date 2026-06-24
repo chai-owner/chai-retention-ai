@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useState } from "react";
+import { summarizeRiskReasons } from "@/lib/ai.functions";
 import {
   Users,
   HeartPulse,
@@ -9,6 +11,7 @@ import {
   Target,
   ArrowRight,
   Database,
+  Sparkles,
 } from "lucide-react";
 import {
   Select,
@@ -68,6 +71,38 @@ function Dashboard() {
   const topRisk = sortedByRisk.slice(0, 5);
   const uploads = useUploads();
   const [period, setPeriod] = useState<Period>("30d");
+
+  // AI-generated one-line explanations for each at-risk account.
+  const summarize = useServerFn(summarizeRiskReasons);
+  const [riskSummaries, setRiskSummaries] = useState<Record<string, string>>({});
+  const riskKey = topRisk.map((c) => c.id).join(",");
+
+  useEffect(() => {
+    if (topRisk.length === 0) return;
+    let cancelled = false;
+    summarize({
+      data: {
+        customers: topRisk.map((c) => ({
+          id: c.id,
+          name: c.name,
+          churnProbability: c.churnProbability,
+          revenue: c.revenue,
+          health: c.health,
+          factors: c.factors.map((f) => f.label),
+        })),
+      },
+    })
+      .then((res) => {
+        if (!cancelled) setRiskSummaries(res);
+      })
+      .catch(() => {
+        /* keep base list if AI is unavailable */
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [riskKey]);
 
   const executive = useMemo(() => {
     const f = PERIOD_FACTORS[period];
@@ -247,11 +282,17 @@ function Dashboard() {
                 key={c.id}
                 to="/app/customers/$id"
                 params={{ id: c.id }}
-                className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-accent/50"
+                className="flex items-start justify-between gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent/50"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{c.name}</p>
                   <p className="text-xs text-muted-foreground">{formatCurrency(c.revenue)} · {c.churnProbability}% churn risk</p>
+                  {riskSummaries[c.id] && (
+                    <p className="mt-1 flex items-start gap-1 text-xs text-foreground/80">
+                      <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                      <span>{riskSummaries[c.id]}</span>
+                    </p>
+                  )}
                 </div>
                 <HealthBadge category={categoryFromHealth(c.health)} />
               </Link>
