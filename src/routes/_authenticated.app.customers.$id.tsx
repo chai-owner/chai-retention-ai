@@ -93,7 +93,7 @@ function CustomerDetail() {
         <StatCard label="Sentiment" value={sentimentLabel} icon={Smile} tone={c.sentiment >= 60 ? "success" : c.sentiment >= 40 ? "warning" : "danger"} hint={`Score ${c.sentiment}/100`} />
       </div>
 
-      <AiRiskAssessment customer={c} />
+
 
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
