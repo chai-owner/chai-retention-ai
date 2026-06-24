@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { CheckCircle2, Link2, Upload } from "lucide-react";
+import { Building2, CheckCircle2, Link2, Upload } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { integrations, crmIntegrations } from "@/lib/mock-data";
 import { UploadWizard } from "@/components/upload-wizard";
