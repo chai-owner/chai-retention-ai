@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ClipboardList } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
-import { plannerMetrics, IMPORTANCE_LABELS } from "@/lib/mock-data";
+import { plannerMetrics, IMPORTANCE_LABELS, metricActualValue } from "@/lib/mock-data";
 import { useMetricWeights, useScoredData } from "@/lib/use-scored-data";
 
 export const Route = createFileRoute("/_authenticated/app/planner")({
@@ -70,16 +70,11 @@ function Planner() {
                 </div>
 
                 <p className="mt-1.5 text-sm text-muted-foreground">{m.why}</p>
-                <div className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
-                  <div>
-                    <p className="font-medium text-foreground">How it predicts churn</p>
-                    <p className="mt-0.5 text-muted-foreground">{m.churn}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Healthy benchmark</p>
-                    <p className="mt-0.5 text-muted-foreground">{m.benchmark}</p>
-                  </div>
+                <div className="mt-3 text-xs">
+                  <p className="font-medium text-foreground">How it predicts churn</p>
+                  <p className="mt-0.5 text-muted-foreground">{m.churn}</p>
                 </div>
+
               </div>
               <div className="lg:w-80 lg:shrink-0">
                 <p className="mb-3 text-center text-xs font-bold text-foreground">Segment Average</p>
@@ -106,11 +101,15 @@ function Planner() {
                             {a.segment}
                           </span>
                         </div>
-                        <span className={`my-1 text-lg font-bold tabular-nums ${textClass}`}>{a.avg}</span>
+                        <span className={`my-1 text-lg font-bold tabular-nums ${textClass}`}>{metricActualValue(m, a.avg)}</span>
                       </div>
                     );
                   })}
                 </div>
+                <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                  <span className="font-medium text-foreground">Healthy benchmark:</span> {m.benchmark}
+                </p>
+
               </div>
             </div>
           </Card>

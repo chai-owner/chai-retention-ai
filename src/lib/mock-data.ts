@@ -390,15 +390,28 @@ export const benchmarks = [
 
 // ---- Customer Intelligence Planner metrics ----
 export const plannerMetrics = [
-  { name: "Login frequency", why: "Tells you whether customers are getting into the product at all.", churn: "Customers who stop logging in churn far more often than active ones.", cadence: "Daily", benchmark: "3–5 logins / week", benchmarkScore: 70, category: "Engagement" },
-  { name: "Feature adoption", why: "Shows whether customers reach the value they signed up for.", churn: "Low adoption is one of the strongest early warnings of churn.", cadence: "Weekly", benchmark: "≥ 60% of core features", benchmarkScore: 60, category: "Engagement" },
-  { name: "Days since last purchase", why: "Measures buying momentum and lapse risk.", churn: "A gap longer than the usual cadence signals disengagement.", cadence: "Daily", benchmark: "< 30 days", benchmarkScore: 65, category: "Transactions" },
-  { name: "Average order value", why: "Indicates account depth and spend trends.", churn: "Falling order value often precedes a downgrade or cancellation.", cadence: "Monthly", benchmark: "Trending flat or up", benchmarkScore: 60, category: "Transactions" },
-  { name: "Support ticket volume", why: "Reveals friction in the customer experience.", churn: "A spike in tickets, especially unresolved ones, predicts churn.", cadence: "Weekly", benchmark: "< 2 open / customer", benchmarkScore: 65, category: "Support" },
-  { name: "Resolution time", why: "How long customers wait for help.", churn: "Slow resolutions erode trust and raise cancellation risk.", cadence: "Weekly", benchmark: "< 24 hours", benchmarkScore: 60, category: "Support" },
-  { name: "CSAT / NPS", why: "Direct measure of how customers feel.", churn: "Declining scores reliably lead the churn that follows.", cadence: "Per interaction", benchmark: "CSAT ≥ 4.3", benchmarkScore: 75, category: "Satisfaction" },
-  { name: "Contract renewal date", why: "Marks the moments where churn actually happens.", churn: "Renewals concentrate risk into a single decision point.", cadence: "Monthly", benchmark: "90-day lead time", benchmarkScore: 70, category: "Retention" },
+  { name: "Login frequency", why: "Tells you whether customers are getting into the product at all.", churn: "Customers who stop logging in churn far more often than active ones.", cadence: "Daily", benchmark: "3–5 logins / week", benchmarkScore: 70, category: "Engagement", unit: " / wk", decimals: 1, valueAt0: 0, valueAt100: 7 },
+  { name: "Feature adoption", why: "Shows whether customers reach the value they signed up for.", churn: "Low adoption is one of the strongest early warnings of churn.", cadence: "Weekly", benchmark: "≥ 60% of core features", benchmarkScore: 60, category: "Engagement", unit: "%", decimals: 0, valueAt0: 10, valueAt100: 95 },
+  { name: "Days since last purchase", why: "Measures buying momentum and lapse risk.", churn: "A gap longer than the usual cadence signals disengagement.", cadence: "Daily", benchmark: "< 30 days", benchmarkScore: 65, category: "Transactions", unit: " days", decimals: 0, valueAt0: 90, valueAt100: 4 },
+  { name: "Average order value", why: "Indicates account depth and spend trends.", churn: "Falling order value often precedes a downgrade or cancellation.", cadence: "Monthly", benchmark: "Trending flat or up", benchmarkScore: 60, category: "Transactions", unit: "", prefix: "$", decimals: 0, valueAt0: 40, valueAt100: 520 },
+  { name: "Support ticket volume", why: "Reveals friction in the customer experience.", churn: "A spike in tickets, especially unresolved ones, predicts churn.", cadence: "Weekly", benchmark: "< 2 open / customer", benchmarkScore: 65, category: "Support", unit: " open", decimals: 1, valueAt0: 8, valueAt100: 0 },
+  { name: "Resolution time", why: "How long customers wait for help.", churn: "Slow resolutions erode trust and raise cancellation risk.", cadence: "Weekly", benchmark: "< 24 hours", benchmarkScore: 60, category: "Support", unit: "h", decimals: 0, valueAt0: 72, valueAt100: 4 },
+  { name: "CSAT / NPS", why: "Direct measure of how customers feel.", churn: "Declining scores reliably lead the churn that follows.", cadence: "Per interaction", benchmark: "CSAT ≥ 4.3", benchmarkScore: 75, category: "Satisfaction", unit: " / 5", decimals: 1, valueAt0: 2.5, valueAt100: 5 },
+  { name: "Contract renewal date", why: "Marks the moments where churn actually happens.", churn: "Renewals concentrate risk into a single decision point.", cadence: "Monthly", benchmark: "90-day lead time", benchmarkScore: 70, category: "Retention", unit: " days", decimals: 0, valueAt0: 10, valueAt100: 120 },
 ];
+
+// Convert a 0–100 sub-score into the metric's real-world value for display.
+export function metricActualValue(
+  metric: { valueAt0?: number; valueAt100?: number; decimals?: number; unit?: string; prefix?: string },
+  score: number,
+): string {
+  const a0 = metric.valueAt0 ?? 0;
+  const a100 = metric.valueAt100 ?? 100;
+  const raw = a0 + (a100 - a0) * (score / 100);
+  const num = raw.toFixed(metric.decimals ?? 0);
+  return `${metric.prefix ?? ""}${num}${metric.unit ?? ""}`;
+}
+
 
 // ---- Integrations ----
 export const integrations = [
