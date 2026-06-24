@@ -13,8 +13,6 @@ import {
   UserPlus,
   TrendingUp,
   Sparkles,
-  Loader2,
-  Brain,
 } from "lucide-react";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
 import {
