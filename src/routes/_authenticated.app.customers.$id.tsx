@@ -22,7 +22,6 @@ import {
   type TimelineEvent,
   type Customer,
 } from "@/lib/mock-data";
-import { assessCustomerRisk, type RiskAssessment } from "@/lib/ai.functions";
 import { useScoredData } from "@/lib/use-scored-data";
 import { cn } from "@/lib/utils";
 
