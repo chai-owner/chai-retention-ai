@@ -71,6 +71,38 @@ function Dashboard() {
   const uploads = useUploads();
   const [period, setPeriod] = useState<Period>("30d");
 
+  // AI-generated one-line explanations for each at-risk account.
+  const summarize = useServerFn(summarizeRiskReasons);
+  const [riskSummaries, setRiskSummaries] = useState<Record<string, string>>({});
+  const riskKey = topRisk.map((c) => c.id).join(",");
+
+  useEffect(() => {
+    if (topRisk.length === 0) return;
+    let cancelled = false;
+    summarize({
+      data: {
+        customers: topRisk.map((c) => ({
+          id: c.id,
+          name: c.name,
+          churnProbability: c.churnProbability,
+          revenue: c.revenue,
+          health: c.health,
+          factors: c.factors.map((f) => f.label),
+        })),
+      },
+    })
+      .then((res) => {
+        if (!cancelled) setRiskSummaries(res);
+      })
+      .catch(() => {
+        /* keep base list if AI is unavailable */
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [riskKey]);
+
   const executive = useMemo(() => {
     const f = PERIOD_FACTORS[period];
     const scale = (n: number) => Math.round(n * f);
