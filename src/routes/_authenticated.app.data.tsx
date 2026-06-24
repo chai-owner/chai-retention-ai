@@ -146,12 +146,8 @@ function DatasetRow({ dataset, lastUpload }: { dataset: PersonalizedDataset; las
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-semibold">{dataset.label}</p>
-          {lastUpload && (
-            <span className={cn("text-[11px] italic", recencyColor(lastUpload))}>
-              Last uploaded on {lastUpload}
-            </span>
-          )}
         </div>
+
         <p className="mt-0.5 text-xs text-muted-foreground">{dataset.description}</p>
 
 
@@ -174,12 +170,20 @@ function DatasetRow({ dataset, lastUpload }: { dataset: PersonalizedDataset; las
         </div>
       </div>
 
-      <button
-        onClick={() => setWizardOpen(true)}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-      >
-        <Upload className="h-3.5 w-3.5" /> Upload {dataset.label}
-      </button>
+      <div className="flex shrink-0 flex-col items-stretch gap-1 md:items-end">
+        <button
+          onClick={() => setWizardOpen(true)}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          <Upload className="h-3.5 w-3.5" /> Upload {dataset.label}
+        </button>
+        {lastUpload && (
+          <span className={cn("text-[11px] italic md:text-right", recencyColor(lastUpload))}>
+            Last uploaded on {lastUpload}
+          </span>
+        )}
+      </div>
+
 
       <UploadWizard dataset={dataset} open={wizardOpen} onOpenChange={setWizardOpen} />
     </div>
