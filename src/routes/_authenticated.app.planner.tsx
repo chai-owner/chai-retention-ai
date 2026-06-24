@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ClipboardList } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
-import { plannerMetrics, IMPORTANCE_LABELS } from "@/lib/mock-data";
+import { plannerMetrics, IMPORTANCE_LABELS, metricActualValue } from "@/lib/mock-data";
 import { useMetricWeights, useScoredData } from "@/lib/use-scored-data";
 
 export const Route = createFileRoute("/_authenticated/app/planner")({
