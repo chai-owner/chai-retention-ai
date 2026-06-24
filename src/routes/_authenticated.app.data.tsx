@@ -34,6 +34,19 @@ function DataPage() {
   const isUploaded = (d: PersonalizedDataset) =>
     uploadedLabels.has(d.label.toLowerCase());
 
+  // Most recent upload date per dataset label.
+  const lastUploadByLabel = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const u of uploads) {
+      const key = u.datasetLabel.toLowerCase();
+      const existing = map.get(key);
+      if (!existing || u.uploadedAt > existing) map.set(key, u.uploadedAt);
+    }
+    return map;
+  }, [uploads]);
+  const lastUpload = (d: PersonalizedDataset) =>
+    lastUploadByLabel.get(d.label.toLowerCase());
+
 
   return (
     <div>
@@ -53,7 +66,7 @@ function DataPage() {
 
         <div className="mt-5 divide-y divide-border border-y border-border">
           {personalized.map((s) => (
-            <DatasetRow key={s.key} dataset={s} uploaded={isUploaded(s)} />
+            <DatasetRow key={s.key} dataset={s} uploaded={isUploaded(s)} lastUpload={lastUpload(s)} />
           ))}
         </div>
       </Card>
@@ -123,7 +136,7 @@ function DataPage() {
   );
 }
 
-function DatasetRow({ dataset, uploaded }: { dataset: PersonalizedDataset; uploaded: boolean }) {
+function DatasetRow({ dataset, uploaded, lastUpload }: { dataset: PersonalizedDataset; uploaded: boolean; lastUpload?: string }) {
   const [wizardOpen, setWizardOpen] = useState(false);
   return (
     <div className="flex flex-col gap-3 py-4 md:flex-row md:items-start md:justify-between">
@@ -135,15 +148,13 @@ function DatasetRow({ dataset, uploaded }: { dataset: PersonalizedDataset; uploa
               <CheckCircle2 className="h-3 w-3" /> Uploaded
             </span>
           )}
+          {lastUpload && (
+            <span className="text-[11px] text-muted-foreground">
+              Last uploaded on {lastUpload}
+            </span>
+          )}
         </div>
         <p className="mt-0.5 text-xs text-muted-foreground">{dataset.description}</p>
-
-        {dataset.reasons.length > 0 && (
-          <p className="mt-2 rounded-lg bg-accent/50 px-2.5 py-1.5 text-[11px] text-muted-foreground">
-            <span className="font-medium text-foreground">Why ChAi needs this: </span>
-            {dataset.reasons.join(" ")}
-          </p>
-        )}
 
         <div className="mt-2 flex flex-wrap gap-1.5">
           {dataset.fields.map((f) => (
