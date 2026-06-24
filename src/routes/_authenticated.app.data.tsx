@@ -138,23 +138,27 @@ function DataPage() {
 
 function DatasetRow({ dataset, uploaded, lastUpload }: { dataset: PersonalizedDataset; uploaded: boolean; lastUpload?: string }) {
   const [wizardOpen, setWizardOpen] = useState(false);
+
+  const recencyColor = (date: string) => {
+    const days = (Date.now() - new Date(date.replace(" ", "T")).getTime()) / 86400000;
+    if (days <= 30) return "text-success";
+    if (days <= 90) return "text-warning";
+    return "text-danger";
+  };
+
   return (
     <div className="flex flex-col gap-3 py-4 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-semibold">{dataset.label}</p>
-          {uploaded && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-success/20 bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
-              <CheckCircle2 className="h-3 w-3" /> Uploaded
-            </span>
-          )}
           {lastUpload && (
-            <span className="text-[11px] text-muted-foreground">
+            <span className={cn("text-[11px] italic", recencyColor(lastUpload))}>
               Last uploaded on {lastUpload}
             </span>
           )}
         </div>
         <p className="mt-0.5 text-xs text-muted-foreground">{dataset.description}</p>
+
 
         <div className="mt-2 flex flex-wrap gap-1.5">
           {dataset.fields.map((f) => (
