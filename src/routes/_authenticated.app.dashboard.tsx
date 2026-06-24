@@ -9,7 +9,6 @@ import {
   Target,
   ArrowRight,
   Database,
-  UploadCloud,
 } from "lucide-react";
 import {
   Select,
@@ -97,7 +96,6 @@ function Dashboard() {
   const qualityBarTone =
     dataQuality >= 75 ? "bg-success" : dataQuality >= 55 ? "bg-caution" : "bg-danger";
   const showSuggestion = dataQuality < 75;
-  const periodLabel = period === "30d" ? "Last 30 days" : "Current month";
 
   return (
     <div>
