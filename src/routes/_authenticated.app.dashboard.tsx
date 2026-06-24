@@ -99,24 +99,28 @@ function Dashboard() {
 
   return (
     <div>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <PageHeader
-          title="Dashboard"
-          description="A 30-second snapshot of how healthy your customer base is, who's at risk, and how much revenue is on the line."
-        />
-        <div className="w-full shrink-0 sm:w-[260px]">
-          <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="month">Current month</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="max-w-md">
+          <PageHeader
+            title="Dashboard"
+            description="A 30-second snapshot of how healthy your customer base is, who's at risk, and how much revenue is on the line."
+          />
+        </div>
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row sm:items-stretch lg:w-auto">
+          <div className="w-full sm:w-[200px]">
+            <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="month">Current month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Condensed data quality context for the selected period */}
-          <div className="mt-2 rounded-lg border border-border bg-card p-3">
+          <div className="w-full rounded-lg border border-border bg-card p-3 sm:w-[240px]">
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Database className="h-3.5 w-3.5" /> Data quality
@@ -137,6 +141,7 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
 
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
