@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   HeartPulse,
@@ -13,6 +16,8 @@ import {
   UserPlus,
   TrendingUp,
   Sparkles,
+  Loader2,
+  Brain,
 } from "lucide-react";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
 import {
@@ -22,8 +27,10 @@ import {
   type TimelineEvent,
   type Customer,
 } from "@/lib/mock-data";
+import { assessCustomerRisk, type RiskAssessment } from "@/lib/ai.functions";
 import { useScoredData } from "@/lib/use-scored-data";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/app/customers/$id")({
   head: () => ({ meta: [{ title: "Customer Detail — ChAi" }] }),
