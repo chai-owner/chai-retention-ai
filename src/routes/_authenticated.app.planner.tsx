@@ -94,14 +94,14 @@ function Planner() {
                     return (
                       <div
                         key={a.segment}
-                        className={`flex flex-1 flex-col items-center rounded-lg border px-2 py-3 ${bgClass}`}
+                        className={`flex flex-1 flex-col items-center justify-center rounded-lg border px-2 py-3 text-center ${bgClass}`}
                       >
-                        <div className="flex min-h-[2rem] items-center justify-center">
+                        <div className="flex min-h-[2rem] w-full items-center justify-center">
                           <span className="text-center text-[10px] font-medium leading-tight text-muted-foreground">
                             {a.segment}
                           </span>
                         </div>
-                        <span className={`my-1 text-lg font-bold tabular-nums ${textClass}`}>{metricActualValue(m, a.avg)}</span>
+                        <span className={`my-1 w-full text-center text-lg font-bold tabular-nums ${textClass}`}>{metricActualValue(m, a.avg)}</span>
                       </div>
                     );
                   })}
