@@ -108,7 +108,7 @@ function Landing() {
 
       {/* Hero */}
       <section className="bg-gradient-hero">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 lg:grid-cols-2 lg:px-6 lg:py-28">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 lg:grid-cols-[5fr_6fr] lg:px-6 lg:py-28">
           <div className="text-center lg:text-left">
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 text-xs font-medium text-muted-foreground">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -138,7 +138,7 @@ function Landing() {
             </div>
             <p className="mt-4 text-xs text-muted-foreground">No credit card. Sample data included so you can look around.</p>
           </div>
-          <div className="relative">
+          <div className="relative lg:-mr-12 xl:-mr-20">
             {/* Peach 3D glow stack */}
             <div className="absolute -inset-8 -z-20 rounded-[2.5rem] bg-gradient-warm opacity-30 blur-3xl" />
             <div className="absolute -right-6 -top-8 -z-10 h-40 w-40 rounded-full bg-primary/30 blur-3xl" />
