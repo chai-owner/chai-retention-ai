@@ -211,20 +211,33 @@ interface BaseCustomer {
 const baseCustomers: BaseCustomer[] = Array.from({ length: 42 }).map((_, i) => {
   const rand = seededRandom(i * 131 + 7);
   const name = `${firstNames[i % firstNames.length]} ${suffixes[(i * 3) % suffixes.length]}`;
+
+  // Give each account an overall "quality centre" so the customer base reads
+  // like a healthy real-world book of business: mostly healthy, a solid watch
+  // group, and only a small tail of at-risk / critical accounts.
+  const r = rand();
+  let centre: number;
+  if (r < 0.55) centre = 78 + rand() * 18; // ~55% healthy (78–96)
+  else if (r < 0.82) centre = 60 + rand() * 14; // ~27% watch (60–74)
+  else if (r < 0.94) centre = 40 + rand() * 14; // ~12% at-risk (40–54)
+  else centre = 24 + rand() * 10; // ~6% critical (24–34)
+
+  const clamp = (n: number) => Math.max(5, Math.min(99, Math.round(n)));
   const subScores: Record<string, number> = {};
-  for (const m of METRIC_NAMES) subScores[m] = Math.round(8 + rand() * 90);
+  for (const m of METRIC_NAMES) subScores[m] = clamp(centre + (rand() * 24 - 12));
   return {
     id: `cus_${(1000 + i).toString()}`,
     name,
     contact: `${["jordan", "casey", "morgan", "riley", "sam", "alex"][i % 6]}@${name.split(" ")[0].toLowerCase()}.com`,
     segment: segments[i % segments.length],
     revenue: Math.round((4 + rand() * 96) * 1000),
-    sentiment: Math.round(20 + rand() * 75),
+    sentiment: Math.round(40 + centre * 0.55 + (rand() * 20 - 10)),
     lastActivity: `${Math.round(1 + rand() * 80)} days ago`,
     subScores,
     seed: i,
   };
 });
+
 
 // Weighted average of a customer's sub-scores using the importance weights.
 export function weightedHealth(subScores: Record<string, number>, weights: MetricWeights): number {
