@@ -10,8 +10,7 @@ import {
   BarChart3,
   MessageSquare,
 } from "lucide-react";
-import heroDashboard from "@/assets/hero-dashboard.jpg";
-import dashMetricsShot from "@/assets/screenshots/dash-metrics.png.asset.json";
+import heroDashboardShot from "@/assets/screenshots/hero-dashboard.png.asset.json";
 import customersShot from "@/assets/screenshots/customers.png.asset.json";
 import insightsShot from "@/assets/screenshots/insights.png.asset.json";
 import plannerShot from "@/assets/screenshots/planner.png.asset.json";
@@ -45,13 +44,6 @@ const features = [
 ];
 
 const showcase = [
-  {
-    img: dashMetricsShot.url,
-    eyebrow: "Executive dashboard",
-    title: "Your whole customer base, in one glance",
-    desc: "Total customers, who's healthy, who's at risk, and exactly how much revenue is on the line — a 30-second snapshot for any stakeholder.",
-    points: ["Live health & risk counts", "Revenue at risk, quantified", "Retention opportunity surfaced"],
-  },
   {
     img: customersShot.url,
     eyebrow: "Customer Risk Center",
@@ -143,10 +135,10 @@ function Landing() {
           <div className="relative">
             <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-warm opacity-20 blur-2xl" />
             <img
-              src={heroDashboard}
-              alt="ChAi customer retention dashboard with health scores, retention trend and at-risk customers"
-              width={1280}
-              height={1024}
+              src={heroDashboardShot.url}
+              alt="ChAi executive dashboard showing customer health scores, revenue at risk and revenue by segment"
+              width={2250}
+              height={1240}
               className="w-full rounded-2xl border border-border shadow-card"
             />
           </div>
