@@ -23,6 +23,7 @@ export function useProfileSync() {
           disengagement: remote.disengagement,
           tracked: remote.tracked,
           channels: remote.channels,
+          metricWeights: remote.metricWeights,
         });
       })
       .catch(() => {
