@@ -377,7 +377,7 @@ function Onboarding() {
                 </div>
               )}
 
-              {step === 4 && (
+              {step === 3 && (
                 <div className="space-y-4">
                    <div>
                     <h2 className="text-xl font-semibold">How much each metric matters</h2>
