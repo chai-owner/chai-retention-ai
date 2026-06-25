@@ -347,7 +347,7 @@ export function buildDataset(weights: MetricWeights): ScoredDataset {
       predictedMonthlyChurn: Math.round(counts["at-risk"] * 0.4 + counts.critical * 0.7),
       predictedRevenueLoss: revenueAtRisk,
       revenueAtRisk,
-      retentionOpportunity: Math.round(revenueAtRisk * 0.62),
+      retentionOpportunity,
     },
     healthDistribution: [
       { name: "Healthy", value: counts.healthy, key: "healthy" as RiskCategory },
