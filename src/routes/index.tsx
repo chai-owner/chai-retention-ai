@@ -135,10 +135,10 @@ function Landing() {
           <div className="relative">
             <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-warm opacity-20 blur-2xl" />
             <img
-              src={heroDashboard}
-              alt="ChAi customer retention dashboard with health scores, retention trend and at-risk customers"
-              width={1280}
-              height={1024}
+              src={heroDashboardShot.url}
+              alt="ChAi executive dashboard showing customer health scores, revenue at risk and revenue by segment"
+              width={2250}
+              height={1240}
               className="w-full rounded-2xl border border-border shadow-card"
             />
           </div>
