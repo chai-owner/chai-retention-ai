@@ -132,12 +132,12 @@ function Landing() {
             </div>
             <p className="mt-4 text-xs text-muted-foreground">No credit card. Sample data included so you can look around.</p>
           </div>
-          <div className="relative [perspective:2000px]">
+          <div className="relative">
             {/* Peach 3D glow stack */}
             <div className="absolute -inset-8 -z-20 rounded-[2.5rem] bg-gradient-warm opacity-30 blur-3xl" />
             <div className="absolute -right-6 -top-8 -z-10 h-40 w-40 rounded-full bg-primary/30 blur-3xl" />
             <div className="absolute -bottom-10 -left-6 -z-10 h-44 w-44 rounded-full bg-secondary/40 blur-3xl" />
-            <div className="relative rounded-[1.75rem] bg-gradient-warm p-3 shadow-card ring-1 ring-primary/10 transition-transform duration-500 will-change-transform [transform:rotateX(8deg)_rotateY(-12deg)_rotateZ(1deg)] hover:[transform:rotateX(4deg)_rotateY(-6deg)]">
+            <div className="relative rounded-[1.75rem] bg-gradient-warm p-3 shadow-card ring-1 ring-primary/10 transition-transform duration-500 hover:-translate-y-1">
               <img
                 src={heroDashboardShot.url}
                 alt="ChAi executive dashboard showing customer health scores, revenue at risk and revenue by segment"
