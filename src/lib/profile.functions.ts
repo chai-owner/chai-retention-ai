@@ -20,6 +20,7 @@ const profileInput = z.object({
   disengagement: z.string(),
   tracked: z.record(z.string(), z.boolean()),
   channels: z.array(z.string()),
+  metricWeights: z.record(z.string(), z.number()).optional(),
 });
 
 export const getProfile = createServerFn({ method: "GET" })
