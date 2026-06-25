@@ -103,7 +103,35 @@ function Onboarding() {
   }, [segments]);
 
   const segmentsValid = segmentErrors.every((e) => e === "");
-  const canContinue = step === 1 ? segmentsValid : true;
+
+  // Gate progress: each step must be sufficiently complete before continuing.
+  const stepValid = useMemo(() => {
+    switch (step) {
+      case 0:
+        return (
+          form.company.trim() !== "" &&
+          form.industry.trim() !== "" &&
+          form.customers.trim() !== "" &&
+          form.avgValue.trim() !== ""
+        );
+      case 1:
+        return segmentsValid;
+      case 2:
+        return (
+          form.whatBuy.trim() !== "" &&
+          form.cadence.trim() !== "" &&
+          form.lifespan.trim() !== "" &&
+          form.successActions.trim() !== "" &&
+          form.disengagement.trim() !== ""
+        );
+      case 5:
+        return channels.length > 0;
+      default:
+        return true;
+    }
+  }, [step, form, segmentsValid, channels]);
+
+  const canContinue = stepValid;
 
 
   function finish() {
