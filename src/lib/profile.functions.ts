@@ -65,6 +65,7 @@ export const saveProfile = createServerFn({ method: "POST" })
       disengagement: data.disengagement,
       tracked: data.tracked,
       channels: data.channels,
+      metric_weights: data.metricWeights ?? {},
       onboarded: true,
       updated_at: new Date().toISOString(),
     });
