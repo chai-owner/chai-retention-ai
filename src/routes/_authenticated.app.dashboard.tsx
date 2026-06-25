@@ -205,10 +205,31 @@ function Dashboard() {
         <StatCard label="Predicted monthly churn" value={`${executive.predictedMonthlyChurn} customers`} icon={TrendingDown} tone="danger" />
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Revenue at risk" value={formatCurrency(executive.revenueAtRisk)} icon={DollarSign} tone="danger" hint="Across at-risk & critical accounts" />
-        <StatCard label="Predicted revenue loss / mo" value={formatCurrency(Math.round(executive.predictedRevenueLoss / 12))} icon={TrendingDown} tone="caution" />
-        <StatCard label="Retention opportunity" value={formatCurrency(executive.retentionOpportunity)} icon={Target} tone="success" hint="Recoverable with action" />
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <StatCard
+          label="Revenue at risk"
+          value={
+            <>
+              {formatCurrency(executive.revenueAtRisk)}{" "}
+              <span className="text-sm font-normal italic text-muted-foreground">per year</span>
+            </>
+          }
+          icon={DollarSign}
+          tone="danger"
+          hint="Across at-risk & critical accounts"
+        />
+        <StatCard
+          label="Retention opportunity"
+          value={
+            <>
+              {formatCurrency(executive.retentionOpportunity)}{" "}
+              <span className="text-sm font-normal italic text-muted-foreground">per year</span>
+            </>
+          }
+          icon={Target}
+          tone="success"
+          hint="Recoverable with action"
+        />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
