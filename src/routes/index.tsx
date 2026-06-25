@@ -45,13 +45,6 @@ const features = [
 
 const showcase = [
   {
-    img: dashMetricsShot.url,
-    eyebrow: "Executive dashboard",
-    title: "Your whole customer base, in one glance",
-    desc: "Total customers, who's healthy, who's at risk, and exactly how much revenue is on the line — a 30-second snapshot for any stakeholder.",
-    points: ["Live health & risk counts", "Revenue at risk, quantified", "Retention opportunity surfaced"],
-  },
-  {
     img: customersShot.url,
     eyebrow: "Customer Risk Center",
     title: "Know precisely who to call today",
