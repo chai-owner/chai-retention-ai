@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUploads, overallScore } from "@/lib/uploads-store";
+import { getCachedRiskSummaries, setCachedRiskSummaries } from "@/lib/risk-summary-cache";
 import {
   PieChart,
   Pie,
@@ -80,6 +81,15 @@ function Dashboard() {
   useEffect(() => {
     if (topRisk.length === 0) return;
     let cancelled = false;
+
+    // Reuse cached summaries when they're fresh (<24h) and built for the same
+    // accounts — this keeps AI usage to at most one call per day.
+    const cached = getCachedRiskSummaries(riskKey);
+    if (cached) {
+      setRiskSummaries(cached);
+      return;
+    }
+
     summarize({
       data: {
         customers: topRisk.map((c) => ({
@@ -93,7 +103,10 @@ function Dashboard() {
       },
     })
       .then((res) => {
-        if (!cancelled) setRiskSummaries(res);
+        if (!cancelled) {
+          setRiskSummaries(res);
+          setCachedRiskSummaries(riskKey, res);
+        }
       })
       .catch(() => {
         /* keep base list if AI is unavailable */
