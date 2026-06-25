@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   BadgeCheck,
+  Settings,
   LogOut,
   LogIn,
 } from "lucide-react";
