@@ -228,21 +228,11 @@ function Onboarding() {
                     </Field>
                   </div>
                   <Field label="Business model">
-                    <div className="flex flex-wrap gap-2">
+                    <select className={inputCls} value={form.model} onChange={(e) => update("model", e.target.value)}>
                       {businessModels.map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => update("model", m)}
-                          className={cn(
-                            "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                            form.model === m ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-accent",
-                          )}
-                        >
-                          {m}
-                        </button>
+                        <option key={m} value={m}>{m}</option>
                       ))}
-                    </div>
+                    </select>
                   </Field>
                 </div>
               )}
