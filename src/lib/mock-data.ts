@@ -379,13 +379,14 @@ export const retentionTrend = [
 
 // ---- Data readiness ----
 export const dataReadiness = [
-  { area: "Customer profiles", score: 90, note: "Most records have names, emails and signup dates." },
-  { area: "Transactions", score: 80, note: "Purchase history is well populated." },
-  { area: "Support data", score: 40, note: "Connect a support tool to unlock ticket signals." },
-  { area: "Engagement data", score: 25, note: "We see almost no product-usage data yet." },
-  { area: "Survey & CSAT", score: 35, note: "Only a few satisfaction scores are on file." },
-  { area: "Retention history", score: 55, note: "Some cancellation dates are missing." },
+  { area: "Customer profiles", score: 94, note: "Almost all records have names, emails and signup dates." },
+  { area: "Transactions", score: 88, note: "Purchase history is well populated and current." },
+  { area: "Support data", score: 79, note: "Recent ticket sync is healthy — most signals are flowing." },
+  { area: "Engagement data", score: 72, note: "Product-usage events are now landing daily." },
+  { area: "Survey & CSAT", score: 68, note: "A good share of satisfaction scores are on file." },
+  { area: "Retention history", score: 81, note: "Renewal and cancellation dates are mostly complete." },
 ];
+
 
 export const readinessOverall = Math.round(
   dataReadiness.reduce((s, d) => s + d.score, 0) / dataReadiness.length,
