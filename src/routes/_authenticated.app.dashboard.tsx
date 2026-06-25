@@ -32,8 +32,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  LineChart,
-  Line,
   CartesianGrid,
 } from "recharts";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
