@@ -498,7 +498,8 @@ function Onboarding() {
                 ) : (
                   <button
                     onClick={finish}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    disabled={!canContinue}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Build my retention engine <Sparkles className="h-4 w-4" />
                   </button>
