@@ -217,7 +217,7 @@ function Onboarding() {
                     </Field>
                     <Field label="Company size">
                       <select className={inputCls} value={form.size} onChange={(e) => update("size", e.target.value)}>
-                        {["1–10", "11–50", "51–200", "201–1000", "1000+"].map((o) => <option key={o}>{o}</option>)}
+                        {companySizes.map((o) => <option key={o}>{o}</option>)}
                       </select>
                     </Field>
                     <Field label="Number of customers">
