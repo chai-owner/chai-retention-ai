@@ -30,7 +30,7 @@ export function StatCard({
   tone = "default",
 }: {
   label: string;
-  value: string | number;
+  value: React.ReactNode;
   hint?: string;
   icon?: LucideIcon;
   tone?: "default" | "success" | "warning" | "caution" | "danger";
