@@ -138,7 +138,7 @@ function Landing() {
             </div>
             <p className="mt-4 text-xs text-muted-foreground">No credit card. Sample data included so you can look around.</p>
           </div>
-          <div className="relative">
+          <div className="relative lg:-mr-12 xl:-mr-20">
             {/* Peach 3D glow stack */}
             <div className="absolute -inset-8 -z-20 rounded-[2.5rem] bg-gradient-warm opacity-30 blur-3xl" />
             <div className="absolute -right-6 -top-8 -z-10 h-40 w-40 rounded-full bg-primary/30 blur-3xl" />
