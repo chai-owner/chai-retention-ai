@@ -229,45 +229,45 @@ function Dashboard() {
         />
       </div>
 
-      <div className="mt-6 grid gap-6">
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-3">
         {/* Health distribution */}
-        <Card>
+        <Card className="self-start">
           <h3 className="font-semibold">Customer health distribution</h3>
           <p className="mt-1 text-xs text-muted-foreground">How your customers split across health bands.</p>
-          <div className="mt-4 h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={healthDistribution} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                  {healthDistribution.map((d) => (
-                    <Cell key={d.key} fill={COLORS[d.key]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: 10,
-                    border: "1px solid var(--border)",
-                    background: "var(--card)",
-                    fontSize: 12,
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-            {healthDistribution.map((d) => (
-              <div key={d.key} className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full" style={{ background: COLORS[d.key] }} />
-                <span className="text-muted-foreground">{d.name}</span>
-                <span className="ml-auto font-medium">{d.value}</span>
-              </div>
-            ))}
+          <div className="mt-4 flex items-center gap-4">
+            <div className="h-40 w-40 shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={healthDistribution} dataKey="value" nameKey="name" innerRadius={44} outerRadius={70} paddingAngle={2}>
+                    {healthDistribution.map((d) => (
+                      <Cell key={d.key} fill={COLORS[d.key]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: 10,
+                      border: "1px solid var(--border)",
+                      background: "var(--card)",
+                      fontSize: 12,
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex-1 space-y-2 text-xs">
+              {healthDistribution.map((d) => (
+                <div key={d.key} className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: COLORS[d.key] }} />
+                  <span className="text-muted-foreground">{d.name}</span>
+                  <span className="ml-auto font-semibold tabular-nums">{d.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </Card>
-      </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
         {/* Revenue by segment */}
-        <Card className="lg:col-span-2">
+        <Card className="self-start lg:col-span-2">
           <h3 className="font-semibold">Revenue & revenue at risk by segment</h3>
           <p className="mt-1 text-xs text-muted-foreground">Where your money — and your exposure — sits.</p>
           <div className="mt-4 h-56">
@@ -286,39 +286,42 @@ function Dashboard() {
             </ResponsiveContainer>
           </div>
         </Card>
+      </div>
 
-        {/* Top risk list */}
-        <Card>
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Needs attention now</h3>
-            <Link to="/app/customers" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-              View all <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="mt-4 space-y-2">
-            {topRisk.map((c) => (
-              <Link
-                key={c.id}
-                to="/app/customers/$id"
-                params={{ id: c.id }}
-                className="flex items-start justify-between gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent/50"
-              >
+      {/* Top risk list */}
+      <Card className="mt-6">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold">Needs attention now</h3>
+          <Link to="/app/customers" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+            View all <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {topRisk.map((c) => (
+            <Link
+              key={c.id}
+              to="/app/customers/$id"
+              params={{ id: c.id }}
+              className="flex h-full flex-col gap-2 rounded-lg border border-border p-3 transition-colors hover:bg-accent/50"
+            >
+              <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{c.name}</p>
                   <p className="text-xs text-muted-foreground">{formatCurrency(c.revenue)} · {c.churnProbability}% churn risk</p>
-                  {riskSummaries[c.id] && (
-                    <p className="mt-1 flex items-start gap-1 text-xs text-foreground/80">
-                      <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
-                      <span>{riskSummaries[c.id]}</span>
-                    </p>
-                  )}
                 </div>
                 <HealthBadge category={categoryFromHealth(c.health)} />
-              </Link>
-            ))}
-          </div>
-        </Card>
-      </div>
+              </div>
+              {riskSummaries[c.id] && (
+                <p className="flex items-start gap-1 text-xs text-foreground/80">
+                  <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                  <span>{riskSummaries[c.id]}</span>
+                </p>
+              )}
+            </Link>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
+
