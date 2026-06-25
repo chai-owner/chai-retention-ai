@@ -24,31 +24,6 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
   component: Onboarding,
 });
 
-const businessModels = [
-  "SaaS", "Subscription", "Ecommerce", "Agency", "Professional Services", "Insurance",
-  "Telecom", "Education", "Financial Services", "Membership", "Marketplace", "Healthcare",
-  "Logistics", "Fitness / Gym", "Hospitality", "Property", "Manufacturing", "Other",
-];
-
-const interactionChannels = [
-  "Email", "Support Tickets", "Live Chat", "Phone Calls", "Customer Success Calls",
-  "WhatsApp", "Surveys", "CRM Notes", "Other",
-];
-
-// Industry-specific questions generated based on the chosen model.
-const industryQuestions: Record<string, string[]> = {
-  SaaS: ["Do you track logins?", "Do you track feature adoption?", "Do you track seat utilization?", "Do customers renew contracts?"],
-  Ecommerce: ["Do you track repeat purchases?", "Do you track average order value?", "Do you track days since last purchase?"],
-  Education: ["Do you track attendance?", "Do you track assignment completion?", "Do you track course progress?"],
-  Insurance: ["Do you track policy renewals?", "Do you track claims activity?", "Do you track premium changes?"],
-  Telecom: ["Do you track complaints?", "Do you track contract renewals?", "Do you track data/usage levels?"],
-};
-
-const defaultQuestions = [
-  "Do you track how often customers engage?",
-  "Do you track repeat purchases or renewals?",
-  "Do you track customer satisfaction?",
-];
 
 const steps = ["Business", "Segments", "How you work", "What to track", "What matters", "Interactions"];
 
