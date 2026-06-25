@@ -59,7 +59,7 @@ function Onboarding() {
     { name: "", min: "", max: "" },
   ]);
 
-  const questions = industryQuestions[form.model] ?? defaultQuestions;
+  const questions = getQuestions(form.model);
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const updateSegment = (i: number, k: keyof Segment, v: string) =>
