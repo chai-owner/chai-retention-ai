@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS metric_weights jsonb DEFAULT '{}'::jsonb;

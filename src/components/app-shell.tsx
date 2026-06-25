@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   BadgeCheck,
+  Settings,
   LogOut,
   LogIn,
 } from "lucide-react";
@@ -28,6 +29,7 @@ const nav = [
   { to: "/app/planner", label: "Intelligence Planner", icon: ClipboardList },
   { to: "/app/insights", label: "Insights & Benchmarks", icon: Lightbulb },
   { to: "/app/trust", label: "Trust & Compliance", icon: ShieldCheck },
+  { to: "/app/settings", label: "Business Profile", icon: Settings },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

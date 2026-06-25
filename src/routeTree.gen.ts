@@ -17,6 +17,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as AuthenticatedAppTrustRouteImport } from './routes/_authenticated.app.trust'
+import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated.app.settings'
 import { Route as AuthenticatedAppPlannerRouteImport } from './routes/_authenticated.app.planner'
 import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenticated.app.insights'
 import { Route as AuthenticatedAppDataQualityRouteImport } from './routes/_authenticated.app.data-quality'
@@ -65,6 +66,12 @@ const AuthenticatedAppTrustRoute = AuthenticatedAppTrustRouteImport.update({
   path: '/trust',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppSettingsRoute =
+  AuthenticatedAppSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppPlannerRoute = AuthenticatedAppPlannerRouteImport.update({
   id: '/planner',
   path: '/planner',
@@ -124,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/app/data-quality': typeof AuthenticatedAppDataQualityRoute
   '/app/insights': typeof AuthenticatedAppInsightsRoute
   '/app/planner': typeof AuthenticatedAppPlannerRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/trust': typeof AuthenticatedAppTrustRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -139,6 +147,7 @@ export interface FileRoutesByTo {
   '/app/data-quality': typeof AuthenticatedAppDataQualityRoute
   '/app/insights': typeof AuthenticatedAppInsightsRoute
   '/app/planner': typeof AuthenticatedAppPlannerRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/trust': typeof AuthenticatedAppTrustRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -158,6 +167,7 @@ export interface FileRoutesById {
   '/_authenticated/app/data-quality': typeof AuthenticatedAppDataQualityRoute
   '/_authenticated/app/insights': typeof AuthenticatedAppInsightsRoute
   '/_authenticated/app/planner': typeof AuthenticatedAppPlannerRoute
+  '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/trust': typeof AuthenticatedAppTrustRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/app/data-quality'
     | '/app/insights'
     | '/app/planner'
+    | '/app/settings'
     | '/app/trust'
     | '/app/'
     | '/app/customers/$id'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/app/data-quality'
     | '/app/insights'
     | '/app/planner'
+    | '/app/settings'
     | '/app/trust'
     | '/app'
     | '/app/customers/$id'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/data-quality'
     | '/_authenticated/app/insights'
     | '/_authenticated/app/planner'
+    | '/_authenticated/app/settings'
     | '/_authenticated/app/trust'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
@@ -279,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/trust'
       fullPath: '/app/trust'
       preLoaderRoute: typeof AuthenticatedAppTrustRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/settings': {
+      id: '/_authenticated/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/planner': {
@@ -363,6 +383,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppDataQualityRoute: typeof AuthenticatedAppDataQualityRoute
   AuthenticatedAppInsightsRoute: typeof AuthenticatedAppInsightsRoute
   AuthenticatedAppPlannerRoute: typeof AuthenticatedAppPlannerRoute
+  AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppTrustRoute: typeof AuthenticatedAppTrustRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
@@ -374,6 +395,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppDataQualityRoute: AuthenticatedAppDataQualityRoute,
   AuthenticatedAppInsightsRoute: AuthenticatedAppInsightsRoute,
   AuthenticatedAppPlannerRoute: AuthenticatedAppPlannerRoute,
+  AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppTrustRoute: AuthenticatedAppTrustRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }

@@ -22,6 +22,7 @@ export type Database = {
           disengagement: string
           id: string
           industry: string
+          metric_weights: Json | null
           model: string
           onboarded: boolean
           segments: Json
@@ -36,6 +37,7 @@ export type Database = {
           disengagement?: string
           id: string
           industry?: string
+          metric_weights?: Json | null
           model?: string
           onboarded?: boolean
           segments?: Json
@@ -50,6 +52,7 @@ export type Database = {
           disengagement?: string
           id?: string
           industry?: string
+          metric_weights?: Json | null
           model?: string
           onboarded?: boolean
           segments?: Json

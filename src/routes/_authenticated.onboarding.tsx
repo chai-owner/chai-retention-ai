@@ -6,6 +6,12 @@ import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
 import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
+import {
+  businessModels,
+  interactionChannels,
+  companySizes,
+  getQuestions,
+} from "@/lib/onboarding-options";
 
 interface Segment {
   name: string;
@@ -18,33 +24,8 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
   component: Onboarding,
 });
 
-const businessModels = [
-  "SaaS", "Subscription", "Ecommerce", "Agency", "Professional Services", "Insurance",
-  "Telecom", "Education", "Financial Services", "Membership", "Marketplace", "Healthcare",
-  "Logistics", "Fitness / Gym", "Hospitality", "Property", "Manufacturing", "Other",
-];
 
-const interactionChannels = [
-  "Email", "Support Tickets", "Live Chat", "Phone Calls", "Customer Success Calls",
-  "WhatsApp", "Surveys", "CRM Notes", "Other",
-];
-
-// Industry-specific questions generated based on the chosen model.
-const industryQuestions: Record<string, string[]> = {
-  SaaS: ["Do you track logins?", "Do you track feature adoption?", "Do you track seat utilization?", "Do customers renew contracts?"],
-  Ecommerce: ["Do you track repeat purchases?", "Do you track average order value?", "Do you track days since last purchase?"],
-  Education: ["Do you track attendance?", "Do you track assignment completion?", "Do you track course progress?"],
-  Insurance: ["Do you track policy renewals?", "Do you track claims activity?", "Do you track premium changes?"],
-  Telecom: ["Do you track complaints?", "Do you track contract renewals?", "Do you track data/usage levels?"],
-};
-
-const defaultQuestions = [
-  "Do you track how often customers engage?",
-  "Do you track repeat purchases or renewals?",
-  "Do you track customer satisfaction?",
-];
-
-const steps = ["Business", "Segments", "How you work", "What to track", "What matters", "Interactions"];
+const steps = ["Business", "Segments", "How you work", "What matters", "What to track", "Interactions"];
 
 const MAX_SEGMENTS = 4;
 
@@ -78,7 +59,7 @@ function Onboarding() {
     { name: "", min: "", max: "" },
   ]);
 
-  const questions = industryQuestions[form.model] ?? defaultQuestions;
+  const questions = getQuestions(form.model);
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const updateSegment = (i: number, k: keyof Segment, v: string) =>
@@ -122,7 +103,35 @@ function Onboarding() {
   }, [segments]);
 
   const segmentsValid = segmentErrors.every((e) => e === "");
-  const canContinue = step === 1 ? segmentsValid : true;
+
+  // Gate progress: each step must be sufficiently complete before continuing.
+  const stepValid = useMemo(() => {
+    switch (step) {
+      case 0:
+        return (
+          form.company.trim() !== "" &&
+          form.industry.trim() !== "" &&
+          form.customers.trim() !== "" &&
+          form.avgValue.trim() !== ""
+        );
+      case 1:
+        return segmentsValid;
+      case 2:
+        return (
+          form.whatBuy.trim() !== "" &&
+          form.cadence.trim() !== "" &&
+          form.lifespan.trim() !== "" &&
+          form.successActions.trim() !== "" &&
+          form.disengagement.trim() !== ""
+        );
+      case 5:
+        return channels.length > 0;
+      default:
+        return true;
+    }
+  }, [step, form, segmentsValid, channels]);
+
+  const canContinue = stepValid;
 
 
   function finish() {
@@ -208,7 +217,7 @@ function Onboarding() {
                     </Field>
                     <Field label="Company size">
                       <select className={inputCls} value={form.size} onChange={(e) => update("size", e.target.value)}>
-                        {["1–10", "11–50", "51–200", "201–1000", "1000+"].map((o) => <option key={o}>{o}</option>)}
+                        {companySizes.map((o) => <option key={o}>{o}</option>)}
                       </select>
                     </Field>
                     <Field label="Number of customers">
@@ -219,21 +228,11 @@ function Onboarding() {
                     </Field>
                   </div>
                   <Field label="Business model">
-                    <div className="flex flex-wrap gap-2">
+                    <select className={inputCls} value={form.model} onChange={(e) => update("model", e.target.value)}>
                       {businessModels.map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => update("model", m)}
-                          className={cn(
-                            "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                            form.model === m ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-accent",
-                          )}
-                        >
-                          {m}
-                        </button>
+                        <option key={m} value={m}>{m}</option>
                       ))}
-                    </div>
+                    </select>
                   </Field>
                 </div>
               )}
@@ -344,7 +343,7 @@ function Onboarding() {
                 </div>
               )}
 
-              {step === 3 && (
+              {step === 4 && (
                 <div className="space-y-4">
                   <div>
                     <h2 className="text-xl font-semibold">What you're already tracking</h2>
@@ -378,7 +377,7 @@ function Onboarding() {
                 </div>
               )}
 
-              {step === 4 && (
+              {step === 3 && (
                 <div className="space-y-4">
                    <div>
                     <h2 className="text-xl font-semibold">How much each metric matters</h2>
@@ -499,7 +498,8 @@ function Onboarding() {
                 ) : (
                   <button
                     onClick={finish}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    disabled={!canContinue}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Build my retention engine <Sparkles className="h-4 w-4" />
                   </button>
