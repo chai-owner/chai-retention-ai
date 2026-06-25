@@ -1,21 +1,23 @@
 ## Goal
-Replace the AI-generated 3D illustration in the homepage hero with a real, focused app screenshot, and remove the resulting duplication with the showcase section.
+Make the homepage images render sharp instead of fuzzy. The source screenshots are already high-resolution (~2300px wide and crisp), so the softness comes from how they're displayed — not the files. The main culprit is the hero's 3D rotation, which forces the browser to rasterize the screenshot at an angle and blurs all its text.
 
-## Changes (`src/routes/index.tsx`)
+## Changes (all in `src/routes/index.tsx`)
 
-1. **Hero image swap**
-   - Capture a fresh, polished dashboard screenshot specifically framed for the hero (wider/landscape crop of the Executive Dashboard — top metric cards + health distribution + revenue-at-risk), upload via `lovable-assets`, and write the pointer to `src/assets/screenshots/hero-dashboard.png.asset.json`.
-   - Point the hero `<img>` at this new screenshot, update `alt` text, and keep the existing soft gradient glow / rounded border / shadow frame so it still looks premium.
-   - Remove the `heroDashboard` import and delete the unused generated illustration asset (`src/assets/hero-dashboard.jpg`).
+### 1. Hero image — drop the 3D tilt, keep the peach frame
+In the hero block (around lines 135–149):
+- Remove the 3D transform classes from the frame wrapper: `[transform:rotateX(8deg)_rotateY(-12deg)_rotateZ(1deg)]` and the hover `hover:[transform:rotateX(4deg)_rotateY(-6deg)]`, plus the now-unneeded `[perspective:2000px]` / `will-change-transform`.
+- Keep the peach gradient frame, glow blurs, ring, and rounded corners exactly as-is so the styling stays.
+- Optionally add a very subtle flat lift on hover (e.g. `hover:-translate-y-1`) so it still feels interactive without rotating.
+- Result: the dashboard screenshot displays flat and crisp inside the same peach frame.
 
-2. **Remove showcase duplication**
-   - Since the dashboard now anchors the hero, drop the first showcase entry ("Executive dashboard") from the `showcase` array so it no longer repeats lower down.
-   - The showcase then leads with **Customer Risk Center**, followed by Insights & Benchmarks and Intelligence Planner. Existing alternating layout still works unchanged.
+### 2. Showcase images — prevent resampling softness
+In the showcase map (around lines 202–210):
+- Replace `object-cover` with natural block rendering (`w-full h-auto block`) so the image is shown at its true aspect ratio with no cropping/scaling resample.
+- Add explicit `width`/`height` attributes matching each screenshot's real pixel size so the browser reserves correct space and downscales cleanly.
 
 ## Notes
-- All screenshots are captured against the live preview with Playwright (authenticated session), consistent with prior homepage shots — tight, focused, high-DPI.
-- No business-logic or backend changes; this is presentation only.
-
-### Technical details
-- Reuse the existing Playwright capture flow used previously for showcase shots; hero crop targets a landscape region (~16:10) of `/app/dashboard`.
-- Asset handled through the `lovable-assets` CLI; only the `.asset.json` pointer is committed.
+- No screenshots need to be recaptured — the assets are already high-DPI and sharp.
+- This is purely a presentation/CSS change to `index.tsx`; no data, asset, or logic changes.
+</content>
+<summary>Remove the hero's 3D tilt (keeping the peach frame) and clean up showcase image rendering so all homepage screenshots display crisp instead of fuzzy.</summary>
+</invoke>

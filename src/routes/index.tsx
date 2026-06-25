@@ -46,6 +46,8 @@ const features = [
 const showcase = [
   {
     img: customersShot.url,
+    w: 2072,
+    h: 1820,
     eyebrow: "Customer Risk Center",
     title: "See exactly why a customer is leaving",
     desc: "Click any account to get its churn probability, the precise reasons driving the risk, and recommended actions ranked by revenue saved.",
@@ -53,6 +55,8 @@ const showcase = [
   },
   {
     img: insightsShot.url,
+    w: 2320,
+    h: 1240,
     eyebrow: "Insights & Benchmarks",
     title: "Recommendations ranked by revenue saved",
     desc: "ChAi turns raw data into prioritized actions and shows how your retention compares to similar businesses.",
@@ -60,6 +64,8 @@ const showcase = [
   },
   {
     img: plannerShot.url,
+    w: 2320,
+    h: 932,
     eyebrow: "Intelligence Planner",
     title: "Learn what to measure — and why",
     desc: "For each metric, see why it matters, how it predicts churn, and where you stand. Prediction accuracy improves as you track more.",
@@ -132,12 +138,12 @@ function Landing() {
             </div>
             <p className="mt-4 text-xs text-muted-foreground">No credit card. Sample data included so you can look around.</p>
           </div>
-          <div className="relative [perspective:2000px]">
+          <div className="relative">
             {/* Peach 3D glow stack */}
             <div className="absolute -inset-8 -z-20 rounded-[2.5rem] bg-gradient-warm opacity-30 blur-3xl" />
             <div className="absolute -right-6 -top-8 -z-10 h-40 w-40 rounded-full bg-primary/30 blur-3xl" />
             <div className="absolute -bottom-10 -left-6 -z-10 h-44 w-44 rounded-full bg-secondary/40 blur-3xl" />
-            <div className="relative rounded-[1.75rem] bg-gradient-warm p-3 shadow-card ring-1 ring-primary/10 transition-transform duration-500 will-change-transform [transform:rotateX(8deg)_rotateY(-12deg)_rotateZ(1deg)] hover:[transform:rotateX(4deg)_rotateY(-6deg)]">
+            <div className="relative rounded-[1.75rem] bg-gradient-warm p-3 shadow-card ring-1 ring-primary/10 transition-transform duration-500 hover:-translate-y-1">
               <img
                 src={heroDashboardShot.url}
                 alt="ChAi executive dashboard showing customer health scores, revenue at risk and revenue by segment"
@@ -204,7 +210,9 @@ function Landing() {
                     <img
                       src={s.img}
                       alt={`${s.eyebrow} — ${s.title}`}
-                      className="w-full object-cover"
+                      width={s.w}
+                      height={s.h}
+                      className="block h-auto w-full"
                       loading="lazy"
                     />
                   </div>
