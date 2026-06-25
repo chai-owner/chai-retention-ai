@@ -316,9 +316,22 @@ export function buildDataset(weights: MetricWeights): ScoredDataset {
     { healthy: 0, watch: 0, "at-risk": 0, critical: 0 } as Record<RiskCategory, number>,
   );
   const totalRevenue = scored.reduce((s, c) => s + c.revenue, 0);
-  const revenueAtRisk = scored
-    .filter((c) => c.health < 55)
-    .reduce((s, c) => s + Math.round(c.revenue * (c.churnProbability / 100)), 0);
+  const atRiskCustomers = scored.filter((c) => c.health < 55);
+  const revenueAtRisk = atRiskCustomers.reduce(
+    (s, c) => s + Math.round(c.revenue * (c.churnProbability / 100)),
+    0,
+  );
+  // Recoverable revenue: weight each at-risk account's exposure by how
+  // saveable it is. Accounts closer to the healthy threshold (higher health,
+  // lower churn probability) are far more winnable than deeply critical ones.
+  const retentionOpportunity = atRiskCustomers.reduce((s, c) => {
+    const exposure = c.revenue * (c.churnProbability / 100);
+    // Health-based saveability: ramps from ~0.20 (health 0) to ~0.80 (health 55).
+    const healthFactor = 0.2 + (Math.max(0, Math.min(c.health, 55)) / 55) * 0.6;
+    // Lower churn probability leaves more room to intervene successfully.
+    const momentumFactor = 0.6 + (1 - c.churnProbability / 100) * 0.4;
+    return s + Math.round(exposure * healthFactor * momentumFactor);
+  }, 0);
 
   return {
     customers: scored,
