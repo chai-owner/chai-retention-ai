@@ -76,15 +76,21 @@ function Dashboard() {
   // AI-generated one-line explanations for each at-risk account.
   const summarize = useServerFn(summarizeRiskReasons);
   const [riskSummaries, setRiskSummaries] = useState<Record<string, string>>({});
-  const riskKey = topRisk.map((c) => c.id).join(",");
+
+  // Cache key combines the at-risk accounts with an "uploads signature" so the
+  // summaries also regenerate immediately whenever new data is uploaded (any
+  // upload feeds the health scoring). Otherwise they're capped at one AI call
+  // per 24h via the localStorage cache.
+  const uploadsSignature = `${uploads.length}:${uploads[0]?.id ?? "none"}:${uploads[0]?.uploadedAt ?? ""}`;
+  const summaryKey = `${topRisk.map((c) => c.id).join(",")}|${uploadsSignature}`;
 
   useEffect(() => {
     if (topRisk.length === 0) return;
     let cancelled = false;
 
     // Reuse cached summaries when they're fresh (<24h) and built for the same
-    // accounts — this keeps AI usage to at most one call per day.
-    const cached = getCachedRiskSummaries(riskKey);
+    // accounts and uploaded data — this keeps AI usage to at most one call per day.
+    const cached = getCachedRiskSummaries(summaryKey);
     if (cached) {
       setRiskSummaries(cached);
       return;
@@ -105,7 +111,7 @@ function Dashboard() {
       .then((res) => {
         if (!cancelled) {
           setRiskSummaries(res);
-          setCachedRiskSummaries(riskKey, res);
+          setCachedRiskSummaries(summaryKey, res);
         }
       })
       .catch(() => {
@@ -115,7 +121,7 @@ function Dashboard() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [riskKey]);
+  }, [summaryKey]);
 
   const executive = useMemo(() => {
     const f = PERIOD_FACTORS[period];
