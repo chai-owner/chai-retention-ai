@@ -47,9 +47,9 @@ const showcase = [
   {
     img: customersShot.url,
     eyebrow: "Customer Risk Center",
-    title: "Know precisely who to call today",
-    desc: "Every account ranked by churn risk, with the highest-value, riskiest customers floated to the top so your team never wastes a save.",
-    points: ["Sorted by risk × revenue", "Per-customer health scores", "Filter by Critical, At-risk, Watch"],
+    title: "See exactly why a customer is leaving",
+    desc: "Click any account to get its churn probability, the precise reasons driving the risk, and recommended actions ranked by revenue saved.",
+    points: ["Root-cause risk breakdown", "Per-customer health & churn scores", "Actions ranked by $ saved"],
   },
   {
     img: insightsShot.url,
