@@ -6,6 +6,12 @@ import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
 import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
+import {
+  businessModels,
+  interactionChannels,
+  companySizes,
+  getQuestions,
+} from "@/lib/onboarding-options";
 
 interface Segment {
   name: string;
