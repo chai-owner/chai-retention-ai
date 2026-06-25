@@ -232,7 +232,7 @@ function Dashboard() {
         />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+      <div className="mt-6 grid gap-6">
         {/* Health distribution */}
         <Card>
           <h3 className="font-semibold">Customer health distribution</h3>
@@ -264,24 +264,6 @@ function Dashboard() {
                 <span className="ml-auto font-medium">{d.value}</span>
               </div>
             ))}
-          </div>
-        </Card>
-
-        {/* Retention trend */}
-        <Card className="lg:col-span-2">
-          <h3 className="font-semibold">Retention & churn trend</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Share of customers retained vs. lost each month.</p>
-          <div className="mt-4 h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={retentionTrend} margin={{ left: -20, right: 8, top: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} domain={[0, 100]} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }} />
-                <Line type="monotone" dataKey="retention" stroke="var(--success)" strokeWidth={2.5} dot={false} name="Retention %" />
-                <Line type="monotone" dataKey="churn" stroke="var(--danger)" strokeWidth={2.5} dot={false} name="Churn %" />
-              </LineChart>
-            </ResponsiveContainer>
           </div>
         </Card>
       </div>
