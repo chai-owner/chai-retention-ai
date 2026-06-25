@@ -210,7 +210,9 @@ function Landing() {
                     <img
                       src={s.img}
                       alt={`${s.eyebrow} — ${s.title}`}
-                      className="w-full object-cover"
+                      width={s.w}
+                      height={s.h}
+                      className="block h-auto w-full"
                       loading="lazy"
                     />
                   </div>
