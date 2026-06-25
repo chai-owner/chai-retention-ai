@@ -36,7 +36,6 @@ import {
 } from "recharts";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
 import {
-  retentionTrend,
   riskMeta,
   formatCurrency,
   categoryFromHealth,
