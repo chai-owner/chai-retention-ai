@@ -10,8 +10,7 @@ import {
   BarChart3,
   MessageSquare,
 } from "lucide-react";
-import heroDashboard from "@/assets/hero-dashboard.jpg";
-import dashMetricsShot from "@/assets/screenshots/dash-metrics.png.asset.json";
+import heroDashboardShot from "@/assets/screenshots/hero-dashboard.png.asset.json";
 import customersShot from "@/assets/screenshots/customers.png.asset.json";
 import insightsShot from "@/assets/screenshots/insights.png.asset.json";
 import plannerShot from "@/assets/screenshots/planner.png.asset.json";
