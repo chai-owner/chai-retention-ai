@@ -138,21 +138,28 @@ function Landing() {
             </p>
 
           </div>
-          <div className="relative lg:-mr-20 xl:-mr-32">
+          <div className="relative lg:-mr-20 xl:-mr-32" style={{ perspective: "1800px" }}>
             {/* Peach 3D glow stack */}
             <div className="absolute -inset-8 -z-20 rounded-[2.5rem] bg-gradient-warm opacity-30 blur-3xl" />
             <div className="absolute -right-6 -top-8 -z-10 h-40 w-40 rounded-full bg-primary/30 blur-3xl" />
             <div className="absolute -bottom-10 -left-6 -z-10 h-44 w-44 rounded-full bg-secondary/40 blur-3xl" />
-            <div className="relative rounded-[1.75rem] bg-gradient-warm p-3 shadow-card ring-1 ring-primary/10 transition-transform duration-500 hover:-translate-y-1">
+            <div
+              className="group relative rounded-[1.75rem] bg-gradient-warm p-3 shadow-card ring-1 ring-primary/10 transition-transform duration-700 ease-out hover:[transform:none]"
+              style={{
+                transform: "rotateY(-16deg) rotateX(7deg) rotateZ(1deg)",
+                transformStyle: "preserve-3d",
+              }}
+            >
               <img
                 src={heroDashboardShot.url}
                 alt="ChAi executive dashboard showing customer health scores, revenue at risk and revenue by segment"
                 width={2368}
                 height={1340}
-                className="w-full rounded-2xl border border-border bg-card shadow-card"
+                className="w-full rounded-2xl border border-border bg-card shadow-2xl"
               />
             </div>
           </div>
+
 
         </div>
       </section>
