@@ -16,49 +16,70 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          avg_value: string
+          cadence: string
           channels: Json
           company: string
+          concerns: string
           created_at: string
+          customers: string
           disengagement: string
           id: string
           industry: string
+          lifespan: string
           metric_weights: Json | null
           model: string
           onboarded: boolean
           segments: Json
+          size: string
           success_actions: string
           tracked: Json
           updated_at: string
+          what_buy: string
         }
         Insert: {
+          avg_value?: string
+          cadence?: string
           channels?: Json
           company?: string
+          concerns?: string
           created_at?: string
+          customers?: string
           disengagement?: string
           id: string
           industry?: string
+          lifespan?: string
           metric_weights?: Json | null
           model?: string
           onboarded?: boolean
           segments?: Json
+          size?: string
           success_actions?: string
           tracked?: Json
           updated_at?: string
+          what_buy?: string
         }
         Update: {
+          avg_value?: string
+          cadence?: string
           channels?: Json
           company?: string
+          concerns?: string
           created_at?: string
+          customers?: string
           disengagement?: string
           id?: string
           industry?: string
+          lifespan?: string
           metric_weights?: Json | null
           model?: string
           onboarded?: boolean
           segments?: Json
+          size?: string
           success_actions?: string
           tracked?: Json
           updated_at?: string
+          what_buy?: string
         }
         Relationships: []
       }

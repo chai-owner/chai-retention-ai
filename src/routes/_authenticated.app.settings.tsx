@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { profileStore, useProfile, type ProfileSegment } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
 import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
-import { businessModels, interactionChannels, getQuestions } from "@/lib/onboarding-options";
+import { businessModels, companySizes, interactionChannels, getQuestions } from "@/lib/onboarding-options";
 
 export const Route = createFileRoute("/_authenticated/app/settings")({
   head: () => ({ meta: [{ title: "Business profile — ChAi" }] }),
@@ -24,6 +24,13 @@ function Settings() {
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
   const [model, setModel] = useState("SaaS");
+  const [size, setSize] = useState("1–10");
+  const [customers, setCustomers] = useState("");
+  const [avgValue, setAvgValue] = useState("");
+  const [whatBuy, setWhatBuy] = useState("");
+  const [cadence, setCadence] = useState("");
+  const [lifespan, setLifespan] = useState("");
+  const [concerns, setConcerns] = useState("");
   const [successActions, setSuccessActions] = useState("");
   const [disengagement, setDisengagement] = useState("");
   const [segments, setSegments] = useState<ProfileSegment[]>([{ name: "", min: "", max: "" }]);
@@ -37,6 +44,13 @@ function Settings() {
     setCompany(profile.company ?? "");
     setIndustry(profile.industry ?? "");
     setModel(profile.model || "SaaS");
+    setSize(profile.size || "1–10");
+    setCustomers(profile.customers ?? "");
+    setAvgValue(profile.avgValue ?? "");
+    setWhatBuy(profile.whatBuy ?? "");
+    setCadence(profile.cadence ?? "");
+    setLifespan(profile.lifespan ?? "");
+    setConcerns(profile.concerns ?? "");
     setSuccessActions(profile.successActions ?? "");
     setDisengagement(profile.disengagement ?? "");
     setSegments(profile.segments?.length ? profile.segments : [{ name: "", min: "", max: "" }]);
@@ -94,6 +108,13 @@ function Settings() {
       company,
       industry,
       model,
+      size,
+      customers,
+      avgValue,
+      whatBuy,
+      cadence,
+      lifespan,
+      concerns,
       segments,
       successActions,
       disengagement,
@@ -135,8 +156,20 @@ function Settings() {
               {businessModels.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </Field>
+          <Field label="Company size">
+            <select className={inputCls} value={size} onChange={(e) => setSize(e.target.value)}>
+              {companySizes.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </Field>
+          <Field label="Number of customers">
+            <input className={inputCls} value={customers} onChange={(e) => setCustomers(e.target.value)} placeholder="e.g. 400" />
+          </Field>
+          <Field label="Average customer value">
+            <input className={inputCls} value={avgValue} onChange={(e) => setAvgValue(e.target.value)} placeholder="e.g. $12,000 / year" />
+          </Field>
         </div>
       </Card>
+
 
       {/* Segments */}
       <Card title="Customer segments" subtitle={`Group by average monthly revenue. Up to ${MAX_SEGMENTS} non-overlapping ranges.`}>
@@ -181,13 +214,26 @@ function Settings() {
 
       {/* How you work */}
       <Card title="How a healthy customer behaves">
+        <Field label="What do customers buy from you?">
+          <input className={inputCls} value={whatBuy} onChange={(e) => setWhatBuy(e.target.value)} placeholder="e.g. an annual software subscription" />
+        </Field>
+        <Field label="How often should a healthy customer engage?">
+          <input className={inputCls} value={cadence} onChange={(e) => setCadence(e.target.value)} placeholder="e.g. logs in weekly" />
+        </Field>
+        <Field label="How long should a healthy customer stay?">
+          <input className={inputCls} value={lifespan} onChange={(e) => setLifespan(e.target.value)} placeholder="e.g. 3+ years" />
+        </Field>
         <Field label="What actions show a customer is succeeding?">
           <input className={inputCls} value={successActions} onChange={(e) => setSuccessActions(e.target.value)} placeholder="e.g. inviting teammates, renewing" />
         </Field>
         <Field label="What actions show disengagement?">
           <input className={inputCls} value={disengagement} onChange={(e) => setDisengagement(e.target.value)} placeholder="e.g. no logins for 30 days" />
         </Field>
+        <Field label="What are your biggest retention concerns?">
+          <textarea className={cn(inputCls, "min-h-20 resize-none")} value={concerns} onChange={(e) => setConcerns(e.target.value)} placeholder="e.g. customers go quiet before renewal" />
+        </Field>
       </Card>
+
 
       {/* What matters — weights */}
       <Card title="How much each metric matters" subtitle="Slide each metric from Unimportant to Critical to retune your customer health score.">
