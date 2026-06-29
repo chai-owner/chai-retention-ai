@@ -237,8 +237,9 @@ function Landing() {
           <div className="relative grid items-center gap-10 lg:grid-cols-2">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-card/70 px-3 py-1 text-xs font-medium text-primary">
-                <Sparkles className="h-3.5 w-3.5" /> Premium add-on
+                <Sparkles className="h-3.5 w-3.5" /> AI-powered
               </span>
+
               <h2 className="mt-5 text-3xl font-semibold tracking-tight">
                 ChAi Data Drop
               </h2>
