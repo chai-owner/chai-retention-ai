@@ -14,6 +14,13 @@ export interface OnboardingProfile {
   company: string;
   industry: string;
   model: string;
+  size?: string;
+  customers?: string;
+  avgValue?: string;
+  whatBuy?: string;
+  cadence?: string;
+  lifespan?: string;
+  concerns?: string;
   segments: ProfileSegment[];
   successActions: string;
   disengagement: string;
