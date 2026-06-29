@@ -156,8 +156,20 @@ function Settings() {
               {businessModels.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </Field>
+          <Field label="Company size">
+            <select className={inputCls} value={size} onChange={(e) => setSize(e.target.value)}>
+              {companySizes.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </Field>
+          <Field label="Number of customers">
+            <input className={inputCls} value={customers} onChange={(e) => setCustomers(e.target.value)} placeholder="e.g. 400" />
+          </Field>
+          <Field label="Average customer value">
+            <input className={inputCls} value={avgValue} onChange={(e) => setAvgValue(e.target.value)} placeholder="e.g. $12,000 / year" />
+          </Field>
         </div>
       </Card>
+
 
       {/* Segments */}
       <Card title="Customer segments" subtitle={`Group by average monthly revenue. Up to ${MAX_SEGMENTS} non-overlapping ranges.`}>
