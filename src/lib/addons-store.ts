@@ -42,7 +42,7 @@ export function useAddons() {
 
 // Pricing presented in the add-on upgrade UI.
 export const SMART_INGEST_PRICING = {
-  monthly: 49,
+  monthly: 39,
   includedPages: 250,
   topUpPerPage: 0.2,
 };
