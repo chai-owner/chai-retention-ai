@@ -44,6 +44,13 @@ function Settings() {
     setCompany(profile.company ?? "");
     setIndustry(profile.industry ?? "");
     setModel(profile.model || "SaaS");
+    setSize(profile.size || "1–10");
+    setCustomers(profile.customers ?? "");
+    setAvgValue(profile.avgValue ?? "");
+    setWhatBuy(profile.whatBuy ?? "");
+    setCadence(profile.cadence ?? "");
+    setLifespan(profile.lifespan ?? "");
+    setConcerns(profile.concerns ?? "");
     setSuccessActions(profile.successActions ?? "");
     setDisengagement(profile.disengagement ?? "");
     setSegments(profile.segments?.length ? profile.segments : [{ name: "", min: "", max: "" }]);
