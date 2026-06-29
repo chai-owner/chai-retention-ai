@@ -238,24 +238,23 @@ function Landing() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
+      {/* Waitlist */}
+      <section id="waitlist" className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
         <div className="overflow-hidden rounded-2xl bg-gradient-warm px-8 py-14 text-center text-primary-foreground shadow-card">
-          <MessageSquare className="mx-auto h-8 w-8 opacity-90" />
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-3 py-1 text-xs font-medium">
+            <Sparkles className="h-3.5 w-3.5" /> Limited early access
+          </span>
           <h2 className="mx-auto mt-4 max-w-xl text-3xl font-semibold tracking-tight">
-            Meet your retention analyst
+            Be among the first to experience ChAi
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-primary-foreground/90">
-            Teach ChAi about your business and see your customer health in minutes.
+            We're onboarding founders in small waves to keep the experience exceptional. Join the
+            waitlist now to secure your spot before invites run out.
           </p>
-          <Link
-            to="/onboarding"
-            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-medium text-foreground transition-transform hover:scale-105"
-          >
-            Get started <ArrowRight className="h-4 w-4" />
-          </Link>
+          <WaitlistForm />
         </div>
       </section>
+
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row lg:px-6">
