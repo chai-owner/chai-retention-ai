@@ -113,6 +113,24 @@ const SUPPORTED =
 
 type Step = "select" | "review";
 
+// Merge editable datasets from multiple files by dataset key, concatenating
+// their rows so a folder of documents collapses into one review screen.
+function mergeEditable(target: EditableDataset[], incoming: EditableDataset[]) {
+  const byKey = new Map(target.map((d) => [d.key, d]));
+  for (const d of incoming) {
+    const existing = byKey.get(d.key);
+    if (existing) {
+      existing.rows = [...existing.rows, ...d.rows];
+      existing.confidence = Math.round((existing.confidence + d.confidence) / 2);
+    } else {
+      const copy = { ...d, rows: [...d.rows] };
+      byKey.set(d.key, copy);
+      target.push(copy);
+    }
+  }
+  return target;
+}
+
 interface EditableDataset {
   key: string;
   label: string;
