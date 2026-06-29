@@ -153,7 +153,7 @@ function SmartIngestCard() {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Sparkles className="h-4 w-4" />
               </span>
-              <h3 className="font-semibold">Smart Ingestion (AI)</h3>
+              <h3 className="font-semibold">ChAi Drop Zone</h3>
               <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                 <Lock className="h-3 w-3" /> Add-on
               </span>
@@ -183,7 +183,7 @@ function SmartIngestCard() {
             <button
               onClick={() => {
                 addonsStore.enable("smartIngest");
-                toast.success("Smart Ingestion enabled", {
+                toast.success("ChAi Drop Zone enabled", {
                   description: "Demo mode — no billing was charged.",
                 });
               }}
@@ -205,7 +205,7 @@ function SmartIngestCard() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Sparkles className="h-4 w-4" />
             </span>
-            <h3 className="font-semibold">Smart Ingestion (AI)</h3>
+            <h3 className="font-semibold">ChAi Drop Zone</h3>
             <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
               Active
             </span>

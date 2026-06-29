@@ -280,7 +280,7 @@ export function SmartIngestWizard({
           if (/rate|429/.test(msg)) {
             toast.error("AI is busy", { description: `Rate limit hit on ${file.name} — try again shortly.` });
           } else if (/402|credit/i.test(msg)) {
-            toast.error("AI credits exhausted", { description: "Add credits to keep using Smart Ingestion." });
+            toast.error("AI credits exhausted", { description: "Add credits to keep using ChAi Drop Zone." });
             break;
           } else {
             toast.error(`Could not read ${file.name}`, { description: msg });
@@ -361,7 +361,7 @@ export function SmartIngestWizard({
       const completeness = Math.round((filled / totalCells) * 100);
       const reliability = Math.min(100, Math.round((d.confidence + completeness) / 2));
       const findings: QualityFinding[] = [
-        { level: "info", text: `Extracted by Smart Ingestion from ${sourceLabel} (${documentType}).` },
+        { level: "info", text: `Extracted by ChAi Drop Zone from ${sourceLabel} (${documentType}).` },
         { level: "info", text: `${d.rows.length.toLocaleString()} rows passed validation.` },
       ];
       const record: UploadRecord = {
@@ -390,7 +390,7 @@ export function SmartIngestWizard({
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" /> Smart Ingestion
+            <Sparkles className="h-4 w-4 text-primary" /> ChAi Drop Zone
           </DialogTitle>
           <DialogDescription>
             {step === "select"
