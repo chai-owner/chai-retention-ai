@@ -270,3 +270,59 @@ function Landing() {
     </div>
   );
 }
+
+function WaitlistForm() {
+  const [email, setEmail] = useState("");
+  const [joined, setJoined] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    setJoined(true);
+    toast.success("You're on the list!", {
+      description: "We'll be in touch as soon as your spot opens up.",
+    });
+  };
+
+  if (joined) {
+    return (
+      <div className="mx-auto mt-8 max-w-md rounded-xl border border-primary-foreground/30 bg-primary-foreground/10 px-6 py-5">
+        <p className="font-semibold">You're on the list 🎉</p>
+        <p className="mt-1 text-sm text-primary-foreground/90">
+          You've secured your spot. Keep an eye on your inbox — invites go out in waves.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <form
+        onSubmit={handleSubmit}
+        className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
+      >
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@company.com"
+          className="flex-1 rounded-lg border border-primary-foreground/30 bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-background"
+        />
+        <button
+          type="submit"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-medium text-foreground transition-transform hover:scale-105"
+        >
+          Join the waitlist <ArrowRight className="h-4 w-4" />
+        </button>
+      </form>
+      <p className="mt-4 text-xs text-primary-foreground/80">
+        Join 1,200+ founders already in line. No spam — just your invite.
+      </p>
+    </>
+  );
+}
+
