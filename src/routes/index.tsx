@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   Sparkles,
   ArrowRight,
@@ -8,7 +10,7 @@ import {
   Lightbulb,
   ShieldCheck,
   BarChart3,
-  MessageSquare,
+  
 } from "lucide-react";
 import heroDashboardShot from "@/assets/screenshots/hero-dashboard.png.asset.json";
 import customersShot from "@/assets/screenshots/customers.png.asset.json";
@@ -92,19 +94,16 @@ function Landing() {
             <span className="text-lg font-semibold tracking-tight">ChAi</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/auth" className="hidden text-sm font-medium text-muted-foreground hover:text-foreground sm:block">
-              Sign in
-            </Link>
-
-            <Link
-              to="/onboarding"
+            <a
+              href="#waitlist"
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Get started <ArrowRight className="h-4 w-4" />
-            </Link>
+              Join the waitlist <ArrowRight className="h-4 w-4" />
+            </a>
           </div>
         </div>
       </header>
+
 
       {/* Hero */}
       <section className="bg-gradient-hero">
@@ -123,20 +122,17 @@ function Landing() {
               explains why, and tells you what to do — all in plain English. No analytics team required.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
-              <Link
-                to="/onboarding"
+              <a
+                href="#waitlist"
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-primary/90"
               >
-                Start free <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                to="/app/dashboard"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-medium transition-colors hover:bg-accent"
-              >
-                Explore the live demo
-              </Link>
+                Join the waitlist <ArrowRight className="h-4 w-4" />
+              </a>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">No credit card. Sample data included so you can look around.</p>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Early access is rolling out in waves. Be among the first to get in.
+            </p>
+
           </div>
           <div className="relative lg:-mr-20 xl:-mr-32">
             {/* Peach 3D glow stack */}
@@ -242,24 +238,23 @@ function Landing() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
+      {/* Waitlist */}
+      <section id="waitlist" className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
         <div className="overflow-hidden rounded-2xl bg-gradient-warm px-8 py-14 text-center text-primary-foreground shadow-card">
-          <MessageSquare className="mx-auto h-8 w-8 opacity-90" />
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-3 py-1 text-xs font-medium">
+            <Sparkles className="h-3.5 w-3.5" /> Limited early access
+          </span>
           <h2 className="mx-auto mt-4 max-w-xl text-3xl font-semibold tracking-tight">
-            Meet your retention analyst
+            Be among the first to experience ChAi
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-primary-foreground/90">
-            Teach ChAi about your business and see your customer health in minutes.
+            We're onboarding founders in small waves to keep the experience exceptional. Join the
+            waitlist now to secure your spot before invites run out.
           </p>
-          <Link
-            to="/onboarding"
-            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-medium text-foreground transition-transform hover:scale-105"
-          >
-            Get started <ArrowRight className="h-4 w-4" />
-          </Link>
+          <WaitlistForm />
         </div>
       </section>
+
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row lg:px-6">
@@ -275,3 +270,59 @@ function Landing() {
     </div>
   );
 }
+
+function WaitlistForm() {
+  const [email, setEmail] = useState("");
+  const [joined, setJoined] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    setJoined(true);
+    toast.success("You're on the list!", {
+      description: "We'll be in touch as soon as your spot opens up.",
+    });
+  };
+
+  if (joined) {
+    return (
+      <div className="mx-auto mt-8 max-w-md rounded-xl border border-primary-foreground/30 bg-primary-foreground/10 px-6 py-5">
+        <p className="font-semibold">You're on the list 🎉</p>
+        <p className="mt-1 text-sm text-primary-foreground/90">
+          You've secured your spot. Keep an eye on your inbox — invites go out in waves.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <form
+        onSubmit={handleSubmit}
+        className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
+      >
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@company.com"
+          className="flex-1 rounded-lg border border-primary-foreground/30 bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-background"
+        />
+        <button
+          type="submit"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-medium text-foreground transition-transform hover:scale-105"
+        >
+          Join the waitlist <ArrowRight className="h-4 w-4" />
+        </button>
+      </form>
+      <p className="mt-4 text-xs text-primary-foreground/80">
+        Join 1,200+ founders already in line. No spam — just your invite.
+      </p>
+    </>
+  );
+}
+
