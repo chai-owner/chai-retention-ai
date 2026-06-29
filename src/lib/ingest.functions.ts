@@ -120,6 +120,10 @@ Return ONLY a JSON object (no markdown, no code fences) of the form:
       throw new Error("ChAi could not read structured data from this document. Try a clearer file.");
     }
 
+    const cell = z
+      .union([z.string(), z.number(), z.boolean(), z.null()])
+      .transform((v) => (v == null ? "" : String(v)));
+
     const ResultSchema = z.object({
       documentType: z.string().default("Document"),
       datasets: z
@@ -127,8 +131,8 @@ Return ONLY a JSON object (no markdown, no code fences) of the form:
           z.object({
             key: z.string(),
             headers: z.array(z.string()),
-            rows: z.array(z.array(z.string())),
-            confidence: z.number().min(0).max(100).default(75),
+            rows: z.array(z.array(cell)),
+            confidence: z.coerce.number().min(0).max(100).default(75),
             note: z.string().default(""),
           }),
         )
