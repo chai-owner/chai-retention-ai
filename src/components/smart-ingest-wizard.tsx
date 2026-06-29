@@ -361,12 +361,12 @@ export function SmartIngestWizard({
       const completeness = Math.round((filled / totalCells) * 100);
       const reliability = Math.min(100, Math.round((d.confidence + completeness) / 2));
       const findings: QualityFinding[] = [
-        { level: "info", text: `Extracted by Smart Ingestion from ${fileName} (${documentType}).` },
+        { level: "info", text: `Extracted by Smart Ingestion from ${sourceLabel} (${documentType}).` },
         { level: "info", text: `${d.rows.length.toLocaleString()} rows passed validation.` },
       ];
       const record: UploadRecord = {
         id: `ing_${Date.now()}_${d.key}`,
-        fileName,
+        fileName: sourceLabel,
         datasetKey: d.key,
         datasetLabel: d.label,
         uploadedAt,
