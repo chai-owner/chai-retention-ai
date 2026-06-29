@@ -37,7 +37,7 @@ export const getProfile = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "company, industry, model, segments, success_actions, disengagement, tracked, channels, metric_weights, onboarded",
+        "company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, segments, success_actions, disengagement, tracked, channels, metric_weights, onboarded",
       )
       .eq("id", userId)
       .maybeSingle();
@@ -47,6 +47,13 @@ export const getProfile = createServerFn({ method: "GET" })
       company: data.company,
       industry: data.industry,
       model: data.model,
+      size: data.size ?? "",
+      customers: data.customers ?? "",
+      avgValue: data.avg_value ?? "",
+      whatBuy: data.what_buy ?? "",
+      cadence: data.cadence ?? "",
+      lifespan: data.lifespan ?? "",
+      concerns: data.concerns ?? "",
       segments: (data.segments ?? []) as unknown as ProfileSegment[],
       successActions: data.success_actions,
       disengagement: data.disengagement,
