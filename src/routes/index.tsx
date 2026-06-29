@@ -223,8 +223,55 @@ function Landing() {
         </div>
       </section>
 
+      {/* ChAi Data Drop — highlighted feature */}
+      <section className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-hero p-8 shadow-card lg:p-12">
+          <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+          <div className="relative grid items-center gap-10 lg:grid-cols-2">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-card/70 px-3 py-1 text-xs font-medium text-primary">
+                <Sparkles className="h-3.5 w-3.5" /> Premium add-on
+              </span>
+              <h2 className="mt-5 text-3xl font-semibold tracking-tight">
+                ChAi Data Drop
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                Drop in any customer document — PDFs, Word and Google docs, spreadsheets, even scanned
+                invoices — and ChAi's AI reads them, extracts the relevant details, and updates your
+                transactions and customer records automatically. No manual data entry, no templates.
+              </p>
+              <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+                {[
+                  { icon: FileText, label: "PDFs & documents" },
+                  { icon: Sheet, label: "Excel & Google Sheets" },
+                  { icon: ScanLine, label: "Scanned invoices" },
+                  { icon: FolderUp, label: "Whole folders at once" },
+                ].map((item) => (
+                  <li key={item.label} className="flex items-center gap-2.5 text-sm">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-primary">
+                      <item.icon className="h-4 w-4" />
+                    </span>
+                    {item.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex items-center justify-center">
+              <div className="relative rounded-2xl border border-border bg-card/80 p-8 text-center shadow-soft backdrop-blur">
+                <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-warm text-primary-foreground shadow-card">
+                  <FolderUp className="h-8 w-8" />
+                </span>
+                <p className="mt-4 text-sm font-medium">Drop a folder of documents</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  ChAi reads, maps and saves the clean data for you
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      {/* Steps */}
+
       <section className="border-y border-border bg-secondary/40">
         <div className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
           <div className="mx-auto max-w-2xl text-center">
