@@ -442,7 +442,7 @@ export function SmartIngestWizard({
           <div className="space-y-5 py-1">
             <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-accent/30 px-3 py-2 text-sm">
               <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{fileName}</span>
+              <span className="font-medium">{sourceLabel}</span>
               <span className="text-muted-foreground">· detected as {documentType}</span>
             </div>
 
