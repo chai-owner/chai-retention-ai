@@ -51,8 +51,10 @@ function DataPage() {
         title="Data Uploads & Integrations"
         description="Bring your customer, transaction and support data into ChAi. We'll check how ready it is and map it for you."
       />
+      <SmartIngestCard />
 
       {/* What to upload — personalized to the onboarding profile, one line per dataset */}
+
       <Card>
         <h3 className="font-semibold">What to upload for your business</h3>
         <p className="mt-1 text-xs text-muted-foreground">
