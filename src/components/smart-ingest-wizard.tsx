@@ -1,0 +1,487 @@
+// Smart Data Ingestion overlay — accepts any supported document, sends it to
+// the AI extraction server function, then shows an editable review screen
+// grouped per detected dataset. Nothing is saved until the data is clean and
+// the user confirms. Mirrors the validation behaviour of upload-wizard.tsx.
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import * as XLSX from "xlsx";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  FileSpreadsheet,
+  Loader2,
+  Sparkles,
+  Upload,
+  X,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import { datasetSchemas, type DatasetSchema } from "@/lib/data-schemas";
+import { extractRecords, type ExtractedDataset } from "@/lib/ingest.functions";
+import {
+  uploadsStore,
+  type FieldCheck,
+  type QualityFinding,
+  type UploadRecord,
+} from "@/lib/uploads-store";
+
+type FieldType = "date" | "number" | "email" | "text";
+
+function inferType(name: string, example: string): FieldType {
+  const n = name.toLowerCase();
+  if (n.includes("email")) return "email";
+  if (n.includes("date")) return "date";
+  if (/^\d+(\.\d+)?$/.test((example || "").trim())) return "number";
+  if (/(amount|revenue|score|logins|minutes|features_used|price|qty|quantity|count)/.test(n))
+    return "number";
+  return "text";
+}
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateValue(type: FieldType, raw: string): string | null {
+  const v = (raw ?? "").trim();
+  if (v === "") return null;
+  switch (type) {
+    case "number":
+      return /^-?\d+(\.\d+)?$/.test(v.replace(/[$,]/g, "")) ? null : `expected a number`;
+    case "date":
+      return DATE_RE.test(v) && !isNaN(Date.parse(v)) ? null : `expected YYYY-MM-DD`;
+    case "email":
+      return EMAIL_RE.test(v) ? null : `expected an email`;
+    default:
+      return null;
+  }
+}
+
+// CSV parse (shared shape with upload-wizard).
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          cell += '"';
+          i++;
+        } else inQuotes = false;
+      } else cell += c;
+    } else if (c === '"') inQuotes = true;
+    else if (c === ",") {
+      row.push(cell);
+      cell = "";
+    } else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else cell += c;
+  }
+  if (cell.length > 0 || row.length > 0) {
+    row.push(cell);
+    rows.push(row);
+  }
+  return rows.filter((r) => r.some((v) => v.trim() !== ""));
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const res = reader.result as string;
+      resolve(res.split(",")[1] ?? "");
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+const SUPPORTED =
+  ".pdf,.png,.jpg,.jpeg,.webp,.csv,.txt,.xlsx,.xls,application/pdf,image/png,image/jpeg,image/webp,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel";
+
+type Step = "select" | "review";
+
+interface EditableDataset {
+  key: string;
+  label: string;
+  schema: DatasetSchema;
+  headers: string[];
+  rows: string[][];
+  confidence: number;
+  note: string;
+}
+
+function buildEditable(extracted: ExtractedDataset[]): EditableDataset[] {
+  const out: EditableDataset[] = [];
+  for (const d of extracted) {
+    const schema = datasetSchemas.find((s) => s.key === d.key);
+    if (!schema) continue;
+    // Normalize to the schema's field order so validation lines up.
+    const headers = schema.fields.map((f) => f.name);
+    const idxFor = (name: string) =>
+      d.headers.findIndex((h) => h.toLowerCase().replace(/[^a-z0-9]/g, "") === name.toLowerCase().replace(/[^a-z0-9]/g, ""));
+    const rows = d.rows.map((r) =>
+      headers.map((h) => {
+        const i = idxFor(h);
+        return i >= 0 ? (r[i] ?? "") : "";
+      }),
+    );
+    out.push({ key: d.key, label: d.label, schema, headers, rows, confidence: d.confidence, note: d.note });
+  }
+  return out;
+}
+
+export function SmartIngestWizard({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const runExtract = useServerFn(extractRecords);
+  const [step, setStep] = useState<Step>("select");
+  const [busy, setBusy] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const [fileSizeKb, setFileSizeKb] = useState(0);
+  const [documentType, setDocumentType] = useState("");
+  const [datasets, setDatasets] = useState<EditableDataset[]>([]);
+
+  function reset() {
+    setStep("select");
+    setBusy(false);
+    setFileName("");
+    setFileSizeKb(0);
+    setDocumentType("");
+    setDatasets([]);
+  }
+  function close() {
+    onOpenChange(false);
+    setTimeout(reset, 200);
+  }
+
+  async function handleFile(file: File) {
+    setBusy(true);
+    try {
+      const schemas = datasetSchemas.map((s) => ({
+        key: s.key,
+        label: s.label,
+        description: s.description,
+        fields: s.fields.map((f) => ({
+          name: f.name,
+          mandatory: f.mandatory,
+          type: inferType(f.name, f.example),
+        })),
+      }));
+
+      const name = file.name.toLowerCase();
+      let payload: { base64?: string; text?: string };
+
+      if (/\.(csv|txt)$/.test(name)) {
+        payload = { text: await file.text() };
+      } else if (/\.(xlsx|xls)$/.test(name)) {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        payload = { text: XLSX.utils.sheet_to_csv(sheet) };
+      } else if (/\.(pdf|png|jpe?g|webp)$/.test(name)) {
+        payload = { base64: await fileToBase64(file) };
+      } else {
+        toast.error("Unsupported file", {
+          description:
+            "Upload a PDF, image (invoice/receipt), CSV, TXT or Excel file. Export Word/Google Docs as PDF first.",
+        });
+        setBusy(false);
+        return;
+      }
+
+      const mimeType =
+        file.type ||
+        (name.endsWith(".pdf")
+          ? "application/pdf"
+          : name.endsWith(".csv")
+            ? "text/csv"
+            : "text/plain");
+
+      const result = await runExtract({
+        data: { fileName: file.name, mimeType, schemas, ...payload },
+      });
+
+      const editable = buildEditable(result.datasets);
+      if (editable.length === 0) {
+        toast.error("Nothing to import", {
+          description: "ChAi couldn't find data matching your customer datasets in this file.",
+        });
+        setBusy(false);
+        return;
+      }
+      setFileName(file.name);
+      setFileSizeKb(Math.max(1, Math.round(file.size / 1024)));
+      setDocumentType(result.documentType);
+      setDatasets(editable);
+      setStep("review");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Extraction failed.";
+      if (/rate|429/.test(msg)) {
+        toast.error("AI is busy", { description: "Rate limit reached — try again in a moment." });
+      } else if (/402|credit/i.test(msg)) {
+        toast.error("AI credits exhausted", { description: "Add credits to keep using Smart Ingestion." });
+      } else {
+        toast.error("Could not read this document", { description: msg });
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function setCell(dsIdx: number, rowIdx: number, colIdx: number, value: string) {
+    setDatasets((prev) =>
+      prev.map((d, di) =>
+        di === dsIdx
+          ? { ...d, rows: d.rows.map((r, ri) => (ri === rowIdx ? r.map((c, ci) => (ci === colIdx ? value : c)) : r)) }
+          : d,
+      ),
+    );
+  }
+  function removeRow(dsIdx: number, rowIdx: number) {
+    setDatasets((prev) =>
+      prev.map((d, di) => (di === dsIdx ? { ...d, rows: d.rows.filter((_, ri) => ri !== rowIdx) } : d)),
+    );
+  }
+
+  // Validation across all datasets.
+  const errorCount = useMemo(() => {
+    let count = 0;
+    for (const d of datasets) {
+      for (const r of d.rows) {
+        d.schema.fields.forEach((f, ci) => {
+          const type = inferType(f.name, f.example);
+          const raw = (r[ci] ?? "").trim();
+          if (raw === "" && f.mandatory) count++;
+          else if (raw !== "" && validateValue(type, raw)) count++;
+        });
+      }
+    }
+    return count;
+  }, [datasets]);
+
+  const totalRows = datasets.reduce((a, d) => a + d.rows.length, 0);
+
+  function confirmAndSave() {
+    if (errorCount > 0 || totalRows === 0) return;
+    const uploadedAt = new Date().toISOString().slice(0, 16).replace("T", " ");
+    for (const d of datasets) {
+      if (d.rows.length === 0) continue;
+      let filled = 0;
+      const totalCells = d.rows.length * d.schema.fields.length || 1;
+      const fieldChecks: FieldCheck[] = d.schema.fields.map((f, ci) => {
+        const nonEmpty = d.rows.filter((r) => (r[ci] ?? "").trim() !== "").length;
+        filled += nonEmpty;
+        return {
+          field: f.name,
+          mandatory: f.mandatory,
+          fill: d.rows.length ? Math.round((nonEmpty / d.rows.length) * 100) : 0,
+        };
+      });
+      const completeness = Math.round((filled / totalCells) * 100);
+      const reliability = Math.min(100, Math.round((d.confidence + completeness) / 2));
+      const findings: QualityFinding[] = [
+        { level: "info", text: `Extracted by Smart Ingestion from ${fileName} (${documentType}).` },
+        { level: "info", text: `${d.rows.length.toLocaleString()} rows passed validation.` },
+      ];
+      const record: UploadRecord = {
+        id: `ing_${Date.now()}_${d.key}`,
+        fileName,
+        datasetKey: d.key,
+        datasetLabel: d.label,
+        uploadedAt,
+        rows: d.rows.length,
+        sizeKb: fileSizeKb,
+        reliability,
+        completeness,
+        findings,
+        fieldChecks,
+      };
+      uploadsStore.add(record);
+    }
+    toast.success("Data imported", {
+      description: `${totalRows.toLocaleString()} rows across ${datasets.length} dataset${datasets.length > 1 ? "s" : ""} added to ChAi.`,
+    });
+    close();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => (v ? onOpenChange(true) : close())}>
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" /> Smart Ingestion
+          </DialogTitle>
+          <DialogDescription>
+            {step === "select"
+              ? "Drop in any document — a scanned invoice, PDF, spreadsheet or text file. ChAi's AI reads it and maps the data into your datasets."
+              : "Review what ChAi extracted, fix anything that looks off, then confirm. Nothing is saved until the data is clean."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === "select" && (
+          <div className="py-2">
+            <input
+              ref={inputRef}
+              type="file"
+              accept={SUPPORTED}
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+                e.target.value = "";
+              }}
+            />
+            <button
+              onClick={() => inputRef.current?.click()}
+              disabled={busy}
+              className="flex w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border px-6 py-12 text-center transition-colors hover:border-primary/40 hover:bg-accent/40"
+            >
+              {busy ? (
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              ) : (
+                <Upload className="h-8 w-8 text-muted-foreground" />
+              )}
+              <span className="text-sm font-medium">
+                {busy ? "Reading your document with AI…" : "Click to choose a document"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                PDF, images (invoices/receipts), Excel, CSV or text. Export Word & Google Docs as PDF first.
+              </span>
+            </button>
+          </div>
+        )}
+
+        {step === "review" && (
+          <div className="space-y-5 py-1">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-accent/30 px-3 py-2 text-sm">
+              <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">{fileName}</span>
+              <span className="text-muted-foreground">· detected as {documentType}</span>
+            </div>
+
+            {datasets.map((d, di) => (
+              <div key={d.key} className="rounded-lg border border-border">
+                <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+                  <div>
+                    <span className="text-sm font-semibold">{d.label}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {d.rows.length} row{d.rows.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                      d.confidence >= 80
+                        ? "bg-success/10 text-success"
+                        : d.confidence >= 60
+                          ? "bg-warning/10 text-warning"
+                          : "bg-danger/10 text-danger",
+                    )}
+                  >
+                    {d.confidence}% confidence
+                  </span>
+                </div>
+                <div className="max-h-72 overflow-auto">
+                  <table className="w-full text-xs">
+                    <thead className="sticky top-0 bg-secondary">
+                      <tr className="text-left">
+                        {d.schema.fields.map((f) => (
+                          <th key={f.name} className="px-2 py-1.5 font-mono font-medium">
+                            {f.name}
+                            {f.mandatory && <span className="text-danger"> *</span>}
+                          </th>
+                        ))}
+                        <th className="px-2 py-1.5" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {d.rows.map((r, ri) => (
+                        <tr key={ri} className="border-t border-border">
+                          {d.schema.fields.map((f, ci) => {
+                            const type = inferType(f.name, f.example);
+                            const raw = (r[ci] ?? "").trim();
+                            const err = raw === "" && f.mandatory ? "required" : raw !== "" ? validateValue(type, raw) : null;
+                            return (
+                              <td key={f.name} className="px-1 py-0.5">
+                                <input
+                                  value={r[ci] ?? ""}
+                                  onChange={(e) => setCell(di, ri, ci, e.target.value)}
+                                  title={err ?? undefined}
+                                  className={cn(
+                                    "w-full min-w-[90px] rounded border bg-background px-1.5 py-1 font-mono outline-none focus:border-primary",
+                                    err ? "border-danger/60 bg-danger/5" : "border-transparent hover:border-border",
+                                  )}
+                                />
+                              </td>
+                            );
+                          })}
+                          <td className="px-1">
+                            <button
+                              onClick={() => removeRow(di, ri)}
+                              className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-danger"
+                              title="Remove row"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+
+            {errorCount === 0 ? (
+              <div className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2.5 text-sm text-success">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>All checks passed — {totalRows.toLocaleString()} rows are clean and ready to import.</span>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2 rounded-lg border border-danger/20 bg-danger/5 px-3 py-2.5 text-sm text-danger">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  {errorCount} cell{errorCount > 1 ? "s" : ""} need fixing (highlighted above) before you can import.
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-3">
+              <button
+                onClick={reset}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
+              >
+                <X className="h-3.5 w-3.5" /> Choose another file
+              </button>
+              <button
+                onClick={confirmAndSave}
+                disabled={errorCount > 0 || totalRows === 0}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <CheckCircle2 className="h-4 w-4" /> Confirm & import
+              </button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
