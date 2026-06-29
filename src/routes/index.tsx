@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sparkles,
   ArrowRight,
@@ -272,15 +273,42 @@ function Landing() {
 }
 
 function WaitlistForm() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [joined, setJoined] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      toast.error("Please enter your name.");
+      return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error("Please enter a valid email address.");
       return;
     }
+    if (!company.trim()) {
+      toast.error("Please enter your company name.");
+      return;
+    }
+
+    setSubmitting(true);
+    const { error } = await supabase.from("waitlist").insert({
+      name: name.trim(),
+      email: email.trim(),
+      company: company.trim(),
+    });
+    setSubmitting(false);
+
+    if (error) {
+      toast.error("Something went wrong", {
+        description: "Please try again in a moment.",
+      });
+      return;
+    }
+
     setJoined(true);
     toast.success("You're on the list!", {
       description: "We'll be in touch as soon as your spot opens up.",
@@ -298,25 +326,42 @@ function WaitlistForm() {
     );
   }
 
+  const inputClass =
+    "w-full rounded-lg border border-primary-foreground/30 bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-background";
+
   return (
     <>
-      <form
-        onSubmit={handleSubmit}
-        className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
-      >
+      <form onSubmit={handleSubmit} className="mx-auto mt-8 flex max-w-md flex-col gap-3">
+        <input
+          type="text"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Your name"
+          className={inputClass}
+        />
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@company.com"
-          className="flex-1 rounded-lg border border-primary-foreground/30 bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-background"
+          className={inputClass}
+        />
+        <input
+          type="text"
+          required
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+          placeholder="Company name"
+          className={inputClass}
         />
         <button
           type="submit"
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-medium text-foreground transition-transform hover:scale-105"
+          disabled={submitting}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-medium text-foreground transition-transform hover:scale-105 disabled:opacity-60"
         >
-          Join the waitlist <ArrowRight className="h-4 w-4" />
+          {submitting ? "Joining…" : "Join the waitlist"} <ArrowRight className="h-4 w-4" />
         </button>
       </form>
       <p className="mt-4 text-xs text-primary-foreground/80">
@@ -325,4 +370,5 @@ function WaitlistForm() {
     </>
   );
 }
+
 
