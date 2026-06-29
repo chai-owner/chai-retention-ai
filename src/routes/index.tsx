@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   Sparkles,
   ArrowRight,
