@@ -11,7 +11,10 @@ import {
   Lightbulb,
   ShieldCheck,
   BarChart3,
-  
+  FolderUp,
+  FileText,
+  ScanLine,
+  Sheet,
 } from "lucide-react";
 import heroDashboardShot from "@/assets/screenshots/hero-dashboard.png.asset.json";
 import customersShot from "@/assets/screenshots/customers.png.asset.json";
