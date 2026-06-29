@@ -172,97 +172,142 @@ export function SmartIngestWizard({
   const runExtract = useServerFn(extractRecords);
   const [step, setStep] = useState<Step>("select");
   const [busy, setBusy] = useState(false);
-  const [fileName, setFileName] = useState("");
+  const [fileNames, setFileNames] = useState<string[]>([]);
   const [fileSizeKb, setFileSizeKb] = useState(0);
   const [documentType, setDocumentType] = useState("");
   const [datasets, setDatasets] = useState<EditableDataset[]>([]);
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+
+  const sourceLabel =
+    fileNames.length === 1 ? fileNames[0] : `${fileNames.length} files`;
 
   function reset() {
     setStep("select");
     setBusy(false);
-    setFileName("");
+    setFileNames([]);
     setFileSizeKb(0);
     setDocumentType("");
     setDatasets([]);
+    setProgress(null);
   }
   function close() {
     onOpenChange(false);
     setTimeout(reset, 200);
   }
 
-  async function handleFile(file: File) {
-    setBusy(true);
-    try {
-      const schemas = datasetSchemas.map((s) => ({
-        key: s.key,
-        label: s.label,
-        description: s.description,
-        fields: s.fields.map((f) => ({
-          name: f.name,
-          mandatory: f.mandatory,
-          type: inferType(f.name, f.example),
-        })),
-      }));
+  // Extract one file. Returns its extracted datasets + document type, or null
+  // (with a toast) when the file is unsupported or yields nothing.
+  async function extractOne(
+    file: File,
+    schemas: ReturnType<typeof buildSchemas>,
+  ): Promise<{ datasets: ExtractedDataset[]; documentType: string } | null> {
+    const name = file.name.toLowerCase();
+    let payload: { base64?: string; text?: string };
 
-      const name = file.name.toLowerCase();
-      let payload: { base64?: string; text?: string };
-
-      if (/\.(csv|txt)$/.test(name)) {
-        payload = { text: await file.text() };
-      } else if (/\.(xlsx|xls)$/.test(name)) {
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, { type: "array" });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        payload = { text: XLSX.utils.sheet_to_csv(sheet) };
-      } else if (/\.(pdf|png|jpe?g|webp)$/.test(name)) {
-        payload = { base64: await fileToBase64(file) };
-      } else {
-        toast.error("Unsupported file", {
-          description:
-            "Upload a PDF, image (invoice/receipt), CSV, TXT or Excel file. Export Word/Google Docs as PDF first.",
-        });
-        setBusy(false);
-        return;
-      }
-
-      const mimeType =
-        file.type ||
-        (name.endsWith(".pdf")
-          ? "application/pdf"
-          : name.endsWith(".csv")
-            ? "text/csv"
-            : "text/plain");
-
-      const result = await runExtract({
-        data: { fileName: file.name, mimeType, schemas, ...payload },
+    if (/\.(csv|txt)$/.test(name)) {
+      payload = { text: await file.text() };
+    } else if (/\.(xlsx|xls)$/.test(name)) {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      payload = { text: XLSX.utils.sheet_to_csv(sheet) };
+    } else if (/\.(pdf|png|jpe?g|webp)$/.test(name)) {
+      payload = { base64: await fileToBase64(file) };
+    } else {
+      toast.error(`Skipped ${file.name}`, {
+        description: "Unsupported type. Use PDF, image, CSV, TXT or Excel.",
       });
+      return null;
+    }
 
-      const editable = buildEditable(result.datasets);
-      if (editable.length === 0) {
+    const mimeType =
+      file.type ||
+      (name.endsWith(".pdf")
+        ? "application/pdf"
+        : name.endsWith(".csv")
+          ? "text/csv"
+          : "text/plain");
+
+    const result = await runExtract({
+      data: { fileName: file.name, mimeType, schemas, ...payload },
+    });
+    return result;
+  }
+
+  function buildSchemas() {
+    return datasetSchemas.map((s) => ({
+      key: s.key,
+      label: s.label,
+      description: s.description,
+      fields: s.fields.map((f) => ({
+        name: f.name,
+        mandatory: f.mandatory,
+        type: inferType(f.name, f.example),
+      })),
+    }));
+  }
+
+  async function handleFiles(files: File[]) {
+    if (files.length === 0) return;
+    setBusy(true);
+    setProgress({ current: 0, total: files.length });
+    try {
+      const schemas = buildSchemas();
+      const merged: EditableDataset[] = [];
+      const usedNames: string[] = [];
+      const docTypes = new Set<string>();
+      let sizeKb = 0;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setProgress({ current: i + 1, total: files.length });
+        try {
+          const result = await extractOne(file, schemas);
+          if (!result) continue;
+          const editable = buildEditable(result.datasets);
+          if (editable.length === 0) {
+            toast.error(`No data in ${file.name}`, {
+              description: "ChAi couldn't match this file to your datasets.",
+            });
+            continue;
+          }
+          mergeEditable(merged, editable);
+          usedNames.push(file.name);
+          docTypes.add(result.documentType);
+          sizeKb += Math.max(1, Math.round(file.size / 1024));
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Extraction failed.";
+          if (/rate|429/.test(msg)) {
+            toast.error("AI is busy", { description: `Rate limit hit on ${file.name} — try again shortly.` });
+          } else if (/402|credit/i.test(msg)) {
+            toast.error("AI credits exhausted", { description: "Add credits to keep using Smart Ingestion." });
+            break;
+          } else {
+            toast.error(`Could not read ${file.name}`, { description: msg });
+          }
+        }
+      }
+
+      if (merged.length === 0) {
         toast.error("Nothing to import", {
-          description: "ChAi couldn't find data matching your customer datasets in this file.",
+          description: "None of the selected files produced data for your datasets.",
         });
         setBusy(false);
+        setProgress(null);
         return;
       }
-      setFileName(file.name);
-      setFileSizeKb(Math.max(1, Math.round(file.size / 1024)));
-      setDocumentType(result.documentType);
-      setDatasets(editable);
+
+      setFileNames(usedNames);
+      setFileSizeKb(sizeKb);
+      setDocumentType(docTypes.size === 1 ? [...docTypes][0] : `${docTypes.size} document types`);
+      setDatasets(merged);
       setStep("review");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Extraction failed.";
-      if (/rate|429/.test(msg)) {
-        toast.error("AI is busy", { description: "Rate limit reached — try again in a moment." });
-      } else if (/402|credit/i.test(msg)) {
-        toast.error("AI credits exhausted", { description: "Add credits to keep using Smart Ingestion." });
-      } else {
-        toast.error("Could not read this document", { description: msg });
-      }
     } finally {
       setBusy(false);
+      setProgress(null);
     }
   }
+
 
   function setCell(dsIdx: number, rowIdx: number, colIdx: number, value: string) {
     setDatasets((prev) =>
