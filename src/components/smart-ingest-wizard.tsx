@@ -390,7 +390,7 @@ export function SmartIngestWizard({
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" /> Smart Ingestion
+            <Sparkles className="h-4 w-4 text-primary" /> ChAi Drop Zone
           </DialogTitle>
           <DialogDescription>
             {step === "select"
