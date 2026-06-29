@@ -24,6 +24,13 @@ function Settings() {
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
   const [model, setModel] = useState("SaaS");
+  const [size, setSize] = useState("1–10");
+  const [customers, setCustomers] = useState("");
+  const [avgValue, setAvgValue] = useState("");
+  const [whatBuy, setWhatBuy] = useState("");
+  const [cadence, setCadence] = useState("");
+  const [lifespan, setLifespan] = useState("");
+  const [concerns, setConcerns] = useState("");
   const [successActions, setSuccessActions] = useState("");
   const [disengagement, setDisengagement] = useState("");
   const [segments, setSegments] = useState<ProfileSegment[]>([{ name: "", min: "", max: "" }]);
