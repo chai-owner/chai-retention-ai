@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Building2, Link2, Upload } from "lucide-react";
+import { Building2, Check, Link2, Lock, Sparkles, Upload } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { integrations, crmIntegrations } from "@/lib/mock-data";
 import { UploadWizard } from "@/components/upload-wizard";
+import { SmartIngestWizard } from "@/components/smart-ingest-wizard";
 import { datasetSchemas } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
 import { personalizeDatasets, type PersonalizedDataset } from "@/lib/personalize-data";
 import { useUploads } from "@/lib/uploads-store";
+import { useAddons, addonsStore, SMART_INGEST_PRICING } from "@/lib/addons-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/data")({
