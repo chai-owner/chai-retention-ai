@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
     // Force signed-in users who haven't finished onboarding into the flow.
-    if (location.pathname !== "/onboarding") {
+    if (location.pathname !== "/onboarding" && location.pathname !== "/admin") {
       try {
         const profile = await getProfile();
         if (!profile?.onboarded) {
