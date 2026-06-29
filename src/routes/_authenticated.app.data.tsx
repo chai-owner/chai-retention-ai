@@ -211,15 +211,15 @@ function SmartIngestCard() {
             </span>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Upload any document — invoices, PDFs, spreadsheets, receipts or text — and ChAi will extract
-            and map the data for you to review.
+            Upload one document or a whole folder's worth at once — invoices, PDFs, spreadsheets,
+            receipts or text — and ChAi will extract and map the data for you to review.
           </p>
         </div>
         <button
           onClick={() => setWizardOpen(true)}
           className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          <Upload className="h-4 w-4" /> Upload a document
+          <Upload className="h-4 w-4" /> Upload documents
         </button>
       </div>
       <SmartIngestWizard open={wizardOpen} onOpenChange={setWizardOpen} />
