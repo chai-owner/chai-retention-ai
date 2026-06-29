@@ -405,10 +405,11 @@ export function SmartIngestWizard({
               ref={inputRef}
               type="file"
               accept={SUPPORTED}
+              multiple
               className="hidden"
               onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f);
+                const fs = Array.from(e.target.files ?? []);
+                if (fs.length) handleFiles(fs);
                 e.target.value = "";
               }}
             />
@@ -423,10 +424,15 @@ export function SmartIngestWizard({
                 <Upload className="h-8 w-8 text-muted-foreground" />
               )}
               <span className="text-sm font-medium">
-                {busy ? "Reading your document with AI…" : "Click to choose a document"}
+                {busy
+                  ? progress
+                    ? `Reading document ${progress.current} of ${progress.total} with AI…`
+                    : "Reading your documents with AI…"
+                  : "Click to choose documents"}
               </span>
               <span className="text-xs text-muted-foreground">
-                PDF, images (invoices/receipts), Excel, CSV or text. Export Word & Google Docs as PDF first.
+                Select one file or a whole folder's worth at once — PDF, images
+                (invoices/receipts), Excel, CSV or text. Export Word & Google Docs as PDF first.
               </span>
             </button>
           </div>
