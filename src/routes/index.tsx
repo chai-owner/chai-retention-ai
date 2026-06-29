@@ -122,20 +122,17 @@ function Landing() {
               explains why, and tells you what to do — all in plain English. No analytics team required.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
-              <Link
-                to="/onboarding"
+              <a
+                href="#waitlist"
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-primary/90"
               >
-                Start free <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                to="/app/dashboard"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-medium transition-colors hover:bg-accent"
-              >
-                Explore the live demo
-              </Link>
+                Join the waitlist <ArrowRight className="h-4 w-4" />
+              </a>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">No credit card. Sample data included so you can look around.</p>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Early access is rolling out in waves. Be among the first to get in.
+            </p>
+
           </div>
           <div className="relative lg:-mr-20 xl:-mr-32">
             {/* Peach 3D glow stack */}
