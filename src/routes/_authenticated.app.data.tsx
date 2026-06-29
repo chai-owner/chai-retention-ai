@@ -135,6 +135,99 @@ function DataPage() {
   );
 }
 
+function SmartIngestCard() {
+  const { smartIngest } = useAddons();
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  if (!smartIngest) {
+    const benefits = [
+      "Drop in scanned invoices, PDFs, spreadsheets, receipts or text",
+      "AI reads the document and maps the data into your ChAi datasets",
+      "Review and fix everything before anything is saved",
+    ];
+    return (
+      <Card className="border-primary/30 bg-gradient-to-br from-accent/40 to-transparent">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              <h3 className="font-semibold">Smart Ingestion (AI)</h3>
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                <Lock className="h-3 w-3" /> Add-on
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Upload any customer document — no templates, no manual formatting. ChAi's AI extracts the
+              relevant data and routes it into the right datasets.
+            </p>
+            <ul className="mt-3 space-y-1.5">
+              {benefits.map((b) => (
+                <li key={b} className="flex items-start gap-2 text-xs">
+                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="shrink-0 rounded-xl border border-border bg-background p-4 text-center md:w-56">
+            <p className="text-2xl font-bold">
+              ${SMART_INGEST_PRICING.monthly}
+              <span className="text-sm font-normal text-muted-foreground">/mo</span>
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Includes {SMART_INGEST_PRICING.includedPages} document pages/month, then $
+              {SMART_INGEST_PRICING.topUpPerPage.toFixed(2)}/page.
+            </p>
+            <button
+              onClick={() => {
+                addonsStore.enable("smartIngest");
+                toast.success("Smart Ingestion enabled", {
+                  description: "Demo mode — no billing was charged.",
+                });
+              }}
+              className="mt-3 w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Enable add-on
+            </button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-primary/30">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <h3 className="font-semibold">Smart Ingestion (AI)</h3>
+            <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
+              Active
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Upload any document — invoices, PDFs, spreadsheets, receipts or text — and ChAi will extract
+            and map the data for you to review.
+          </p>
+        </div>
+        <button
+          onClick={() => setWizardOpen(true)}
+          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          <Upload className="h-4 w-4" /> Upload a document
+        </button>
+      </div>
+      <SmartIngestWizard open={wizardOpen} onOpenChange={setWizardOpen} />
+    </Card>
+  );
+}
+
+
 function DatasetRow({ dataset, lastUpload }: { dataset: PersonalizedDataset; lastUpload?: string }) {
   const [wizardOpen, setWizardOpen] = useState(false);
 
