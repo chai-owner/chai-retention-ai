@@ -100,6 +100,7 @@ function Customers() {
         ))}
       </div>
 
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -109,23 +110,26 @@ function Customers() {
             className="w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {filters.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                filter === f.key
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-muted-foreground hover:bg-accent",
-              )}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        {lifecycle === "active" && (
+          <div className="flex flex-wrap gap-1.5">
+            {filters.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  filter === f.key
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground hover:bg-accent",
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
 
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
         <div className="overflow-x-auto">
