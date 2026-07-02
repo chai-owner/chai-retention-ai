@@ -66,6 +66,8 @@ export interface Recommendation {
   reasoning: string;
 }
 
+export type CustomerStatus = "active" | "churned" | "won-back";
+
 export interface Customer {
   id: string;
   name: string;
@@ -81,6 +83,13 @@ export interface Customer {
   factors: Factor[];
   recommendations: Recommendation[];
   timeline: TimelineEvent[];
+  // Lifecycle. Active customers omit these; churned / won-back carry history.
+  status?: CustomerStatus;
+  churnedDate?: string; // ISO date the customer left
+  tenureMonths?: number; // how long they stayed before leaving
+  winBackScore?: number; // 0–100 likelihood of re-winning them
+  winBackDifficulty?: "Easy" | "Moderate" | "Hard";
+  winBackAction?: string; // the top recommended re-engagement move
 }
 
 const firstNames = ["Acme", "Northwind", "Globex", "Initech", "Umbrella", "Hooli", "Stark", "Wayne", "Soylent", "Vandelay", "Pied Piper", "Wonka", "Cyberdyne", "Tyrell", "Gekko", "Oscorp", "Bluth", "Massive Dynamic"];
