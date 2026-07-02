@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Users,
+  UserMinus,
   Database,
   ClipboardList,
   Lightbulb,
@@ -24,6 +25,7 @@ import { useProfileSync } from "@/lib/use-profile-sync";
 const nav = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/customers", label: "Customer Risk Center", icon: Users },
+  { to: "/app/churned", label: "Churned & Win-back", icon: UserMinus },
   { to: "/app/data", label: "Data Uploads & Integrations", icon: Database },
   { to: "/app/data-quality", label: "Data Quality", icon: BadgeCheck },
   { to: "/app/planner", label: "Intelligence Planner", icon: ClipboardList },

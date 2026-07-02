@@ -6,15 +6,27 @@ import {
   categoryFromHealth,
   formatCurrency,
   riskMeta,
+  getChurnedCustomers,
+  getWonBackCustomers,
   type RiskCategory,
+  type Customer,
 } from "@/lib/mock-data";
 import { useScoredData } from "@/lib/use-scored-data";
+import { useChurnOverrides } from "@/lib/churn-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/customers/")({
   head: () => ({ meta: [{ title: "Customer Risk Center — ChAi" }] }),
   component: Customers,
 });
+
+type Lifecycle = "active" | "churned" | "won-back";
+
+const lifecycleTabs: { key: Lifecycle; label: string }[] = [
+  { key: "active", label: "Active" },
+  { key: "churned", label: "Churned" },
+  { key: "won-back", label: "Won back" },
+];
 
 const filters: { key: RiskCategory | "all"; label: string }[] = [
   { key: "all", label: "All" },
@@ -27,17 +39,42 @@ const filters: { key: RiskCategory | "all"; label: string }[] = [
 function Customers() {
   const navigate = useNavigate();
   const { sortedByRisk } = useScoredData();
+  const overrides = useChurnOverrides();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RiskCategory | "all">("all");
+  const [lifecycle, setLifecycle] = useState<Lifecycle>("active");
+
+  // Active list excludes anything manually flagged as churned/won-back.
+  const activeRows = useMemo(
+    () => sortedByRisk.filter((c) => !overrides[c.id]),
+    [sortedByRisk, overrides],
+  );
+
+  // Manual overrides pull accounts into the churned / won-back tabs.
+  const overriddenChurned = useMemo(
+    () => sortedByRisk.filter((c) => overrides[c.id]?.status === "churned"),
+    [sortedByRisk, overrides],
+  );
+  const overriddenWonBack = useMemo(
+    () => sortedByRisk.filter((c) => overrides[c.id]?.status === "won-back"),
+    [sortedByRisk, overrides],
+  );
+
+  const dataset: Customer[] = useMemo(() => {
+    if (lifecycle === "churned") return [...getChurnedCustomers(), ...overriddenChurned];
+    if (lifecycle === "won-back") return [...getWonBackCustomers(), ...overriddenWonBack];
+    return activeRows;
+  }, [lifecycle, activeRows, overriddenChurned, overriddenWonBack]);
 
   const rows = useMemo(() => {
-    return sortedByRisk.filter((c) => {
+    return dataset.filter((c) => {
       const cat = categoryFromHealth(c.health);
-      const matchesFilter = filter === "all" || cat === filter;
+      const matchesFilter = lifecycle !== "active" || filter === "all" || cat === filter;
       const matchesQuery = c.name.toLowerCase().includes(query.toLowerCase());
       return matchesFilter && matchesQuery;
     });
-  }, [query, filter, sortedByRisk]);
+  }, [query, filter, lifecycle, dataset]);
+
 
   return (
     <div>
@@ -45,6 +82,23 @@ function Customers() {
         title="Customer Risk Center"
         description="Every customer ranked by churn risk. The riskiest, highest-value accounts rise to the top so you know exactly who to focus on."
       />
+
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        {lifecycleTabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setLifecycle(t.key)}
+            className={cn(
+              "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+              lifecycle === t.key
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:bg-accent",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs">
@@ -56,23 +110,26 @@ function Customers() {
             className="w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {filters.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                filter === f.key
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-muted-foreground hover:bg-accent",
-              )}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        {lifecycle === "active" && (
+          <div className="flex flex-wrap gap-1.5">
+            {filters.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  filter === f.key
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground hover:bg-accent",
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
 
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
         <div className="overflow-x-auto">

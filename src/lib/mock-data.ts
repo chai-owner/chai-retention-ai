@@ -66,6 +66,8 @@ export interface Recommendation {
   reasoning: string;
 }
 
+export type CustomerStatus = "active" | "churned" | "won-back";
+
 export interface Customer {
   id: string;
   name: string;
@@ -81,6 +83,13 @@ export interface Customer {
   factors: Factor[];
   recommendations: Recommendation[];
   timeline: TimelineEvent[];
+  // Lifecycle. Active customers omit these; churned / won-back carry history.
+  status?: CustomerStatus;
+  churnedDate?: string; // ISO date the customer left
+  tenureMonths?: number; // how long they stayed before leaving
+  winBackScore?: number; // 0–100 likelihood of re-winning them
+  winBackDifficulty?: "Easy" | "Moderate" | "Hard";
+  winBackAction?: string; // the top recommended re-engagement move
 }
 
 const firstNames = ["Acme", "Northwind", "Globex", "Initech", "Umbrella", "Hooli", "Stark", "Wayne", "Soylent", "Vandelay", "Pied Piper", "Wonka", "Cyberdyne", "Tyrell", "Gekko", "Oscorp", "Bluth", "Massive Dynamic"];
@@ -378,7 +387,131 @@ export const healthDistribution = defaultDataset.healthDistribution;
 export const segmentRevenue = defaultDataset.segmentRevenue;
 
 export function getCustomer(id: string) {
-  return customers.find((c) => c.id === id);
+  return [...customers, ...churnedCustomers].find((c) => c.id === id);
+}
+
+// ---- Churned & won-back customers ----
+// Customers who have already left. They are intentionally kept OUT of the
+// scored/active dataset so they never distort health averages, revenue-at-risk
+// or retention-opportunity. Their value now is win-back and learning.
+
+interface ChurnedSeed {
+  name: string;
+  segment: string;
+  revenue: number;
+  sentiment: number;
+  churnedDate: string;
+  tenureMonths: number;
+  reason: string; // matches a Factor label from factorPool
+  winBackScore: number;
+  status?: CustomerStatus;
+}
+
+const churnedSeeds: ChurnedSeed[] = [
+  { name: "Vandelay Industries", segment: "Enterprise", revenue: 84000, sentiment: 34, churnedDate: "2025-04-12", tenureMonths: 31, reason: "No recent purchases", winBackScore: 78 },
+  { name: "Gekko Partners", segment: "Mid-Market", revenue: 46000, sentiment: 28, churnedDate: "2025-03-02", tenureMonths: 18, reason: "Unresolved support tickets", winBackScore: 64 },
+  { name: "Bluth Co", segment: "SMB", revenue: 19000, sentiment: 22, churnedDate: "2025-02-19", tenureMonths: 9, reason: "Negative sentiment detected", winBackScore: 31 },
+  { name: "Soylent Group", segment: "Enterprise", revenue: 72000, sentiment: 41, churnedDate: "2025-05-01", tenureMonths: 26, reason: "Competitor mentioned", winBackScore: 58 },
+  { name: "Oscorp Digital", segment: "Startup", revenue: 12000, sentiment: 19, churnedDate: "2025-01-08", tenureMonths: 6, reason: "Usage declining", winBackScore: 24 },
+  { name: "Wonka Studio", segment: "Mid-Market", revenue: 38000, sentiment: 47, churnedDate: "2025-04-27", tenureMonths: 22, reason: "Declining satisfaction", winBackScore: 71 },
+  // A success story — a churned account that was re-won.
+  { name: "Massive Dynamic Labs", segment: "Enterprise", revenue: 68000, sentiment: 66, churnedDate: "2025-01-15", tenureMonths: 29, reason: "No recent purchases", winBackScore: 88, status: "won-back" },
+];
+
+const winBackActionByReason: Record<string, string> = {
+  "No recent purchases": "Send a personalised return offer with a renewed pricing plan.",
+  "Unresolved support tickets": "Have a senior CSM reach out to resolve the open issues and rebuild trust.",
+  "Negative sentiment detected": "Executive apology call plus a concrete fix for their biggest complaint.",
+  "Competitor mentioned": "Share a tailored comparison and a win-back incentive vs the competitor.",
+  "Usage declining": "Offer free re-onboarding and a guided value-recap session.",
+  "Declining satisfaction": "Invite to a product roadmap preview and address their past feedback directly.",
+};
+
+function winBackDifficulty(score: number): "Easy" | "Moderate" | "Hard" {
+  if (score >= 70) return "Easy";
+  if (score >= 45) return "Moderate";
+  return "Hard";
+}
+
+export const churnedCustomers: Customer[] = churnedSeeds.map((s, i) => {
+  const factor = factorPool.find((f) => f.label === s.reason) ?? factorPool[0];
+  const health = 100 - factor.weight - 40 + (i % 3) * 4;
+  return {
+    id: `chn_${(2000 + i).toString()}`,
+    name: s.name,
+    contact: `${["jordan", "casey", "morgan", "riley", "sam", "alex"][i % 6]}@${s.name.split(" ")[0].toLowerCase()}.com`,
+    segment: s.segment,
+    health: Math.max(5, health),
+    risk: 100,
+    churnProbability: 100,
+    revenue: s.revenue,
+    sentiment: s.sentiment,
+    lastActivity: s.churnedDate,
+    factors: [factor],
+    recommendations: [],
+    timeline: [],
+    status: s.status ?? "churned",
+    churnedDate: s.churnedDate,
+    tenureMonths: s.tenureMonths,
+    winBackScore: s.winBackScore,
+    winBackDifficulty: winBackDifficulty(s.winBackScore),
+    winBackAction: winBackActionByReason[s.reason] ?? "Reach out with a tailored win-back offer.",
+  };
+});
+
+export function getChurnedCustomers(): Customer[] {
+  return churnedCustomers.filter((c) => c.status === "churned");
+}
+
+export function getWonBackCustomers(): Customer[] {
+  return churnedCustomers.filter((c) => c.status === "won-back");
+}
+
+// Auto-inference: flag active accounts that look like they've effectively
+// already churned (deeply critical health + very high churn probability).
+export function looksChurned(c: Customer): boolean {
+  return (c.status ?? "active") === "active" && c.health < 30 && c.churnProbability >= 85;
+}
+
+export interface ChurnAnalytics {
+  churnedCount: number;
+  wonBackCount: number;
+  revenueLost: number;
+  winBackOpportunity: number;
+  avgTenureMonths: number;
+  churnRate: number; // % of the total book that has churned
+  topReasons: { label: string; count: number; share: number }[];
+}
+
+export function churnAnalytics(activeCount = customers.length): ChurnAnalytics {
+  const churned = getChurnedCustomers();
+  const wonBack = getWonBackCustomers();
+  const revenueLost = churned.reduce((s, c) => s + c.revenue, 0);
+  const winBackOpportunity = churned.reduce(
+    (s, c) => s + Math.round(c.revenue * ((c.winBackScore ?? 0) / 100)),
+    0,
+  );
+  const avgTenure = churned.length
+    ? Math.round(churned.reduce((s, c) => s + (c.tenureMonths ?? 0), 0) / churned.length)
+    : 0;
+  const total = activeCount + churned.length;
+  const reasonCounts = new Map<string, number>();
+  churned.forEach((c) => {
+    const label = c.factors[0]?.label ?? "Other";
+    reasonCounts.set(label, (reasonCounts.get(label) ?? 0) + 1);
+  });
+  const topReasons = [...reasonCounts.entries()]
+    .map(([label, count]) => ({ label, count, share: Math.round((count / churned.length) * 100) }))
+    .sort((a, b) => b.count - a.count);
+  return {
+    churnedCount: churned.length,
+    wonBackCount: wonBack.length,
+    revenueLost,
+    winBackOpportunity,
+    avgTenureMonths: avgTenure,
+    churnRate: total ? Math.round((churned.length / total) * 100) : 0,
+    topReasons,
+  };
 }
 
 export const retentionTrend = [

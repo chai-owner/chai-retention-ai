@@ -39,6 +39,7 @@ import {
   riskMeta,
   formatCurrency,
   categoryFromHealth,
+  churnAnalytics,
 } from "@/lib/mock-data";
 import { useScoredData } from "@/lib/use-scored-data";
 
@@ -134,6 +135,8 @@ function Dashboard() {
     };
   }, [baseExecutive, period]);
 
+  const churn = useMemo(() => churnAnalytics(), []);
+
   // Overall data quality across uploaded datasets, for the selected period.
   // Current month relies on fewer, more recent files, so it's modestly lower.
   const dataQuality = useMemo(() => {
@@ -228,6 +231,30 @@ function Dashboard() {
           hint="Recoverable with action"
         />
       </div>
+
+      <Link to="/app/churned" className="mt-4 block">
+        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-soft transition-colors hover:border-primary/40 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-danger/10 text-danger">
+              <TrendingDown className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="text-sm font-medium">
+                {churn.churnedCount} customers churned ·{" "}
+                <span className="text-danger">{formatCurrency(churn.revenueLost)}</span>{" "}
+                <span className="text-xs font-normal italic text-muted-foreground">/ yr lost</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatCurrency(churn.winBackOpportunity)}/yr recoverable through win-back — excluded from active metrics above.
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+            View win-back <ArrowRight className="h-4 w-4" />
+          </span>
+        </div>
+      </Link>
+
 
       <div className="mt-6 grid items-start gap-6 lg:grid-cols-3">
         {/* Health distribution */}
