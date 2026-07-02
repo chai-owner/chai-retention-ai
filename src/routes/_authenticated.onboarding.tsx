@@ -49,6 +49,7 @@ function Onboarding() {
     lifespan: "",
     successActions: "",
     disengagement: "",
+    churnDefinition: "",
     concerns: "",
   });
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
