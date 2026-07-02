@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   HeartPulse,
@@ -13,16 +15,20 @@ import {
   UserPlus,
   TrendingUp,
   Sparkles,
+  UserMinus,
+  RotateCcw,
 } from "lucide-react";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
 import {
   getCustomer,
   categoryFromHealth,
   formatCurrency,
+  looksChurned,
   type TimelineEvent,
   type Customer,
 } from "@/lib/mock-data";
 import { useScoredData } from "@/lib/use-scored-data";
+import { churnStore, useChurnOverrides } from "@/lib/churn-store";
 import { cn } from "@/lib/utils";
 
 
