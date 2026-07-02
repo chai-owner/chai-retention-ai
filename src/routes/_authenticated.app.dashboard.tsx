@@ -39,6 +39,7 @@ import {
   riskMeta,
   formatCurrency,
   categoryFromHealth,
+  churnAnalytics,
 } from "@/lib/mock-data";
 import { useScoredData } from "@/lib/use-scored-data";
 
