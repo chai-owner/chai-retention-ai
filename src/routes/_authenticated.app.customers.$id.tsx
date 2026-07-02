@@ -69,18 +69,97 @@ const priorityChip: Record<string, string> = {
 function CustomerDetail() {
   const { id } = Route.useLoaderData() as { id: string };
   const { customers } = useScoredData();
-  const c = (customers.find((x) => x.id === id) ?? customers[0]) as Customer;
+  const overrides = useChurnOverrides();
+  // Active customers come from the scored dataset; churned/won-back accounts
+  // live outside it, so fall back to the full lookup.
+  const c = (customers.find((x) => x.id === id) ?? getCustomer(id) ?? customers[0]) as Customer;
   const cat = categoryFromHealth(c.health);
   const sentimentLabel = c.sentiment >= 60 ? "Positive" : c.sentiment >= 40 ? "Neutral" : "Negative";
+
+  // Effective lifecycle status = seeded status, overridden by any manual action.
+  const override = overrides[c.id];
+  const status = override?.status ?? c.status ?? "active";
+  const suggestChurn = status === "active" && looksChurned(c);
+  const [dismissed, setDismissed] = useState(false);
 
   return (
     <div>
       <Link
-        to="/app/customers"
+        to={status === "active" ? "/app/customers" : "/app/churned"}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to Risk Center
+        <ArrowLeft className="h-4 w-4" /> Back to {status === "active" ? "Risk Center" : "Churned & Win-back"}
       </Link>
+
+      {/* Lifecycle banner */}
+      {status === "churned" ? (
+        <div className="mb-5 flex flex-col gap-3 rounded-xl border border-danger/20 bg-danger/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2.5">
+            <UserMinus className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">This customer has churned</p>
+              <p className="text-xs text-muted-foreground">
+                They're excluded from active retention metrics. Focus here on winning them back.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              churnStore.markWonBack(c.id);
+              toast.success(`${c.name} marked as won back`);
+            }}
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-success px-3 py-2 text-sm font-medium text-success-foreground hover:bg-success/90"
+          >
+            <RotateCcw className="h-4 w-4" /> Mark as won back
+          </button>
+        </div>
+      ) : status === "won-back" ? (
+        <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-success/20 bg-success/5 p-4">
+          <RotateCcw className="h-5 w-5 shrink-0 text-success" />
+          <p className="text-sm font-medium text-foreground">Won back — this customer returned after churning.</p>
+        </div>
+      ) : suggestChurn && !dismissed ? (
+        <div className="mb-5 flex flex-col gap-3 rounded-xl border border-warning/30 bg-warning/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">Looks churned — confirm?</p>
+              <p className="text-xs text-muted-foreground">
+                Very low health and near-certain churn probability suggest this account may already be gone.
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <button
+              onClick={() => setDismissed(true)}
+              className="inline-flex items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-accent"
+            >
+              Still active
+            </button>
+            <button
+              onClick={() => {
+                churnStore.markChurned(c.id, c.factors[0]?.label);
+                toast.success(`${c.name} marked as churned`);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-danger px-3 py-2 text-sm font-medium text-danger-foreground hover:bg-danger/90"
+            >
+              <UserMinus className="h-4 w-4" /> Mark as churned
+            </button>
+          </div>
+        </div>
+      ) : status === "active" ? (
+        <div className="mb-5 flex justify-end">
+          <button
+            onClick={() => {
+              churnStore.markChurned(c.id, c.factors[0]?.label);
+              toast.success(`${c.name} marked as churned`);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <UserMinus className="h-3.5 w-3.5" /> Mark as churned
+          </button>
+        </div>
+      ) : null}
 
       <PageHeader title={c.name} description={`${c.segment} · ${c.contact} · last active ${c.lastActivity}`}>
         <HealthBadge category={cat} />
