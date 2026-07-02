@@ -11,6 +11,7 @@ import {
   interactionChannels,
   companySizes,
   getQuestions,
+  getChurnDefinition,
 } from "@/lib/onboarding-options";
 
 interface Segment {
