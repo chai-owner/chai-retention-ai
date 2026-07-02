@@ -24,6 +24,9 @@ export interface OnboardingProfile {
   segments: ProfileSegment[];
   successActions: string;
   disengagement: string;
+  // How the user defines a churned customer (their own words, seeded from an
+  // industry suggestion during onboarding).
+  churnDefinition?: string;
   tracked: Record<string, boolean>;
   channels: string[];
   // Importance (1–5) the user assigns to each health metric during onboarding.
