@@ -5,13 +5,19 @@ import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getProfile } from "@/lib/profile.functions";
 import { profileStore } from "@/lib/profile-store";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useProfileSync() {
   const fetchProfile = useServerFn(getProfile);
 
   useEffect(() => {
     let cancelled = false;
-    fetchProfile()
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (cancelled || !data.session) return;
+        return fetchProfile();
+      })
       .then((remote) => {
         if (cancelled || !remote || !remote.onboarded) return;
         profileStore.save({
