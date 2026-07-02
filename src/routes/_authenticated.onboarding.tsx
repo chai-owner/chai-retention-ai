@@ -11,6 +11,7 @@ import {
   interactionChannels,
   companySizes,
   getQuestions,
+  getChurnDefinition,
 } from "@/lib/onboarding-options";
 
 interface Segment {
@@ -48,6 +49,7 @@ function Onboarding() {
     lifespan: "",
     successActions: "",
     disengagement: "",
+    churnDefinition: "",
     concerns: "",
   });
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
@@ -122,7 +124,8 @@ function Onboarding() {
           form.cadence.trim() !== "" &&
           form.lifespan.trim() !== "" &&
           form.successActions.trim() !== "" &&
-          form.disengagement.trim() !== ""
+          form.disengagement.trim() !== "" &&
+          form.churnDefinition.trim() !== ""
         );
       case 5:
         return channels.length > 0;
@@ -150,6 +153,7 @@ function Onboarding() {
       segments,
       successActions: form.successActions,
       disengagement: form.disengagement,
+      churnDefinition: form.churnDefinition,
       tracked,
       channels,
       metricWeights,
@@ -344,6 +348,33 @@ function Onboarding() {
                   <Field label="What actions show disengagement?">
                     <input className={inputCls} value={form.disengagement} onChange={(e) => update("disengagement", e.target.value)} placeholder="e.g. no logins for 30 days" />
                   </Field>
+                  <div>
+                    <Field label="When would you consider a customer churned?">
+                      <textarea
+                        className={cn(inputCls, "min-h-20 resize-none")}
+                        value={form.churnDefinition}
+                        onChange={(e) => update("churnDefinition", e.target.value)}
+                        placeholder="Describe what 'churned' means for your business"
+                      />
+                    </Field>
+                    <div className="mt-2 flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+                      <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                      <div className="min-w-0">
+                        <p>
+                          Based on your {form.model} model, a common definition is:{" "}
+                          <span className="text-foreground">"{getChurnDefinition(form.model)}"</span>
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => update("churnDefinition", getChurnDefinition(form.model))}
+                          className="mt-1.5 font-medium text-primary underline-offset-2 hover:underline"
+                        >
+                          Use this suggestion
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   <Field label="What are your biggest retention concerns?">
                     <textarea className={cn(inputCls, "min-h-20 resize-none")} value={form.concerns} onChange={(e) => update("concerns", e.target.value)} placeholder="e.g. customers go quiet before renewal" />
                   </Field>
