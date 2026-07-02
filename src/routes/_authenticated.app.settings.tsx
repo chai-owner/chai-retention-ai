@@ -33,6 +33,7 @@ function Settings() {
   const [concerns, setConcerns] = useState("");
   const [successActions, setSuccessActions] = useState("");
   const [disengagement, setDisengagement] = useState("");
+  const [churnDefinition, setChurnDefinition] = useState("");
   const [segments, setSegments] = useState<ProfileSegment[]>([{ name: "", min: "", max: "" }]);
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
