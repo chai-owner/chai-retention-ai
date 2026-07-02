@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Users,
+  UserMinus,
   Database,
   ClipboardList,
   Lightbulb,
