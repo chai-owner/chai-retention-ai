@@ -46,3 +46,33 @@ export const defaultQuestions = [
 export function getQuestions(model: string): string[] {
   return industryQuestions[model] ?? defaultQuestions;
 }
+
+// Suggested definitions of a "churned customer" tailored to each business
+// model. Shown during onboarding so users can accept a sensible default or
+// refine it, rather than us assuming what churn means for their business.
+export const churnDefinitions: Record<string, string> = {
+  SaaS: "No logins for 60+ days, or a subscription that wasn't renewed at term.",
+  Subscription: "Cancelled their subscription, or a failed payment that wasn't recovered within 30 days.",
+  Ecommerce: "No purchase in the last 6 months, having previously bought regularly.",
+  Agency: "Ended their retainer or hasn't renewed an engagement after it lapsed.",
+  "Professional Services": "No active engagement and no new work booked in the last 6 months.",
+  Insurance: "Let a policy lapse or didn't renew at the end of the term.",
+  Telecom: "Cancelled their contract or ported their number to another provider.",
+  Education: "Didn't re-enrol for the next term, or stopped attending for 30+ days.",
+  "Financial Services": "Closed their account or has had no activity for 6+ months.",
+  Membership: "Didn't renew their membership or hasn't visited in 90+ days.",
+  Marketplace: "No transactions in the last 90 days after previously being active.",
+  Healthcare: "Missed follow-ups and hasn't booked an appointment in 6+ months.",
+  Logistics: "No shipments booked in the last 90 days, or didn't renew a contract.",
+  "Fitness / Gym": "Cancelled their membership or hasn't visited in 30+ days.",
+  Hospitality: "No repeat booking in the last 12 months after previously returning.",
+  Property: "Didn't renew their lease or gave notice to leave.",
+  Manufacturing: "No reorder in the expected cycle, or didn't renew a supply contract.",
+};
+
+const defaultChurnDefinition =
+  "No purchases or engagement for a sustained period, or an explicit cancellation.";
+
+export function getChurnDefinition(model: string): string {
+  return churnDefinitions[model] ?? defaultChurnDefinition;
+}
