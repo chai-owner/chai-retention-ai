@@ -153,6 +153,7 @@ function Onboarding() {
       segments,
       successActions: form.successActions,
       disengagement: form.disengagement,
+      churnDefinition: form.churnDefinition,
       tracked,
       channels,
       metricWeights,
