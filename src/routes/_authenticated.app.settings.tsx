@@ -54,6 +54,7 @@ function Settings() {
     setConcerns(profile.concerns ?? "");
     setSuccessActions(profile.successActions ?? "");
     setDisengagement(profile.disengagement ?? "");
+    setChurnDefinition(profile.churnDefinition ?? "");
     setSegments(profile.segments?.length ? profile.segments : [{ name: "", min: "", max: "" }]);
     setTracked(profile.tracked ?? {});
     setChannels(profile.channels ?? []);
