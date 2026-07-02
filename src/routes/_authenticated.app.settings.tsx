@@ -120,6 +120,7 @@ function Settings() {
       segments,
       successActions,
       disengagement,
+      churnDefinition,
       tracked,
       channels,
       metricWeights,
