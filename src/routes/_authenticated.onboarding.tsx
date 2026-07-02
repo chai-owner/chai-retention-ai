@@ -124,7 +124,8 @@ function Onboarding() {
           form.cadence.trim() !== "" &&
           form.lifespan.trim() !== "" &&
           form.successActions.trim() !== "" &&
-          form.disengagement.trim() !== ""
+          form.disengagement.trim() !== "" &&
+          form.churnDefinition.trim() !== ""
         );
       case 5:
         return channels.length > 0;
