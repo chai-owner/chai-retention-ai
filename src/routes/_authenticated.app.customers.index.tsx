@@ -83,7 +83,23 @@ function Customers() {
         description="Every customer ranked by churn risk. The riskiest, highest-value accounts rise to the top so you know exactly who to focus on."
       />
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        {lifecycleTabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setLifecycle(t.key)}
+            className={cn(
+              "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+              lifecycle === t.key
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:bg-accent",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
