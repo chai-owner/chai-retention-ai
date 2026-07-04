@@ -6,6 +6,8 @@ import { PageHeader, Card } from "@/components/ui/chai";
 import { integrations, crmIntegrations } from "@/lib/mock-data";
 import { UploadWizard } from "@/components/upload-wizard";
 import { SmartIngestWizard } from "@/components/smart-ingest-wizard";
+import { CrmSyncWizard } from "@/components/crm-sync-wizard";
+import type { CrmProvider } from "@/lib/crm.functions";
 import { datasetSchemas } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
 import { personalizeDatasets, type PersonalizedDataset } from "@/lib/personalize-data";
@@ -121,24 +123,7 @@ function DataPage() {
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {crmIntegrations.map((it) => (
-            <div key={it.name} className="rounded-xl border border-border p-4">
-              <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-primary">
-                  <Building2 className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold">{it.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{it.category}</p>
-                </div>
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">{it.desc}</p>
-              <button
-                onClick={() => toast.info(`Connect ${it.name}`, { description: "Demo mode — OAuth flow not enabled." })}
-                className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
-              >
-                Connect
-              </button>
-            </div>
+            <CrmCard key={it.name} name={it.name} category={it.category} desc={it.desc} />
           ))}
         </div>
       </Card>
@@ -294,6 +279,63 @@ function DatasetRow({ dataset, lastUpload }: { dataset: PersonalizedDataset; las
 
 
       <UploadWizard dataset={dataset} open={wizardOpen} onOpenChange={setWizardOpen} />
+    </div>
+  );
+}
+
+// Maps a CRM display name to its connector provider id.
+const CRM_PROVIDER_BY_NAME: Record<string, CrmProvider> = {
+  Salesforce: "salesforce",
+  HubSpot: "hubspot",
+  "Zoho CRM": "zoho_crm",
+};
+
+function CrmCard({ name, category, desc }: { name: string; category: string; desc: string }) {
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const uploads = useUploads();
+  const provider = CRM_PROVIDER_BY_NAME[name];
+
+  // Most recent sync for this CRM, derived from imported upload records.
+  const lastSynced = useMemo(() => {
+    const prefix = `${name} —`;
+    let latest: string | undefined;
+    for (const u of uploads) {
+      if (u.fileName.startsWith(prefix) && (!latest || u.uploadedAt > latest)) {
+        latest = u.uploadedAt;
+      }
+    }
+    return latest;
+  }, [uploads, name]);
+
+  return (
+    <div className="rounded-xl border border-border p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-primary">
+          <Building2 className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold">{name}</p>
+          <p className="text-[11px] text-muted-foreground">{category}</p>
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">{desc}</p>
+      <button
+        onClick={() => setWizardOpen(true)}
+        className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
+      >
+        {lastSynced ? "Sync now" : "Connect & sync"}
+      </button>
+      {lastSynced && (
+        <p className="mt-1.5 text-center text-[11px] italic text-success">Last synced {lastSynced}</p>
+      )}
+      {provider && (
+        <CrmSyncWizard
+          provider={provider}
+          providerName={name}
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+        />
+      )}
     </div>
   );
 }
