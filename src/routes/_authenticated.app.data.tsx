@@ -121,24 +121,7 @@ function DataPage() {
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {crmIntegrations.map((it) => (
-            <div key={it.name} className="rounded-xl border border-border p-4">
-              <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-primary">
-                  <Building2 className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold">{it.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{it.category}</p>
-                </div>
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">{it.desc}</p>
-              <button
-                onClick={() => toast.info(`Connect ${it.name}`, { description: "Demo mode — OAuth flow not enabled." })}
-                className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
-              >
-                Connect
-              </button>
-            </div>
+            <CrmCard key={it.name} name={it.name} category={it.category} desc={it.desc} />
           ))}
         </div>
       </Card>
