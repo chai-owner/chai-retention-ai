@@ -1,39 +1,59 @@
-# Handle churned customers in ChAi
-
 ## Goal
-Add a proper lifecycle stage for customers who have already left. Churned accounts stop polluting active retention metrics, get their own space, and become fuel for **win-back** (re-engagement targets) and **learning** (why they left). Detection is **both** auto-inferred and manually confirmed.
 
-Consistent with the rest of the app, this stays in the frontend/mock-data layer (customers are demo data in `src/lib/mock-data.ts`, not a database table).
+Make the CRM tiles on the Data page (Salesforce, HubSpot, Zoho CRM) actually pull real records into ChAi, mapping CRM data into the existing datasets, instead of showing the demo "OAuth not enabled" toast.
 
-## 1. Data model (`src/lib/mock-data.ts`)
-- Add a lifecycle field to `Customer`: `status: "active" | "churned" | "won-back"` (default `active`).
-- For churned customers add:
-  - `churnedDate` — when they left.
-  - `churnReason` — the dominant factor(s) that preceded churn (reuse existing `factors`).
-  - `winBackScore` (0–100) — likelihood they can be re-won, plus a `winBackDifficulty`.
-- Seed ~4–6 churned demo accounts (and 1 "won-back") so every new view has content.
-- Add helpers: `getActiveCustomers()`, `getChurnedCustomers()`, and a `churnAnalytics()` aggregator (churn rate, revenue lost/yr, top churn reasons).
-- Keep churned accounts **out** of the datasets that feed health averages, revenue-at-risk, and retention-opportunity.
+## What data each CRM will accept (and where it lands)
 
-## 2. Auto-inference + manual flag
-- Add a pure helper `inferChurnRisk(customer)` that flags likely-churned accounts from signals (subscription ended / long inactivity / no revenue past cadence).
-- On a customer's detail page (`_authenticated.app.customers.$id.tsx`), when auto-inference suggests churn, show a banner: **"Looks churned — confirm?"** with **Mark as churned** / **Still active** actions.
-- Add a manual **"Mark as churned"** action (with reason capture) available from the detail page. Persist the override in a small local store (mirroring the `addons-store` / `uploads-store` pattern) so it survives within the session.
+CRM data maps into ChAi's existing dataset schemas (`src/lib/data-schemas.ts`) so the rest of the app (health scoring, risk, churn) works unchanged:
 
-## 3. Keep active views clean
-- Risk Center list (`_authenticated.app.customers.index.tsx`): default to active customers only; add a filter chip set — **Active · Churned · Won back**.
-- Dashboard metrics unchanged in logic but now correctly exclude churned accounts; add a small **"Churned this period"** stat and **revenue lost / yr** (italic, matching the existing per-year styling) so loss is visible without distorting at-risk numbers.
+```text
+CRM object                         → ChAi dataset      → key fields
+Accounts / Companies / Contacts    → Customers         customer_id, name, email, signup_date,
+                                                        monthly_revenue, plan, region, status
+Deals / Opportunities / Invoices   → Transactions      customer_id, transaction_id, amount,
+                                                        transaction_date, product, currency
+Engagement / activity / touchpoints→ Product usage     customer_id, date, logins/active signal
+Renewal / lifecycle / pipeline     → Customer status   feeds churn definition + lifecycle
+```
 
-## 4. New "Churned & Win-back" view
-New route `src/routes/_authenticated.app.churned.tsx` (nav entry in `app-shell.tsx`):
-- **Win-back candidates** — churned customers ranked by `winBackScore`, each with a tailored recommendation ("send return offer," "re-onboard," "exec re-approach") and estimated recoverable revenue.
-- **Why customers leave** — aggregated churn-reason breakdown (bar list of top factors with % share) from `churnAnalytics()`, so the team learns patterns.
-- Summary stats: churn rate, total revenue lost, average tenure before churn, win-back opportunity.
+Per CRM:
+- **Salesforce** — `Account` (Customers), `Opportunity` (Transactions/renewals), `Contact` (email/owner), activity (usage signal).
+- **HubSpot** — `companies`/`contacts` (Customers), `deals` (Transactions), engagement events (usage), lifecycle stage (status).
+- **Zoho CRM** — `Accounts`/`Contacts` (Customers), `Deals` (Transactions/pipeline), touchpoints (usage).
 
-## 5. Won-back path
-- Marking a churned customer as re-engaged sets `status: "won-back"`, moves them out of win-back candidates, and surfaces them in a small "Recently won back" strip for positive reinforcement.
+## Important decision needed: whose CRM?
 
-## Scope / non-goals
-- Frontend + mock-data only; no database schema changes (customer data is demo data).
-- No changes to onboarding, pricing, or the AI ingestion features.
-- Reuse existing components (`PageHeader`, `StatCard`, `Card`, `HealthBadge`) and design tokens — no new palette.
+Lovable's standard connectors authenticate **one workspace/builder account**, not each signed-in end user. Two paths:
+
+- **A — Connector (single account):** fastest. Good if ChAi connects to *your* CRM (single tenant / internal demo). Uses `standard_connectors--connect` and the connector gateway. This plan assumes A.
+- **B — Per-user OAuth:** required if every ChAi customer connects *their own* CRM. Needs provider OAuth apps + per-user token storage — a much larger build. Flag if this is the target.
+
+## Implementation (Path A)
+
+### 1. Connect the connectors
+Link Salesforce, HubSpot, and Zoho CRM via `standard_connectors--connect`. This injects `SALESFORCE_API_KEY`, `HUBSPOT_API_KEY`, `ZOHO_CRM_API_KEY` alongside `LOVABLE_API_KEY` into the server runtime.
+
+### 2. New server functions — `src/lib/crm.functions.ts`
+One `createServerFn({ method: "POST" })` per provider (or a single fn with a `provider` arg), each guarded by `requireSupabaseAuth`:
+- Calls the provider through the connector gateway (`https://connector-gateway.lovable.dev/{provider}/...`) with `Authorization: Bearer LOVABLE_API_KEY` + `X-Connection-Api-Key`.
+- Fetches Accounts/Contacts, Deals/Opportunities, and recent activity (paginated).
+- Normalizes each record into ChAi dataset rows (headers + string rows) reusing the shape already produced by `extractRecords` in `ingest.functions.ts`, so downstream review/import code is shared.
+- Returns `{ datasets: ExtractedDataset[] }` plus a per-dataset confidence.
+
+### 3. Wire the UI (`src/routes/_authenticated.app.data.tsx`)
+- Replace each CRM tile's demo-toast `onClick` with a connect/import flow: trigger the server fn, show a loading state, then a **review step** (reuse the mapping/preview UI pattern from `SmartIngestWizard`) before anything is saved.
+- On confirm, write results into `uploads-store` as `UploadRecord`s (same path manual uploads use), so Data Quality, dashboard metrics, and customer lists pick them up automatically.
+- Show "Last synced" per CRM, mirroring the existing "Last uploaded on" recency treatment.
+
+### 4. Status & churn alignment
+Map CRM lifecycle/renewal state onto the `status` field (`active` / `churned` / `won-back`) using the user's onboarding `churnDefinition`, so imported CRM accounts respect the churn rules already configured.
+
+## Technical notes
+- All CRM calls are server-side only (gateway keys never reach the browser).
+- Reuse `ExtractedDataset` / `UploadRecord` types — no new data model.
+- Validate + cap pagination; back off on 429; surface clear errors on gateway 4xx.
+- No DB schema change required for Path A (data flows into the existing in-memory uploads store); if you want CRM imports persisted per user, that's an added `crm_imports` table (say the word).
+
+## Out of scope (unless requested)
+- Per-user OAuth (Path B).
+- Scheduled/automatic background sync (this plan is on-demand sync from the tile).
