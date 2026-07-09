@@ -1,10 +1,13 @@
-// Accounting sync overlay — pulls live records from a connected accounting
-// tool (QuickBooks Online, Xero or FreshBooks) through a server function, then
-// shows the same editable review screen as ChAi Data Drop before anything is
-// saved. Nothing is imported until the data is clean and the user confirms.
+// Accounting sync overlay — simulates connecting an accounting tool
+// (QuickBooks Online, Xero or FreshBooks) and generates representative
+// customers + invoices, then shows the same editable review screen as ChAi
+// Data Drop before anything is saved. Nothing is imported until the data is
+// clean and the user confirms.
+//
+// QuickBooks / Xero / FreshBooks aren't available as live Lovable connectors,
+// so this runs a client-side demo sync instead of a real OAuth gateway call.
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CheckCircle2, Receipt, Loader2, X } from "lucide-react";
 import {
   Dialog,
@@ -15,7 +18,10 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { datasetSchemas, type DatasetSchema } from "@/lib/data-schemas";
-import { syncAccounting, type AccountingProvider } from "@/lib/accounting.functions";
+import {
+  generateAccountingDatasets,
+  type AccountingProvider,
+} from "@/lib/accounting-demo";
 import type { ExtractedDataset } from "@/lib/ingest.functions";
 import {
   uploadsStore,
@@ -23,6 +29,7 @@ import {
   type QualityFinding,
   type UploadRecord,
 } from "@/lib/uploads-store";
+
 
 type FieldType = "date" | "number" | "email" | "text";
 
