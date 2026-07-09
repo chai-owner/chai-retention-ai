@@ -552,6 +552,7 @@ export async function fetchAndNormalize(
       headers: CUSTOMER_HEADERS,
       rows: customerRows,
       confidence: 92,
+      note: "Customers synced live from your accounting account.",
     });
   }
   if (txnRows.length) {
@@ -561,6 +562,7 @@ export async function fetchAndNormalize(
       headers: TRANSACTION_HEADERS,
       rows: txnRows,
       confidence: 88,
+      note: "Invoices synced live from your accounting account.",
     });
   }
   return datasets;
