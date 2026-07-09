@@ -2,7 +2,6 @@
 // client-callable RPC boundary; all real work happens in accounting.server.ts
 // which is loaded inside the handlers so it never ships to the browser.
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -98,6 +97,3 @@ export const disconnectAccounting = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Not used directly on the client but keeps getRequestHeader imported for
-// potential origin fallback in future handlers.
-void getRequestHeader;
