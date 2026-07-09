@@ -27,6 +27,7 @@ import { Route as AuthenticatedAppDashboardRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppCustomersRouteImport } from './routes/_authenticated.app.customers'
 import { Route as AuthenticatedAppChurnedRouteImport } from './routes/_authenticated.app.churned'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
+import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -124,6 +125,12 @@ const AuthenticatedAppCustomersIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAppCustomersRoute,
   } as any)
+const ApiPublicAccountingCallbackRoute =
+  ApiPublicAccountingCallbackRouteImport.update({
+    id: '/api/public/accounting/callback',
+    path: '/api/public/accounting/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAppCustomersIdRoute =
   AuthenticatedAppCustomersIdRouteImport.update({
     id: '/$id',
@@ -149,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/app/trust': typeof AuthenticatedAppTrustRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
+  '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -167,6 +175,7 @@ export interface FileRoutesByTo {
   '/app/trust': typeof AuthenticatedAppTrustRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
+  '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/app/customers': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRoutesById {
@@ -189,6 +198,7 @@ export interface FileRoutesById {
   '/_authenticated/app/trust': typeof AuthenticatedAppTrustRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
+  '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/_authenticated/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRouteTypes {
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
     | '/app/trust'
     | '/app/'
     | '/app/customers/$id'
+    | '/api/public/accounting/callback'
     | '/app/customers/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/app/trust'
     | '/app'
     | '/app/customers/$id'
+    | '/api/public/accounting/callback'
     | '/app/customers'
   id:
     | '__root__'
@@ -250,6 +262,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/trust'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
+    | '/api/public/accounting/callback'
     | '/_authenticated/app/customers/'
   fileRoutesById: FileRoutesById
 }
@@ -258,6 +271,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -388,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCustomersIndexRouteImport
       parentRoute: typeof AuthenticatedAppCustomersRoute
     }
+    '/api/public/accounting/callback': {
+      id: '/api/public/accounting/callback'
+      path: '/api/public/accounting/callback'
+      fullPath: '/api/public/accounting/callback'
+      preLoaderRoute: typeof ApiPublicAccountingCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/customers/$id': {
       id: '/_authenticated/app/customers/$id'
       path: '/$id'
@@ -464,6 +485,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

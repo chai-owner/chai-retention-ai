@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Building2, Check, Link2, Lock, Receipt, Sparkles, Upload } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Building2, Check, Link2, Lock, Receipt, Sparkles, Upload, Loader2 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { integrations, crmIntegrations, accountingIntegrations } from "@/lib/mock-data";
 import { UploadWizard } from "@/components/upload-wizard";
@@ -9,7 +10,13 @@ import { SmartIngestWizard } from "@/components/smart-ingest-wizard";
 import { CrmSyncWizard } from "@/components/crm-sync-wizard";
 import { AccountingSyncWizard } from "@/components/accounting-sync-wizard";
 import type { CrmProvider } from "@/lib/crm.functions";
-import type { AccountingProvider } from "@/lib/accounting-demo";
+import {
+  getAccountingStatus,
+  getAccountingConfig,
+  startAccountingOAuth,
+  disconnectAccounting,
+  type AccountingProvider,
+} from "@/lib/accounting.functions";
 import { datasetSchemas } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
 import { personalizeDatasets, type PersonalizedDataset } from "@/lib/personalize-data";
@@ -131,17 +138,7 @@ function DataPage() {
       </Card>
 
       {/* Accounting integrations */}
-      <Card className="mt-6">
-        <h3 className="font-semibold">Connect your accounting tools</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Your accounting system knows what customers actually buy and how often. Connect it so ChAi can pull customers and invoices to reveal spend, buying cadence and lifetime value. Connect securely with OAuth.
-        </p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          {accountingIntegrations.map((it) => (
-            <AccountingCard key={it.name} name={it.name} category={it.category} desc={it.desc} />
-          ))}
-        </div>
-      </Card>
+      <AccountingSection />
     </div>
   );
 }
@@ -362,10 +359,111 @@ const ACCOUNTING_PROVIDER_BY_NAME: Record<string, AccountingProvider> = {
   FreshBooks: "freshbooks",
 };
 
-function AccountingCard({ name, category, desc }: { name: string; category: string; desc: string }) {
+type AccountingStatus = {
+  provider: AccountingProvider;
+  company_name: string | null;
+  connected_at: string;
+};
+
+function AccountingSection() {
+  const [status, setStatus] = useState<AccountingStatus[]>([]);
+  const [config, setConfig] = useState<Record<AccountingProvider, boolean> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const fetchStatus = useServerFn(getAccountingStatus);
+  const fetchConfig = useServerFn(getAccountingConfig);
+
+  const refresh = async () => {
+    try {
+      const [s, c] = await Promise.all([fetchStatus(), fetchConfig()]);
+      setStatus(s as AccountingStatus[]);
+      setConfig(c as Record<AccountingProvider, boolean>);
+    } catch {
+      /* ignore — cards fall back to a connect prompt */
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+    // Handle the OAuth callback redirect result once.
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("accounting_connected");
+    const err = params.get("accounting_error");
+    if (connected) {
+      const name =
+        ACCOUNTING_PROVIDERS_NAME[connected as AccountingProvider] ?? connected;
+      toast.success(`${name} connected`, {
+        description: "You can now sync customers and invoices into ChAi.",
+      });
+    }
+    if (err) {
+      toast.error("Connection failed", { description: err });
+    }
+    if (connected || err) {
+      window.history.replaceState({}, "", "/app/data");
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <Card className="mt-6">
+      <h3 className="font-semibold">Connect your accounting tools</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Your accounting system knows what customers actually buy and how often. Connect it so ChAi can pull customers and invoices to reveal spend, buying cadence and lifetime value. You authorize securely with OAuth — ChAi never sees your password.
+      </p>
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        {accountingIntegrations.map((it) => (
+          <AccountingCard
+            key={it.name}
+            name={it.name}
+            category={it.category}
+            desc={it.desc}
+            loading={loading}
+            connected={status.find(
+              (s) => s.provider === ACCOUNTING_PROVIDER_BY_NAME[it.name],
+            )}
+            configured={
+              config
+                ? config[ACCOUNTING_PROVIDER_BY_NAME[it.name]]
+                : true
+            }
+            onChanged={refresh}
+          />
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+const ACCOUNTING_PROVIDERS_NAME: Record<AccountingProvider, string> = {
+  quickbooks: "QuickBooks Online",
+  xero: "Xero",
+  freshbooks: "FreshBooks",
+};
+
+function AccountingCard({
+  name,
+  category,
+  desc,
+  loading,
+  connected,
+  configured,
+  onChanged,
+}: {
+  name: string;
+  category: string;
+  desc: string;
+  loading: boolean;
+  connected?: AccountingStatus;
+  configured: boolean;
+  onChanged: () => void;
+}) {
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const uploads = useUploads();
   const provider = ACCOUNTING_PROVIDER_BY_NAME[name];
+  const startOAuth = useServerFn(startAccountingOAuth);
+  const disconnect = useServerFn(disconnectAccounting);
 
   // Most recent sync for this accounting tool, derived from imported uploads.
   const lastSynced = useMemo(() => {
@@ -379,6 +477,33 @@ function AccountingCard({ name, category, desc }: { name: string; category: stri
     return latest;
   }, [uploads, name]);
 
+  async function handleConnect() {
+    setConnecting(true);
+    try {
+      const { url } = await startOAuth({
+        data: { provider, origin: window.location.origin },
+      });
+      window.location.href = url;
+    } catch (e) {
+      setConnecting(false);
+      toast.error("Couldn’t start connection", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
+  }
+
+  async function handleDisconnect() {
+    try {
+      await disconnect({ data: { provider } });
+      toast.success(`${name} disconnected`);
+      onChanged();
+    } catch (e) {
+      toast.error("Couldn’t disconnect", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
+  }
+
   return (
     <div className="rounded-xl border border-border p-4">
       <div className="flex items-center gap-2">
@@ -389,18 +514,59 @@ function AccountingCard({ name, category, desc }: { name: string; category: stri
           <p className="text-sm font-semibold">{name}</p>
           <p className="text-[11px] text-muted-foreground">{category}</p>
         </div>
+        {connected && (
+          <span className="ml-auto flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+            <Check className="h-3 w-3" /> Connected
+          </span>
+        )}
       </div>
       <p className="mt-3 text-xs text-muted-foreground">{desc}</p>
-      <button
-        onClick={() => setWizardOpen(true)}
-        className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
-      >
-        {lastSynced ? "Sync now" : "Connect & sync"}
-      </button>
-      {lastSynced && (
-        <p className="mt-1.5 text-center text-[11px] italic text-success">Last synced {lastSynced}</p>
+
+      {loading ? (
+        <div className="mt-3 flex items-center justify-center py-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
+      ) : !configured ? (
+        <div className="mt-3 rounded-lg border border-dashed border-border px-3 py-2 text-[11px] text-muted-foreground">
+          Add your {name} developer app credentials to enable this connection.
+        </div>
+      ) : connected ? (
+        <>
+          <button
+            onClick={() => setWizardOpen(true)}
+            className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
+          >
+            Sync now
+          </button>
+          <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px]">
+            {connected.company_name && (
+              <span className="text-muted-foreground">{connected.company_name}</span>
+            )}
+            <button
+              onClick={handleDisconnect}
+              className="text-muted-foreground underline-offset-2 hover:text-danger hover:underline"
+            >
+              Disconnect
+            </button>
+          </div>
+          {lastSynced && (
+            <p className="mt-1 text-center text-[11px] italic text-success">
+              Last synced {lastSynced}
+            </p>
+          )}
+        </>
+      ) : (
+        <button
+          onClick={handleConnect}
+          disabled={connecting}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+        >
+          {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+          {connecting ? "Redirecting…" : "Connect with OAuth"}
+        </button>
       )}
-      {provider && (
+
+      {provider && connected && (
         <AccountingSyncWizard
           provider={provider}
           providerName={name}
@@ -411,3 +577,4 @@ function AccountingCard({ name, category, desc }: { name: string; category: stri
     </div>
   );
 }
+
