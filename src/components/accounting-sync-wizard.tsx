@@ -242,13 +242,21 @@ export function AccountingSyncWizard({
           </DialogDescription>
         </DialogHeader>
 
-        {!loaded && (
+        {!loaded && !error && (
           <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="text-sm font-medium">Pulling records from {providerName}…</span>
             <span className="text-xs text-muted-foreground">
               Fetching customers and invoices through your secure connection.
             </span>
+          </div>
+        )}
+
+        {error && (
+          <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+            <AlertTriangle className="h-8 w-8 text-danger" />
+            <span className="text-sm font-medium">Couldn’t sync from {providerName}</span>
+            <span className="max-w-md text-xs text-muted-foreground">{error}</span>
           </div>
         )}
 
