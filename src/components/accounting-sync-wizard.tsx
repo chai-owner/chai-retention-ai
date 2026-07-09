@@ -1,10 +1,13 @@
-// Accounting sync overlay — pulls live records from a connected accounting
-// tool (QuickBooks Online, Xero or FreshBooks) through a server function, then
-// shows the same editable review screen as ChAi Data Drop before anything is
-// saved. Nothing is imported until the data is clean and the user confirms.
+// Accounting sync overlay — simulates connecting an accounting tool
+// (QuickBooks Online, Xero or FreshBooks) and generates representative
+// customers + invoices, then shows the same editable review screen as ChAi
+// Data Drop before anything is saved. Nothing is imported until the data is
+// clean and the user confirms.
+//
+// QuickBooks / Xero / FreshBooks aren't available as live Lovable connectors,
+// so this runs a client-side demo sync instead of a real OAuth gateway call.
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CheckCircle2, Receipt, Loader2, X } from "lucide-react";
 import {
   Dialog,
@@ -15,7 +18,10 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { datasetSchemas, type DatasetSchema } from "@/lib/data-schemas";
-import { syncAccounting, type AccountingProvider } from "@/lib/accounting.functions";
+import {
+  generateAccountingDatasets,
+  type AccountingProvider,
+} from "@/lib/accounting-demo";
 import type { ExtractedDataset } from "@/lib/ingest.functions";
 import {
   uploadsStore,
@@ -23,6 +29,7 @@ import {
   type QualityFinding,
   type UploadRecord,
 } from "@/lib/uploads-store";
+
 
 type FieldType = "date" | "number" | "email" | "text";
 
@@ -98,7 +105,6 @@ export function AccountingSyncWizard({
   onOpenChange: (v: boolean) => void;
   onImported?: () => void;
 }) {
-  const runSync = useServerFn(syncAccounting);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [datasets, setDatasets] = useState<EditableDataset[]>([]);
@@ -113,38 +119,25 @@ export function AccountingSyncWizard({
     setTimeout(reset, 200);
   }
 
-  // Kick off the sync as soon as the dialog opens.
+  // Simulate the sync as soon as the dialog opens.
   useEffect(() => {
     if (!open || loaded || busy) return;
     let cancelled = false;
-    (async () => {
-      setBusy(true);
-      try {
-        const result = await runSync({ data: { provider } });
-        if (cancelled) return;
-        const editable = buildEditable(result.datasets);
-        if (editable.length === 0) {
-          toast.error("No records found", {
-            description: `ChAi couldn't find any importable records in ${providerName}.`,
-          });
-          close();
-          return;
-        }
-        setDatasets(editable);
-        setLoaded(true);
-      } catch (err) {
-        if (cancelled) return;
-        const msg = err instanceof Error ? err.message : "Sync failed.";
-        toast.error(`Couldn't sync ${providerName}`, { description: msg });
-        close();
-      } finally {
-        if (!cancelled) setBusy(false);
-      }
-    })();
+    setBusy(true);
+    // Brief delay so the connecting state reads as a real sync.
+    const timer = setTimeout(() => {
+      if (cancelled) return;
+      const editable = buildEditable(generateAccountingDatasets(provider));
+      setDatasets(editable);
+      setLoaded(true);
+      setBusy(false);
+    }, 900);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   function setCell(dsIdx: number, rowIdx: number, colIdx: number, value: string) {
     setDatasets((prev) =>
