@@ -105,7 +105,6 @@ export function AccountingSyncWizard({
   onOpenChange: (v: boolean) => void;
   onImported?: () => void;
 }) {
-  const runSync = useServerFn(syncAccounting);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [datasets, setDatasets] = useState<EditableDataset[]>([]);
@@ -120,38 +119,25 @@ export function AccountingSyncWizard({
     setTimeout(reset, 200);
   }
 
-  // Kick off the sync as soon as the dialog opens.
+  // Simulate the sync as soon as the dialog opens.
   useEffect(() => {
     if (!open || loaded || busy) return;
     let cancelled = false;
-    (async () => {
-      setBusy(true);
-      try {
-        const result = await runSync({ data: { provider } });
-        if (cancelled) return;
-        const editable = buildEditable(result.datasets);
-        if (editable.length === 0) {
-          toast.error("No records found", {
-            description: `ChAi couldn't find any importable records in ${providerName}.`,
-          });
-          close();
-          return;
-        }
-        setDatasets(editable);
-        setLoaded(true);
-      } catch (err) {
-        if (cancelled) return;
-        const msg = err instanceof Error ? err.message : "Sync failed.";
-        toast.error(`Couldn't sync ${providerName}`, { description: msg });
-        close();
-      } finally {
-        if (!cancelled) setBusy(false);
-      }
-    })();
+    setBusy(true);
+    // Brief delay so the connecting state reads as a real sync.
+    const timer = setTimeout(() => {
+      if (cancelled) return;
+      const editable = buildEditable(generateAccountingDatasets(provider));
+      setDatasets(editable);
+      setLoaded(true);
+      setBusy(false);
+    }, 900);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   function setCell(dsIdx: number, rowIdx: number, colIdx: number, value: string) {
     setDatasets((prev) =>
