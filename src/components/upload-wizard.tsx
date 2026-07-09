@@ -174,6 +174,7 @@ export function UploadWizard({
   const [headers, setHeaders] = useState<string[]>([]);
   const [dataRows, setDataRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [mergeSummary, setMergeSummary] = useState<MergeSummary | null>(null);
 
   function reset() {
     setStep("select");
