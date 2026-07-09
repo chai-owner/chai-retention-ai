@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_connections: {
+        Row: {
+          access_token: string
+          account_id: string | null
+          company_name: string | null
+          connected_at: string
+          expires_at: string | null
+          id: string
+          provider: string
+          realm_id: string | null
+          refresh_token: string | null
+          tenant_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          account_id?: string | null
+          company_name?: string | null
+          connected_at?: string
+          expires_at?: string | null
+          id?: string
+          provider: string
+          realm_id?: string | null
+          refresh_token?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          account_id?: string | null
+          company_name?: string | null
+          connected_at?: string
+          expires_at?: string | null
+          id?: string
+          provider?: string
+          realm_id?: string | null
+          refresh_token?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      accounting_oauth_states: {
+        Row: {
+          created_at: string
+          provider: string
+          redirect_uri: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          provider: string
+          redirect_uri: string
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          provider?: string
+          redirect_uri?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avg_value: string
