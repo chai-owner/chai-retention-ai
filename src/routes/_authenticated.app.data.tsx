@@ -138,17 +138,7 @@ function DataPage() {
       </Card>
 
       {/* Accounting integrations */}
-      <Card className="mt-6">
-        <h3 className="font-semibold">Connect your accounting tools</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Your accounting system knows what customers actually buy and how often. Connect it so ChAi can pull customers and invoices to reveal spend, buying cadence and lifetime value. Connect securely with OAuth.
-        </p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          {accountingIntegrations.map((it) => (
-            <AccountingCard key={it.name} name={it.name} category={it.category} desc={it.desc} />
-          ))}
-        </div>
-      </Card>
+      <AccountingSection />
     </div>
   );
 }
