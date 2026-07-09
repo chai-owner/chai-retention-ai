@@ -74,26 +74,8 @@ function DataPage() {
         <span className="h-px flex-1 bg-border" />
       </div>
 
-      {/* What to upload — personalized to the onboarding profile, one line per dataset */}
-
-
-      <Card>
-        <h3 className="font-semibold">What to upload for your business</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {profile
-            ? `Tailored to your ${profile.model} business and how you defined success. Upload each dataset below to power your retention model.`
-            : "Upload each dataset below. Complete onboarding to tailor these to your business and industry."}
-        </p>
-
-        <div className="mt-5 divide-y divide-border border-y border-border">
-          {personalized.map((s) => (
-            <DatasetRow key={s.key} dataset={s} lastUpload={lastUpload(s)} />
-          ))}
-        </div>
-      </Card>
-
-
       {/* Integrations */}
+
 
       <Card className="mt-6">
         <h3 className="font-semibold">Connect your support tools</h3>
@@ -139,9 +121,26 @@ function DataPage() {
 
       {/* Accounting integrations */}
       <AccountingSection />
+
+      {/* What to upload — personalized to the onboarding profile, one line per dataset */}
+      <Card className="mt-6">
+        <h3 className="font-semibold">What to upload for your business</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {profile
+            ? `Tailored to your ${profile.model} business and how you defined success. Upload each dataset below to power your retention model.`
+            : "Upload each dataset below. Complete onboarding to tailor these to your business and industry."}
+        </p>
+
+        <div className="mt-5 divide-y divide-border border-y border-border">
+          {personalized.map((s) => (
+            <DatasetRow key={s.key} dataset={s} lastUpload={lastUpload(s)} />
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
+
 
 function SmartIngestCard() {
   const { smartIngest } = useAddons();
