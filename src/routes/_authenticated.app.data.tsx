@@ -354,3 +354,60 @@ function CrmCard({ name, category, desc }: { name: string; category: string; des
     </div>
   );
 }
+
+// Maps an accounting tool display name to its connector provider id.
+const ACCOUNTING_PROVIDER_BY_NAME: Record<string, AccountingProvider> = {
+  "QuickBooks Online": "quickbooks",
+  Xero: "xero",
+  FreshBooks: "freshbooks",
+};
+
+function AccountingCard({ name, category, desc }: { name: string; category: string; desc: string }) {
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const uploads = useUploads();
+  const provider = ACCOUNTING_PROVIDER_BY_NAME[name];
+
+  // Most recent sync for this accounting tool, derived from imported uploads.
+  const lastSynced = useMemo(() => {
+    const prefix = `${name} —`;
+    let latest: string | undefined;
+    for (const u of uploads) {
+      if (u.fileName.startsWith(prefix) && (!latest || u.uploadedAt > latest)) {
+        latest = u.uploadedAt;
+      }
+    }
+    return latest;
+  }, [uploads, name]);
+
+  return (
+    <div className="rounded-xl border border-border p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-primary">
+          <Receipt className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold">{name}</p>
+          <p className="text-[11px] text-muted-foreground">{category}</p>
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">{desc}</p>
+      <button
+        onClick={() => setWizardOpen(true)}
+        className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
+      >
+        {lastSynced ? "Sync now" : "Connect & sync"}
+      </button>
+      {lastSynced && (
+        <p className="mt-1.5 text-center text-[11px] italic text-success">Last synced {lastSynced}</p>
+      )}
+      {provider && (
+        <AccountingSyncWizard
+          provider={provider}
+          providerName={name}
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+        />
+      )}
+    </div>
+  );
+}
