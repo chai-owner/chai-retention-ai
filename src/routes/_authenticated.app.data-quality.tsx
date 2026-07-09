@@ -175,6 +175,21 @@ function DataQualityPage() {
           )}
         </div>
       </Card>
+
+      {tickets.length > 0 && (
+        <Card className="mt-6">
+          <h3 className="font-semibold">Ticket status changes</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Each ticket is tracked by its ID. When you re-upload a ticket with a changed status, ChAi
+            overwrites it and logs the change, so you can see how long a ticket took to close.
+          </p>
+          <div className="mt-4 space-y-3">
+            {tickets.map((t) => (
+              <TicketRow key={t.ticket_id} ticket={t} />
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
