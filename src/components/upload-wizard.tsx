@@ -155,7 +155,7 @@ interface ErrorRow {
   message: string;
 }
 
-type Step = "select" | "review";
+type Step = "select" | "review" | "done";
 
 export function UploadWizard({
   dataset,
