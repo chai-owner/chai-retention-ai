@@ -106,33 +106,41 @@ export function AccountingSyncWizard({
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [datasets, setDatasets] = useState<EditableDataset[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const runSync = useServerFn(syncAccounting);
 
   function reset() {
     setBusy(false);
     setLoaded(false);
     setDatasets([]);
+    setError(null);
   }
   function close() {
     onOpenChange(false);
     setTimeout(reset, 200);
   }
 
-  // Simulate the sync as soon as the dialog opens.
+  // Pull live data as soon as the dialog opens.
   useEffect(() => {
     if (!open || loaded || busy) return;
     let cancelled = false;
     setBusy(true);
-    // Brief delay so the connecting state reads as a real sync.
-    const timer = setTimeout(() => {
-      if (cancelled) return;
-      const editable = buildEditable(generateAccountingDatasets(provider));
-      setDatasets(editable);
-      setLoaded(true);
-      setBusy(false);
-    }, 900);
+    setError(null);
+    runSync({ data: { provider } })
+      .then((res) => {
+        if (cancelled) return;
+        const editable = buildEditable(res.datasets as ExtractedDataset[]);
+        setDatasets(editable);
+        setLoaded(true);
+        setBusy(false);
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : "Sync failed");
+        setBusy(false);
+      });
     return () => {
       cancelled = true;
-      clearTimeout(timer);
     };
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
