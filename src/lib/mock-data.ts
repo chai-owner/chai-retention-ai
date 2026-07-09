@@ -587,6 +587,13 @@ export const crmIntegrations = [
   { name: "Zoho CRM", category: "CRM", desc: "Pull accounts, deals, pipeline stages and contact touchpoints.", status: "available" },
 ];
 
+// ---- Accounting integrations ----
+export const accountingIntegrations = [
+  { name: "QuickBooks Online", category: "Accounting", desc: "Sync customers and invoices to see spend, purchase cadence and lifetime value.", status: "available" },
+  { name: "Xero", category: "Accounting", desc: "Import contacts and invoices to track billing history and buying habits.", status: "available" },
+  { name: "FreshBooks", category: "Accounting", desc: "Pull clients and invoices to understand revenue, frequency and churn signals.", status: "available" },
+];
+
 // ---- Data quality findings ----
 export const dataQuality = {
   reliability: 78,
