@@ -1,59 +1,35 @@
-## Goal
+# Support ticket status tracking
 
-Make the CRM tiles on the Data page (Salesforce, HubSpot, Zoho CRM) actually pull real records into ChAi, mapping CRM data into the existing datasets, instead of showing the demo "OAuth not enabled" toast.
+Today, uploading support tickets only records file-level metadata (`UploadRecord`) — the actual ticket rows aren't kept, so re-uploading the same ticket just adds another upload entry. This adds a real ticket-level store that dedupes by `ticket_id`, overwrites an existing ticket when its status changes, logs every status change with a timestamp, and computes how long each ticket took to close. Results show both after a support upload and in a persistent section on the Data Quality page.
 
-## What data each CRM will accept (and where it lands)
+## Behavior
 
-CRM data maps into ChAi's existing dataset schemas (`src/lib/data-schemas.ts`) so the rest of the app (health scoring, risk, churn) works unchanged:
+- On a **Support tickets** upload, each row is merged by `ticket_id`:
+  - **New ticket_id** → inserted, first status recorded.
+  - **Existing ticket_id, same status** → left as-is (no duplicate).
+  - **Existing ticket_id, changed status** → the stored ticket is overwritten with the new status/fields, and a status-change event is appended to its history, timestamped at upload time.
+- **Time-to-close** uses upload timestamps (per your choice): when a ticket flips to a closing status (`resolved` or `closed`), we record the close time as that upload's timestamp and compute duration from the ticket's `created_date` to that moment. Reopening (moving away from a closed status) clears the closed state so a later re-close recomputes.
+- A short summary is produced per upload: tickets added, tickets updated, newly closed, reopened, and average time-to-close.
 
-```text
-CRM object                         → ChAi dataset      → key fields
-Accounts / Companies / Contacts    → Customers         customer_id, name, email, signup_date,
-                                                        monthly_revenue, plan, region, status
-Deals / Opportunities / Invoices   → Transactions      customer_id, transaction_id, amount,
-                                                        transaction_date, product, currency
-Engagement / activity / touchpoints→ Product usage     customer_id, date, logins/active signal
-Renewal / lifecycle / pipeline     → Customer status   feeds churn definition + lifecycle
-```
+## Where it shows
 
-Per CRM:
-- **Salesforce** — `Account` (Customers), `Opportunity` (Transactions/renewals), `Contact` (email/owner), activity (usage signal).
-- **HubSpot** — `companies`/`contacts` (Customers), `deals` (Transactions), engagement events (usage), lifecycle stage (status).
-- **Zoho CRM** — `Accounts`/`Contacts` (Customers), `Deals` (Transactions/pipeline), touchpoints (usage).
+- **After a support upload** (result panel in the upload wizard): "X new, Y updated, Z newly closed, avg time-to-close N days."
+- **Data Quality page** — a new "Ticket status changes" section: a table of tracked tickets showing current status, a compact status-change timeline (status → status with dates), and resolution time for closed tickets.
 
-## Important decision needed: whose CRM?
+## Technical details
 
-Lovable's standard connectors authenticate **one workspace/builder account**, not each signed-in end user. Two paths:
+**New file `src/lib/tickets-store.ts`**
+- `useSyncExternalStore`-based in-memory store (same pattern as `uploads-store.ts`), keyed by `ticket_id`.
+- `TicketRecord`: `ticket_id`, `customer_id`, `created_date`, `status`, `category`, `satisfaction_score`, `history: { status: string; at: string }[]`, `closedAt?: string`, `resolutionHours?: number`.
+- Seed with a handful of demo tickets (including one with a resolved history and one reopened) so the Data Quality section isn't empty in the demo.
+- `mergeTickets(rows: Record<string,string>[]): MergeSummary` — performs the dedupe/overwrite/history logic above and returns `{ inserted, updated, closed, reopened, avgResolutionHours }`. Closing statuses: `resolved`, `closed`. Timestamps use `new Date()` at merge time.
+- `useTickets()` hook exporting the current list.
 
-- **A — Connector (single account):** fastest. Good if ChAi connects to *your* CRM (single tenant / internal demo). Uses `standard_connectors--connect` and the connector gateway. This plan assumes A.
-- **B — Per-user OAuth:** required if every ChAi customer connects *their own* CRM. Needs provider OAuth apps + per-user token storage — a much larger build. Flag if this is the target.
+**`src/components/upload-wizard.tsx`**
+- In `confirmAndSave`, when `dataset.key === "support"`, build mapped row objects (using the existing `mapping`/`headers`) and call `mergeTickets` before adding the `UploadRecord`.
+- Add a lightweight `"done"` step (or inline result block) that renders the merge summary for support uploads; other datasets keep closing immediately as they do now.
 
-## Implementation (Path A)
+**`src/routes/_authenticated.app.data-quality.tsx`**
+- Add a "Ticket status changes" card (only meaningful when tickets exist) rendering the tracked tickets: current status badge, the status-change timeline from `history`, and resolution time for closed tickets. Read via `useTickets()`.
 
-### 1. Connect the connectors
-Link Salesforce, HubSpot, and Zoho CRM via `standard_connectors--connect`. This injects `SALESFORCE_API_KEY`, `HUBSPOT_API_KEY`, `ZOHO_CRM_API_KEY` alongside `LOVABLE_API_KEY` into the server runtime.
-
-### 2. New server functions — `src/lib/crm.functions.ts`
-One `createServerFn({ method: "POST" })` per provider (or a single fn with a `provider` arg), each guarded by `requireSupabaseAuth`:
-- Calls the provider through the connector gateway (`https://connector-gateway.lovable.dev/{provider}/...`) with `Authorization: Bearer LOVABLE_API_KEY` + `X-Connection-Api-Key`.
-- Fetches Accounts/Contacts, Deals/Opportunities, and recent activity (paginated).
-- Normalizes each record into ChAi dataset rows (headers + string rows) reusing the shape already produced by `extractRecords` in `ingest.functions.ts`, so downstream review/import code is shared.
-- Returns `{ datasets: ExtractedDataset[] }` plus a per-dataset confidence.
-
-### 3. Wire the UI (`src/routes/_authenticated.app.data.tsx`)
-- Replace each CRM tile's demo-toast `onClick` with a connect/import flow: trigger the server fn, show a loading state, then a **review step** (reuse the mapping/preview UI pattern from `SmartIngestWizard`) before anything is saved.
-- On confirm, write results into `uploads-store` as `UploadRecord`s (same path manual uploads use), so Data Quality, dashboard metrics, and customer lists pick them up automatically.
-- Show "Last synced" per CRM, mirroring the existing "Last uploaded on" recency treatment.
-
-### 4. Status & churn alignment
-Map CRM lifecycle/renewal state onto the `status` field (`active` / `churned` / `won-back`) using the user's onboarding `churnDefinition`, so imported CRM accounts respect the churn rules already configured.
-
-## Technical notes
-- All CRM calls are server-side only (gateway keys never reach the browser).
-- Reuse `ExtractedDataset` / `UploadRecord` types — no new data model.
-- Validate + cap pagination; back off on 429; surface clear errors on gateway 4xx.
-- No DB schema change required for Path A (data flows into the existing in-memory uploads store); if you want CRM imports persisted per user, that's an added `crm_imports` table (say the word).
-
-## Out of scope (unless requested)
-- Per-user OAuth (Path B).
-- Scheduled/automatic background sync (this plan is on-demand sync from the tile).
+No backend/schema changes — this stays in the existing in-memory demo-store pattern used across the app.

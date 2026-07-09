@@ -36,6 +36,7 @@ import {
   type QualityFinding,
   type UploadRecord,
 } from "@/lib/uploads-store";
+import { mergeTickets, formatDuration, type MergeSummary } from "@/lib/tickets-store";
 
 // ---------- CSV parsing ----------
 function parseCsv(text: string): string[][] {
@@ -154,7 +155,7 @@ interface ErrorRow {
   message: string;
 }
 
-type Step = "select" | "review";
+type Step = "select" | "review" | "done";
 
 export function UploadWizard({
   dataset,
@@ -173,6 +174,7 @@ export function UploadWizard({
   const [headers, setHeaders] = useState<string[]>([]);
   const [dataRows, setDataRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [mergeSummary, setMergeSummary] = useState<MergeSummary | null>(null);
 
   function reset() {
     setStep("select");
@@ -182,6 +184,7 @@ export function UploadWizard({
     setHeaders([]);
     setDataRows([]);
     setMapping({});
+    setMergeSummary(null);
   }
 
   function close() {
@@ -305,6 +308,28 @@ export function UploadWizard({
       fieldChecks,
     };
     uploadsStore.add(record);
+
+    // Support tickets: merge by ticket_id, overwriting on status change and
+    // logging status history so we can measure time-to-close.
+    if (dataset.key === "support") {
+      const rowObjects = dataRows.map((r) => {
+        const obj: Record<string, string> = {};
+        for (const f of dataset.fields) {
+          const col = mapping[f.name];
+          const idx = col ? headers.indexOf(col) : -1;
+          obj[f.name] = idx >= 0 ? (r[idx] ?? "").trim() : "";
+        }
+        return obj;
+      });
+      const summary = mergeTickets(rowObjects);
+      setMergeSummary(summary);
+      toast.success("Support tickets updated", {
+        description: `${summary.inserted} new · ${summary.updated} updated · ${summary.closed} newly closed.`,
+      });
+      setStep("done");
+      return;
+    }
+
     toast.success("Data saved", {
       description: `${dataset.label}: ${dataRows.length.toLocaleString()} clean rows imported into ChAi.`,
     });
@@ -476,6 +501,49 @@ export function UploadWizard({
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <CheckCircle2 className="h-4 w-4" /> Confirm & save data
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === "done" && mergeSummary && (
+          <div className="space-y-5 py-1">
+            <div className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2.5 text-sm text-success">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>Support tickets merged. Existing tickets were overwritten where the status changed.</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { label: "New tickets", value: mergeSummary.inserted },
+                { label: "Updated", value: mergeSummary.updated },
+                { label: "Newly closed", value: mergeSummary.closed },
+                { label: "Reopened", value: mergeSummary.reopened },
+              ].map((s) => (
+                <div key={s.label} className="rounded-lg border border-border p-3 text-center">
+                  <p className="text-2xl font-semibold tabular-nums">{s.value}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {mergeSummary.avgResolutionHours != null && (
+              <div className="rounded-lg border border-border bg-accent/30 px-3 py-2.5 text-sm">
+                Average time to close for tickets closed in this upload:{" "}
+                <span className="font-semibold">{formatDuration(mergeSummary.avgResolutionHours)}</span>
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              See the full status-change history and resolution times on the Data Quality page.
+            </p>
+
+            <div className="flex justify-end">
+              <button
+                onClick={close}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <CheckCircle2 className="h-4 w-4" /> Done
               </button>
             </div>
           </div>
