@@ -193,3 +193,43 @@ function DataQualityPage() {
     </div>
   );
 }
+
+function TicketRow({ ticket }: { ticket: TicketRecord }) {
+  const closed = ticket.status.toLowerCase() === "resolved" || ticket.status.toLowerCase() === "closed";
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-xs font-semibold">{ticket.ticket_id}</span>
+          <span className="text-[11px] text-muted-foreground">{ticket.customer_id}</span>
+          {ticket.category && (
+            <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              {ticket.category}
+            </span>
+          )}
+        </div>
+        <span className={cn("inline-block rounded-full border px-2 py-0.5 text-xs font-medium", statusChip(ticket.status))}>
+          {ticket.status}
+        </span>
+      </div>
+
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+        {ticket.history.map((h, i) => (
+          <span key={i} className="flex items-center gap-1.5">
+            {i > 0 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
+            <span className="rounded border border-border bg-secondary px-1.5 py-0.5">
+              <span className="font-medium">{h.status}</span>{" "}
+              <span className="text-muted-foreground">{h.at}</span>
+            </span>
+          </span>
+        ))}
+      </div>
+
+      {closed && ticket.resolutionHours != null && (
+        <p className="mt-2 text-xs text-success">
+          Closed in <span className="font-semibold">{formatDuration(ticket.resolutionHours)}</span> from open to resolved.
+        </p>
+      )}
+    </div>
+  );
+}
