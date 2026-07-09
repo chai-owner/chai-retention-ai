@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Building2, Check, Link2, Lock, Receipt, Sparkles, Upload } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Building2, Check, Link2, Lock, Receipt, Sparkles, Upload, Loader2 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { integrations, crmIntegrations, accountingIntegrations } from "@/lib/mock-data";
 import { UploadWizard } from "@/components/upload-wizard";
@@ -9,7 +10,13 @@ import { SmartIngestWizard } from "@/components/smart-ingest-wizard";
 import { CrmSyncWizard } from "@/components/crm-sync-wizard";
 import { AccountingSyncWizard } from "@/components/accounting-sync-wizard";
 import type { CrmProvider } from "@/lib/crm.functions";
-import type { AccountingProvider } from "@/lib/accounting-demo";
+import {
+  getAccountingStatus,
+  getAccountingConfig,
+  startAccountingOAuth,
+  disconnectAccounting,
+  type AccountingProvider,
+} from "@/lib/accounting.functions";
 import { datasetSchemas } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
 import { personalizeDatasets, type PersonalizedDataset } from "@/lib/personalize-data";
