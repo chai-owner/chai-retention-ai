@@ -505,6 +505,49 @@ export function UploadWizard({
             </div>
           </div>
         )}
+
+        {step === "done" && mergeSummary && (
+          <div className="space-y-5 py-1">
+            <div className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2.5 text-sm text-success">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>Support tickets merged. Existing tickets were overwritten where the status changed.</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { label: "New tickets", value: mergeSummary.inserted },
+                { label: "Updated", value: mergeSummary.updated },
+                { label: "Newly closed", value: mergeSummary.closed },
+                { label: "Reopened", value: mergeSummary.reopened },
+              ].map((s) => (
+                <div key={s.label} className="rounded-lg border border-border p-3 text-center">
+                  <p className="text-2xl font-semibold tabular-nums">{s.value}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {mergeSummary.avgResolutionHours != null && (
+              <div className="rounded-lg border border-border bg-accent/30 px-3 py-2.5 text-sm">
+                Average time to close for tickets closed in this upload:{" "}
+                <span className="font-semibold">{formatDuration(mergeSummary.avgResolutionHours)}</span>
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              See the full status-change history and resolution times on the Data Quality page.
+            </p>
+
+            <div className="flex justify-end">
+              <button
+                onClick={close}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <CheckCircle2 className="h-4 w-4" /> Done
+              </button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
