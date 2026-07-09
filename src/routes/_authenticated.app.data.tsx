@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Building2, Check, Link2, Lock, Sparkles, Upload } from "lucide-react";
+import { Building2, Check, Link2, Lock, Receipt, Sparkles, Upload } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
-import { integrations, crmIntegrations } from "@/lib/mock-data";
+import { integrations, crmIntegrations, accountingIntegrations } from "@/lib/mock-data";
 import { UploadWizard } from "@/components/upload-wizard";
 import { SmartIngestWizard } from "@/components/smart-ingest-wizard";
 import { CrmSyncWizard } from "@/components/crm-sync-wizard";
+import { AccountingSyncWizard } from "@/components/accounting-sync-wizard";
 import type { CrmProvider } from "@/lib/crm.functions";
+import type { AccountingProvider } from "@/lib/accounting.functions";
 import { datasetSchemas } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
 import { personalizeDatasets, type PersonalizedDataset } from "@/lib/personalize-data";
@@ -124,6 +126,19 @@ function DataPage() {
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {crmIntegrations.map((it) => (
             <CrmCard key={it.name} name={it.name} category={it.category} desc={it.desc} />
+          ))}
+        </div>
+      </Card>
+
+      {/* Accounting integrations */}
+      <Card className="mt-6">
+        <h3 className="font-semibold">Connect your accounting tools</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Your accounting system knows what customers actually buy and how often. Connect it so ChAi can pull customers and invoices to reveal spend, buying cadence and lifetime value. Connect securely with OAuth.
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          {accountingIntegrations.map((it) => (
+            <AccountingCard key={it.name} name={it.name} category={it.category} desc={it.desc} />
           ))}
         </div>
       </Card>
@@ -330,6 +345,63 @@ function CrmCard({ name, category, desc }: { name: string; category: string; des
       )}
       {provider && (
         <CrmSyncWizard
+          provider={provider}
+          providerName={name}
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+        />
+      )}
+    </div>
+  );
+}
+
+// Maps an accounting tool display name to its connector provider id.
+const ACCOUNTING_PROVIDER_BY_NAME: Record<string, AccountingProvider> = {
+  "QuickBooks Online": "quickbooks",
+  Xero: "xero",
+  FreshBooks: "freshbooks",
+};
+
+function AccountingCard({ name, category, desc }: { name: string; category: string; desc: string }) {
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const uploads = useUploads();
+  const provider = ACCOUNTING_PROVIDER_BY_NAME[name];
+
+  // Most recent sync for this accounting tool, derived from imported uploads.
+  const lastSynced = useMemo(() => {
+    const prefix = `${name} —`;
+    let latest: string | undefined;
+    for (const u of uploads) {
+      if (u.fileName.startsWith(prefix) && (!latest || u.uploadedAt > latest)) {
+        latest = u.uploadedAt;
+      }
+    }
+    return latest;
+  }, [uploads, name]);
+
+  return (
+    <div className="rounded-xl border border-border p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-primary">
+          <Receipt className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold">{name}</p>
+          <p className="text-[11px] text-muted-foreground">{category}</p>
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">{desc}</p>
+      <button
+        onClick={() => setWizardOpen(true)}
+        className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
+      >
+        {lastSynced ? "Sync now" : "Connect & sync"}
+      </button>
+      {lastSynced && (
+        <p className="mt-1.5 text-center text-[11px] italic text-success">Last synced {lastSynced}</p>
+      )}
+      {provider && (
+        <AccountingSyncWizard
           provider={provider}
           providerName={name}
           open={wizardOpen}
