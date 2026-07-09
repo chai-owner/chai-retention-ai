@@ -36,6 +36,7 @@ import {
   type QualityFinding,
   type UploadRecord,
 } from "@/lib/uploads-store";
+import { mergeTickets, formatDuration, type MergeSummary } from "@/lib/tickets-store";
 
 // ---------- CSV parsing ----------
 function parseCsv(text: string): string[][] {
