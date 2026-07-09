@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { FileSpreadsheet, Trash2 } from "lucide-react";
+import { ArrowRight, FileSpreadsheet, Trash2 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { dataReadiness, readinessOverall } from "@/lib/mock-data";
 import {
@@ -9,6 +9,7 @@ import {
   overallScore,
   type UploadRecord,
 } from "@/lib/uploads-store";
+import { useTickets, formatDuration, type TicketRecord } from "@/lib/tickets-store";
 import {
   AlertDialog,
   AlertDialogAction,
