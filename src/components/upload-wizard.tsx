@@ -184,6 +184,7 @@ export function UploadWizard({
     setHeaders([]);
     setDataRows([]);
     setMapping({});
+    setMergeSummary(null);
   }
 
   function close() {
