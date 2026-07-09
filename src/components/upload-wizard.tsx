@@ -308,6 +308,28 @@ export function UploadWizard({
       fieldChecks,
     };
     uploadsStore.add(record);
+
+    // Support tickets: merge by ticket_id, overwriting on status change and
+    // logging status history so we can measure time-to-close.
+    if (dataset.key === "support") {
+      const rowObjects = dataRows.map((r) => {
+        const obj: Record<string, string> = {};
+        for (const f of dataset.fields) {
+          const col = mapping[f.name];
+          const idx = col ? headers.indexOf(col) : -1;
+          obj[f.name] = idx >= 0 ? (r[idx] ?? "").trim() : "";
+        }
+        return obj;
+      });
+      const summary = mergeTickets(rowObjects);
+      setMergeSummary(summary);
+      toast.success("Support tickets updated", {
+        description: `${summary.inserted} new · ${summary.updated} updated · ${summary.closed} newly closed.`,
+      });
+      setStep("done");
+      return;
+    }
+
     toast.success("Data saved", {
       description: `${dataset.label}: ${dataRows.length.toLocaleString()} clean rows imported into ChAi.`,
     });
