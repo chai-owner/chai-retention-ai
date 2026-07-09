@@ -26,11 +26,11 @@ const nav = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/customers", label: "Customer Risk Center", icon: Users },
   { to: "/app/churned", label: "Churned & Win-back", icon: UserMinus },
-  { to: "/app/data", label: "Data Uploads & Integrations", icon: Database },
   { to: "/app/data-quality", label: "Data Quality", icon: BadgeCheck },
   { to: "/app/planner", label: "Intelligence Planner", icon: ClipboardList },
   { to: "/app/insights", label: "Insights & Benchmarks", icon: Lightbulb },
   { to: "/app/trust", label: "Trust & Compliance", icon: ShieldCheck },
+  { to: "/app/data", label: "Data Uploads & Integrations", icon: Database },
   { to: "/app/settings", label: "Business Profile", icon: Settings },
 ];
 
