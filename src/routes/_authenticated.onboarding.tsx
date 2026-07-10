@@ -45,6 +45,7 @@ const MAX_SEGMENTS = 4;
 function Onboarding() {
   const navigate = useNavigate();
   const persistProfile = useServerFn(saveProfile);
+  const getRecommendedWeights = useServerFn(recommendMetricWeights);
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
