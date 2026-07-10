@@ -1,0 +1,209 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { Sparkles, Loader2, CalendarCheck, TrendingUp, Users, DollarSign, AlertTriangle } from "lucide-react";
+import { useScoredData } from "@/lib/use-scored-data";
+import { useProfile } from "@/lib/profile-store";
+import { formatCurrency } from "@/lib/mock-data";
+import { generateCollectiveInsights } from "@/lib/ai.functions";
+import { markBooked } from "@/lib/profile.functions";
+
+export const Route = createFileRoute("/_authenticated/app/welcome")({
+  head: () => ({ meta: [{ title: "Your first insights — ChAi" }] }),
+  component: WelcomePage,
+});
+
+const CALENDLY_URL =
+  "https://calendly.com/calendar-askchai/30min?hide_event_type_details=1&hide_gdpr_banner=1&primary_color=c16e2d";
+
+declare global {
+  interface Window {
+    Calendly?: { initPopupWidget: (opts: { url: string }) => void };
+  }
+}
+
+function WelcomePage() {
+  const data = useScoredData();
+  const profile = useProfile();
+  const getInsights = useServerFn(generateCollectiveInsights);
+  const recordBooked = useServerFn(markBooked);
+
+  const [insights, setInsights] = useState<string[]>([]);
+  const [loadingInsights, setLoadingInsights] = useState(true);
+  const [booked, setBooked] = useState(false);
+  const requested = useRef(false);
+
+  const monthsOfRevenue = 12;
+  const flagged = data.executive.atRisk + data.executive.critical;
+
+  // Fallback insights computed from the dataset if the AI call fails.
+  const fallbackInsights = useMemo(() => {
+    const e = data.executive;
+    return [
+      `${e.critical + e.atRisk} of your ${e.totalCustomers} customers are showing churn-risk signals right now.`,
+      `About ${formatCurrency(data.revenueAtRisk)} of revenue is currently exposed to churn.`,
+      `Roughly ${formatCurrency(e.retentionOpportunity)} of that is realistically recoverable with the right outreach.`,
+      `${e.healthy} customers are healthy — your strongest base to grow from and reference.`,
+      `Support friction is the single biggest churn driver across your at-risk accounts.`,
+    ];
+  }, [data]);
+
+  useEffect(() => {
+    if (requested.current) return;
+    requested.current = true;
+
+    const summary = [
+      profile ? `Company: ${profile.company} (${profile.industry}, ${profile.model} model).` : "",
+      `Customers analyzed: ${data.executive.totalCustomers}.`,
+      `Total annual revenue reviewed: ${formatCurrency(data.totalRevenue)}.`,
+      `Revenue currently at risk: ${formatCurrency(data.revenueAtRisk)}.`,
+      `Recoverable revenue opportunity: ${formatCurrency(data.executive.retentionOpportunity)}.`,
+      `Health mix — healthy ${data.executive.healthy}, watch ${data.executive.watch}, at-risk ${data.executive.atRisk}, critical ${data.executive.critical}.`,
+      profile?.concerns ? `Owner's stated retention concerns: ${profile.concerns}.` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    getInsights({ data: { summary } })
+      .then((res) => {
+        setInsights(res.insights.length ? res.insights : fallbackInsights);
+      })
+      .catch(() => setInsights(fallbackInsights))
+      .finally(() => setLoadingInsights(false));
+  }, [getInsights, data, profile, fallbackInsights]);
+
+  // Detect a completed Calendly booking and persist it.
+  useEffect(() => {
+    if (profile?.bookedAt) setBooked(true);
+  }, [profile?.bookedAt]);
+
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (
+        typeof e.data === "object" &&
+        e.data?.event === "calendly.event_scheduled"
+      ) {
+        setBooked(true);
+        recordBooked().catch(() => {});
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [recordBooked]);
+
+  function openCalendly() {
+    if (window.Calendly) {
+      window.Calendly.initPopupWidget({ url: CALENDLY_URL });
+    } else {
+      window.open(CALENDLY_URL, "_blank");
+    }
+  }
+
+  const name = profile?.fullName?.split(" ")[0];
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-8 py-4">
+      <div>
+        <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          <Sparkles className="h-3.5 w-3.5" /> Your initial assessment is ready
+        </span>
+        <h1 className="mt-4 text-2xl font-semibold sm:text-3xl">
+          {name ? `${name}, here's what we found` : "Here's what we found"}
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          We've analyzed{" "}
+          <strong className="text-foreground">{data.executive.totalCustomers} customers</strong>,{" "}
+          <strong className="text-foreground">{monthsOfRevenue} months of revenue</strong> and your
+          support history — and surfaced{" "}
+          <strong className="text-foreground">{flagged} accounts</strong> that need attention.
+        </p>
+      </div>
+
+      {/* Quick stats */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Stat icon={Users} label="Customers analyzed" value={String(data.executive.totalCustomers)} />
+        <Stat icon={DollarSign} label="Revenue reviewed" value={formatCurrency(data.totalRevenue)} />
+        <Stat icon={AlertTriangle} label="Accounts flagged" value={String(flagged)} />
+      </div>
+
+      {/* Insights */}
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-card sm:p-8">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Your top insights</h2>
+        </div>
+        {loadingInsights ? (
+          <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Analyzing your data…
+          </div>
+        ) : (
+          <ol className="mt-5 space-y-4">
+            {insights.map((it, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                  {i + 1}
+                </span>
+                <p className="text-sm leading-relaxed">{it}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
+      {/* Booking CTA */}
+      <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-accent/50 to-transparent p-6 text-center sm:p-8">
+        {booked ? (
+          <div className="flex flex-col items-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-success/15 text-success">
+              <CalendarCheck className="h-6 w-6" />
+            </span>
+            <h3 className="mt-4 text-lg font-semibold">Your onboarding is booked 🎉</h3>
+            <p className="mt-2 max-w-md text-sm text-muted-foreground">
+              We'll walk you through your full dashboard and insights on the call. Keep improving your
+              inputs in the meantime — you can revisit your Business Profile and add more data any time.
+            </p>
+            <button
+              onClick={openCalendly}
+              className="mt-5 text-sm font-medium text-primary hover:underline"
+            >
+              Need to reschedule?
+            </button>
+          </div>
+        ) : (
+          <>
+            <h3 className="text-lg font-semibold">This is just the beginning.</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+              We'll open up your full dashboard and detailed insights at your onboarding.{" "}
+              <button
+                onClick={openCalendly}
+                className="font-semibold text-primary underline underline-offset-2 hover:opacity-80"
+              >
+                Let's schedule that session now!
+              </button>
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        <span className="text-xs font-medium">{label}</span>
+      </div>
+      <p className="mt-2 text-xl font-semibold">{value}</p>
+    </div>
+  );
+}

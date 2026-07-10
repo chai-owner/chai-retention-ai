@@ -11,6 +11,10 @@ export interface ProfileSegment {
 }
 
 export interface OnboardingProfile {
+  fullName?: string;
+  email?: string;
+  unlocked?: boolean;
+  bookedAt?: string | null;
   company: string;
   industry: string;
   model: string;

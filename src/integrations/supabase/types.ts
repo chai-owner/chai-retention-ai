@@ -83,9 +83,67 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_log: {
+        Row: {
+          created_at: string
+          id: string
+          input_tokens: number
+          model: string
+          operation: string
+          output_tokens: number
+          total_tokens: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          model?: string
+          operation: string
+          output_tokens?: number
+          total_tokens?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          model?: string
+          operation?: string
+          output_tokens?: number
+          total_tokens?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      impersonation_audit: {
+        Row: {
+          admin_id: string
+          ended_at: string | null
+          id: string
+          started_at: string
+          target_id: string
+        }
+        Insert: {
+          admin_id: string
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          target_id: string
+        }
+        Update: {
+          admin_id?: string
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          target_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avg_value: string
+          booked_at: string | null
           cadence: string
           channels: Json
           company: string
@@ -93,6 +151,8 @@ export type Database = {
           created_at: string
           customers: string
           disengagement: string
+          email: string
+          full_name: string
           id: string
           industry: string
           lifespan: string
@@ -103,11 +163,13 @@ export type Database = {
           size: string
           success_actions: string
           tracked: Json
+          unlocked: boolean
           updated_at: string
           what_buy: string
         }
         Insert: {
           avg_value?: string
+          booked_at?: string | null
           cadence?: string
           channels?: Json
           company?: string
@@ -115,6 +177,8 @@ export type Database = {
           created_at?: string
           customers?: string
           disengagement?: string
+          email?: string
+          full_name?: string
           id: string
           industry?: string
           lifespan?: string
@@ -125,11 +189,13 @@ export type Database = {
           size?: string
           success_actions?: string
           tracked?: Json
+          unlocked?: boolean
           updated_at?: string
           what_buy?: string
         }
         Update: {
           avg_value?: string
+          booked_at?: string | null
           cadence?: string
           channels?: Json
           company?: string
@@ -137,6 +203,8 @@ export type Database = {
           created_at?: string
           customers?: string
           disengagement?: string
+          email?: string
+          full_name?: string
           id?: string
           industry?: string
           lifespan?: string
@@ -147,6 +215,7 @@ export type Database = {
           size?: string
           success_actions?: string
           tracked?: Json
+          unlocked?: boolean
           updated_at?: string
           what_buy?: string
         }

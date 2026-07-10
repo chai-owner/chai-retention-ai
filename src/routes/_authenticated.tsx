@@ -30,6 +30,21 @@ export const Route = createFileRoute("/_authenticated")({
         if (!profile?.onboarded) {
           throw redirect({ to: "/onboarding" });
         }
+        // Onboarded but not yet unlocked by an admin: keep them on the
+        // insights/booking screen. They may still revisit Business Profile
+        // and Data to improve their inputs.
+        const lockedAllowed = new Set([
+          "/app/welcome",
+          "/app/settings",
+          "/app/data",
+        ]);
+        if (
+          !profile.unlocked &&
+          location.pathname.startsWith("/app") &&
+          !lockedAllowed.has(location.pathname)
+        ) {
+          throw redirect({ to: "/app/welcome" });
+        }
       } catch (err) {
         if (isRedirect(err)) throw err;
         // If the profile can't be loaded, don't block the app.

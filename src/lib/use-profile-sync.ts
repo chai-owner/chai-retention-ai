@@ -21,6 +21,10 @@ export function useProfileSync() {
       .then((remote) => {
         if (cancelled || !remote || !remote.onboarded) return;
         profileStore.save({
+          fullName: remote.fullName,
+          email: remote.email,
+          unlocked: remote.unlocked,
+          bookedAt: remote.bookedAt,
           company: remote.company,
           industry: remote.industry,
           model: remote.model,

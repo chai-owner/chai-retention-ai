@@ -31,6 +31,7 @@ function AuthPage() {
   const { redirect: redirectTo } = Route.useSearch();
   const dest = redirectTo ?? "/app/dashboard";
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,7 +64,10 @@ function AuthPage() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}${dest}` },
+        options: {
+          emailRedirectTo: `${window.location.origin}${dest}`,
+          data: { full_name: name.trim() },
+        },
       });
       if (error) {
         toast.error(error.message);
@@ -147,6 +151,21 @@ function AuthPage() {
               </div>
 
               <form onSubmit={handleEmail} className="space-y-3">
+                {mode === "register" && (
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Full name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className={inputCls}
+                      placeholder="Jane Doe"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
                     Email
