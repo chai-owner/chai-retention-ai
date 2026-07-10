@@ -516,7 +516,7 @@ function Onboarding() {
                         <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-2">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                            Couldn't generate tailored weights — showing sensible defaults you can adjust.
+                            Couldn't generate tailored metrics — showing a sensible default set you can adjust.
                           </span>
                           <button
                             type="button"
