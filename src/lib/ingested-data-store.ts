@@ -1,0 +1,74 @@
+// In-memory store of the ACTUAL rows a user uploads or syncs, keyed by dataset
+// (customers / transactions / usage / support / surveys). This is what powers
+// true per-customer scoring — as opposed to uploads-store.ts, which only tracks
+// upload metadata for the Data Quality view. Starts empty: nothing here is demo
+// data, it is purely what the user brings in.
+import { useSyncExternalStore } from "react";
+
+export type IngestRow = Record<string, string>;
+export type IngestedData = Record<string, IngestRow[]>;
+
+// The natural primary key per dataset, used to de-duplicate on re-upload.
+// Datasets without a single row-key (usage, surveys) simply append.
+const ID_FIELD: Record<string, string> = {
+  customers: "customer_id",
+  transactions: "transaction_id",
+  support: "ticket_id",
+};
+
+let data: IngestedData = {};
+
+const listeners = new Set<() => void>();
+function emit() {
+  listeners.forEach((l) => l());
+}
+
+// Turn schema-field-ordered string rows into keyed objects.
+export function rowsToObjects(fieldNames: string[], rows: string[][]): IngestRow[] {
+  return rows.map((r) => {
+    const o: IngestRow = {};
+    fieldNames.forEach((name, i) => {
+      o[name] = (r[i] ?? "").trim();
+    });
+    return o;
+  });
+}
+
+export const ingestedStore = {
+  subscribe(cb: () => void) {
+    listeners.add(cb);
+    return () => listeners.delete(cb);
+  },
+  getSnapshot() {
+    return data;
+  },
+  addRows(key: string, rows: IngestRow[]) {
+    if (!rows.length) return;
+    const existing = data[key] ?? [];
+    const idField = ID_FIELD[key];
+    let merged: IngestRow[];
+    if (idField) {
+      const byId = new Map<string, IngestRow>();
+      let n = 0;
+      for (const row of existing) byId.set(row[idField] || `__${key}_${n++}`, row);
+      for (const row of rows) byId.set(row[idField] || `__${key}_${n++}`, row);
+      merged = [...byId.values()];
+    } else {
+      merged = [...existing, ...rows];
+    }
+    data = { ...data, [key]: merged };
+    emit();
+  },
+  clear() {
+    data = {};
+    emit();
+  },
+};
+
+export function useIngested(): IngestedData {
+  return useSyncExternalStore(
+    ingestedStore.subscribe,
+    ingestedStore.getSnapshot,
+    ingestedStore.getSnapshot,
+  );
+}
