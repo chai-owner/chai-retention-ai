@@ -2,6 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { logAiUsage } from "./ai-usage.server";
+
+const MODEL = "google/gemini-3-flash-preview";
 
 // ---------------------------------------------------------------------------
 
