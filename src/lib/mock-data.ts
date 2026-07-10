@@ -139,14 +139,14 @@ function buildTimeline(
 ): TimelineEvent[] {
   const contract = 12000 + Math.round(rand() * 60) * 1000;
   const events: TimelineEvent[] = [
-    { date: "2024-02-14", type: "signup", title: "Became a customer", detail: `${name} signed up for the Growth plan.` },
-    { date: "2024-03-02", type: "purchase", title: "First purchase", detail: `Initial annual contract — $${contract.toLocaleString()}.` },
-    { date: "2024-06-18", type: "usage", title: "Strong early adoption", detail: "Activated 4 of 5 core features. Health score peaked at 88." },
-    { date: "2024-09-05", type: "survey", title: "Survey response", detail: "NPS of 9 — promoter. 'Great product, easy to use.'" },
+    { date: "2025-03-10", type: "signup", title: "Became a customer", detail: `${name} signed up for the Growth plan.` },
+    { date: "2025-03-24", type: "purchase", title: "First purchase", detail: `Initial annual contract — $${contract.toLocaleString()}.` },
+    { date: "2025-07-02", type: "usage", title: "Strong early adoption", detail: "Activated 4 of 5 core features. Health score peaked at 88." },
+    { date: "2025-10-08", type: "survey", title: "Survey response", detail: "NPS of 9 — promoter. 'Great product, easy to use.'" },
   ];
 
   // Weave each detected risk factor into the history as a concrete event.
-  const factorEventDates = ["2025-01-22", "2025-02-18", "2025-03-10", "2025-04-19", "2025-05-02"];
+  const factorEventDates = ["2026-02-11", "2026-03-18", "2026-04-22", "2026-05-19", "2026-06-09"];
   factors.forEach((f, idx) => {
     const date = factorEventDates[idx % factorEventDates.length];
     const map: Record<string, TimelineEvent> = {
@@ -163,10 +163,11 @@ function buildTimeline(
   });
 
   if (cat === "healthy") {
-    events.push({ date: "2025-05-21", type: "score", title: "Account is healthy", detail: `Health score steady at ${health}. Low churn risk (${churnProbability}%).` });
+    events.push({ date: "2026-06-28", type: "score", title: "Account is healthy", detail: `Health score steady at ${health}. Low churn risk (${churnProbability}%).` });
   } else {
-    events.push({ date: "2025-05-21", type: "score", title: "Risk escalated", detail: `Churn probability rose to ${churnProbability}% — health score now ${health}.` });
+    events.push({ date: "2026-06-28", type: "score", title: "Risk escalated", detail: `Churn probability rose to ${churnProbability}% — health score now ${health}.` });
   }
+
 
   return events.sort((a, b) => a.date.localeCompare(b.date));
 }
