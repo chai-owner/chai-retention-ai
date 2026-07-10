@@ -33,10 +33,14 @@ export function useScoredData(): ScoredDataset {
   const weights = useMetricWeights();
   const ingested = useIngested();
   const profile = useProfile();
+  const signedIn = useSignedIn();
   return useMemo(() => {
-    if (assessSufficiency(ingested).enough) return buildRealDataset(ingested, weights, profile);
+    // Signed-in users always see their own real data — never sample data, even
+    // when they've added little or nothing. Sample data is reserved for the
+    // public, no-login demo.
+    if (signedIn) return buildRealDataset(ingested, weights, profile);
     return buildDataset(weights);
-  }, [weights, ingested, profile]);
+  }, [weights, ingested, profile, signedIn]);
 }
 
 // Real-only assessment (never falls back to sample data). Used by the first-run
