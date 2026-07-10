@@ -75,6 +75,14 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // `demo` powers the public product demo. It's retained across navigation so
+  // every /app page keeps showing sample data while in demo mode.
+  validateSearch: (search: Record<string, unknown>): { demo?: boolean } => {
+    const raw = search.demo;
+    const on = raw === true || raw === "1" || raw === "true";
+    return on ? { demo: true } : {};
+  },
+  search: { middlewares: [retainSearchParams(["demo"])] },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
