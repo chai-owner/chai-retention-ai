@@ -97,11 +97,18 @@ function Landing() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
+              to="/app/dashboard"
+              className="hidden items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent sm:inline-flex"
+            >
+              View ChAi Demo
+            </Link>
+            <Link
               to="/auth"
               className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
             >
               Log in
             </Link>
+
             <Link
               to="/auth"
               search={{ mode: "signup" }}
