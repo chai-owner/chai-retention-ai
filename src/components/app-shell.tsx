@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProfileSync } from "@/lib/use-profile-sync";
 
 const nav = [
+  { to: "/app/welcome", label: "Welcome", icon: Sparkles },
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/customers", label: "Customer Risk Center", icon: Users },
   { to: "/app/churned", label: "Churned & Win-back", icon: UserMinus },
@@ -33,6 +34,9 @@ const nav = [
   { to: "/app/data", label: "Data Uploads & Integrations", icon: Database },
   { to: "/app/settings", label: "Business Profile", icon: Settings },
 ];
+
+// Pages a locked (onboarded but not yet unlocked) customer can still access.
+const LOCKED_ALLOWED = new Set(["/app/welcome", "/app/settings", "/app/data"]);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
