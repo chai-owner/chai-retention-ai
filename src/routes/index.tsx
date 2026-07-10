@@ -331,12 +331,7 @@ function Landing() {
             >
               Get started free <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link
-              to="/auth"
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary-foreground/40 px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-foreground/10"
-            >
-              Ask ChAi anything
-            </Link>
+
           </div>
         </div>
       </section>
