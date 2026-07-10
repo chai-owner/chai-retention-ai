@@ -24,6 +24,7 @@ import { AskChAi } from "@/components/ask-chai";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfileSync } from "@/lib/use-profile-sync";
 import { useProfile } from "@/lib/profile-store";
+import { useDemoMode } from "@/lib/use-demo-mode";
 import { impersonationStore, useImpersonation } from "@/lib/impersonation";
 import { endImpersonation } from "@/lib/admin.functions";
 
