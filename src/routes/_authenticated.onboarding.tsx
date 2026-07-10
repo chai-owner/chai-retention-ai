@@ -67,14 +67,10 @@ function Onboarding() {
   });
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
-  const [metricWeights, setMetricWeights] = useState<Record<string, number>>(
-    () => ({ ...DEFAULT_METRIC_WEIGHTS }),
-  );
-  // AI-generated recommendations (weights + tailored reasons) for step 3.
-  const [recommendedWeights, setRecommendedWeights] = useState<Record<string, number>>(
-    () => ({ ...DEFAULT_METRIC_WEIGHTS }),
-  );
-  const [metricReasons, setMetricReasons] = useState<Record<string, string>>({});
+  const [metricWeights, setMetricWeights] = useState<Record<string, number>>({});
+  // AI-generated metric SET (definitions) + recommended weights for step 3.
+  const [generatedMetrics, setGeneratedMetrics] = useState<PlannerMetric[]>([]);
+  const [recommendedWeights, setRecommendedWeights] = useState<Record<string, number>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState(false);
   const metricsGenerated = useRef(false);
@@ -82,13 +78,19 @@ function Onboarding() {
     { name: "", min: "", max: "" },
   ]);
 
-  // When the user reaches the "What matters" step, ask ChAi to recommend metric
-  // importance tailored to the industry/company info they entered earlier.
+  // The metrics shown in step 3: ChAi's generated set once ready, otherwise the
+  // built-in defaults as a fallback.
+  const activeMetrics: PlannerMetric[] =
+    generatedMetrics.length > 0 ? generatedMetrics : plannerMetrics;
+
+  // When the user reaches the "What matters" step, ask ChAi to GENERATE the
+  // retention metrics this specific business should track, tailored to the
+  // industry/company info they entered earlier.
   async function generateMetricRecommendations() {
     setMetricsLoading(true);
     setMetricsError(false);
     try {
-      const { recommendations } = await getRecommendedWeights({
+      const { metrics } = await getRecommendedMetrics({
         data: {
           profile: {
             company: form.company,
@@ -101,22 +103,19 @@ function Onboarding() {
             cadence: form.cadence,
             lifespan: form.lifespan,
             concerns: form.concerns,
+            successActions: form.successActions,
+            disengagement: form.disengagement,
           },
-          metrics: plannerMetrics.map((m) => ({ name: m.name, why: m.why })),
         },
       });
-      if (recommendations.length === 0) {
+      if (metrics.length === 0) {
         setMetricsError(true);
         return;
       }
-      const weights: Record<string, number> = { ...DEFAULT_METRIC_WEIGHTS };
-      const reasons: Record<string, string> = {};
-      for (const r of recommendations) {
-        weights[r.name] = r.weight;
-        if (r.reason) reasons[r.name] = r.reason;
-      }
+      const weights: Record<string, number> = {};
+      for (const m of metrics) weights[m.name] = m.weight ?? 3;
+      setGeneratedMetrics(metrics);
       setRecommendedWeights(weights);
-      setMetricReasons(reasons);
       setMetricWeights(weights);
       metricsGenerated.current = true;
     } catch {
