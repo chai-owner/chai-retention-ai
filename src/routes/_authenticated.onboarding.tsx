@@ -490,14 +490,14 @@ function Onboarding() {
               {step === 3 && (
                 <div className="space-y-4">
                    <div>
-                    <h2 className="text-xl font-semibold">How much each metric matters</h2>
+                    <h2 className="text-xl font-semibold">The metrics ChAi will track for you</h2>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Slide each metric from Unimportant to Critical. ChAi weights your customer health score by what matters most to you.
+                      ChAi picked these retention metrics for your business. Slide each from Unimportant to Critical to shape how your customer health score is weighted.
                     </p>
                     <div className="mt-3 flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
                       <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                       <span>
-                        ChAi generated these <span className="font-medium text-foreground">recommended weights</span> from your industry, business model and the company details you entered. Adjust any metric to fit your priorities.
+                        ChAi <span className="font-medium text-foreground">generated this metric set</span> from your industry, business model and the company details you entered. Adjust any weight to fit your priorities.
                       </span>
                     </div>
                   </div>
