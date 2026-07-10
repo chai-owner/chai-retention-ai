@@ -41,17 +41,8 @@ function scoreChip(v: number) {
         : "bg-danger/10 text-danger border-danger/20";
 }
 
-function statusChip(status: string) {
-  const s = status.toLowerCase();
-  if (s === "resolved" || s === "closed") return "bg-success/10 text-success border-success/20";
-  if (s === "reopened") return "bg-danger/10 text-danger border-danger/20";
-  if (s === "in_progress" || s === "pending") return "bg-warning/15 text-warning-foreground border-warning/30";
-  return "bg-secondary text-muted-foreground border-border";
-}
-
 function DataQualityPage() {
   const uploads = useUploads();
-  const tickets = useTickets();
 
   function deleteUpload(u: UploadRecord) {
     uploadsStore.remove(u.id);
