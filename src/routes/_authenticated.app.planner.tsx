@@ -107,9 +107,11 @@ function Planner() {
                     );
                   })}
                 </div>
-                <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                  <span className="font-medium text-foreground">Healthy benchmark:</span> {m.benchmark}
-                </p>
+                {m.benchmark && (
+                  <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                    <span className="font-medium text-foreground">Healthy benchmark:</span> {m.benchmark}
+                  </p>
+                )}
 
               </div>
             </div>
