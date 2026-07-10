@@ -118,7 +118,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="space-y-2 border-t border-sidebar-border p-3">
-          {signedIn ? (
+          {demo ? (
+            <Link
+              to="/"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+              Exit demo
+            </Link>
+          ) : signedIn ? (
             <button
               onClick={handleSignOut}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
@@ -137,13 +145,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
           <div className="rounded-lg bg-accent/60 p-3">
             <p className="text-xs font-medium text-accent-foreground">
-              {signedIn ? "Demo workspace" : "You're exploring the demo"}
+              {demo ? "You're exploring the demo" : signedIn ? "Your workspace" : "You're exploring the demo"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Sample data for Northwind Labs. Nothing here is real customer data.
+              {demo || !signedIn
+                ? "Sample data for Northwind Labs. Nothing here is real customer data."
+                : "Your live retention workspace, built from the data you've added."}
             </p>
           </div>
         </div>
+
 
 
       </aside>
