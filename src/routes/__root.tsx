@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  retainSearchParams,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
