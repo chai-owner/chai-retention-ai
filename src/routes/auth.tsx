@@ -6,6 +6,18 @@ import { lovable } from "@/integrations/lovable/index";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+// Removes the `demo` flag from a URL/path so a real login never lands on the
+// sample-data demo (the flag is otherwise retained across navigation).
+function stripDemo(href: string): string {
+  try {
+    const url = new URL(href, "http://x");
+    url.searchParams.delete("demo");
+    return url.pathname + (url.search ? url.search : "");
+  } catch {
+    return href;
+  }
+}
+
 export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
