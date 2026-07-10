@@ -601,30 +601,6 @@ function Onboarding() {
 const inputCls =
   "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary";
 
-function BenefitCard({
-  title,
-  examples,
-  benefit,
-}: {
-  title: string;
-  examples: string;
-  benefit: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border p-4">
-      <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-primary">
-          <Sparkles className="h-4 w-4" />
-        </span>
-        <div>
-          <p className="text-sm font-semibold">{title}</p>
-          <p className="text-[11px] text-muted-foreground">{examples}</p>
-        </div>
-      </div>
-      <p className="mt-3 text-xs text-muted-foreground">{benefit}</p>
-    </div>
-  );
-}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
