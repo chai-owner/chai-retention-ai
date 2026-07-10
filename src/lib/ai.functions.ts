@@ -151,3 +151,106 @@ Return ONLY a JSON array of 5 strings (no markdown, no code fences).`;
     }
     return { insights: insights.slice(0, 5) };
   });
+
+// ---------------------------------------------------------------------------
+// Recommended metric importance — tailors the onboarding "What matters" step
+// to the company's industry, business model and profile answers.
+// ---------------------------------------------------------------------------
+
+const MetricCatalogItem = z.object({
+  name: z.string(),
+  why: z.string(),
+});
+
+const RecommendMetricWeightsInput = z.object({
+  profile: z.object({
+    company: z.string().optional(),
+    industry: z.string().optional(),
+    model: z.string().optional(),
+    size: z.string().optional(),
+    customers: z.string().optional(),
+    avgValue: z.string().optional(),
+    whatBuy: z.string().optional(),
+    cadence: z.string().optional(),
+    lifespan: z.string().optional(),
+    concerns: z.string().optional(),
+  }),
+  metrics: z.array(MetricCatalogItem).min(1).max(30),
+});
+
+export type RecommendMetricWeightsInput = z.infer<typeof RecommendMetricWeightsInput>;
+
+export type MetricRecommendation = { name: string; weight: number; reason: string };
+
+export const recommendMetricWeights = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => RecommendMetricWeightsInput.parse(input))
+  .handler(async ({ data }): Promise<{ recommendations: MetricRecommendation[] }> => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+
+    const gateway = createLovableAiGatewayProvider(key);
+
+    const p = data.profile;
+    const profileLines = [
+      p.company && `Company: ${p.company}`,
+      p.industry && `Industry: ${p.industry}`,
+      p.model && `Business model: ${p.model}`,
+      p.size && `Company size: ${p.size}`,
+      p.customers && `Number of customers: ${p.customers}`,
+      p.avgValue && `Average customer value: ${p.avgValue}`,
+      p.whatBuy && `What customers buy: ${p.whatBuy}`,
+      p.cadence && `Purchase/usage cadence: ${p.cadence}`,
+      p.lifespan && `Typical customer lifespan: ${p.lifespan}`,
+      p.concerns && `Owner's concerns: ${p.concerns}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const metricList = data.metrics
+      .map((m) => `- ${m.name}: ${m.why}`)
+      .join("\n");
+
+    const prompt = `You are ChAi, a customer-retention analyst. A business owner is setting up churn tracking. Based on their business below, recommend how important each retention metric is for THEM specifically, on a 1-5 scale where 1 = Unimportant, 2 = Minor, 3 = Moderate, 4 = Important, 5 = Critical.
+
+Business profile:
+${profileLines || "(limited profile provided)"}
+
+Metrics to rate (use these EXACT names):
+${metricList}
+
+Tailor the weights to this business. For example, a low-frequency high-value SaaS should weight renewal date and feature adoption highly; a high-frequency e-commerce store should weight days since last purchase and order value highly. Give a short reason (max ~14 words) grounded in THEIR business for each metric.
+
+Return ONLY a JSON array (no markdown, no code fences) where each item is:
+{"name": "<exact metric name>", "weight": <integer 1-5>, "reason": "<short reason>"}`;
+
+    const { text, usage } = await generateText({
+      model: gateway(MODEL),
+      prompt,
+    });
+    await logAiUsage("recommendMetricWeights", MODEL, usage);
+
+    const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    const validNames = new Set(data.metrics.map((m) => m.name));
+    let recommendations: MetricRecommendation[] = [];
+    try {
+      const parsed = z
+        .array(
+          z.object({
+            name: z.string(),
+            weight: z.number(),
+            reason: z.string().optional(),
+          }),
+        )
+        .parse(JSON.parse(jsonText));
+      recommendations = parsed
+        .filter((r) => validNames.has(r.name))
+        .map((r) => ({
+          name: r.name,
+          weight: Math.max(1, Math.min(5, Math.round(r.weight))),
+          reason: (r.reason ?? "").trim(),
+        }));
+    } catch {
+      recommendations = [];
+    }
+    return { recommendations };
+  });
