@@ -498,62 +498,94 @@ function Onboarding() {
                     <div className="mt-3 flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
                       <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                       <span>
-                        These are <span className="font-medium text-foreground">recommended weights</span> based on your industry and the company information you entered. Adjust any metric to fit your priorities.
+                        ChAi generated these <span className="font-medium text-foreground">recommended weights</span> from your industry, business model and the company details you entered. Adjust any metric to fit your priorities.
                       </span>
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    {plannerMetrics.map((m) => {
-                      const level = metricWeights[m.name] ?? 3;
-                      const recommended = DEFAULT_METRIC_WEIGHTS[m.name] ?? 3;
-                      const isRecommended = level === recommended;
-                      return (
-                        <div key={m.name} className="rounded-xl border border-border p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium">{m.name}</p>
-                              <p className="mt-0.5 text-xs text-muted-foreground">{m.why}</p>
-                            </div>
-                            <div className="flex shrink-0 flex-col items-end gap-1">
-                              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
-                                {IMPORTANCE_LABELS[level - 1]}
-                              </span>
-                              {isRecommended ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                                  <Sparkles className="h-2.5 w-2.5" /> Recommended
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setMetricWeights((w) => ({ ...w, [m.name]: recommended }))
-                                  }
-                                  className="text-[10px] text-primary underline-offset-2 hover:underline"
-                                >
-                                  Reset to recommended
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                          <input
-                            type="range"
-                            min={1}
-                            max={5}
-                            step={1}
-                            value={level}
-                            onChange={(e) =>
-                              setMetricWeights((w) => ({ ...w, [m.name]: Number(e.target.value) }))
-                            }
-                            className="mt-3 w-full accent-primary"
-                          />
-                          <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
-                            <span>Unimportant</span>
-                            <span>Critical</span>
-                          </div>
+
+                  {metricsLoading ? (
+                    <div className="flex flex-col items-center rounded-xl border border-border py-12 text-center">
+                      <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                      <p className="mt-3 text-sm font-medium">ChAi is tailoring your metrics…</p>
+                      <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+                        Weighing each retention signal against your {form.industry || "business"} profile.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {metricsError && (
+                        <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-2">
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                            Couldn't generate tailored weights — showing sensible defaults you can adjust.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              metricsGenerated.current = false;
+                              void generateMetricRecommendations();
+                            }}
+                            className="shrink-0 font-medium text-primary underline-offset-2 hover:underline"
+                          >
+                            Retry
+                          </button>
                         </div>
-                      );
-                    })}
-                  </div>
+                      )}
+                      <div className="space-y-4">
+                        {plannerMetrics.map((m) => {
+                          const level = metricWeights[m.name] ?? 3;
+                          const recommended = recommendedWeights[m.name] ?? DEFAULT_METRIC_WEIGHTS[m.name] ?? 3;
+                          const isRecommended = level === recommended;
+                          const description = metricReasons[m.name] || m.why;
+                          return (
+                            <div key={m.name} className="rounded-xl border border-border p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium">{m.name}</p>
+                                  <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+                                </div>
+                                <div className="flex shrink-0 flex-col items-end gap-1">
+                                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                                    {IMPORTANCE_LABELS[level - 1]}
+                                  </span>
+                                  {isRecommended ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                                      <Sparkles className="h-2.5 w-2.5" /> ChAi recommended
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setMetricWeights((w) => ({ ...w, [m.name]: recommended }))
+                                      }
+                                      className="text-[10px] text-primary underline-offset-2 hover:underline"
+                                    >
+                                      Reset to recommended
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <input
+                                type="range"
+                                min={1}
+                                max={5}
+                                step={1}
+                                value={level}
+                                onChange={(e) =>
+                                  setMetricWeights((w) => ({ ...w, [m.name]: Number(e.target.value) }))
+                                }
+                                className="mt-3 w-full accent-primary"
+                              />
+                              <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                                <span>Unimportant</span>
+                                <span>Critical</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
