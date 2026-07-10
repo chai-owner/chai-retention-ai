@@ -212,8 +212,29 @@ interface BaseCustomer {
   revenue: number;
   sentiment: number;
   lastActivity: string;
+  centre: number;
   subScores: Record<string, number>;
   seed: number;
+}
+
+// Stable hash of a metric name → used to seed a deterministic sub-score for
+// ANY metric, including ones the AI generates during onboarding. This lets the
+// scoring engine work with an arbitrary, user-tailored metric set rather than
+// a fixed list.
+function hashString(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h);
+}
+
+// Deterministic 0–100 sub-score for a given customer + metric name, centred on
+// the customer's overall quality so health reads consistently across metrics.
+export function subScoreFor(seed: number, centre: number, metricName: string): number {
+  const rand = seededRandom(seed * 733 + hashString(metricName));
+  return Math.max(5, Math.min(99, Math.round(centre + (rand() * 24 - 12))));
 }
 
 // Per-customer raw metric sub-scores (0–100). The final health score is a
@@ -243,6 +264,7 @@ const baseCustomers: BaseCustomer[] = Array.from({ length: 42 }).map((_, i) => {
     revenue: Math.round((4 + rand() * 96) * 1000),
     sentiment: Math.round(40 + centre * 0.55 + (rand() * 20 - 10)),
     lastActivity: `${Math.round(1 + rand() * 80)} days ago`,
+    centre,
     subScores,
     seed: i,
   };
@@ -250,12 +272,22 @@ const baseCustomers: BaseCustomer[] = Array.from({ length: 42 }).map((_, i) => {
 
 
 // Weighted average of a customer's sub-scores using the importance weights.
-export function weightedHealth(subScores: Record<string, number>, weights: MetricWeights): number {
+// Scores over whatever metric set the weights define — including AI-generated
+// metrics — falling back to a deterministic sub-score for any metric that has
+// no pre-computed value on the customer.
+export function weightedHealth(
+  base: { centre: number; seed: number; subScores: Record<string, number> },
+  weights: MetricWeights,
+): number {
   let num = 0;
   let den = 0;
-  for (const m of METRIC_NAMES) {
+  const names = Object.keys(weights);
+  const list = names.length ? names : METRIC_NAMES.slice();
+  for (const m of list) {
     const w = weights[m] ?? 0;
-    num += (subScores[m] ?? 50) * w;
+    if (w <= 0) continue;
+    const score = base.subScores[m] ?? subScoreFor(base.seed, base.centre, m);
+    num += score * w;
     den += w;
   }
   return den > 0 ? Math.round(num / den) : 50;
@@ -263,9 +295,15 @@ export function weightedHealth(subScores: Record<string, number>, weights: Metri
 
 // Produce the fully-scored customer list for a given set of importance weights.
 export function scoreCustomers(weights: MetricWeights): Customer[] {
+  const activeNames = Object.keys(weights).length ? Object.keys(weights) : METRIC_NAMES.slice();
   return baseCustomers.map((b) => {
     const rand = seededRandom(b.seed * 97 + 13);
-    const health = weightedHealth(b.subScores, weights);
+    // Build sub-scores for the active (possibly AI-generated) metric set.
+    const subScores: Record<string, number> = {};
+    for (const m of activeNames) {
+      subScores[m] = b.subScores[m] ?? subScoreFor(b.seed, b.centre, m);
+    }
+    const health = weightedHealth(b, weights);
     const cat = categoryFromHealth(health);
     const risk = Math.max(2, Math.min(99, Math.round(100 - health + (rand() * 12 - 6))));
     const churnProbability = Math.min(96, Math.max(3, Math.round((100 - health) * 0.9 + rand() * 10)));
@@ -286,7 +324,7 @@ export function scoreCustomers(weights: MetricWeights): Customer[] {
       revenue: b.revenue,
       sentiment: b.sentiment,
       lastActivity: b.lastActivity,
-      subScores: b.subScores,
+      subScores,
       factors,
       recommendations,
       timeline: buildTimeline(rand, b.name, cat, factors, health, churnProbability),
@@ -551,7 +589,27 @@ export const benchmarks = [
 ];
 
 // ---- Customer Intelligence Planner metrics ----
-export const plannerMetrics = [
+// Shape shared by the built-in planner metrics and AI-generated metric sets.
+// Display-only fields (benchmark, unit, valueAt*) are optional so AI metrics —
+// which only carry name/why/churn/category/weight/reason — still type-check.
+export interface PlannerMetric {
+  name: string;
+  why: string;
+  churn: string;
+  category: string;
+  cadence?: string;
+  benchmark?: string;
+  benchmarkScore?: number;
+  unit?: string;
+  prefix?: string;
+  decimals?: number;
+  valueAt0?: number;
+  valueAt100?: number;
+  reason?: string;
+  weight?: number;
+}
+
+export const plannerMetrics: PlannerMetric[] = [
   { name: "Login frequency", why: "Tells you whether customers are getting into the product at all.", churn: "Customers who stop logging in churn far more often than active ones.", cadence: "Daily", benchmark: "3–5 logins / week", benchmarkScore: 70, category: "Engagement", unit: " / wk", decimals: 1, valueAt0: 0, valueAt100: 7 },
   { name: "Feature adoption", why: "Shows whether customers reach the value they signed up for.", churn: "Low adoption is one of the strongest early warnings of churn.", cadence: "Weekly", benchmark: "≥ 60% of core features", benchmarkScore: 60, category: "Engagement", unit: "%", decimals: 0, valueAt0: 10, valueAt100: 95 },
   { name: "Days since last purchase", why: "Measures buying momentum and lapse risk.", churn: "A gap longer than the usual cadence signals disengagement.", cadence: "Daily", benchmark: "< 30 days", benchmarkScore: 65, category: "Transactions", unit: " days", decimals: 0, valueAt0: 90, valueAt100: 4 },

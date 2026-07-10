@@ -5,7 +5,8 @@ import { Sparkles, Plus, Trash2, AlertCircle, Check, Loader2, Save } from "lucid
 import { cn } from "@/lib/utils";
 import { profileStore, useProfile, type ProfileSegment } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
-import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
+import { IMPORTANCE_LABELS } from "@/lib/mock-data";
+import { useActiveMetrics } from "@/lib/use-scored-data";
 import { businessModels, companySizes, interactionChannels, getQuestions, getChurnDefinition } from "@/lib/onboarding-options";
 
 export const Route = createFileRoute("/_authenticated/app/settings")({
@@ -17,6 +18,7 @@ const MAX_SEGMENTS = 4;
 
 function Settings() {
   const profile = useProfile();
+  const activeMetrics = useActiveMetrics();
   const persistProfile = useServerFn(saveProfile);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -37,7 +39,7 @@ function Settings() {
   const [segments, setSegments] = useState<ProfileSegment[]>([{ name: "", min: "", max: "" }]);
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
-  const [metricWeights, setMetricWeights] = useState<Record<string, number>>({ ...DEFAULT_METRIC_WEIGHTS });
+  const [metricWeights, setMetricWeights] = useState<Record<string, number>>({});
 
   // Hydrate local form state from the saved profile once it's available.
   useEffect(() => {
@@ -58,7 +60,7 @@ function Settings() {
     setSegments(profile.segments?.length ? profile.segments : [{ name: "", min: "", max: "" }]);
     setTracked(profile.tracked ?? {});
     setChannels(profile.channels ?? []);
-    setMetricWeights({ ...DEFAULT_METRIC_WEIGHTS, ...(profile.metricWeights ?? {}) });
+    setMetricWeights({ ...(profile.metricWeights ?? {}) });
   }, [profile]);
 
   const questions = getQuestions(model);
@@ -124,6 +126,7 @@ function Settings() {
       tracked,
       channels,
       metricWeights,
+      metrics: activeMetrics.map((m) => ({ ...m, weight: metricWeights[m.name] ?? m.weight ?? 3 })),
     };
     profileStore.save(payload);
     persistProfile({ data: payload }).catch(() => {
@@ -262,9 +265,9 @@ function Settings() {
       {/* What matters — weights */}
       <Card title="How much each metric matters" subtitle="Slide each metric from Unimportant to Critical to retune your customer health score.">
         <div className="space-y-4">
-          {plannerMetrics.map((m) => {
-            const level = metricWeights[m.name] ?? 3;
-            const recommended = DEFAULT_METRIC_WEIGHTS[m.name] ?? 3;
+          {activeMetrics.map((m) => {
+            const level = metricWeights[m.name] ?? m.weight ?? 3;
+            const recommended = m.weight ?? 3;
             const isRecommended = level === recommended;
             return (
               <div key={m.name} className="rounded-xl border border-border p-4">

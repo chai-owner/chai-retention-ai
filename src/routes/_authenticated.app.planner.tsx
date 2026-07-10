@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ClipboardList } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
-import { plannerMetrics, IMPORTANCE_LABELS, metricActualValue } from "@/lib/mock-data";
-import { useMetricWeights, useScoredData } from "@/lib/use-scored-data";
+import { IMPORTANCE_LABELS, metricActualValue } from "@/lib/mock-data";
+import { useActiveMetrics, useMetricWeights, useScoredData } from "@/lib/use-scored-data";
 
 export const Route = createFileRoute("/_authenticated/app/planner")({
   head: () => ({ meta: [{ title: "Intelligence Planner — ChAi" }] }),
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/_authenticated/app/planner")({
 
 function Planner() {
   const weights = useMetricWeights();
+  const plannerMetrics = useActiveMetrics();
   const { customers } = useScoredData();
 
   const total = plannerMetrics.length;
@@ -106,9 +107,11 @@ function Planner() {
                     );
                   })}
                 </div>
-                <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                  <span className="font-medium text-foreground">Healthy benchmark:</span> {m.benchmark}
-                </p>
+                {m.benchmark && (
+                  <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                    <span className="font-medium text-foreground">Healthy benchmark:</span> {m.benchmark}
+                  </p>
+                )}
 
               </div>
             </div>

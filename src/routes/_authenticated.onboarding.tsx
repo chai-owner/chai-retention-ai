@@ -5,8 +5,8 @@ import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCir
 import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
-import { recommendMetricWeights } from "@/lib/ai.functions";
-import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
+import { recommendMetrics } from "@/lib/ai.functions";
+import { plannerMetrics, IMPORTANCE_LABELS, type PlannerMetric } from "@/lib/mock-data";
 import { SmartIngestCard, UploadDatasetsCard } from "@/components/data-uploads-panel";
 import { IntegrationsPanel } from "@/components/integrations-panel";
 import {
@@ -45,7 +45,7 @@ const MAX_SEGMENTS = 4;
 function Onboarding() {
   const navigate = useNavigate();
   const persistProfile = useServerFn(saveProfile);
-  const getRecommendedWeights = useServerFn(recommendMetricWeights);
+  const getRecommendedMetrics = useServerFn(recommendMetrics);
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -67,14 +67,10 @@ function Onboarding() {
   });
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
-  const [metricWeights, setMetricWeights] = useState<Record<string, number>>(
-    () => ({ ...DEFAULT_METRIC_WEIGHTS }),
-  );
-  // AI-generated recommendations (weights + tailored reasons) for step 3.
-  const [recommendedWeights, setRecommendedWeights] = useState<Record<string, number>>(
-    () => ({ ...DEFAULT_METRIC_WEIGHTS }),
-  );
-  const [metricReasons, setMetricReasons] = useState<Record<string, string>>({});
+  const [metricWeights, setMetricWeights] = useState<Record<string, number>>({});
+  // AI-generated metric SET (definitions) + recommended weights for step 3.
+  const [generatedMetrics, setGeneratedMetrics] = useState<PlannerMetric[]>([]);
+  const [recommendedWeights, setRecommendedWeights] = useState<Record<string, number>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState(false);
   const metricsGenerated = useRef(false);
@@ -82,13 +78,19 @@ function Onboarding() {
     { name: "", min: "", max: "" },
   ]);
 
-  // When the user reaches the "What matters" step, ask ChAi to recommend metric
-  // importance tailored to the industry/company info they entered earlier.
+  // The metrics shown in step 3: ChAi's generated set once ready, otherwise the
+  // built-in defaults as a fallback.
+  const activeMetrics: PlannerMetric[] =
+    generatedMetrics.length > 0 ? generatedMetrics : plannerMetrics;
+
+  // When the user reaches the "What matters" step, ask ChAi to GENERATE the
+  // retention metrics this specific business should track, tailored to the
+  // industry/company info they entered earlier.
   async function generateMetricRecommendations() {
     setMetricsLoading(true);
     setMetricsError(false);
     try {
-      const { recommendations } = await getRecommendedWeights({
+      const { metrics } = await getRecommendedMetrics({
         data: {
           profile: {
             company: form.company,
@@ -101,22 +103,19 @@ function Onboarding() {
             cadence: form.cadence,
             lifespan: form.lifespan,
             concerns: form.concerns,
+            successActions: form.successActions,
+            disengagement: form.disengagement,
           },
-          metrics: plannerMetrics.map((m) => ({ name: m.name, why: m.why })),
         },
       });
-      if (recommendations.length === 0) {
+      if (metrics.length === 0) {
         setMetricsError(true);
         return;
       }
-      const weights: Record<string, number> = { ...DEFAULT_METRIC_WEIGHTS };
-      const reasons: Record<string, string> = {};
-      for (const r of recommendations) {
-        weights[r.name] = r.weight;
-        if (r.reason) reasons[r.name] = r.reason;
-      }
+      const weights: Record<string, number> = {};
+      for (const m of metrics) weights[m.name] = m.weight ?? 3;
+      setGeneratedMetrics(metrics);
       setRecommendedWeights(weights);
-      setMetricReasons(reasons);
       setMetricWeights(weights);
       metricsGenerated.current = true;
     } catch {
@@ -212,6 +211,16 @@ function Onboarding() {
 
   function finish() {
     setSubmitting(true);
+    // Persist weights for the active (AI-generated) metric set so the scoring
+    // engine keys off exactly the metrics ChAi chose for this business.
+    const effectiveWeights: Record<string, number> = {};
+    for (const m of activeMetrics) {
+      effectiveWeights[m.name] = metricWeights[m.name] ?? m.weight ?? 3;
+    }
+    const savedMetrics: PlannerMetric[] = activeMetrics.map((m) => ({
+      ...m,
+      weight: effectiveWeights[m.name],
+    }));
     const payload = {
       company: form.company,
       industry: form.industry,
@@ -229,7 +238,8 @@ function Onboarding() {
       churnDefinition: form.churnDefinition,
       tracked,
       channels,
-      metricWeights,
+      metricWeights: effectiveWeights,
+      metrics: savedMetrics,
     };
     profileStore.save(payload);
     // Persist to the user's account so it follows them across devices.
@@ -491,14 +501,14 @@ function Onboarding() {
               {step === 3 && (
                 <div className="space-y-4">
                    <div>
-                    <h2 className="text-xl font-semibold">How much each metric matters</h2>
+                    <h2 className="text-xl font-semibold">The metrics ChAi will track for you</h2>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Slide each metric from Unimportant to Critical. ChAi weights your customer health score by what matters most to you.
+                      ChAi picked these retention metrics for your business. Slide each from Unimportant to Critical to shape how your customer health score is weighted.
                     </p>
                     <div className="mt-3 flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
                       <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                       <span>
-                        ChAi generated these <span className="font-medium text-foreground">recommended weights</span> from your industry, business model and the company details you entered. Adjust any metric to fit your priorities.
+                        ChAi <span className="font-medium text-foreground">generated this metric set</span> from your industry, business model and the company details you entered. Adjust any weight to fit your priorities.
                       </span>
                     </div>
                   </div>
@@ -506,9 +516,9 @@ function Onboarding() {
                   {metricsLoading ? (
                     <div className="flex flex-col items-center rounded-xl border border-border py-12 text-center">
                       <Loader2 className="h-7 w-7 animate-spin text-primary" />
-                      <p className="mt-3 text-sm font-medium">ChAi is tailoring your metrics…</p>
+                      <p className="mt-3 text-sm font-medium">ChAi is generating your metrics…</p>
                       <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-                        Weighing each retention signal against your {form.industry || "business"} profile.
+                        Choosing the retention signals that matter for a {form.industry || "business"} like yours.
                       </p>
                     </div>
                   ) : (
@@ -517,7 +527,7 @@ function Onboarding() {
                         <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-2">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                            Couldn't generate tailored weights — showing sensible defaults you can adjust.
+                            Couldn't generate tailored metrics — showing a sensible default set you can adjust.
                           </span>
                           <button
                             type="button"
@@ -532,11 +542,11 @@ function Onboarding() {
                         </div>
                       )}
                       <div className="space-y-4">
-                        {plannerMetrics.map((m) => {
-                          const level = metricWeights[m.name] ?? 3;
-                          const recommended = recommendedWeights[m.name] ?? DEFAULT_METRIC_WEIGHTS[m.name] ?? 3;
+                        {activeMetrics.map((m) => {
+                          const level = metricWeights[m.name] ?? m.weight ?? 3;
+                          const recommended = recommendedWeights[m.name] ?? m.weight ?? 3;
                           const isRecommended = level === recommended;
-                          const description = metricReasons[m.name] || m.why;
+                          const description = m.reason || m.why;
                           return (
                             <div key={m.name} className="rounded-xl border border-border p-4">
                               <div className="flex items-center justify-between gap-3">
