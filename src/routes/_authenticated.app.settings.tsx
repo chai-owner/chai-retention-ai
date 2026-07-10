@@ -39,7 +39,7 @@ function Settings() {
   const [segments, setSegments] = useState<ProfileSegment[]>([{ name: "", min: "", max: "" }]);
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
-  const [metricWeights, setMetricWeights] = useState<Record<string, number>>({ ...DEFAULT_METRIC_WEIGHTS });
+  const [metricWeights, setMetricWeights] = useState<Record<string, number>>({});
 
   // Hydrate local form state from the saved profile once it's available.
   useEffect(() => {
