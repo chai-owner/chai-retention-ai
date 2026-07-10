@@ -30,6 +30,16 @@ export function useMetricWeights(): MetricWeights {
   return useMemo(() => resolveWeights(profile?.metricWeights), [profile?.metricWeights]);
 }
 
+// The active metric definitions: the AI-generated set saved during onboarding
+// when present, otherwise the built-in default planner metrics.
+export function useActiveMetrics(): PlannerMetric[] {
+  const profile = useProfile();
+  return useMemo(
+    () => (profile?.metrics && profile.metrics.length > 0 ? profile.metrics : plannerMetrics),
+    [profile?.metrics],
+  );
+}
+
 export function useScoredData(): ScoredDataset {
   const weights = useMetricWeights();
   const ingested = useIngested();
