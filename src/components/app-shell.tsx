@@ -17,12 +17,15 @@ import {
   Settings,
   LogOut,
   LogIn,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AskChAi } from "@/components/ask-chai";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfileSync } from "@/lib/use-profile-sync";
 import { useProfile } from "@/lib/profile-store";
+import { impersonationStore, useImpersonation } from "@/lib/impersonation";
+import { endImpersonation } from "@/lib/admin.functions";
 
 const nav = [
   { to: "/app/welcome", label: "Welcome", icon: Sparkles },
