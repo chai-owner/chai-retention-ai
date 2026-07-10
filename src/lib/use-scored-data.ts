@@ -15,14 +15,13 @@ import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/rea
 import { useSignedIn } from "@/lib/use-auth-state";
 import { useDemoMode } from "@/lib/use-demo-mode";
 
-// Merge saved weights over the defaults so a partial set still scores fully.
+// Resolve the active importance weights. When the user has saved their own set
+// (from onboarding — which may be an AI-generated metric set with custom names),
+// use it verbatim so scoring keys off exactly those metrics. Otherwise fall
+// back to the built-in defaults.
 export function resolveWeights(saved?: Record<string, number> | null): MetricWeights {
-  if (!saved) return DEFAULT_METRIC_WEIGHTS;
-  const merged: MetricWeights = { ...DEFAULT_METRIC_WEIGHTS };
-  for (const m of METRIC_NAMES) {
-    if (typeof saved[m] === "number") merged[m] = saved[m];
-  }
-  return merged;
+  if (saved && Object.keys(saved).length > 0) return saved;
+  return DEFAULT_METRIC_WEIGHTS;
 }
 
 export function useMetricWeights(): MetricWeights {
