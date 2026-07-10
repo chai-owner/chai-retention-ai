@@ -5,7 +5,12 @@
 // public product demo without seeing any of their own real data.
 import { useSearch } from "@tanstack/react-router";
 
-export function useDemoMode(): boolean {
-  const search = useSearch({ strict: false }) as { demo?: boolean };
-  return search?.demo === true;
+export function isDemoValue(raw: unknown): boolean {
+  return raw === true || raw === "1" || raw === "true";
 }
+
+export function useDemoMode(): boolean {
+  const search = useSearch({ strict: false }) as { demo?: unknown };
+  return isDemoValue(search?.demo);
+}
+
