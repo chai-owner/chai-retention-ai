@@ -589,7 +589,27 @@ export const benchmarks = [
 ];
 
 // ---- Customer Intelligence Planner metrics ----
-export const plannerMetrics = [
+// Shape shared by the built-in planner metrics and AI-generated metric sets.
+// Display-only fields (benchmark, unit, valueAt*) are optional so AI metrics —
+// which only carry name/why/churn/category/weight/reason — still type-check.
+export interface PlannerMetric {
+  name: string;
+  why: string;
+  churn: string;
+  category: string;
+  cadence?: string;
+  benchmark?: string;
+  benchmarkScore?: number;
+  unit?: string;
+  prefix?: string;
+  decimals?: number;
+  valueAt0?: number;
+  valueAt100?: number;
+  reason?: string;
+  weight?: number;
+}
+
+export const plannerMetrics: PlannerMetric[] = [
   { name: "Login frequency", why: "Tells you whether customers are getting into the product at all.", churn: "Customers who stop logging in churn far more often than active ones.", cadence: "Daily", benchmark: "3–5 logins / week", benchmarkScore: 70, category: "Engagement", unit: " / wk", decimals: 1, valueAt0: 0, valueAt100: 7 },
   { name: "Feature adoption", why: "Shows whether customers reach the value they signed up for.", churn: "Low adoption is one of the strongest early warnings of churn.", cadence: "Weekly", benchmark: "≥ 60% of core features", benchmarkScore: 60, category: "Engagement", unit: "%", decimals: 0, valueAt0: 10, valueAt100: 95 },
   { name: "Days since last purchase", why: "Measures buying momentum and lapse risk.", churn: "A gap longer than the usual cadence signals disengagement.", cadence: "Daily", benchmark: "< 30 days", benchmarkScore: 65, category: "Transactions", unit: " days", decimals: 0, valueAt0: 90, valueAt100: 4 },
