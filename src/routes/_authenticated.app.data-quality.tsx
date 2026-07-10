@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ArrowRight, FileSpreadsheet, Trash2 } from "lucide-react";
+import { FileSpreadsheet, Trash2 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { dataReadiness, readinessOverall } from "@/lib/mock-data";
 import {
@@ -9,7 +9,6 @@ import {
   overallScore,
   type UploadRecord,
 } from "@/lib/uploads-store";
-import { useTickets, formatDuration, type TicketRecord } from "@/lib/tickets-store";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,17 +41,8 @@ function scoreChip(v: number) {
         : "bg-danger/10 text-danger border-danger/20";
 }
 
-function statusChip(status: string) {
-  const s = status.toLowerCase();
-  if (s === "resolved" || s === "closed") return "bg-success/10 text-success border-success/20";
-  if (s === "reopened") return "bg-danger/10 text-danger border-danger/20";
-  if (s === "in_progress" || s === "pending") return "bg-warning/15 text-warning-foreground border-warning/30";
-  return "bg-secondary text-muted-foreground border-border";
-}
-
 function DataQualityPage() {
   const uploads = useUploads();
-  const tickets = useTickets();
 
   function deleteUpload(u: UploadRecord) {
     uploadsStore.remove(u.id);
@@ -175,61 +165,6 @@ function DataQualityPage() {
           )}
         </div>
       </Card>
-
-      {tickets.length > 0 && (
-        <Card className="mt-6">
-          <h3 className="font-semibold">Ticket status changes</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Each ticket is tracked by its ID. When you re-upload a ticket with a changed status, ChAi
-            overwrites it and logs the change, so you can see how long a ticket took to close.
-          </p>
-          <div className="mt-4 space-y-3">
-            {tickets.map((t) => (
-              <TicketRow key={t.ticket_id} ticket={t} />
-            ))}
-          </div>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function TicketRow({ ticket }: { ticket: TicketRecord }) {
-  const closed = ticket.status.toLowerCase() === "resolved" || ticket.status.toLowerCase() === "closed";
-  return (
-    <div className="rounded-lg border border-border p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-xs font-semibold">{ticket.ticket_id}</span>
-          <span className="text-[11px] text-muted-foreground">{ticket.customer_id}</span>
-          {ticket.category && (
-            <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-              {ticket.category}
-            </span>
-          )}
-        </div>
-        <span className={cn("inline-block rounded-full border px-2 py-0.5 text-xs font-medium", statusChip(ticket.status))}>
-          {ticket.status}
-        </span>
-      </div>
-
-      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-        {ticket.history.map((h, i) => (
-          <span key={i} className="flex items-center gap-1.5">
-            {i > 0 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
-            <span className="rounded border border-border bg-secondary px-1.5 py-0.5">
-              <span className="font-medium">{h.status}</span>{" "}
-              <span className="text-muted-foreground">{h.at}</span>
-            </span>
-          </span>
-        ))}
-      </div>
-
-      {closed && ticket.resolutionHours != null && (
-        <p className="mt-2 text-xs text-success">
-          Closed in <span className="font-semibold">{formatDuration(ticket.resolutionHours)}</span> from open to resolved.
-        </p>
-      )}
     </div>
   );
 }
