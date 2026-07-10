@@ -97,3 +97,16 @@ export const saveProfile = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+// Records that the user has booked their onboarding call (Calendly).
+export const markBooked = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ booked_at: new Date().toISOString() })
+      .eq("id", userId);
+    if (error) throw error;
+    return { ok: true };
+  });
