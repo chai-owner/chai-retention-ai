@@ -3,6 +3,7 @@
 // works. Backed by localStorage and exposed via useSyncExternalStore, mirroring
 // the uploads-store pattern. SSR-safe: returns null on the server.
 import { useSyncExternalStore } from "react";
+import type { PlannerMetric } from "@/lib/mock-data";
 
 export interface ProfileSegment {
   name: string;
