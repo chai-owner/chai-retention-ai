@@ -13,6 +13,7 @@ import {
 import { useIngested } from "@/lib/ingested-data-store";
 import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/real-scoring";
 import { useSignedIn } from "@/lib/use-auth-state";
+import { useDemoMode } from "@/lib/use-demo-mode";
 
 // Merge saved weights over the defaults so a partial set still scores fully.
 export function resolveWeights(saved?: Record<string, number> | null): MetricWeights {
