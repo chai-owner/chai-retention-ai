@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ArrowRight, FileSpreadsheet, Trash2 } from "lucide-react";
+import { FileSpreadsheet, Trash2 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { dataReadiness, readinessOverall } from "@/lib/mock-data";
 import {
