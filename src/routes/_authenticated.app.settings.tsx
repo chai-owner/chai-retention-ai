@@ -264,9 +264,9 @@ function Settings() {
       {/* What matters — weights */}
       <Card title="How much each metric matters" subtitle="Slide each metric from Unimportant to Critical to retune your customer health score.">
         <div className="space-y-4">
-          {plannerMetrics.map((m) => {
-            const level = metricWeights[m.name] ?? 3;
-            const recommended = DEFAULT_METRIC_WEIGHTS[m.name] ?? 3;
+          {activeMetrics.map((m) => {
+            const level = metricWeights[m.name] ?? m.weight ?? 3;
+            const recommended = m.weight ?? 3;
             const isRecommended = level === recommended;
             return (
               <div key={m.name} className="rounded-xl border border-border p-4">
