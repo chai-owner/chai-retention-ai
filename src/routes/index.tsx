@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -97,13 +97,20 @@ function Landing() {
             </span>
             <span className="text-lg font-semibold tracking-tight">ChAi</span>
           </div>
-          <div className="flex items-center gap-3">
-            <a
-              href="#waitlist"
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/auth"
+              className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Log in
+            </Link>
+            <Link
+              to="/auth"
+              search={{ mode: "signup" }}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Join the waitlist <ArrowRight className="h-4 w-4" />
-            </a>
+              Sign up <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </header>
