@@ -505,9 +505,9 @@ function Onboarding() {
                   {metricsLoading ? (
                     <div className="flex flex-col items-center rounded-xl border border-border py-12 text-center">
                       <Loader2 className="h-7 w-7 animate-spin text-primary" />
-                      <p className="mt-3 text-sm font-medium">ChAi is tailoring your metrics…</p>
+                      <p className="mt-3 text-sm font-medium">ChAi is generating your metrics…</p>
                       <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-                        Weighing each retention signal against your {form.industry || "business"} profile.
+                        Choosing the retention signals that matter for a {form.industry || "business"} like yours.
                       </p>
                     </div>
                   ) : (
