@@ -31,6 +31,7 @@ function AuthPage() {
   const { redirect: redirectTo } = Route.useSearch();
   const dest = redirectTo ?? "/app/dashboard";
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
