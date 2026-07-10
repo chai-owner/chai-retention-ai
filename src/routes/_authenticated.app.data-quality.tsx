@@ -9,7 +9,6 @@ import {
   overallScore,
   type UploadRecord,
 } from "@/lib/uploads-store";
-import { useTickets, formatDuration, type TicketRecord } from "@/lib/tickets-store";
 import {
   AlertDialog,
   AlertDialogAction,
