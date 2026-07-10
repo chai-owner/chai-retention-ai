@@ -172,7 +172,7 @@ function Onboarding() {
     persistProfile({ data: payload }).catch(() => {
       // Non-blocking: localStorage already holds the profile.
     });
-    setTimeout(() => navigate({ to: "/app/dashboard" }), 1600);
+    setTimeout(() => navigate({ to: "/app/welcome" }), 1600);
   }
 
   return (
