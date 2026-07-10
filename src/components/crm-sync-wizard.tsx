@@ -23,6 +23,7 @@ import {
   type QualityFinding,
   type UploadRecord,
 } from "@/lib/uploads-store";
+import { ingestedStore, rowsToObjects } from "@/lib/ingested-data-store";
 
 type FieldType = "date" | "number" | "email" | "text";
 
@@ -220,6 +221,7 @@ export function CrmSyncWizard({
         fieldChecks,
       };
       uploadsStore.add(record);
+      ingestedStore.addRows(d.key, rowsToObjects(d.schema.fields.map((f) => f.name), d.rows));
     }
     toast.success(`${providerName} data imported`, {
       description: `${totalRows.toLocaleString()} rows across ${datasets.length} dataset${

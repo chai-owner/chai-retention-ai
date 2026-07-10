@@ -1,6 +1,6 @@
-// Reactive customer dataset driven by the importance weights the user sets
-// during onboarding. Falls back to sensible defaults when no weights are saved
-// (including during SSR, where the profile is null).
+// Reactive customer dataset. Prefers the user's REAL uploaded/synced data when
+// there is enough of it to score; otherwise falls back to the illustrative
+// sample dataset (used for SSR and the public, no-login demo experience).
 import { useMemo } from "react";
 import { useProfile } from "@/lib/profile-store";
 import {
@@ -10,6 +10,8 @@ import {
   type MetricWeights,
   type ScoredDataset,
 } from "@/lib/mock-data";
+import { useIngested } from "@/lib/ingested-data-store";
+import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/real-scoring";
 
 // Merge saved weights over the defaults so a partial set still scores fully.
 export function resolveWeights(saved?: Record<string, number> | null): MetricWeights {
@@ -28,5 +30,25 @@ export function useMetricWeights(): MetricWeights {
 
 export function useScoredData(): ScoredDataset {
   const weights = useMetricWeights();
-  return useMemo(() => buildDataset(weights), [weights]);
+  const ingested = useIngested();
+  const profile = useProfile();
+  return useMemo(() => {
+    if (assessSufficiency(ingested).enough) return buildRealDataset(ingested, weights, profile);
+    return buildDataset(weights);
+  }, [weights, ingested, profile]);
+}
+
+// Real-only assessment (never falls back to sample data). Used by the first-run
+// insights screen so a user who added little/no data sees an honest "not enough
+// data" message instead of a fabricated snapshot.
+export function useRealAssessment(): { sufficiency: Sufficiency; dataset: ScoredDataset | null } {
+  const weights = useMetricWeights();
+  const ingested = useIngested();
+  const profile = useProfile();
+  return useMemo(() => {
+    const sufficiency = assessSufficiency(ingested);
+    const dataset =
+      sufficiency.customerCount > 0 ? buildRealDataset(ingested, weights, profile) : null;
+    return { sufficiency, dataset };
+  }, [weights, ingested, profile]);
 }

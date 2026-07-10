@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
 import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
+import { SmartIngestCard, UploadDatasetsCard } from "@/components/data-uploads-panel";
+import { IntegrationsPanel } from "@/components/integrations-panel";
 import {
   businessModels,
   interactionChannels,
@@ -530,27 +532,12 @@ function Onboarding() {
                   <div>
                     <h2 className="text-xl font-semibold">Connect your integrations</h2>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      The more ChAi can see, the sharper your retention insights. You can connect these
-                      now or any time from Data &amp; Integrations — nothing here is required to continue.
+                      The more ChAi can see, the sharper your retention insights. Connect any of these
+                      now, or skip and add them later from Data &amp; Integrations — nothing here is
+                      required to continue.
                     </p>
                   </div>
-                  <div className="space-y-3">
-                    <BenefitCard
-                      title="Support tools"
-                      examples="Zendesk, Intercom, Freshdesk"
-                      benefit="Support interactions are one of the strongest churn signals — unresolved or repeated tickets flag frustration early."
-                    />
-                    <BenefitCard
-                      title="CRM"
-                      examples="Salesforce, HubSpot, Zoho"
-                      benefit="Brings in accounts, deals and renewal stages so ChAi factors pipeline and renewal risk into customer health."
-                    />
-                    <BenefitCard
-                      title="Accounting"
-                      examples="QuickBooks, Xero, FreshBooks"
-                      benefit="Reveals what customers actually buy and how often — powering spend, buying cadence and lifetime value."
-                    />
-                  </div>
+                  <IntegrationsPanel />
                 </div>
               )}
 
@@ -559,26 +546,18 @@ function Onboarding() {
                   <div>
                     <h2 className="text-xl font-semibold">Add your data</h2>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      ChAi needs some of your data to run its first assessment. Choose whichever is easier —
-                      you can always add more later from Data &amp; Integrations.
+                      ChAi runs its first assessment on the data you add here — nothing is made up.
+                      Drop in documents or upload CSVs. The more you add, the more accurate your first
+                      snapshot. You can skip and add data later, too.
                     </p>
                   </div>
-                  <div className="space-y-3">
-                    <BenefitCard
-                      title="ChAi Data Drop (AI-powered)"
-                      examples="PDFs, scans, spreadsheets, receipts"
-                      benefit="Drop in any customer document — no templates or formatting. ChAi's AI reads it and maps the data into the right datasets for you to review."
-                    />
-                    <BenefitCard
-                      title="Upload CSVs (do it yourself)"
-                      examples="Customers, transactions, support tickets"
-                      benefit="Prefer structured files? Upload CSVs for each dataset and ChAi guides you through mapping the columns."
-                    />
-                  </div>
+                  <SmartIngestCard />
+                  <UploadDatasetsCard />
                   <div className="rounded-lg bg-accent/40 p-4 text-sm text-muted-foreground">
-                    <p className="font-medium text-foreground">You're all set.</p>
-                    ChAi will build a {form.model} retention framework, run its first assessment, and show
-                    you your top insights — all in plain English.
+                    <p className="font-medium text-foreground">Ready when you are.</p>
+                    ChAi will build a {form.model} retention framework and run its first assessment on
+                    whatever you've added. Added little or nothing? We'll tell you honestly and set it
+                    up together on your onboarding call.
                   </div>
                 </div>
               )}
@@ -622,30 +601,6 @@ function Onboarding() {
 const inputCls =
   "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary";
 
-function BenefitCard({
-  title,
-  examples,
-  benefit,
-}: {
-  title: string;
-  examples: string;
-  benefit: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border p-4">
-      <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-primary">
-          <Sparkles className="h-4 w-4" />
-        </span>
-        <div>
-          <p className="text-sm font-semibold">{title}</p>
-          <p className="text-[11px] text-muted-foreground">{examples}</p>
-        </div>
-      </div>
-      <p className="mt-3 text-xs text-muted-foreground">{benefit}</p>
-    </div>
-  );
-}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

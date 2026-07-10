@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkles, Loader2, CalendarCheck, TrendingUp, Users, DollarSign, AlertTriangle } from "lucide-react";
-import { useScoredData } from "@/lib/use-scored-data";
+import {
+  Sparkles,
+  Loader2,
+  CalendarCheck,
+  TrendingUp,
+  Users,
+  DollarSign,
+  AlertTriangle,
+  Database,
+} from "lucide-react";
+import { useRealAssessment } from "@/lib/use-scored-data";
 import { useProfile } from "@/lib/profile-store";
 import { formatCurrency } from "@/lib/mock-data";
 import { generateCollectiveInsights } from "@/lib/ai.functions";
@@ -23,42 +32,43 @@ declare global {
 }
 
 function WelcomePage() {
-  const data = useScoredData();
+  const { sufficiency, dataset } = useRealAssessment();
   const profile = useProfile();
   const getInsights = useServerFn(generateCollectiveInsights);
   const recordBooked = useServerFn(markBooked);
 
   const [insights, setInsights] = useState<string[]>([]);
-  const [loadingInsights, setLoadingInsights] = useState(true);
+  const [loadingInsights, setLoadingInsights] = useState(sufficiency.enough);
   const [booked, setBooked] = useState(false);
   const requested = useRef(false);
 
-  const monthsOfRevenue = 12;
-  const flagged = data.executive.atRisk + data.executive.critical;
+  const hasSnapshot = sufficiency.enough && dataset != null;
+  const flagged = dataset ? dataset.executive.atRisk + dataset.executive.critical : 0;
 
-  // Fallback insights computed from the dataset if the AI call fails.
+  // Fallback insights computed from the real dataset if the AI call fails.
   const fallbackInsights = useMemo(() => {
-    const e = data.executive;
+    if (!dataset) return [];
+    const e = dataset.executive;
     return [
       `${e.critical + e.atRisk} of your ${e.totalCustomers} customers are showing churn-risk signals right now.`,
-      `About ${formatCurrency(data.revenueAtRisk)} of revenue is currently exposed to churn.`,
+      `About ${formatCurrency(dataset.revenueAtRisk)} of revenue is currently exposed to churn.`,
       `Roughly ${formatCurrency(e.retentionOpportunity)} of that is realistically recoverable with the right outreach.`,
       `${e.healthy} customers are healthy — your strongest base to grow from and reference.`,
-      `Support friction is the single biggest churn driver across your at-risk accounts.`,
     ];
-  }, [data]);
+  }, [dataset]);
 
   useEffect(() => {
+    if (!hasSnapshot || !dataset) return;
     if (requested.current) return;
     requested.current = true;
 
     const summary = [
       profile ? `Company: ${profile.company} (${profile.industry}, ${profile.model} model).` : "",
-      `Customers analyzed: ${data.executive.totalCustomers}.`,
-      `Total annual revenue reviewed: ${formatCurrency(data.totalRevenue)}.`,
-      `Revenue currently at risk: ${formatCurrency(data.revenueAtRisk)}.`,
-      `Recoverable revenue opportunity: ${formatCurrency(data.executive.retentionOpportunity)}.`,
-      `Health mix — healthy ${data.executive.healthy}, watch ${data.executive.watch}, at-risk ${data.executive.atRisk}, critical ${data.executive.critical}.`,
+      `Customers analyzed: ${dataset.executive.totalCustomers}.`,
+      `Total annual revenue reviewed: ${formatCurrency(dataset.totalRevenue)}.`,
+      `Revenue currently at risk: ${formatCurrency(dataset.revenueAtRisk)}.`,
+      `Recoverable revenue opportunity: ${formatCurrency(dataset.executive.retentionOpportunity)}.`,
+      `Health mix — healthy ${dataset.executive.healthy}, watch ${dataset.executive.watch}, at-risk ${dataset.executive.atRisk}, critical ${dataset.executive.critical}.`,
       profile?.concerns ? `Owner's stated retention concerns: ${profile.concerns}.` : "",
     ]
       .filter(Boolean)
@@ -70,19 +80,15 @@ function WelcomePage() {
       })
       .catch(() => setInsights(fallbackInsights))
       .finally(() => setLoadingInsights(false));
-  }, [getInsights, data, profile, fallbackInsights]);
+  }, [getInsights, dataset, profile, fallbackInsights, hasSnapshot]);
 
-  // Detect a completed Calendly booking and persist it.
   useEffect(() => {
     if (profile?.bookedAt) setBooked(true);
   }, [profile?.bookedAt]);
 
   useEffect(() => {
     function onMessage(e: MessageEvent) {
-      if (
-        typeof e.data === "object" &&
-        e.data?.event === "calendly.event_scheduled"
-      ) {
+      if (typeof e.data === "object" && e.data?.event === "calendly.event_scheduled") {
         setBooked(true);
         recordBooked().catch(() => {});
       }
@@ -105,50 +111,100 @@ function WelcomePage() {
     <div className="mx-auto max-w-3xl space-y-8 py-4">
       <div>
         <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-          <Sparkles className="h-3.5 w-3.5" /> Your initial assessment is ready
+          <Sparkles className="h-3.5 w-3.5" />{" "}
+          {hasSnapshot ? "Your initial assessment is ready" : "Welcome to ChAi"}
         </span>
         <h1 className="mt-4 text-2xl font-semibold sm:text-3xl">
-          {name ? `${name}, here's what we found` : "Here's what we found"}
+          {hasSnapshot
+            ? name
+              ? `${name}, here's what we found`
+              : "Here's what we found"
+            : name
+              ? `You're all set up, ${name}`
+              : "You're all set up"}
         </h1>
-        <p className="mt-2 text-muted-foreground">
-          We've analyzed{" "}
-          <strong className="text-foreground">{data.executive.totalCustomers} customers</strong>,{" "}
-          <strong className="text-foreground">{monthsOfRevenue} months of revenue</strong> and your
-          support history — and surfaced{" "}
-          <strong className="text-foreground">{flagged} accounts</strong> that need attention.
-        </p>
-      </div>
-
-      {/* Quick stats */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Stat icon={Users} label="Customers analyzed" value={String(data.executive.totalCustomers)} />
-        <Stat icon={DollarSign} label="Revenue reviewed" value={formatCurrency(data.totalRevenue)} />
-        <Stat icon={AlertTriangle} label="Accounts flagged" value={String(flagged)} />
-      </div>
-
-      {/* Insights */}
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-card sm:p-8">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">Your top insights</h2>
-        </div>
-        {loadingInsights ? (
-          <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Analyzing your data…
-          </div>
+        {hasSnapshot && dataset ? (
+          <p className="mt-2 text-muted-foreground">
+            We've analyzed{" "}
+            <strong className="text-foreground">
+              {dataset.executive.totalCustomers} customers
+            </strong>{" "}
+            from your own data — and surfaced{" "}
+            <strong className="text-foreground">{flagged} accounts</strong> that need attention.
+          </p>
         ) : (
-          <ol className="mt-5 space-y-4">
-            {insights.map((it, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                  {i + 1}
-                </span>
-                <p className="text-sm leading-relaxed">{it}</p>
-              </li>
-            ))}
-          </ol>
+          <p className="mt-2 text-muted-foreground">
+            Your retention framework is built. The next step is your onboarding call.
+          </p>
         )}
       </div>
+
+      {hasSnapshot && dataset ? (
+        <>
+          {/* Quick stats */}
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Stat
+              icon={Users}
+              label="Customers analyzed"
+              value={String(dataset.executive.totalCustomers)}
+            />
+            <Stat
+              icon={DollarSign}
+              label="Revenue reviewed"
+              value={formatCurrency(dataset.totalRevenue)}
+            />
+            <Stat icon={AlertTriangle} label="Accounts flagged" value={String(flagged)} />
+          </div>
+
+          {/* Insights */}
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-card sm:p-8">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">Your top insights</h2>
+            </div>
+            {loadingInsights ? (
+              <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Analyzing your data…
+              </div>
+            ) : (
+              <ol className="mt-5 space-y-4">
+                {insights.map((it, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {i + 1}
+                    </span>
+                    <p className="text-sm leading-relaxed">{it}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </>
+      ) : (
+        /* Not enough data for an accurate snapshot */
+        <div className="rounded-2xl border border-warning/30 bg-warning/5 p-6 sm:p-8">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning/15 text-warning-foreground">
+              <Database className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold">Not enough data yet for an accurate snapshot</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {sufficiency.reason ||
+                  "We need a bit more of your data before we can build a reliable business snapshot."}{" "}
+                That's completely fine — we'll set everything up together on your onboarding call, and
+                you can keep adding data any time.
+              </p>
+              <Link
+                to="/app/data"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
+              >
+                <Database className="h-4 w-4" /> Add your data
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Booking CTA */}
       <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-accent/50 to-transparent p-6 text-center sm:p-8">

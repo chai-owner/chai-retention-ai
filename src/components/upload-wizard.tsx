@@ -37,6 +37,7 @@ import {
   type UploadRecord,
 } from "@/lib/uploads-store";
 import { mergeTickets, formatDuration, type MergeSummary } from "@/lib/tickets-store";
+import { ingestedStore } from "@/lib/ingested-data-store";
 
 // ---------- CSV parsing ----------
 function parseCsv(text: string): string[][] {
@@ -309,18 +310,22 @@ export function UploadWizard({
     };
     uploadsStore.add(record);
 
+    // Capture the actual rows (mapped to schema fields) so ChAi can score
+    // customers on real data.
+    const rowObjects = dataRows.map((r) => {
+      const obj: Record<string, string> = {};
+      for (const f of dataset.fields) {
+        const col = mapping[f.name];
+        const idx = col ? headers.indexOf(col) : -1;
+        obj[f.name] = idx >= 0 ? (r[idx] ?? "").trim() : "";
+      }
+      return obj;
+    });
+    ingestedStore.addRows(dataset.key, rowObjects);
+
     // Support tickets: merge by ticket_id, overwriting on status change and
     // logging status history so we can measure time-to-close.
     if (dataset.key === "support") {
-      const rowObjects = dataRows.map((r) => {
-        const obj: Record<string, string> = {};
-        for (const f of dataset.fields) {
-          const col = mapping[f.name];
-          const idx = col ? headers.indexOf(col) : -1;
-          obj[f.name] = idx >= 0 ? (r[idx] ?? "").trim() : "";
-        }
-        return obj;
-      });
       const summary = mergeTickets(rowObjects);
       setMergeSummary(summary);
       toast.success("Support tickets updated", {
