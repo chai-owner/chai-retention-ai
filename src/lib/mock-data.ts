@@ -264,6 +264,7 @@ const baseCustomers: BaseCustomer[] = Array.from({ length: 42 }).map((_, i) => {
     revenue: Math.round((4 + rand() * 96) * 1000),
     sentiment: Math.round(40 + centre * 0.55 + (rand() * 20 - 10)),
     lastActivity: `${Math.round(1 + rand() * 80)} days ago`,
+    centre,
     subScores,
     seed: i,
   };
