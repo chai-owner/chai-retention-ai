@@ -272,12 +272,22 @@ const baseCustomers: BaseCustomer[] = Array.from({ length: 42 }).map((_, i) => {
 
 
 // Weighted average of a customer's sub-scores using the importance weights.
-export function weightedHealth(subScores: Record<string, number>, weights: MetricWeights): number {
+// Scores over whatever metric set the weights define — including AI-generated
+// metrics — falling back to a deterministic sub-score for any metric that has
+// no pre-computed value on the customer.
+export function weightedHealth(
+  base: { centre: number; seed: number; subScores: Record<string, number> },
+  weights: MetricWeights,
+): number {
   let num = 0;
   let den = 0;
-  for (const m of METRIC_NAMES) {
+  const names = Object.keys(weights);
+  const list = names.length ? names : METRIC_NAMES.slice();
+  for (const m of list) {
     const w = weights[m] ?? 0;
-    num += (subScores[m] ?? 50) * w;
+    if (w <= 0) continue;
+    const score = base.subScores[m] ?? subScoreFor(base.seed, base.centre, m);
+    num += score * w;
     den += w;
   }
   return den > 0 ? Math.round(num / den) : 50;
@@ -285,9 +295,15 @@ export function weightedHealth(subScores: Record<string, number>, weights: Metri
 
 // Produce the fully-scored customer list for a given set of importance weights.
 export function scoreCustomers(weights: MetricWeights): Customer[] {
+  const activeNames = Object.keys(weights).length ? Object.keys(weights) : METRIC_NAMES.slice();
   return baseCustomers.map((b) => {
     const rand = seededRandom(b.seed * 97 + 13);
-    const health = weightedHealth(b.subScores, weights);
+    // Build sub-scores for the active (possibly AI-generated) metric set.
+    const subScores: Record<string, number> = {};
+    for (const m of activeNames) {
+      subScores[m] = b.subScores[m] ?? subScoreFor(b.seed, b.centre, m);
+    }
+    const health = weightedHealth(b, weights);
     const cat = categoryFromHealth(health);
     const risk = Math.max(2, Math.min(99, Math.round(100 - health + (rand() * 12 - 6))));
     const churnProbability = Math.min(96, Math.max(3, Math.round((100 - health) * 0.9 + rand() * 10)));
@@ -308,7 +324,7 @@ export function scoreCustomers(weights: MetricWeights): Customer[] {
       revenue: b.revenue,
       sentiment: b.sentiment,
       lastActivity: b.lastActivity,
-      subScores: b.subScores,
+      subScores,
       factors,
       recommendations,
       timeline: buildTimeline(rand, b.name, cat, factors, health, churnProbability),
