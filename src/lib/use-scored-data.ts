@@ -6,7 +6,8 @@ import { useProfile } from "@/lib/profile-store";
 import {
   buildDataset,
   DEFAULT_METRIC_WEIGHTS,
-  
+  plannerMetrics,
+  type PlannerMetric,
   type MetricWeights,
   type ScoredDataset,
 } from "@/lib/mock-data";
