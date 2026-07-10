@@ -10,6 +10,7 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    mode: search.mode === "signup" ? ("signup" as const) : undefined,
   }),
   head: () => ({ meta: [{ title: "Sign in — ChAi" }] }),
   beforeLoad: async ({ search }) => {
