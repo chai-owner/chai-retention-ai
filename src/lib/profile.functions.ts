@@ -63,6 +63,8 @@ export const getProfile = createServerFn({ method: "GET" })
       channels: (data.channels ?? []) as unknown as string[],
       metricWeights: (data.metric_weights ?? {}) as unknown as Record<string, number>,
       onboarded: data.onboarded,
+      unlocked: data.unlocked ?? false,
+      bookedAt: data.booked_at ?? null,
     };
   });
 
