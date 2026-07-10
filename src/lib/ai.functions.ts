@@ -99,12 +99,55 @@ ${lines}
 
 Return ONLY a JSON object (no markdown, no code fences) mapping each account id to its one-sentence summary string.`;
 
-    const { text } = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
+    const { text, usage } = await generateText({
+      model: gateway(MODEL),
       prompt,
     });
+    await logAiUsage("summarizeRiskReasons", MODEL, usage);
 
     const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
     const parsed = z.record(z.string(), z.string()).parse(JSON.parse(jsonText));
     return parsed;
+  });
+
+// ---------------------------------------------------------------------------
+// Collective insights — the top findings shown on the post-onboarding welcome
+// screen before a user's full dashboard is unlocked.
+// ---------------------------------------------------------------------------
+
+const CollectiveInsightsInput = z.object({
+  summary: z.string().min(1),
+});
+
+export type CollectiveInsightsInput = z.infer<typeof CollectiveInsightsInput>;
+
+export const generateCollectiveInsights = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => CollectiveInsightsInput.parse(input))
+  .handler(async ({ data }): Promise<{ insights: string[] }> => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+
+    const gateway = createLovableAiGatewayProvider(key);
+
+    const prompt = `You are ChAi, a customer-retention analyst. Based on the workspace analysis below, write the TOP 5 most interesting, high-level collective insights a business owner would most want to know about their customer base and retention. Each insight is ONE punchy plain-language sentence (max ~18 words), specific and useful. Do not invent precise numbers that aren't given.
+
+Workspace analysis:
+${data.summary}
+
+Return ONLY a JSON array of 5 strings (no markdown, no code fences).`;
+
+    const { text, usage } = await generateText({
+      model: gateway(MODEL),
+      prompt,
+    });
+    await logAiUsage("generateCollectiveInsights", MODEL, usage);
+
+    const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    let insights: string[] = [];
+    try {
+      insights = z.array(z.string()).parse(JSON.parse(jsonText));
+    } catch {
+      insights = [];
+    }
+    return { insights: insights.slice(0, 5) };
   });
