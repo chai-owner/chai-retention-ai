@@ -212,8 +212,29 @@ interface BaseCustomer {
   revenue: number;
   sentiment: number;
   lastActivity: string;
+  centre: number;
   subScores: Record<string, number>;
   seed: number;
+}
+
+// Stable hash of a metric name → used to seed a deterministic sub-score for
+// ANY metric, including ones the AI generates during onboarding. This lets the
+// scoring engine work with an arbitrary, user-tailored metric set rather than
+// a fixed list.
+function hashString(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h);
+}
+
+// Deterministic 0–100 sub-score for a given customer + metric name, centred on
+// the customer's overall quality so health reads consistently across metrics.
+export function subScoreFor(seed: number, centre: number, metricName: string): number {
+  const rand = seededRandom(seed * 733 + hashString(metricName));
+  return Math.max(5, Math.min(99, Math.round(centre + (rand() * 24 - 12))));
 }
 
 // Per-customer raw metric sub-scores (0–100). The final health score is a
