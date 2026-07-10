@@ -98,6 +98,7 @@ function Landing() {
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               to="/app/dashboard"
+              search={{ demo: true }}
               className="hidden items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent sm:inline-flex"
             >
               View ChAi Demo
