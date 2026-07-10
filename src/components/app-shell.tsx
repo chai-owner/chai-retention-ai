@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { AskChAi } from "@/components/ask-chai";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfileSync } from "@/lib/use-profile-sync";
+import { useProfile } from "@/lib/profile-store";
 
 const nav = [
   { to: "/app/welcome", label: "Welcome", icon: Sparkles },
