@@ -52,11 +52,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   useProfileSync();
   const profile = useProfile();
+  const demo = useDemoMode();
 
   // Locked = a signed-in customer who has onboarded but hasn't been unlocked by
-  // an admin yet. Demo visitors (no session) see the full app.
-  const locked = signedIn === true && profile != null && profile.unlocked !== true;
-  const visibleNav = locked ? nav.filter((n) => LOCKED_ALLOWED.has(n.to)) : nav;
+  // an admin yet. Demo visitors (no session) and demo mode see the full app.
+  const locked = !demo && signedIn === true && profile != null && profile.unlocked !== true;
+  // In demo mode the Welcome screen (onboarding/booking) isn't part of the
+  // product demo, so hide it and keep everything on sample data.
+  const baseNav = demo ? nav.filter((n) => n.to !== "/app/welcome") : nav;
+  const visibleNav = locked ? baseNav.filter((n) => LOCKED_ALLOWED.has(n.to)) : baseNav;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
