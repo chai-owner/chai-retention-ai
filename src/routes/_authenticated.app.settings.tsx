@@ -60,7 +60,7 @@ function Settings() {
     setSegments(profile.segments?.length ? profile.segments : [{ name: "", min: "", max: "" }]);
     setTracked(profile.tracked ?? {});
     setChannels(profile.channels ?? []);
-    setMetricWeights({ ...DEFAULT_METRIC_WEIGHTS, ...(profile.metricWeights ?? {}) });
+    setMetricWeights({ ...(profile.metricWeights ?? {}) });
   }, [profile]);
 
   const questions = getQuestions(model);
