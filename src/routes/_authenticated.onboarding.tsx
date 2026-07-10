@@ -5,8 +5,8 @@ import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCir
 import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
-import { recommendMetricWeights } from "@/lib/ai.functions";
-import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
+import { recommendMetrics } from "@/lib/ai.functions";
+import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS, type PlannerMetric } from "@/lib/mock-data";
 import { SmartIngestCard, UploadDatasetsCard } from "@/components/data-uploads-panel";
 import { IntegrationsPanel } from "@/components/integrations-panel";
 import {
