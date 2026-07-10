@@ -12,6 +12,7 @@ export const Route = createFileRoute("/_authenticated/app/planner")({
 
 function Planner() {
   const weights = useMetricWeights();
+  const plannerMetrics = useActiveMetrics();
   const { customers } = useScoredData();
 
   const total = plannerMetrics.length;
