@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+
 import {
   Sparkles,
   ArrowRight,
@@ -133,16 +131,24 @@ function Landing() {
               explains why, and tells you what to do — all in plain English. No analytics team required.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
-              <a
-                href="#waitlist"
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-primary/90"
               >
-                Join the waitlist <ArrowRight className="h-4 w-4" />
-              </a>
+                Get started free <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/auth"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                Log in
+              </Link>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              Early access is rolling out in waves. Be among the first to get in.
+              Set up your retention engine in minutes — no analytics team required.
             </p>
+
 
           </div>
           <div className="relative lg:-mr-20 xl:-mr-32" style={{ perspective: "1800px" }}>
@@ -304,22 +310,37 @@ function Landing() {
         </div>
       </section>
 
-      {/* Waitlist */}
-      <section id="waitlist" className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
+      {/* Final CTA */}
+      <section id="get-started" className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
         <div className="overflow-hidden rounded-2xl bg-gradient-warm px-8 py-14 text-center text-primary-foreground shadow-card">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-3 py-1 text-xs font-medium">
-            <Sparkles className="h-3.5 w-3.5" /> Limited early access
+            <Sparkles className="h-3.5 w-3.5" /> Start today
           </span>
           <h2 className="mx-auto mt-4 max-w-xl text-3xl font-semibold tracking-tight">
-            Be among the first to experience ChAi
+            Keep more of the customers you've earned
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-primary-foreground/90">
-            We're onboarding founders in small waves to keep the experience exceptional. Join the
-            waitlist now to secure your spot before invites run out.
+            Sign up, bring your data, and let ChAi surface who's at risk and what to do next — all in
+            plain English.
           </p>
-          <WaitlistForm />
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              to="/auth"
+              search={{ mode: "signup" }}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-medium text-foreground transition-transform hover:scale-105"
+            >
+              Get started free <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/auth"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary-foreground/40 px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-foreground/10"
+            >
+              Ask ChAi anything
+            </Link>
+          </div>
         </div>
       </section>
+
 
 
       <footer className="border-t border-border">
@@ -337,103 +358,5 @@ function Landing() {
   );
 }
 
-function WaitlistForm() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [joined, setJoined] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      toast.error("Please enter your name.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    if (!company.trim()) {
-      toast.error("Please enter your company name.");
-      return;
-    }
-
-    setSubmitting(true);
-    const { error } = await supabase.from("waitlist").insert({
-      name: name.trim(),
-      email: email.trim(),
-      company: company.trim(),
-    });
-    setSubmitting(false);
-
-    if (error) {
-      toast.error("Something went wrong", {
-        description: "Please try again in a moment.",
-      });
-      return;
-    }
-
-    setJoined(true);
-    toast.success("You're on the list!", {
-      description: "We'll be in touch as soon as your spot opens up.",
-    });
-  };
-
-  if (joined) {
-    return (
-      <div className="mx-auto mt-8 max-w-md rounded-xl border border-primary-foreground/30 bg-primary-foreground/10 px-6 py-5">
-        <p className="font-semibold">You're on the list 🎉</p>
-        <p className="mt-1 text-sm text-primary-foreground/90">
-          You've secured your spot. Keep an eye on your inbox — invites go out in waves.
-        </p>
-      </div>
-    );
-  }
-
-  const inputClass =
-    "w-full rounded-lg border border-primary-foreground/30 bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-background";
-
-  return (
-    <>
-      <form onSubmit={handleSubmit} className="mx-auto mt-8 flex max-w-md flex-col gap-3">
-        <input
-          type="text"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Your name"
-          className={inputClass}
-        />
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@company.com"
-          className={inputClass}
-        />
-        <input
-          type="text"
-          required
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
-          placeholder="Company name"
-          className={inputClass}
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-medium text-foreground transition-transform hover:scale-105 disabled:opacity-60"
-        >
-          {submitting ? "Joining…" : "Join the waitlist"} <ArrowRight className="h-4 w-4" />
-        </button>
-      </form>
-      <p className="mt-4 text-xs text-primary-foreground/80">
-        Join 1,200+ founders already in line. No spam — just your invite.
-      </p>
-    </>
-  );
-}
 
 
