@@ -409,15 +409,16 @@ interface ChurnedSeed {
 }
 
 const churnedSeeds: ChurnedSeed[] = [
-  { name: "Vandelay Industries", segment: "Enterprise", revenue: 84000, sentiment: 34, churnedDate: "2025-04-12", tenureMonths: 31, reason: "No recent purchases", winBackScore: 78 },
-  { name: "Gekko Partners", segment: "Mid-Market", revenue: 46000, sentiment: 28, churnedDate: "2025-03-02", tenureMonths: 18, reason: "Unresolved support tickets", winBackScore: 64 },
-  { name: "Bluth Co", segment: "SMB", revenue: 19000, sentiment: 22, churnedDate: "2025-02-19", tenureMonths: 9, reason: "Negative sentiment detected", winBackScore: 31 },
-  { name: "Soylent Group", segment: "Enterprise", revenue: 72000, sentiment: 41, churnedDate: "2025-05-01", tenureMonths: 26, reason: "Competitor mentioned", winBackScore: 58 },
-  { name: "Oscorp Digital", segment: "Startup", revenue: 12000, sentiment: 19, churnedDate: "2025-01-08", tenureMonths: 6, reason: "Usage declining", winBackScore: 24 },
-  { name: "Wonka Studio", segment: "Mid-Market", revenue: 38000, sentiment: 47, churnedDate: "2025-04-27", tenureMonths: 22, reason: "Declining satisfaction", winBackScore: 71 },
+  { name: "Vandelay Industries", segment: "Enterprise", revenue: 84000, sentiment: 34, churnedDate: "2026-05-12", tenureMonths: 31, reason: "No recent purchases", winBackScore: 78 },
+  { name: "Gekko Partners", segment: "Mid-Market", revenue: 46000, sentiment: 28, churnedDate: "2026-04-02", tenureMonths: 18, reason: "Unresolved support tickets", winBackScore: 64 },
+  { name: "Bluth Co", segment: "SMB", revenue: 19000, sentiment: 22, churnedDate: "2026-03-19", tenureMonths: 9, reason: "Negative sentiment detected", winBackScore: 31 },
+  { name: "Soylent Group", segment: "Enterprise", revenue: 72000, sentiment: 41, churnedDate: "2026-06-01", tenureMonths: 26, reason: "Competitor mentioned", winBackScore: 58 },
+  { name: "Oscorp Digital", segment: "Startup", revenue: 12000, sentiment: 19, churnedDate: "2026-02-08", tenureMonths: 6, reason: "Usage declining", winBackScore: 24 },
+  { name: "Wonka Studio", segment: "Mid-Market", revenue: 38000, sentiment: 47, churnedDate: "2026-05-27", tenureMonths: 22, reason: "Declining satisfaction", winBackScore: 71 },
   // A success story — a churned account that was re-won.
-  { name: "Massive Dynamic Labs", segment: "Enterprise", revenue: 68000, sentiment: 66, churnedDate: "2025-01-15", tenureMonths: 29, reason: "No recent purchases", winBackScore: 88, status: "won-back" },
+  { name: "Massive Dynamic Labs", segment: "Enterprise", revenue: 68000, sentiment: 66, churnedDate: "2026-02-15", tenureMonths: 29, reason: "No recent purchases", winBackScore: 88, status: "won-back" },
 ];
+
 
 const winBackActionByReason: Record<string, string> = {
   "No recent purchases": "Send a personalised return offer with a renewed pricing plan.",
