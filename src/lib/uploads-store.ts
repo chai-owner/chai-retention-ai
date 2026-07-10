@@ -58,6 +58,10 @@ export const uploadsStore = {
     uploads = [record, ...uploads];
     emit();
   },
+  clear() {
+    uploads = [];
+    emit();
+  },
 };
 
 export function useUploads() {
