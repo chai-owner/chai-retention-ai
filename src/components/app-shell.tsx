@@ -178,10 +178,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <div className="flex-1" />
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground sm:flex">
-            <span className="h-2 w-2 rounded-full bg-success" />
-            Retention engine synced 4 min ago
-          </div>
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-sm font-semibold">
             N
           </div>
