@@ -133,16 +133,24 @@ function Landing() {
               explains why, and tells you what to do — all in plain English. No analytics team required.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
-              <a
-                href="#waitlist"
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-primary/90"
               >
-                Join the waitlist <ArrowRight className="h-4 w-4" />
-              </a>
+                Get started free <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/auth"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                Log in
+              </Link>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              Early access is rolling out in waves. Be among the first to get in.
+              Set up your retention engine in minutes — no analytics team required.
             </p>
+
 
           </div>
           <div className="relative lg:-mr-20 xl:-mr-32" style={{ perspective: "1800px" }}>
