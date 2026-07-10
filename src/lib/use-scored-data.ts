@@ -12,6 +12,7 @@ import {
 } from "@/lib/mock-data";
 import { useIngested } from "@/lib/ingested-data-store";
 import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/real-scoring";
+import { useSignedIn } from "@/lib/use-auth-state";
 
 // Merge saved weights over the defaults so a partial set still scores fully.
 export function resolveWeights(saved?: Record<string, number> | null): MetricWeights {
@@ -32,10 +33,14 @@ export function useScoredData(): ScoredDataset {
   const weights = useMetricWeights();
   const ingested = useIngested();
   const profile = useProfile();
+  const signedIn = useSignedIn();
   return useMemo(() => {
-    if (assessSufficiency(ingested).enough) return buildRealDataset(ingested, weights, profile);
+    // Signed-in users always see their own real data — never sample data, even
+    // when they've added little or nothing. Sample data is reserved for the
+    // public, no-login demo.
+    if (signedIn) return buildRealDataset(ingested, weights, profile);
     return buildDataset(weights);
-  }, [weights, ingested, profile]);
+  }, [weights, ingested, profile, signedIn]);
 }
 
 // Real-only assessment (never falls back to sample data). Used by the first-run
