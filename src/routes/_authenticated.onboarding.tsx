@@ -211,6 +211,16 @@ function Onboarding() {
 
   function finish() {
     setSubmitting(true);
+    // Persist weights for the active (AI-generated) metric set so the scoring
+    // engine keys off exactly the metrics ChAi chose for this business.
+    const effectiveWeights: Record<string, number> = {};
+    for (const m of activeMetrics) {
+      effectiveWeights[m.name] = metricWeights[m.name] ?? m.weight ?? 3;
+    }
+    const savedMetrics: PlannerMetric[] = activeMetrics.map((m) => ({
+      ...m,
+      weight: effectiveWeights[m.name],
+    }));
     const payload = {
       company: form.company,
       industry: form.industry,
@@ -228,7 +238,8 @@ function Onboarding() {
       churnDefinition: form.churnDefinition,
       tracked,
       channels,
-      metricWeights,
+      metricWeights: effectiveWeights,
+      metrics: savedMetrics,
     };
     profileStore.save(payload);
     // Persist to the user's account so it follows them across devices.
