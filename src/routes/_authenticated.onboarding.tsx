@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
+import { recommendMetricWeights } from "@/lib/ai.functions";
 import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
 import { SmartIngestCard, UploadDatasetsCard } from "@/components/data-uploads-panel";
 import { IntegrationsPanel } from "@/components/integrations-panel";
