@@ -531,11 +531,11 @@ function Onboarding() {
                         </div>
                       )}
                       <div className="space-y-4">
-                        {plannerMetrics.map((m) => {
-                          const level = metricWeights[m.name] ?? 3;
-                          const recommended = recommendedWeights[m.name] ?? DEFAULT_METRIC_WEIGHTS[m.name] ?? 3;
+                        {activeMetrics.map((m) => {
+                          const level = metricWeights[m.name] ?? m.weight ?? 3;
+                          const recommended = recommendedWeights[m.name] ?? m.weight ?? 3;
                           const isRecommended = level === recommended;
-                          const description = metricReasons[m.name] || m.why;
+                          const description = m.reason || m.why;
                           return (
                             <div key={m.name} className="rounded-xl border border-border p-4">
                               <div className="flex items-center justify-between gap-3">
