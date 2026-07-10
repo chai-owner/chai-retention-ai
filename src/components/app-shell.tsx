@@ -24,6 +24,7 @@ import { AskChAi } from "@/components/ask-chai";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfileSync } from "@/lib/use-profile-sync";
 import { useProfile } from "@/lib/profile-store";
+import { useDemoMode } from "@/lib/use-demo-mode";
 import { impersonationStore, useImpersonation } from "@/lib/impersonation";
 import { endImpersonation } from "@/lib/admin.functions";
 
@@ -51,11 +52,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   useProfileSync();
   const profile = useProfile();
+  const demo = useDemoMode();
 
   // Locked = a signed-in customer who has onboarded but hasn't been unlocked by
-  // an admin yet. Demo visitors (no session) see the full app.
-  const locked = signedIn === true && profile != null && profile.unlocked !== true;
-  const visibleNav = locked ? nav.filter((n) => LOCKED_ALLOWED.has(n.to)) : nav;
+  // an admin yet. Demo visitors (no session) and demo mode see the full app.
+  const locked = !demo && signedIn === true && profile != null && profile.unlocked !== true;
+  // In demo mode the Welcome screen (onboarding/booking) isn't part of the
+  // product demo, so hide it and keep everything on sample data.
+  const baseNav = demo ? nav.filter((n) => n.to !== "/app/welcome") : nav;
+  const visibleNav = locked ? baseNav.filter((n) => LOCKED_ALLOWED.has(n.to)) : baseNav;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
@@ -113,7 +118,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="space-y-2 border-t border-sidebar-border p-3">
-          {signedIn ? (
+          {demo ? (
+            <Link
+              to="/"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+              Exit demo
+            </Link>
+          ) : signedIn ? (
             <button
               onClick={handleSignOut}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
@@ -132,13 +145,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
           <div className="rounded-lg bg-accent/60 p-3">
             <p className="text-xs font-medium text-accent-foreground">
-              {signedIn ? "Demo workspace" : "You're exploring the demo"}
+              {demo ? "You're exploring the demo" : signedIn ? "Your workspace" : "You're exploring the demo"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Sample data for Northwind Labs. Nothing here is real customer data.
+              {demo || !signedIn
+                ? "Sample data for Northwind Labs. Nothing here is real customer data."
+                : "Your live retention workspace, built from the data you've added."}
             </p>
           </div>
         </div>
+
 
 
       </aside>
