@@ -18,6 +18,7 @@ const MAX_SEGMENTS = 4;
 
 function Settings() {
   const profile = useProfile();
+  const activeMetrics = useActiveMetrics();
   const persistProfile = useServerFn(saveProfile);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
