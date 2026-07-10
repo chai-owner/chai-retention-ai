@@ -37,13 +37,15 @@ export const getProfile = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, segments, success_actions, disengagement, tracked, channels, metric_weights, onboarded",
+        "full_name, email, company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, segments, success_actions, disengagement, tracked, channels, metric_weights, onboarded, unlocked, booked_at",
       )
       .eq("id", userId)
       .maybeSingle();
     if (error) throw error;
     if (!data) return null;
     return {
+      fullName: data.full_name ?? "",
+      email: data.email ?? "",
       company: data.company,
       industry: data.industry,
       model: data.model,
