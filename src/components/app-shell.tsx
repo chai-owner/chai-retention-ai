@@ -178,9 +178,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <div className="flex-1" />
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-sm font-semibold">
-            N
-          </div>
         </header>
         <ImpersonationBanner />
         <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">{children}</main>
