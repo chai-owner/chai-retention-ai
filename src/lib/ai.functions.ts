@@ -44,10 +44,11 @@ ${data.context?.trim() || "(no live workspace data provided)"}`;
       .map((m) => `${m.role === "user" ? "User" : "ChAi"}: ${m.text}`)
       .join("\n");
 
-    const { text } = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
+    const { text, usage } = await generateText({
+      model: gateway(MODEL),
       prompt: `${system}\n\nConversation so far:\n${convo}\n\nChAi:`,
     });
+    await logAiUsage("askChai", MODEL, usage);
 
     return { reply: text.trim() };
   });
