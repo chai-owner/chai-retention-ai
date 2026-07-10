@@ -26,7 +26,16 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
 });
 
 
-const steps = ["Business", "Segments", "How you work", "What matters", "What to track", "Interactions"];
+const steps = [
+  "Business",
+  "Segments",
+  "How you work",
+  "What matters",
+  "What to track",
+  "Interactions",
+  "Integrations",
+  "Data",
+];
 
 const MAX_SEGMENTS = 4;
 
