@@ -174,3 +174,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+function ImpersonationBanner() {
+  const imp = useImpersonation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const endImp = useServerFn(endImpersonation);
+  const [exiting, setExiting] = useState(false);
+
+  if (!imp) return null;
+
+  async function exit() {
+    if (!imp) return;
+    setExiting(true);
+    try {
+      if (imp.auditId) await endImp({ data: { auditId: imp.auditId } }).catch(() => {});
+      await supabase.auth.setSession({
+        access_token: imp.adminSession.access_token,
+        refresh_token: imp.adminSession.refresh_token,
+      });
+    } finally {
+      impersonationStore.clear();
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      navigate({ to: "/admin" });
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 bg-primary px-4 py-2 text-sm text-primary-foreground lg:px-8">
+      <span className="flex items-center gap-2">
+        <Eye className="h-4 w-4" />
+        Viewing as <strong>{imp.targetName || imp.targetEmail}</strong> (admin impersonation)
+      </span>
+      <button
+        onClick={exit}
+        disabled={exiting}
+        className="inline-flex items-center gap-1.5 rounded-md bg-primary-foreground/15 px-3 py-1 font-medium transition-colors hover:bg-primary-foreground/25 disabled:opacity-60"
+      >
+        <LogOut className="h-3.5 w-3.5" /> Exit impersonation
+      </button>
+    </div>
+  );
+}
