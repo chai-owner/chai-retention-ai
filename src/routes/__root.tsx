@@ -111,6 +111,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      {
+        rel: "stylesheet",
+        href: "https://assets.calendly.com/assets/external/widget.css",
+      },
+    ],
+    scripts: [
+      {
+        src: "https://assets.calendly.com/assets/external/widget.js",
+        async: true,
+      },
     ],
   }),
   shellComponent: RootShell,
