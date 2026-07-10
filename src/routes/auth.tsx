@@ -53,8 +53,8 @@ function AuthPage() {
   const [emailSent, setEmailSent] = useState(false);
 
   function goToDest() {
-    if (redirectTo) navigate({ href: redirectTo });
-    else navigate({ to: "/app/dashboard" });
+    if (redirectTo) navigate({ href: stripDemo(redirectTo) });
+    else navigate({ to: "/app/dashboard", search: { demo: undefined } });
   }
 
   async function handleGoogle() {
