@@ -5,7 +5,8 @@ import { Sparkles, Plus, Trash2, AlertCircle, Check, Loader2, Save } from "lucid
 import { cn } from "@/lib/utils";
 import { profileStore, useProfile, type ProfileSegment } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
-import { plannerMetrics, DEFAULT_METRIC_WEIGHTS, IMPORTANCE_LABELS } from "@/lib/mock-data";
+import { IMPORTANCE_LABELS } from "@/lib/mock-data";
+import { useActiveMetrics } from "@/lib/use-scored-data";
 import { businessModels, companySizes, interactionChannels, getQuestions, getChurnDefinition } from "@/lib/onboarding-options";
 
 export const Route = createFileRoute("/_authenticated/app/settings")({
