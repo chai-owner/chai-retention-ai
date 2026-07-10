@@ -126,6 +126,7 @@ function Settings() {
       tracked,
       channels,
       metricWeights,
+      metrics: activeMetrics.map((m) => ({ ...m, weight: metricWeights[m.name] ?? m.weight ?? 3 })),
     };
     profileStore.save(payload);
     persistProfile({ data: payload }).catch(() => {
