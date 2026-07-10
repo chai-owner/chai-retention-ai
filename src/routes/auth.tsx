@@ -42,7 +42,7 @@ const inputCls =
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
-  const dest = redirectTo ?? "/app/dashboard";
+  const dest = stripDemo(redirectTo ?? "/app/dashboard");
   const [mode, setMode] = useState<"login" | "register">(
     initialMode === "signup" ? "register" : "login",
   );
