@@ -312,22 +312,37 @@ function Landing() {
         </div>
       </section>
 
-      {/* Waitlist */}
-      <section id="waitlist" className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
+      {/* Final CTA */}
+      <section id="get-started" className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
         <div className="overflow-hidden rounded-2xl bg-gradient-warm px-8 py-14 text-center text-primary-foreground shadow-card">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-3 py-1 text-xs font-medium">
-            <Sparkles className="h-3.5 w-3.5" /> Limited early access
+            <Sparkles className="h-3.5 w-3.5" /> Start today
           </span>
           <h2 className="mx-auto mt-4 max-w-xl text-3xl font-semibold tracking-tight">
-            Be among the first to experience ChAi
+            Keep more of the customers you've earned
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-primary-foreground/90">
-            We're onboarding founders in small waves to keep the experience exceptional. Join the
-            waitlist now to secure your spot before invites run out.
+            Sign up, bring your data, and let ChAi surface who's at risk and what to do next — all in
+            plain English.
           </p>
-          <WaitlistForm />
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              to="/auth"
+              search={{ mode: "signup" }}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-medium text-foreground transition-transform hover:scale-105"
+            >
+              Get started free <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/auth"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary-foreground/40 px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-foreground/10"
+            >
+              Ask ChAi anything
+            </Link>
+          </div>
         </div>
       </section>
+
 
 
       <footer className="border-t border-border">
