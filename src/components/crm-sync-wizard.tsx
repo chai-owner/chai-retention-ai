@@ -23,6 +23,7 @@ import {
   type QualityFinding,
   type UploadRecord,
 } from "@/lib/uploads-store";
+import { ingestedStore, rowsToObjects } from "@/lib/ingested-data-store";
 
 type FieldType = "date" | "number" | "email" | "text";
 
