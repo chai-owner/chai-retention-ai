@@ -17,8 +17,8 @@ export const Route = createFileRoute("/auth")({
     const { data } = await supabase.auth.getUser();
     if (data.user) {
       throw search.redirect
-        ? redirect({ href: search.redirect })
-        : redirect({ to: "/app/dashboard" });
+        ? redirect({ href: stripDemo(search.redirect) })
+        : redirect({ to: "/app/dashboard", search: { demo: undefined } });
     }
   },
   component: AuthPage,
