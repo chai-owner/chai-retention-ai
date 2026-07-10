@@ -6,6 +6,18 @@ import { lovable } from "@/integrations/lovable/index";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+// Removes the `demo` flag from a URL/path so a real login never lands on the
+// sample-data demo (the flag is otherwise retained across navigation).
+function stripDemo(href: string): string {
+  try {
+    const url = new URL(href, "http://x");
+    url.searchParams.delete("demo");
+    return url.pathname + (url.search ? url.search : "");
+  } catch {
+    return href;
+  }
+}
+
 export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>) => ({
@@ -17,8 +29,8 @@ export const Route = createFileRoute("/auth")({
     const { data } = await supabase.auth.getUser();
     if (data.user) {
       throw search.redirect
-        ? redirect({ href: search.redirect })
-        : redirect({ to: "/app/dashboard" });
+        ? redirect({ href: stripDemo(search.redirect) })
+        : redirect({ to: "/app/dashboard", search: { demo: undefined } });
     }
   },
   component: AuthPage,
@@ -30,7 +42,7 @@ const inputCls =
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
-  const dest = redirectTo ?? "/app/dashboard";
+  const dest = stripDemo(redirectTo ?? "/app/dashboard");
   const [mode, setMode] = useState<"login" | "register">(
     initialMode === "signup" ? "register" : "login",
   );
@@ -41,8 +53,8 @@ function AuthPage() {
   const [emailSent, setEmailSent] = useState(false);
 
   function goToDest() {
-    if (redirectTo) navigate({ href: redirectTo });
-    else navigate({ to: "/app/dashboard" });
+    if (redirectTo) navigate({ href: stripDemo(redirectTo) });
+    else navigate({ to: "/app/dashboard", search: { demo: undefined } });
   }
 
   async function handleGoogle() {
