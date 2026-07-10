@@ -35,6 +35,8 @@ export interface OnboardingProfile {
   channels: string[];
   // Importance (1–5) the user assigns to each health metric during onboarding.
   metricWeights?: Record<string, number>;
+  // The AI-generated metric set (definitions) tailored to this business.
+  metrics?: PlannerMetric[];
 }
 
 const STORAGE_KEY = "chai.onboarding.profile";
