@@ -37,6 +37,7 @@ import {
   type UploadRecord,
 } from "@/lib/uploads-store";
 import { mergeTickets, formatDuration, type MergeSummary } from "@/lib/tickets-store";
+import { ingestedStore } from "@/lib/ingested-data-store";
 
 // ---------- CSV parsing ----------
 function parseCsv(text: string): string[][] {
