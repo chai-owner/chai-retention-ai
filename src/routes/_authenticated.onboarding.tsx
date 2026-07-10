@@ -70,9 +70,69 @@ function Onboarding() {
   const [metricWeights, setMetricWeights] = useState<Record<string, number>>(
     () => ({ ...DEFAULT_METRIC_WEIGHTS }),
   );
+  // AI-generated recommendations (weights + tailored reasons) for step 3.
+  const [recommendedWeights, setRecommendedWeights] = useState<Record<string, number>>(
+    () => ({ ...DEFAULT_METRIC_WEIGHTS }),
+  );
+  const [metricReasons, setMetricReasons] = useState<Record<string, string>>({});
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState(false);
+  const metricsGenerated = useRef(false);
   const [segments, setSegments] = useState<Segment[]>([
     { name: "", min: "", max: "" },
   ]);
+
+  // When the user reaches the "What matters" step, ask ChAi to recommend metric
+  // importance tailored to the industry/company info they entered earlier.
+  async function generateMetricRecommendations() {
+    setMetricsLoading(true);
+    setMetricsError(false);
+    try {
+      const { recommendations } = await getRecommendedWeights({
+        data: {
+          profile: {
+            company: form.company,
+            industry: form.industry,
+            model: form.model,
+            size: form.size,
+            customers: form.customers,
+            avgValue: form.avgValue,
+            whatBuy: form.whatBuy,
+            cadence: form.cadence,
+            lifespan: form.lifespan,
+            concerns: form.concerns,
+          },
+          metrics: plannerMetrics.map((m) => ({ name: m.name, why: m.why })),
+        },
+      });
+      if (recommendations.length === 0) {
+        setMetricsError(true);
+        return;
+      }
+      const weights: Record<string, number> = { ...DEFAULT_METRIC_WEIGHTS };
+      const reasons: Record<string, string> = {};
+      for (const r of recommendations) {
+        weights[r.name] = r.weight;
+        if (r.reason) reasons[r.name] = r.reason;
+      }
+      setRecommendedWeights(weights);
+      setMetricReasons(reasons);
+      setMetricWeights(weights);
+      metricsGenerated.current = true;
+    } catch {
+      setMetricsError(true);
+    } finally {
+      setMetricsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (step === 3 && !metricsGenerated.current && !metricsLoading && !metricsError) {
+      void generateMetricRecommendations();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
 
   const questions = getQuestions(form.model);
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
