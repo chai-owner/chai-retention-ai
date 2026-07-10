@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated")({
     const isDemo = location.pathname.startsWith("/app");
     // Explicit demo mode (?demo=1): show the sample-data product demo even to a
     // signed-in user, and never redirect them into onboarding/welcome.
-    const demoMode = (search as { demo?: boolean })?.demo === true;
+    const demoMode = isDemoValue((search as { demo?: unknown })?.demo);
 
     let user = null;
     try {
