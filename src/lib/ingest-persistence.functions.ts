@@ -200,6 +200,8 @@ export const listAllIngested = createServerFn({ method: "GET" })
 
 // ---- listIngestBatches ----------------------------------------------------
 
+type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+
 export interface IngestBatchRow {
   id: string;
   source_kind: string;
@@ -210,7 +212,7 @@ export interface IngestBatchRow {
   status: string;
   error: string | null;
   created_at: string;
-  meta: Record<string, string | number | boolean | null | Array<unknown> | Record<string, unknown>> | null;
+  meta: JsonValue;
 }
 
 export const listIngestBatches = createServerFn({ method: "GET" })
