@@ -218,7 +218,7 @@ function Landing() {
                   <ul className="mt-5 space-y-2.5">
                     {s.points.map((p) => (
                       <li key={p} className="flex items-center gap-2.5 text-sm">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-primary">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/15">
                           <ArrowRight className="h-3 w-3" />
                         </span>
                         {p}
