@@ -186,13 +186,13 @@ function Landing() {
             From understanding what to measure to knowing exactly who to call today.
           </p>
         </div>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
-            <div key={f.title} className="rounded-xl border border-border bg-card p-6 shadow-soft">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-primary">
-                <f.icon className="h-5 w-5" />
+            <div key={f.title} className="group rounded-2xl border border-border bg-card p-6 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lift">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/10">
+                <f.icon className="h-5 w-5" strokeWidth={1.75} />
               </span>
-              <h3 className="mt-4 font-semibold">{f.title}</h3>
+              <h3 className="mt-4 font-semibold text-foreground">{f.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{f.desc}</p>
             </div>
           ))}
