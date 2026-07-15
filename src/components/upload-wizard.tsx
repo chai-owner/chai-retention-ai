@@ -38,6 +38,7 @@ import {
 } from "@/lib/uploads-store";
 import { mergeTickets, formatDuration, type MergeSummary } from "@/lib/tickets-store";
 import { ingestedStore } from "@/lib/ingested-data-store";
+import { persistBatch } from "@/lib/ingest-persistence";
 
 // ---------- CSV parsing ----------
 function parseCsv(text: string): string[][] {
@@ -322,6 +323,23 @@ export function UploadWizard({
       return obj;
     });
     ingestedStore.addRows(dataset.key, rowObjects);
+    void persistBatch({
+      localUploadId: record.id,
+      source_kind: "upload",
+      source_provider: "csv",
+      dataset_key: dataset.key,
+      filename: fileName,
+      rows: rowObjects,
+      meta: {
+        datasetLabel: dataset.label,
+        reliability,
+        completeness: fill,
+        sizeKb: fileSizeKb,
+        findings,
+        fieldChecks,
+      },
+    });
+
 
     // Support tickets: merge by ticket_id, overwriting on status change and
     // logging status history so we can measure time-to-close.

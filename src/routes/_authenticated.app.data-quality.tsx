@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { removePersistedBatch } from "@/lib/ingest-persistence";
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
   head: () => ({ meta: [{ title: "Data Quality — ChAi" }] }),
@@ -46,6 +47,8 @@ function DataQualityPage() {
 
   function deleteUpload(u: UploadRecord) {
     uploadsStore.remove(u.id);
+    // Also remove from the DB so refresh doesn't bring it back.
+    void removePersistedBatch(u.id);
     toast.success("Upload deleted", { description: `${u.fileName} and its data were removed from ChAi.` });
   }
 

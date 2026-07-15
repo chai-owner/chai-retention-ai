@@ -32,6 +32,7 @@ import {
   type UploadRecord,
 } from "@/lib/uploads-store";
 import { ingestedStore, rowsToObjects } from "@/lib/ingested-data-store";
+import { persistBatch } from "@/lib/ingest-persistence";
 
 type FieldType = "date" | "number" | "email" | "text";
 
@@ -379,7 +380,17 @@ export function SmartIngestWizard({
         fieldChecks,
       };
       uploadsStore.add(record);
-      ingestedStore.addRows(d.key, rowsToObjects(d.schema.fields.map((f) => f.name), d.rows));
+      const rowObjects = rowsToObjects(d.schema.fields.map((f) => f.name), d.rows);
+      ingestedStore.addRows(d.key, rowObjects);
+      void persistBatch({
+        localUploadId: record.id,
+        source_kind: "drop",
+        source_provider: documentType || "drop",
+        dataset_key: d.key,
+        filename: sourceLabel,
+        rows: rowObjects,
+        meta: { datasetLabel: d.label, reliability, completeness, sizeKb: fileSizeKb, findings, fieldChecks },
+      });
     }
     toast.success("Data imported", {
       description: `${totalRows.toLocaleString()} rows across ${datasets.length} dataset${datasets.length > 1 ? "s" : ""} added to ChAi.`,

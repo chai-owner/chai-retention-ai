@@ -140,6 +140,244 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_batches: {
+        Row: {
+          created_at: string
+          dataset_key: string
+          error: string | null
+          filename: string | null
+          id: string
+          meta: Json
+          row_count: number
+          source_kind: string
+          source_provider: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dataset_key: string
+          error?: string | null
+          filename?: string | null
+          id?: string
+          meta?: Json
+          row_count?: number
+          source_kind: string
+          source_provider: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dataset_key?: string
+          error?: string | null
+          filename?: string | null
+          id?: string
+          meta?: Json
+          row_count?: number
+          source_kind?: string
+          source_provider?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ingested_customers: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          customer_id: string
+          data: Json
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          customer_id: string
+          data?: Json
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          customer_id?: string
+          data?: Json
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingested_customers_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingested_support: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          customer_id: string | null
+          data: Json
+          id: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          data?: Json
+          id?: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          data?: Json
+          id?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingested_support_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingested_surveys: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          customer_id: string | null
+          data: Json
+          id: string
+          submitted_at: string | null
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          data?: Json
+          id?: string
+          submitted_at?: string | null
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          data?: Json
+          id?: string
+          submitted_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingested_surveys_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingested_transactions: {
+        Row: {
+          amount: number | null
+          batch_id: string | null
+          created_at: string
+          customer_id: string | null
+          data: Json
+          id: string
+          occurred_at: string | null
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          batch_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          data?: Json
+          id?: string
+          occurred_at?: string | null
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          batch_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          data?: Json
+          id?: string
+          occurred_at?: string | null
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingested_transactions_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingested_usage: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          customer_id: string | null
+          data: Json
+          id: string
+          occurred_at: string | null
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          data?: Json
+          id?: string
+          occurred_at?: string | null
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          data?: Json
+          id?: string
+          occurred_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingested_usage_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avg_value: string

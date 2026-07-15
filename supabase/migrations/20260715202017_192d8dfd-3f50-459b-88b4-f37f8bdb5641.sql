@@ -1,0 +1,1 @@
+ALTER TABLE public.ingest_batches ADD COLUMN meta JSONB NOT NULL DEFAULT '{}'::jsonb;

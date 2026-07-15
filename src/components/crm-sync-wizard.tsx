@@ -24,6 +24,7 @@ import {
   type UploadRecord,
 } from "@/lib/uploads-store";
 import { ingestedStore, rowsToObjects } from "@/lib/ingested-data-store";
+import { persistBatch } from "@/lib/ingest-persistence";
 
 type FieldType = "date" | "number" | "email" | "text";
 
@@ -221,7 +222,24 @@ export function CrmSyncWizard({
         fieldChecks,
       };
       uploadsStore.add(record);
-      ingestedStore.addRows(d.key, rowsToObjects(d.schema.fields.map((f) => f.name), d.rows));
+      const rowObjects = rowsToObjects(d.schema.fields.map((f) => f.name), d.rows);
+      ingestedStore.addRows(d.key, rowObjects);
+      void persistBatch({
+        localUploadId: record.id,
+        source_kind: "crm",
+        source_provider: provider,
+        dataset_key: d.key,
+        filename: record.fileName,
+        rows: rowObjects,
+        meta: {
+          datasetLabel: d.label,
+          reliability,
+          completeness,
+          sizeKb: 0,
+          findings,
+          fieldChecks,
+        },
+      });
     }
     toast.success(`${providerName} data imported`, {
       description: `${totalRows.toLocaleString()} rows across ${datasets.length} dataset${
