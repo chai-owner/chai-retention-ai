@@ -28,6 +28,7 @@ import { Route as AuthenticatedAppDashboardRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppCustomersRouteImport } from './routes/_authenticated.app.customers'
 import { Route as AuthenticatedAppChurnedRouteImport } from './routes/_authenticated.app.churned'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
+import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public/hooks/daily-sync'
 import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
 
@@ -131,6 +132,11 @@ const AuthenticatedAppCustomersIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAppCustomersRoute,
   } as any)
+const ApiPublicHooksDailySyncRoute = ApiPublicHooksDailySyncRouteImport.update({
+  id: '/api/public/hooks/daily-sync',
+  path: '/api/public/hooks/daily-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAccountingCallbackRoute =
   ApiPublicAccountingCallbackRouteImport.update({
     id: '/api/public/accounting/callback',
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
+  '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
   '/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
+  '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
   '/app/customers': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRoutesById {
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
+  '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
   '/_authenticated/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRouteTypes {
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
+    | '/api/public/hooks/daily-sync'
     | '/app/customers/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
+    | '/api/public/hooks/daily-sync'
     | '/app/customers'
   id:
     | '__root__'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
     | '/api/public/accounting/callback'
+    | '/api/public/hooks/daily-sync'
     | '/_authenticated/app/customers/'
   fileRoutesById: FileRoutesById
 }
@@ -284,6 +296,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
+  ApiPublicHooksDailySyncRoute: typeof ApiPublicHooksDailySyncRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -421,6 +434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCustomersIndexRouteImport
       parentRoute: typeof AuthenticatedAppCustomersRoute
     }
+    '/api/public/hooks/daily-sync': {
+      id: '/api/public/hooks/daily-sync'
+      path: '/api/public/hooks/daily-sync'
+      fullPath: '/api/public/hooks/daily-sync'
+      preLoaderRoute: typeof ApiPublicHooksDailySyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/accounting/callback': {
       id: '/api/public/accounting/callback'
       path: '/api/public/accounting/callback'
@@ -507,6 +527,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
+  ApiPublicHooksDailySyncRoute: ApiPublicHooksDailySyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
