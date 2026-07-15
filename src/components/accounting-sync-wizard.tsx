@@ -224,6 +224,7 @@ export function AccountingSyncWizard({
       const rowObjects = rowsToObjects(d.schema.fields.map((f) => f.name), d.rows);
       ingestedStore.addRows(d.key, rowObjects);
       void persistBatch({
+        localUploadId: record.id,
         source_kind: "accounting",
         source_provider: provider,
         dataset_key: d.key,

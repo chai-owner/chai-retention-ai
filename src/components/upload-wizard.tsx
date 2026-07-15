@@ -324,6 +324,7 @@ export function UploadWizard({
     });
     ingestedStore.addRows(dataset.key, rowObjects);
     void persistBatch({
+      localUploadId: record.id,
       source_kind: "upload",
       source_provider: "csv",
       dataset_key: dataset.key,
