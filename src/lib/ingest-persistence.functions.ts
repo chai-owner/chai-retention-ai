@@ -73,7 +73,7 @@ export const saveIngestBatch = createServerFn({ method: "POST" })
         filename: data.filename ?? null,
         row_count: data.rows.length,
         status: "ok",
-        meta: data.meta ?? {},
+        meta: (data.meta ?? {}) as never,
       })
       .select("id, created_at")
       .single();
@@ -210,7 +210,7 @@ export interface IngestBatchRow {
   status: string;
   error: string | null;
   created_at: string;
-  meta: Record<string, unknown>;
+  meta: Record<string, string | number | boolean | null | Array<unknown> | Record<string, unknown>> | null;
 }
 
 export const listIngestBatches = createServerFn({ method: "GET" })
