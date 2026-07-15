@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { removePersistedBatch } from "@/lib/ingest-persistence";
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
   head: () => ({ meta: [{ title: "Data Quality — ChAi" }] }),
