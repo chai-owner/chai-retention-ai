@@ -86,26 +86,26 @@ const steps = [
 function Landing() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
+      {/* Nav — navy sticky */}
+      <header className="sticky top-0 z-30 border-b border-white/5 bg-navy/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 lg:px-6">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-warm text-primary-foreground">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-gold ring-1 ring-white/10">
               <Sparkles className="h-4 w-4" />
             </span>
-            <span className="text-lg font-semibold tracking-tight">ChAi</span>
+            <span className="text-lg font-semibold tracking-tight text-white">ChAi</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               to="/app/dashboard"
               search={{ demo: true }}
-              className="hidden items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent sm:inline-flex"
+              className="hidden items-center rounded-lg px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
             >
               View ChAi Demo
             </Link>
             <Link
               to="/auth"
-              className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               Log in
             </Link>
@@ -113,7 +113,7 @@ function Landing() {
             <Link
               to="/auth"
               search={{ mode: "signup" }}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="inline-flex items-center gap-1.5 rounded-[14px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-[color:var(--primary-hover)]"
             >
               Sign up <ArrowRight className="h-4 w-4" />
             </Link>
@@ -122,19 +122,21 @@ function Landing() {
       </header>
 
 
-      {/* Hero */}
-      <section className="bg-gradient-hero">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 lg:grid-cols-[2fr_3fr] lg:px-6 lg:py-28">
+      {/* Hero — deep navy */}
+      <section className="bg-navy relative overflow-hidden">
+        <div aria-hidden className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-40 -left-20 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-24 lg:grid-cols-[2fr_3fr] lg:px-6 lg:py-32">
           <div className="text-center lg:text-left">
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 text-xs font-medium text-muted-foreground">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/80">
+              <Sparkles className="h-3.5 w-3.5 text-gold" />
               AI Retention Analyst, on demand
             </span>
-            <h1 className="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-6xl">
               Keep the customers you{" "}
-              <span className="font-display italic font-normal text-primary">already worked so hard</span> to win.
+              <span className="font-semibold text-gold">already worked so hard</span> to win.
             </h1>
-            <p className="mt-6 max-w-xl text-lg text-muted-foreground lg:mx-0">
+            <p className="mt-6 max-w-xl text-lg text-white/70 lg:mx-0">
               ChAi is an AI retention analyst that understands customer health, predicts who's about to leave,
               explains why, and tells you what to do — all in plain English. No analytics team required.
             </p>
@@ -142,41 +144,32 @@ function Landing() {
               <Link
                 to="/auth"
                 search={{ mode: "signup" }}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-primary/90"
+                className="inline-flex items-center gap-2 rounded-[14px] bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-all hover:bg-[color:var(--primary-hover)] hover:shadow-lift"
               >
                 Get started free <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 to="/auth"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                className="inline-flex items-center gap-2 rounded-[14px] border border-white/30 bg-transparent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-white/10"
               >
                 Log in
               </Link>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">
+            <p className="mt-4 text-xs text-white/60">
               Set up your retention engine in minutes — no analytics team required.
             </p>
 
 
           </div>
-          <div className="relative lg:-mr-20 xl:-mr-32" style={{ perspective: "1800px" }}>
-            {/* Peach 3D glow stack */}
-            <div className="absolute -inset-8 -z-20 rounded-[2.5rem] bg-gradient-warm opacity-30 blur-3xl" />
-            <div className="absolute -right-6 -top-8 -z-10 h-40 w-40 rounded-full bg-primary/30 blur-3xl" />
-            <div className="absolute -bottom-10 -left-6 -z-10 h-44 w-44 rounded-full bg-secondary/40 blur-3xl" />
-            <div
-              className="group relative rounded-[1.75rem] bg-gradient-warm p-3 shadow-card ring-1 ring-primary/10 transition-transform duration-700 ease-out hover:[transform:none]"
-              style={{
-                transform: "rotateY(-16deg) rotateX(7deg) rotateZ(1deg)",
-                transformStyle: "preserve-3d",
-              }}
-            >
+          <div className="relative lg:-mr-20 xl:-mr-32">
+            <div className="absolute -inset-8 -z-10 rounded-[2rem] bg-primary/10 blur-3xl" />
+            <div className="relative rounded-2xl bg-white p-2 shadow-lift ring-1 ring-white/10">
               <img
                 src={heroDashboardShot.url}
                 alt="ChAi executive dashboard showing customer health scores, revenue at risk and revenue by segment"
                 width={2368}
                 height={1340}
-                className="w-full rounded-2xl border border-border bg-card shadow-2xl"
+                className="w-full rounded-xl border border-border bg-card"
               />
             </div>
           </div>
