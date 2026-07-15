@@ -32,6 +32,7 @@ import {
   type UploadRecord,
 } from "@/lib/uploads-store";
 import { ingestedStore, rowsToObjects } from "@/lib/ingested-data-store";
+import { persistBatch } from "@/lib/ingest-persistence";
 
 type FieldType = "date" | "number" | "email" | "text";
 
