@@ -47,6 +47,8 @@ function DataQualityPage() {
 
   function deleteUpload(u: UploadRecord) {
     uploadsStore.remove(u.id);
+    // Also remove from the DB so refresh doesn't bring it back.
+    void removePersistedBatch(u.id);
     toast.success("Upload deleted", { description: `${u.fileName} and its data were removed from ChAi.` });
   }
 
