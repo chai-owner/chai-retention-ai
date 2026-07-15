@@ -379,7 +379,16 @@ export function SmartIngestWizard({
         fieldChecks,
       };
       uploadsStore.add(record);
-      ingestedStore.addRows(d.key, rowsToObjects(d.schema.fields.map((f) => f.name), d.rows));
+      const rowObjects = rowsToObjects(d.schema.fields.map((f) => f.name), d.rows);
+      ingestedStore.addRows(d.key, rowObjects);
+      void persistBatch({
+        source_kind: "drop",
+        source_provider: documentType || "drop",
+        dataset_key: d.key,
+        filename: sourceLabel,
+        rows: rowObjects,
+        meta: { datasetLabel: d.label, reliability, completeness, sizeKb: fileSizeKb, findings, fieldChecks },
+      });
     }
     toast.success("Data imported", {
       description: `${totalRows.toLocaleString()} rows across ${datasets.length} dataset${datasets.length > 1 ? "s" : ""} added to ChAi.`,
