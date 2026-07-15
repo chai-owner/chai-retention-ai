@@ -314,41 +314,44 @@ function Landing() {
 
       {/* Final CTA */}
       <section id="get-started" className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
-        <div className="overflow-hidden rounded-2xl bg-gradient-warm px-8 py-14 text-center text-primary-foreground shadow-card">
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-3 py-1 text-xs font-medium">
-            <Sparkles className="h-3.5 w-3.5" /> Start today
-          </span>
-          <h2 className="mx-auto mt-4 max-w-xl text-3xl font-semibold tracking-tight">
-            Keep more of the customers you've earned
-          </h2>
-          <p className="mx-auto mt-3 max-w-lg text-primary-foreground/90">
-            Sign up, bring your data, and let ChAi surface who's at risk and what to do next — all in
-            plain English.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              to="/auth"
-              search={{ mode: "signup" }}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-background px-6 py-3 text-sm font-medium text-foreground transition-transform hover:scale-105"
-            >
-              Get started free <ArrowRight className="h-4 w-4" />
-            </Link>
-
+        <div className="relative overflow-hidden rounded-2xl bg-navy px-8 py-14 text-center text-white shadow-card">
+          <div aria-hidden className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-primary/25 blur-3xl" />
+          <div aria-hidden className="absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-medium text-white/80">
+              <Sparkles className="h-3.5 w-3.5 text-gold" /> Start today
+            </span>
+            <h2 className="mx-auto mt-4 max-w-xl text-3xl font-semibold tracking-tight text-white">
+              Keep more of the customers you've earned
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-white/70">
+              Sign up, bring your data, and let ChAi surface who's at risk and what to do next — all in
+              plain English.
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
+                className="inline-flex items-center justify-center gap-2 rounded-[14px] bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-all hover:bg-[color:var(--primary-hover)] hover:shadow-lift"
+              >
+                Get started free <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
 
 
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row lg:px-6">
+      <footer className="bg-navy text-white">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-10 text-sm text-white/60 sm:flex-row lg:px-6">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-warm text-primary-foreground">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/5 text-gold ring-1 ring-white/10">
               <Sparkles className="h-3 w-3" />
             </span>
-            <span className="font-semibold text-foreground">ChAi</span>
+            <span className="font-semibold text-white">ChAi</span>
           </div>
-          <p>Customer intelligence & retention, in plain English.</p>
+          <p>Customer intelligence &amp; retention, in plain English.</p>
         </div>
       </footer>
     </div>
