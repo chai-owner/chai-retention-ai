@@ -22,6 +22,7 @@ export type Database = {
           connected_at: string
           expires_at: string | null
           id: string
+          last_synced_at: string | null
           provider: string
           realm_id: string | null
           refresh_token: string | null
@@ -36,6 +37,7 @@ export type Database = {
           connected_at?: string
           expires_at?: string | null
           id?: string
+          last_synced_at?: string | null
           provider: string
           realm_id?: string | null
           refresh_token?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           connected_at?: string
           expires_at?: string | null
           id?: string
+          last_synced_at?: string | null
           provider?: string
           realm_id?: string | null
           refresh_token?: string | null
@@ -112,6 +115,33 @@ export type Database = {
           operation?: string
           output_tokens?: number
           total_tokens?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_sync_state: {
+        Row: {
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          provider?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

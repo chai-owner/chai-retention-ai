@@ -431,17 +431,31 @@ function isoDate(v: any): string {
 export async function fetchAndNormalize(
   userId: string,
   provider: AccountingProvider,
+  sinceOverride?: string | null,
 ): Promise<ExtractedDataset[]> {
   const conn = await loadFreshConnection(userId, provider);
   const auth = { Authorization: `Bearer ${conn.access_token}`, Accept: "application/json" };
+  // Prefer explicit override (used by the daily cron); otherwise fall back to
+  // the connection's own last_synced_at so manual "Sync now" is also delta.
+  const since =
+    sinceOverride === undefined
+      ? ((conn as unknown as { last_synced_at?: string | null }).last_synced_at ?? null)
+      : sinceOverride;
+  const startedAt = new Date().toISOString();
 
   const customerRows: string[][] = [];
   const txnRows: string[][] = [];
 
   if (provider === "quickbooks") {
     const base = `${qboApiBase()}/v3/company/${conn.realm_id}`;
+    const customerWhere = since
+      ? ` where Metadata.LastUpdatedTime > '${since}'`
+      : "";
+    const invoiceWhere = since
+      ? ` where Metadata.LastUpdatedTime > '${since}'`
+      : "";
     const cRes = await fetch(
-      `${base}/query?query=${encodeURIComponent("select * from Customer maxresults 200")}&minorversion=65`,
+      `${base}/query?query=${encodeURIComponent(`select * from Customer${customerWhere} maxresults 500`)}&minorversion=65`,
       { headers: auth },
     );
     const cJson = await readJson(cRes, "QuickBooks customers");
@@ -457,7 +471,7 @@ export async function fetchAndNormalize(
       ]);
     }
     const iRes = await fetch(
-      `${base}/query?query=${encodeURIComponent("select * from Invoice maxresults 500")}&minorversion=65`,
+      `${base}/query?query=${encodeURIComponent(`select * from Invoice${invoiceWhere} maxresults 1000`)}&minorversion=65`,
       { headers: auth },
     );
     const iJson = await readJson(iRes, "QuickBooks invoices");
@@ -472,7 +486,11 @@ export async function fetchAndNormalize(
       ]);
     }
   } else if (provider === "xero") {
-    const xauth = { ...auth, "Xero-tenant-id": conn.tenant_id ?? "" };
+    const xauth: Record<string, string> = {
+      ...auth,
+      "Xero-tenant-id": conn.tenant_id ?? "",
+    };
+    if (since) xauth["If-Modified-Since"] = new Date(since).toUTCString();
     const cRes = await fetch("https://api.xero.com/api.xro/2.0/Contacts", {
       headers: xauth,
     });
@@ -494,6 +512,7 @@ export async function fetchAndNormalize(
     );
     const iJson = await readJson(iRes, "Xero invoices");
     for (const inv of iJson?.Invoices ?? []) {
+
       txnRows.push([
         String(inv.Contact?.ContactID ?? ""),
         String(inv.InvoiceNumber || inv.InvoiceID || ""),
@@ -506,8 +525,11 @@ export async function fetchAndNormalize(
   } else {
     // freshbooks
     const acct = conn.account_id;
+    const sinceQs = since
+      ? `&search[updated_min]=${encodeURIComponent(since)}`
+      : "";
     const cRes = await fetch(
-      `https://api.freshbooks.com/accounting/account/${acct}/users/clients?per_page=200`,
+      `https://api.freshbooks.com/accounting/account/${acct}/users/clients?per_page=200${sinceQs}`,
       { headers: auth },
     );
     const cJson = await readJson(cRes, "FreshBooks clients");
@@ -528,7 +550,7 @@ export async function fetchAndNormalize(
       ]);
     }
     const iRes = await fetch(
-      `https://api.freshbooks.com/accounting/account/${acct}/invoices/invoices?per_page=500`,
+      `https://api.freshbooks.com/accounting/account/${acct}/invoices/invoices?per_page=500${sinceQs}`,
       { headers: auth },
     );
     const iJson = await readJson(iRes, "FreshBooks invoices");
@@ -543,6 +565,15 @@ export async function fetchAndNormalize(
       ]);
     }
   }
+
+  // Record this successful pull so the next sync only fetches deltas.
+  const db = await admin();
+  await db
+    .from("accounting_connections")
+    .update({ last_synced_at: startedAt })
+    .eq("user_id", userId)
+    .eq("provider", provider);
+
 
   const datasets: ExtractedDataset[] = [];
   if (customerRows.length) {
