@@ -303,8 +303,8 @@ function Landing() {
           <div className="mt-12 grid gap-8 md:grid-cols-3">
             {steps.map((s) => (
               <div key={s.n}>
-                <span className="font-display text-4xl italic text-primary">{s.n}</span>
-                <h3 className="mt-3 text-lg font-semibold">{s.title}</h3>
+                <span className="text-4xl font-semibold tracking-tight text-primary">{s.n}</span>
+                <h3 className="mt-3 text-lg font-semibold text-foreground">{s.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{s.desc}</p>
               </div>
             ))}
