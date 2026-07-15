@@ -1,73 +1,60 @@
+## Plan: Enterprise navy / royal blue / gold rebrand
 
-# Persist all ingested data to the backend
+Premium B2B SaaS visual system (Stripe / Linear / Vanta feel). Presentation-only — no business logic changes.
 
-**Recommendation:** do this. Chai can't score, trend, or reason about customers that disappear on refresh. Right now every upload, CRM sync, and accounting sync lands in a JS variable (`ingestedStore`) and is gone the next page load — only accounting OAuth tokens are actually saved. This plan moves all user-brought data into the database, scoped per user, with a batch history so you can see *what* arrived *when* and *from where*.
+### Design tokens (`src/styles.css`)
 
-## Data model (new tables in `public`)
+Replace current tokens with:
 
-```text
-ingest_batches            one row per upload / sync run
-  id, user_id, source_kind ('upload' | 'crm' | 'accounting' | 'drop'),
-  source_provider (e.g. 'salesforce', 'quickbooks', 'csv'),
-  dataset_key ('customers' | 'transactions' | 'support' | 'usage' | 'surveys'),
-  filename, row_count, status, error, created_at
+- `--background` `#F8FAFC` · `--card` `#FFFFFF` · `--border` `#E6ECF6`
+- `--foreground` `#0F172A` · `--muted-foreground` `#475569` · a `--muted-foreground-2` `#64748B`
+- `--primary` `#1E5ABA` (royal blue) · `--primary-hover` `#174B96` · `--primary-foreground` white
+- `--navy` `#081D3A` (deep navy — hero, nav, footer surfaces)
+- `--accent` `#F2C94C` (gold — sparingly)
+- `--radius` `16px`
+- `--shadow-soft` `0 10px 30px rgba(8,29,58,.08)` and a `--shadow-soft-lg` for hover lift
+- `.dark` mapped to navy-dominant surfaces with the same accent hierarchy
 
-ingested_customers        dedup on (user_id, customer_id)
-  id, user_id, customer_id, batch_id, data jsonb, created_at, updated_at
+All tokens as OKLCH via `@theme inline`. Remove existing amber/orange gradient tokens; add `--gradient-navy` (navy → slightly lighter navy) to replace orange glows.
 
-ingested_transactions     dedup on (user_id, transaction_id)
-  id, user_id, transaction_id, batch_id, customer_id, data jsonb,
-  amount, occurred_at, created_at
+### Typography (`src/routes/__root.tsx`)
 
-ingested_support          dedup on (user_id, ticket_id)
-  id, user_id, ticket_id, batch_id, customer_id, data jsonb, created_at
+Load Inter (400/500/600/700/800) via `<link rel="stylesheet">` on Google Fonts (with preconnect). Set `--font-sans: "Inter"`. Remove any prior display serif.
 
-ingested_usage            append-only
-  id, user_id, batch_id, customer_id, data jsonb, occurred_at, created_at
+### Global components
 
-ingested_surveys          append-only
-  id, user_id, batch_id, customer_id, data jsonb, submitted_at, created_at
-```
+- **Buttons** — primary: royal blue bg, white text, `rounded-[14px]`, medium weight, hover `#174B96` + soft shadow. Secondary: white bg, blue border + blue text, hover very light blue (`#F8FAFC` tinted).
+- **Cards** — white, `rounded-2xl`, `--shadow-soft`, hover: small lift + thin blue border.
+- **Icons** — outline style, royal blue stroke; occasional gold detail.
 
-- Full incoming row kept as `jsonb` so nothing outside the current narrow shape is silently dropped.
-- Promoted columns (`customer_id`, `amount`, `occurred_at`) power scoring queries without JSON parsing.
-- Every table: `GRANT` to `authenticated` + `service_role`, RLS on, policies scoped to `auth.uid() = user_id`. No `anon`.
-- Indexes on `(user_id, dataset)` and `batch_id`.
+### Navigation (sticky)
 
-## Server functions (`src/lib/ingest.functions.ts`)
+Navy background, white logo wordmark with a small gold sparkle mark, white nav links (blue on active/hover), royal blue primary CTA, minimal bottom border.
 
-- `saveIngestBatch({ source, provider, dataset, rows, filename? })` — auth-gated; creates a batch row and upserts data rows.
-- `listIngestBatches()` — batch history for Data Quality + Integrations panels.
-- `listIngestedRows({ dataset })` — replaces the client `ingestedStore` reads.
-- `deleteIngestBatch({ id })` — removes a batch and its rows.
+### Hero
 
-All use `requireSupabaseAuth`; RLS enforces per-user isolation.
+Keep existing layout. Navy `#081D3A` background. White headline with 1–2 gold accent words. White subhead at reduced opacity. Royal blue primary CTA + outlined white secondary CTA. Replace orange glow with subtle navy/blue radial gradient. Dashboard screenshot sits in a white card with `--shadow-soft`.
 
-## Client rewiring
+### Feature cards / sections
 
-- `ingestedStore` becomes a thin TanStack Query-backed cache reading from `listIngestedRows`. Refresh no longer clears data.
-- Wizards (`upload-wizard`, `smart-ingest-wizard`, `crm-sync-wizard`, `accounting-sync-wizard`) call `saveIngestBatch` instead of `ingestedStore.addRows`.
-- `uploads-store` (upload metadata) is replaced by `listIngestBatches`, so Data Quality history survives refresh too.
-- Dashboard / Customers / Churned / Customer detail keep their selectors, just reading from the query-backed store.
-- On sign-out, invalidate queries so nothing leaks across users.
+Alternate white and `#F8FAFC` section backgrounds for rhythm. Feature cards: white, subtle shadow, royal blue icons, optional tiny gold badge. Hover: lift + shadow bump + thin blue border. Generous vertical padding (increase section spacing ~20%).
 
-## Out of scope
+### Dashboard mockups
 
-- `tickets-store`, `churn-store`, `addons-store`, `profile-store` — UI/preference state, leave in-memory for now.
-- Demo mock data stays client-only; real ingests go to DB.
-- Team/org sharing — everything per-user until roles are expanded.
+Recolor charts and mock UI: royal blue primary, gold secondary, neutral gray fills. Remove amber/orange/green except for genuine status pills. Applies to hero preview and any in-page dashboard graphics.
 
-## Technical notes
+### Footer
 
-- Chunked upserts (~500 rows/insert) with `onConflict: 'user_id,customer_id'` etc. so re-syncs dedupe the same way today's store does.
-- CRM/accounting server functions write directly with `context.supabase` instead of returning the dataset to the browser; response becomes `{ batchId, counts }`.
-- File uploads still parse CSV/XLSX in the browser, then POST parsed rows to `saveIngestBatch`.
+Deep navy bg, white headings, muted gray (`#94A3B8`) links with royal blue hover, gold accent on the logo mark.
 
-## Rollout order
+### Audit pass
 
-1. Migration: 6 tables + GRANTs + RLS + indexes + `updated_at` trigger.
-2. Add `ingest.functions.ts` server functions.
-3. Switch CRM + accounting sync flows to write to DB.
-4. Switch upload + smart-drop wizards to write to DB.
-5. Replace `ingestedStore` reads with query-backed selectors.
-6. Replace `uploads-store` with the batch-history query.
+Grep and replace hardcoded `bg-amber-*`, `text-orange-*`, `bg-[#...]` chai/warm references across: `Navigation`, `HeroSection`, feature/testimonial/pricing sections, `Footer`, dashboard preview components, and any authenticated dashboard views. Route everything through the new semantic tokens (`bg-primary`, `text-primary`, `bg-card`, `border-border`, `text-muted-foreground`, `bg-[hsl(var(--navy))]`, `text-[hsl(var(--accent))]`).
+
+### Animations
+
+Keep to fade-in, small upward translate, button hover, card lift, smooth scroll. Remove any bounce/scale/spin.
+
+### Verify
+
+Load `/` and one authenticated page. Confirm: navy hero + white dashboard card, royal blue CTAs, gold used only as small accents, alternating section backgrounds, consistent radius + soft shadows, no residual amber/orange.
