@@ -220,7 +220,16 @@ export function AccountingSyncWizard({
         fieldChecks,
       };
       uploadsStore.add(record);
-      ingestedStore.addRows(d.key, rowsToObjects(d.schema.fields.map((f) => f.name), d.rows));
+      const rowObjects = rowsToObjects(d.schema.fields.map((f) => f.name), d.rows);
+      ingestedStore.addRows(d.key, rowObjects);
+      void persistBatch({
+        source_kind: "accounting",
+        source_provider: provider,
+        dataset_key: d.key,
+        filename: record.fileName,
+        rows: rowObjects,
+        meta: { datasetLabel: d.label, reliability, completeness, sizeKb: 0, findings, fieldChecks },
+      });
     }
     toast.success(`${providerName} data imported`, {
       description: `${totalRows.toLocaleString()} rows across ${datasets.length} dataset${
