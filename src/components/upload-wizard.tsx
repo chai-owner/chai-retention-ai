@@ -323,6 +323,22 @@ export function UploadWizard({
       return obj;
     });
     ingestedStore.addRows(dataset.key, rowObjects);
+    void persistBatch({
+      source_kind: "upload",
+      source_provider: "csv",
+      dataset_key: dataset.key,
+      filename: fileName,
+      rows: rowObjects,
+      meta: {
+        datasetLabel: dataset.label,
+        reliability,
+        completeness: fill,
+        sizeKb: fileSizeKb,
+        findings,
+        fieldChecks,
+      },
+    });
+
 
     // Support tickets: merge by ticket_id, overwriting on status change and
     // logging status history so we can measure time-to-close.
