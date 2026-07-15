@@ -20,11 +20,17 @@ export interface PersistBatchArgs {
   rows: IngestRow[];
   // Optional metadata for uploads (quality, completeness, findings, etc.).
   meta?: Record<string, unknown>;
+  // If provided, the client-side uploadsStore record with this id will be
+  // relabeled to the DB batch id once the save succeeds so future deletes
+  // hit the real row.
+  localUploadId?: string;
 }
 
 export async function persistBatch(args: PersistBatchArgs): Promise<{ batchId: string } | null> {
   try {
-    const res = await saveIngestBatch({ data: args });
+    const { localUploadId, ...payload } = args;
+    const res = await saveIngestBatch({ data: payload });
+    if (localUploadId) uploadsStore.replaceId(localUploadId, res.batchId);
     return { batchId: res.batchId };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not save to your account";
