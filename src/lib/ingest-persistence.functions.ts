@@ -226,7 +226,7 @@ export const listIngestBatches = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw new Error(error.message);
-    return (data ?? []) as IngestBatchRow[];
+    return ((data ?? []) as unknown) as IngestBatchRow[];
   });
 
 // ---- deleteIngestBatch ----------------------------------------------------
