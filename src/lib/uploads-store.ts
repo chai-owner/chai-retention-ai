@@ -58,6 +58,11 @@ export const uploadsStore = {
     uploads = [record, ...uploads];
     emit();
   },
+  replaceId(oldId: string, newId: string) {
+    if (oldId === newId) return;
+    uploads = uploads.map((u) => (u.id === oldId ? { ...u, id: newId } : u));
+    emit();
+  },
   clear() {
     uploads = [];
     emit();
