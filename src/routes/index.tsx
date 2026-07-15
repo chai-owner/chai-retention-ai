@@ -246,18 +246,19 @@ function Landing() {
 
       {/* ChAi Data Drop — highlighted feature */}
       <section className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
-        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-hero p-8 shadow-card lg:p-12">
-          <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+        <div className="relative overflow-hidden rounded-2xl bg-navy p-8 text-white shadow-card lg:p-12">
+          <div aria-hidden className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-primary/25 blur-3xl" />
+          <div aria-hidden className="absolute -bottom-16 -left-10 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
           <div className="relative grid items-center gap-10 lg:grid-cols-2">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-card/70 px-3 py-1 text-xs font-medium text-primary">
-                <Sparkles className="h-3.5 w-3.5" /> AI-powered
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/80">
+                <Sparkles className="h-3.5 w-3.5 text-gold" /> AI-powered
               </span>
 
-              <h2 className="mt-5 text-3xl font-semibold tracking-tight">
+              <h2 className="mt-5 text-3xl font-semibold tracking-tight text-white">
                 ChAi Data Drop
               </h2>
-              <p className="mt-3 text-muted-foreground">
+              <p className="mt-3 text-white/70">
                 Drop in any customer document — PDFs, Word and Google docs, spreadsheets, even scanned
                 invoices — and ChAi's AI reads them, extracts the relevant details, and updates your
                 transactions and customer records automatically. No manual data entry, no templates.
@@ -269,9 +270,9 @@ function Landing() {
                   { icon: ScanLine, label: "Scanned invoices" },
                   { icon: FolderUp, label: "Whole folders at once" },
                 ].map((item) => (
-                  <li key={item.label} className="flex items-center gap-2.5 text-sm">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-primary">
-                      <item.icon className="h-4 w-4" />
+                  <li key={item.label} className="flex items-center gap-2.5 text-sm text-white/85">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white ring-1 ring-white/10">
+                      <item.icon className="h-4 w-4" strokeWidth={1.75} />
                     </span>
                     {item.label}
                   </li>
@@ -279,11 +280,11 @@ function Landing() {
               </ul>
             </div>
             <div className="flex items-center justify-center">
-              <div className="relative rounded-2xl border border-border bg-card/80 p-8 text-center shadow-soft backdrop-blur">
-                <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-warm text-primary-foreground shadow-card">
-                  <FolderUp className="h-8 w-8" />
+              <div className="relative rounded-2xl border border-border bg-card p-8 text-center shadow-soft">
+                <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                  <FolderUp className="h-8 w-8" strokeWidth={1.75} />
                 </span>
-                <p className="mt-4 text-sm font-medium">Drop a folder of documents</p>
+                <p className="mt-4 text-sm font-medium text-foreground">Drop a folder of documents</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   ChAi reads, maps and saves the clean data for you
                 </p>
