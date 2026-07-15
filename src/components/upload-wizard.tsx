@@ -38,6 +38,7 @@ import {
 } from "@/lib/uploads-store";
 import { mergeTickets, formatDuration, type MergeSummary } from "@/lib/tickets-store";
 import { ingestedStore } from "@/lib/ingested-data-store";
+import { persistBatch } from "@/lib/ingest-persistence";
 
 // ---------- CSV parsing ----------
 function parseCsv(text: string): string[][] {
