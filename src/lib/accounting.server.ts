@@ -525,8 +525,11 @@ export async function fetchAndNormalize(
   } else {
     // freshbooks
     const acct = conn.account_id;
+    const sinceQs = since
+      ? `&search[updated_min]=${encodeURIComponent(since)}`
+      : "";
     const cRes = await fetch(
-      `https://api.freshbooks.com/accounting/account/${acct}/users/clients?per_page=200`,
+      `https://api.freshbooks.com/accounting/account/${acct}/users/clients?per_page=200${sinceQs}`,
       { headers: auth },
     );
     const cJson = await readJson(cRes, "FreshBooks clients");
@@ -547,7 +550,7 @@ export async function fetchAndNormalize(
       ]);
     }
     const iRes = await fetch(
-      `https://api.freshbooks.com/accounting/account/${acct}/invoices/invoices?per_page=500`,
+      `https://api.freshbooks.com/accounting/account/${acct}/invoices/invoices?per_page=500${sinceQs}`,
       { headers: auth },
     );
     const iJson = await readJson(iRes, "FreshBooks invoices");
@@ -562,6 +565,15 @@ export async function fetchAndNormalize(
       ]);
     }
   }
+
+  // Record this successful pull so the next sync only fetches deltas.
+  const db = await admin();
+  await db
+    .from("accounting_connections")
+    .update({ last_synced_at: startedAt })
+    .eq("user_id", userId)
+    .eq("provider", provider);
+
 
   const datasets: ExtractedDataset[] = [];
   if (customerRows.length) {
