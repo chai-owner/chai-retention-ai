@@ -147,6 +147,7 @@ export type Database = {
           error: string | null
           filename: string | null
           id: string
+          meta: Json
           row_count: number
           source_kind: string
           source_provider: string
@@ -159,6 +160,7 @@ export type Database = {
           error?: string | null
           filename?: string | null
           id?: string
+          meta?: Json
           row_count?: number
           source_kind: string
           source_provider: string
@@ -171,6 +173,7 @@ export type Database = {
           error?: string | null
           filename?: string | null
           id?: string
+          meta?: Json
           row_count?: number
           source_kind?: string
           source_provider?: string
