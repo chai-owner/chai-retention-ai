@@ -63,12 +63,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const visibleNav = locked ? baseNav.filter((n) => LOCKED_ALLOWED.has(n.to)) : baseNav;
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
-      setSignedIn(!!session),
-    );
+    supabase.auth.getSession().then(({ data }) => {
+      const isIn = !!data.session;
+      setSignedIn(isIn);
+      if (isIn && !demo) void hydrateIngestFromServer();
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      setSignedIn(!!session);
+      if (event === "SIGNED_IN" && !demo) void hydrateIngestFromServer();
+    });
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, [demo]);
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
