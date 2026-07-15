@@ -44,7 +44,7 @@ const CHUNK = 500;
 
 async function chunkedUpsert<T>(
   rows: T[],
-  fn: (chunk: T[]) => Promise<{ error: { message: string } | null }>,
+  fn: (chunk: T[]) => PromiseLike<{ error: { message: string } | null }>,
 ) {
   for (let i = 0; i < rows.length; i += CHUNK) {
     const chunk = rows.slice(i, i + CHUNK);
