@@ -80,7 +80,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
           try {
             const since = (row.last_synced_at as string | null) ?? null;
             const startedAt = new Date().toISOString();
-            const datasets = await runCrmSync(provider, 500, since);
+            const datasets = await runCrmSync(provider, userId, 500, since);
             const { totalRows } = await persistDatasetsAdmin(
               userId,
               "crm",
