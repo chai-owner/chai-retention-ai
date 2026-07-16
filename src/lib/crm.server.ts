@@ -262,11 +262,12 @@ export async function markCrmSynced(userId: string, provider: CrmProvider, when:
 
 export async function runCrmSync(
   provider: CrmProvider,
+  userId: string,
   limit: number,
   since: string | null,
 ): Promise<ExtractedDataset[]> {
   switch (provider) {
-    case "salesforce": return syncSalesforce(limit, since);
+    case "salesforce": return syncSalesforce(userId, limit, since);
     case "hubspot": return syncHubspot(limit, since);
     case "zoho_crm": return syncZoho(limit, since);
     default: throw new Error("Unsupported CRM provider");
