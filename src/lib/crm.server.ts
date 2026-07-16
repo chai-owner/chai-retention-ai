@@ -29,6 +29,11 @@ function credsFor(provider: CrmProvider) {
   return { lovableKey, connectionKey, name: meta.name };
 }
 
+function credsForUser(lovableKey: string, connectionKey: string) {
+  return { lovableKey, connectionKey };
+}
+
+
 function gatewayHeaders(connectionKey: string, lovableKey: string) {
   return {
     Authorization: `Bearer ${lovableKey}`,
@@ -98,19 +103,40 @@ async function gwPost(url: string, headers: Record<string, string>, body: unknow
 
 // ---------------- Salesforce ----------------
 
-async function syncSalesforce(limit: number, since: string | null): Promise<ExtractedDataset[]> {
-  const { lovableKey, connectionKey } = credsFor("salesforce");
-  const headers = gatewayHeaders(connectionKey, lovableKey);
-  const base = `${GATEWAY_BASE}/salesforce`;
+async function syncSalesforce(
+  userId: string,
+  limit: number,
+  since: string | null,
+): Promise<ExtractedDataset[]> {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  if (!lovableKey) throw new Error("Missing LOVABLE_API_KEY");
+  const { getConnectionKeyForUser } = await import("./app-user-connections.server");
+  const connectionKey = await getConnectionKeyForUser(userId, "salesforce");
+  if (!connectionKey) {
+    throw new Error(
+      "Salesforce isn't connected for your account. Connect it under Data → Connect your CRM first.",
+    );
+  }
+  const { callAsAppUser } = await import("@/integrations/lovable/appUserConnector");
 
   const where = since ? ` WHERE SystemModstamp >= ${since}` : "";
   const accSoql = `SELECT Id, Name, CreatedDate, AnnualRevenue, Type, BillingCountry FROM Account${where} ORDER BY SystemModstamp DESC LIMIT ${limit}`;
   const oppSoql = `SELECT Id, AccountId, Name, Amount, CloseDate, StageName FROM Opportunity${where} ORDER BY SystemModstamp DESC LIMIT ${limit}`;
 
-  const [acc, opp] = await Promise.all([
-    gwGet(`${base}/query?q=${encodeURIComponent(accSoql)}`, headers),
-    gwGet(`${base}/query?q=${encodeURIComponent(oppSoql)}`, headers),
-  ]);
+  async function soql(q: string) {
+    const res = await callAsAppUser({
+      gatewayBaseUrl: GATEWAY_BASE,
+      connectionAPIKey: connectionKey!,
+      connectorId: "salesforce",
+      path: "/query?q=" + encodeURIComponent(q),
+    });
+    if (res.status === 429) throw new Error("Salesforce rate limit hit — try again shortly.");
+    const body = await res.text();
+    if (!res.ok) throw new Error(`Salesforce request failed [${res.status}]: ${body.slice(0, 300)}`);
+    return body ? JSON.parse(body) : null;
+  }
+
+  const [acc, opp] = await Promise.all([soql(accSoql), soql(oppSoql)]);
 
   const customers: string[][] = (acc?.records ?? []).map((r: Record<string, unknown>) => [
     toStr(r.Id), toStr(r.Name), "", dateOnly(r.CreatedDate),
@@ -123,6 +149,7 @@ async function syncSalesforce(limit: number, since: string | null): Promise<Extr
   ]);
   return buildDatasets(customers, transactions);
 }
+
 
 // ---------------- HubSpot ----------------
 
@@ -235,11 +262,12 @@ export async function markCrmSynced(userId: string, provider: CrmProvider, when:
 
 export async function runCrmSync(
   provider: CrmProvider,
+  userId: string,
   limit: number,
   since: string | null,
 ): Promise<ExtractedDataset[]> {
   switch (provider) {
-    case "salesforce": return syncSalesforce(limit, since);
+    case "salesforce": return syncSalesforce(userId, limit, since);
     case "hubspot": return syncHubspot(limit, since);
     case "zoho_crm": return syncZoho(limit, since);
     default: throw new Error("Unsupported CRM provider");

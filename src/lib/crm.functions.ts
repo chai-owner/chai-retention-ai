@@ -36,7 +36,7 @@ export const syncCrm = createServerFn({ method: "POST" })
 
     const since = await getCrmSince(context.userId, provider);
     const startedAt = new Date().toISOString();
-    const datasets = await runCrmSync(provider, data.limit, since);
+    const datasets = await runCrmSync(provider, context.userId, data.limit, since);
     await markCrmSynced(context.userId, provider, startedAt);
     return { provider, providerName: name, datasets, since };
   });
