@@ -29,6 +29,11 @@ function credsFor(provider: CrmProvider) {
   return { lovableKey, connectionKey, name: meta.name };
 }
 
+function credsForUser(lovableKey: string, connectionKey: string) {
+  return { lovableKey, connectionKey };
+}
+
+
 function gatewayHeaders(connectionKey: string, lovableKey: string) {
   return {
     Authorization: `Bearer ${lovableKey}`,
