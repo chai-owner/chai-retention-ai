@@ -68,8 +68,8 @@ const showcase = [
   },
   {
     img: plannerShot.url,
-    w: 2800,
-    h: 1864,
+    w: 2400,
+    h: 2240,
     eyebrow: "Intelligence Planner",
     title: "Learn what to measure — and why",
     desc: "For each metric, see why it matters, how it predicts churn, and where you stand. Prediction accuracy improves as you track more.",
