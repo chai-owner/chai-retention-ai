@@ -59,8 +59,8 @@ const showcase = [
   },
   {
     img: insightsShot.url,
-    w: 2800,
-    h: 2480,
+    w: 2400,
+    h: 2600,
     eyebrow: "Insights & Benchmarks",
     title: "Recommendations ranked by revenue saved",
     desc: "ChAi turns raw data into prioritized actions and shows how your retention compares to similar businesses.",
