@@ -50,8 +50,8 @@ const features = [
 const showcase = [
   {
     img: customersShot.url,
-    w: 2800,
-    h: 3640,
+    w: 2400,
+    h: 2020,
     eyebrow: "Customer Risk Center",
     title: "See exactly why a customer is leaving",
     desc: "Click any account to get its churn probability, the precise reasons driving the risk, and recommended actions ranked by revenue saved.",
