@@ -167,8 +167,8 @@ function Landing() {
               <img
                 src={heroDashboardShot.url}
                 alt="ChAi executive dashboard showing customer health scores, revenue at risk and revenue by segment"
-                width={2800}
-                height={2680}
+                width={2400}
+                height={1760}
                 className="w-full rounded-xl border border-border bg-card"
               />
             </div>
