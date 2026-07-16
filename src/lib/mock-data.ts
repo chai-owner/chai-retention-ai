@@ -148,7 +148,20 @@ function buildTimeline(
   // Weave each detected risk factor into the history as a concrete event.
   const factorEventDates = ["2026-04-11", "2026-05-18", "2026-06-05", "2026-06-24", "2026-07-08"];
   factors.forEach((f, idx) => {
-...
+    const date = factorEventDates[idx % factorEventDates.length];
+    const map: Record<string, TimelineEvent> = {
+      "Usage declining": { date, type: "usage", title: "Usage started declining", detail: f.detail },
+      "No recent purchases": { date, type: "purchase", title: "Buying activity stalled", detail: f.detail },
+      "Unresolved support tickets": { date, type: "support", title: "Support tickets piling up", detail: f.detail },
+      "Negative sentiment detected": { date, type: "conversation", title: "Negative sentiment in conversations", detail: f.detail },
+      "Competitor mentioned": { date, type: "conversation", title: "Competitor evaluation mentioned", detail: f.detail },
+      "Below benchmark engagement": { date, type: "usage", title: "Engagement fell below benchmark", detail: f.detail },
+      "Declining satisfaction": { date, type: "survey", title: "Satisfaction scores dropped", detail: f.detail },
+      "Multiple escalations": { date, type: "support", title: "Issues escalated to management", detail: f.detail },
+    };
+    events.push(map[f.label] ?? { date, type: "score", title: f.label, detail: f.detail });
+  });
+
   if (cat === "healthy") {
     events.push({ date: "2026-07-14", type: "score", title: "Account is healthy", detail: `Health score steady at ${health}. Low churn risk (${churnProbability}%).` });
   } else {
