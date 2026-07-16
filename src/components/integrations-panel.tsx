@@ -11,6 +11,13 @@ import { CrmSyncWizard } from "@/components/crm-sync-wizard";
 import { AccountingSyncWizard } from "@/components/accounting-sync-wizard";
 import type { CrmProvider } from "@/lib/crm.functions";
 import {
+  startSalesforceConnect,
+  saveSalesforceConnection,
+  getSalesforceStatus,
+  disconnectSalesforce,
+} from "@/lib/salesforce.functions";
+import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
+import {
   getAccountingStatus,
   getAccountingConfig,
   startAccountingOAuth,
@@ -18,6 +25,8 @@ import {
   type AccountingProvider,
 } from "@/lib/accounting.functions";
 import { useUploads } from "@/lib/uploads-store";
+
+const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
 
 const CRM_PROVIDER_BY_NAME: Record<string, CrmProvider> = {
   Salesforce: "salesforce",
