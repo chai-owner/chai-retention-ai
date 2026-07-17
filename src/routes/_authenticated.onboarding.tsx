@@ -220,12 +220,14 @@ function Onboarding() {
           form.disengagement.trim() !== "" &&
           form.churnDefinition.trim() !== ""
         );
+      case 3:
+        return metrics.length > 0;
       case 5:
         return channels.length > 0;
       default:
         return true;
     }
-  }, [step, form, segmentsValid, channels]);
+  }, [step, form, segmentsValid, channels, metrics]);
 
   const canContinue = stepValid;
 
