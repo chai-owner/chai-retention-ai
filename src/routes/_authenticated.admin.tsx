@@ -90,7 +90,14 @@ function AdminPage() {
     }
   }
 
-  const totalTokens = customers.reduce((s, c) => s + c.totalTokens, 0);
+  const totalCostUsd = customers.reduce((s, c) => s + c.totalCostUsd, 0);
+  const formatCost = (n: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: n > 0 && n < 1 ? 4 : 2,
+      maximumFractionDigits: n > 0 && n < 1 ? 4 : 2,
+    }).format(n);
 
   if (loading) {
     return (
