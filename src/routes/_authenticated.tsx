@@ -27,7 +27,8 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/auth", search: { redirect: location.href } });
     }
 
-    if (demoMode) return { user };
+    if (demoMode && !user) return { user: null };
+
 
 
     // Force signed-in users who haven't finished onboarding into the flow.
