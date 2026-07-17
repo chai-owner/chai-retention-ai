@@ -30,7 +30,7 @@ export const Route = createFileRoute("/auth")({
     if (data.user) {
       throw search.redirect
         ? redirect({ href: stripDemo(search.redirect) })
-        : redirect({ to: "/app/dashboard", search: { demo: undefined } });
+        : redirect({ to: "/app/dashboard", search: { demo: false } });
     }
   },
   component: AuthPage,
