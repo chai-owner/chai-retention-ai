@@ -45,6 +45,8 @@ function scoreChip(v: number) {
 
 function DataQualityPage() {
   const uploads = useUploads();
+  const signedIn = useSignedIn();
+  const isReal = signedIn === true;
 
   function deleteUpload(u: UploadRecord) {
     uploadsStore.remove(u.id);
