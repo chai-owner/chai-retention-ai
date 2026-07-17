@@ -333,7 +333,7 @@ function Landing() {
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 to="/auth"
-                search={{ mode: "signup" }}
+                search={{ mode: "signup", demo: false }}
                 className="inline-flex items-center justify-center gap-2 rounded-[14px] bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-all hover:bg-[color:var(--primary-hover)] hover:shadow-lift"
               >
                 Get started free <ArrowRight className="h-4 w-4" />
