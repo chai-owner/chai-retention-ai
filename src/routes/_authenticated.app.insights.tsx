@@ -49,6 +49,8 @@ const statusIcon = {
 
 function Insights() {
   const { customers } = useScoredData();
+  const signedIn = useSignedIn();
+  const isReal = signedIn === true;
   const [expanded, setExpanded] = useState<string | null>(null);
   const recAgg = useMemo(() => aggregateRecs(customers), [customers]);
   return (
