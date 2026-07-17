@@ -143,6 +143,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ) : (
             <Link
               to="/auth"
+              search={{ demo: false }}
               className="flex w-full items-center gap-3 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <LogIn className="h-[18px] w-[18px]" />
