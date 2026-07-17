@@ -68,8 +68,10 @@ function Onboarding() {
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
   const [metricWeights, setMetricWeights] = useState<Record<string, number>>({});
-  // AI-generated metric SET (definitions) + recommended weights for step 3.
-  const [generatedMetrics, setGeneratedMetrics] = useState<PlannerMetric[]>([]);
+  // The active metric set the user is customizing in step 3. Seeded from
+  // ChAi's generated set, but the user can remove or add their own.
+  const [metrics, setMetrics] = useState<PlannerMetric[]>(plannerMetrics);
+  const [customMetricNames, setCustomMetricNames] = useState<Set<string>>(new Set());
   const [recommendedWeights, setRecommendedWeights] = useState<Record<string, number>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState(false);
@@ -78,10 +80,17 @@ function Onboarding() {
     { name: "", min: "", max: "" },
   ]);
 
-  // The metrics shown in step 3: ChAi's generated set once ready, otherwise the
-  // built-in defaults as a fallback.
-  const activeMetrics: PlannerMetric[] =
-    generatedMetrics.length > 0 ? generatedMetrics : plannerMetrics;
+  // Add-metric inline form state.
+  const [addingMetric, setAddingMetric] = useState(false);
+  const [newMetric, setNewMetric] = useState({
+    name: "",
+    category: "Engagement",
+    why: "",
+    weight: 3,
+  });
+  const [addMetricError, setAddMetricError] = useState("");
+
+  const activeMetrics: PlannerMetric[] = metrics;
 
   // When the user reaches the "What matters" step, ask ChAi to GENERATE the
   // retention metrics this specific business should track, tailored to the
