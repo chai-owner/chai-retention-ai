@@ -114,21 +114,9 @@ function Onboarding() {
       }
       const weights: Record<string, number> = {};
       for (const m of metrics) weights[m.name] = m.weight ?? 3;
-      // Preserve any custom metrics the user already added; replace the AI ones.
-      setMetrics((prev) => {
-        const customs = prev.filter((p) => customMetricNames.has(p.name));
-        const aiFiltered = metrics.filter((m) => !customMetricNames.has(m.name));
-        return [...aiFiltered, ...customs];
-      });
+      setMetrics(metrics);
       setRecommendedWeights(weights);
-      setMetricWeights((prev) => {
-        const next: Record<string, number> = { ...weights };
-        // Keep the user's own weights for their custom metrics.
-        for (const name of customMetricNames) {
-          if (prev[name] != null) next[name] = prev[name];
-        }
-        return next;
-      });
+      setMetricWeights(weights);
       metricsGenerated.current = true;
     } catch {
       setMetricsError(true);
