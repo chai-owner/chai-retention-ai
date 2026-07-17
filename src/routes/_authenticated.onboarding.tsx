@@ -69,9 +69,8 @@ function Onboarding() {
   const [channels, setChannels] = useState<string[]>([]);
   const [metricWeights, setMetricWeights] = useState<Record<string, number>>({});
   // The active metric set the user is customizing in step 3. Seeded from
-  // ChAi's generated set, but the user can remove or add their own.
+  // ChAi's generated set; the user can remove metrics down to a minimum of 4.
   const [metrics, setMetrics] = useState<PlannerMetric[]>(plannerMetrics);
-  const [customMetricNames, setCustomMetricNames] = useState<Set<string>>(new Set());
   const [recommendedWeights, setRecommendedWeights] = useState<Record<string, number>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState(false);
@@ -80,17 +79,9 @@ function Onboarding() {
     { name: "", min: "", max: "" },
   ]);
 
-  // Add-metric inline form state.
-  const [addingMetric, setAddingMetric] = useState(false);
-  const [newMetric, setNewMetric] = useState({
-    name: "",
-    category: "Engagement",
-    why: "",
-    weight: 3,
-  });
-  const [addMetricError, setAddMetricError] = useState("");
-
+  const MIN_METRICS = 4;
   const activeMetrics: PlannerMetric[] = metrics;
+
 
   // When the user reaches the "What matters" step, ask ChAi to GENERATE the
   // retention metrics this specific business should track, tailored to the
