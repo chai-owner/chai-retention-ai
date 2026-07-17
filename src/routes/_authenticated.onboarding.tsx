@@ -564,8 +564,8 @@ function Onboarding() {
                         {activeMetrics.map((m) => {
                           const level = metricWeights[m.name] ?? m.weight ?? 3;
                           const recommended = recommendedWeights[m.name] ?? m.weight ?? 3;
-                          const isCustom = customMetricNames.has(m.name);
-                          const isRecommended = !isCustom && level === recommended;
+                          const isRecommended = level === recommended;
+                          const canRemove = metrics.length > MIN_METRICS;
                           const description = m.reason || m.why;
                           return (
                             <div key={m.name} className="rounded-xl border border-border p-4">
@@ -581,11 +581,7 @@ function Onboarding() {
                                     <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
                                       {IMPORTANCE_LABELS[level - 1]}
                                     </span>
-                                    {isCustom ? (
-                                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                                        Custom
-                                      </span>
-                                    ) : isRecommended ? (
+                                    {isRecommended ? (
                                       <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                                         <Sparkles className="h-2.5 w-2.5" /> ChAi recommended
                                       </span>
@@ -604,8 +600,10 @@ function Onboarding() {
                                   <button
                                     type="button"
                                     onClick={() => removeMetric(m.name)}
+                                    disabled={!canRemove}
+                                    title={canRemove ? "Remove metric" : `Keep at least ${MIN_METRICS} metrics`}
                                     aria-label={`Remove ${m.name}`}
-                                    className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
                                   </button>
@@ -630,94 +628,12 @@ function Onboarding() {
                           );
                         })}
 
-                        {addingMetric ? (
-                          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
-                            <p className="text-sm font-medium">Add your own metric</p>
-                            <div className="space-y-2">
-                              <input
-                                type="text"
-                                placeholder="Metric name (e.g. Weekly logins)"
-                                value={newMetric.name}
-                                onChange={(e) => setNewMetric((n) => ({ ...n, name: e.target.value }))}
-                                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                              />
-                              <select
-                                value={newMetric.category}
-                                onChange={(e) => setNewMetric((n) => ({ ...n, category: e.target.value }))}
-                                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                              >
-                                <option>Engagement</option>
-                                <option>Transactions</option>
-                                <option>Support</option>
-                                <option>Satisfaction</option>
-                                <option>Retention</option>
-                              </select>
-                              <input
-                                type="text"
-                                placeholder="What does it tell you? (optional)"
-                                value={newMetric.why}
-                                onChange={(e) => setNewMetric((n) => ({ ...n, why: e.target.value }))}
-                                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                              />
-                              <div>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-muted-foreground">Importance</span>
-                                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                                    {IMPORTANCE_LABELS[newMetric.weight - 1]}
-                                  </span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min={1}
-                                  max={5}
-                                  step={1}
-                                  value={newMetric.weight}
-                                  onChange={(e) =>
-                                    setNewMetric((n) => ({ ...n, weight: Number(e.target.value) }))
-                                  }
-                                  className="mt-1 w-full accent-primary"
-                                />
-                              </div>
-                              {addMetricError && (
-                                <p className="text-xs text-destructive">{addMetricError}</p>
-                              )}
-                            </div>
-                            <div className="flex justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setAddingMetric(false);
-                                  setAddMetricError("");
-                                  setNewMetric({ name: "", category: "Engagement", why: "", weight: 3 });
-                                }}
-                                className="rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                onClick={addCustomMetric}
-                                className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
-                              >
-                                Add metric
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setAddingMetric(true)}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border p-4 text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary"
-                          >
-                            <Plus className="h-4 w-4" /> Add a metric
-                          </button>
-                        )}
-
-                        {metrics.length === 0 && (
+                        {metrics.length <= MIN_METRICS && (
                           <p className="text-xs text-muted-foreground">
-                            Add at least one metric to continue.
+                            Keep at least {MIN_METRICS} metrics so ChAi has enough signal to score health.
                           </p>
                         )}
+
                       </div>
                     </>
                   )}
