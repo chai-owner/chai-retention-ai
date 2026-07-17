@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Sparkles, Loader2, Mail, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -25,13 +25,11 @@ export const Route = createFileRoute("/auth")({
     mode: search.mode === "signup" ? ("signup" as const) : undefined,
   }),
   head: () => ({ meta: [{ title: "Sign in — ChAi" }] }),
-  beforeLoad: async ({ search }) => {
-    const { data } = await supabase.auth.getUser();
-    if (data.user) {
-      throw search.redirect
-        ? redirect({ href: stripDemo(search.redirect) })
-        : redirect({ to: "/app/dashboard", search: { demo: false } });
-    }
+  beforeLoad: async () => {
+    // Intentionally do NOT auto-redirect signed-in users away from /auth.
+    // A visitor who clicks "Log in" or "Sign up" expects to see the form
+    // (e.g. to sign in as a different account), not to be bounced into the
+    // app or an incomplete onboarding flow from a stale session.
   },
   component: AuthPage,
 });
