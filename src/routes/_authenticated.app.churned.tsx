@@ -20,6 +20,7 @@ import {
   type Customer,
 } from "@/lib/mock-data";
 import { useChurnOverrides } from "@/lib/churn-store";
+import { useSignedIn } from "@/lib/use-auth-state";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/churned")({
