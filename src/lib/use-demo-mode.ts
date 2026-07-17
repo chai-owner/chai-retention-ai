@@ -5,6 +5,7 @@
 // public product demo without seeing any of their own real data.
 import { useEffect, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { useSignedIn } from "@/lib/use-auth-state";
 
 export function isDemoValue(raw: unknown): boolean {
   return raw === true || raw === "1" || raw === "true";
@@ -13,11 +14,14 @@ export function isDemoValue(raw: unknown): boolean {
 export function useDemoMode(): boolean {
   // Re-read whenever the location changes so navigating in/out of demo updates.
   const searchStr = useRouterState({ select: (s) => s.location.searchStr });
+  const signedIn = useSignedIn();
   const [demo, setDemo] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     setDemo(isDemoValue(params.get("demo")));
   }, [searchStr]);
+  // Signed-in users never see demo data — the `?demo=1` flag is ignored.
+  if (signedIn) return false;
   return demo;
 }
