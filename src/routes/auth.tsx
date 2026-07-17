@@ -94,11 +94,15 @@ function AuthPage() {
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast.error(
-        error.message.includes("Email not confirmed")
-          ? "Please confirm your email first — check your inbox."
-          : "Incorrect email or password.",
-      );
+      if (error.message.includes("Email not confirmed")) {
+        toast.error("Please confirm your email first — check your inbox.");
+      } else {
+        // Supabase returns a generic "Invalid login credentials" for both
+        // wrong password and unknown email. Nudge the user to sign up in case
+        // they don't have an account yet.
+        toast.error("No account found for that email. Please sign up first.");
+        setMode("register");
+      }
       setLoading(false);
       return;
     }
