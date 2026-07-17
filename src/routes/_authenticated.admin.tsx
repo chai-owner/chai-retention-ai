@@ -141,7 +141,7 @@ function AdminPage() {
           label="Unlocked"
           value={String(customers.filter((c) => c.unlocked).length)}
         />
-        <Stat icon={Cpu} label="Total AI tokens" value={totalTokens.toLocaleString()} />
+        <Stat icon={Cpu} label="Total AI cost" value={formatCost(totalCostUsd)} />
       </div>
 
       <Card className="overflow-hidden p-0">
