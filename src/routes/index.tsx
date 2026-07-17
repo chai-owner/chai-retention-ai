@@ -144,13 +144,14 @@ function Landing() {
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
               <Link
                 to="/auth"
-                search={{ mode: "signup" }}
+                search={{ mode: "signup", demo: false }}
                 className="inline-flex items-center gap-2 rounded-[14px] bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-soft transition-all hover:bg-[color:var(--primary-hover)] hover:shadow-lift"
               >
                 Get started free <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 to="/auth"
+                search={{ demo: false }}
                 className="inline-flex items-center gap-2 rounded-[14px] border border-white/30 bg-transparent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-white/10"
               >
                 Log in
