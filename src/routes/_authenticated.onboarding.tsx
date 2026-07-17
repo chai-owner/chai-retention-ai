@@ -68,8 +68,10 @@ function Onboarding() {
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
   const [metricWeights, setMetricWeights] = useState<Record<string, number>>({});
-  // AI-generated metric SET (definitions) + recommended weights for step 3.
-  const [generatedMetrics, setGeneratedMetrics] = useState<PlannerMetric[]>([]);
+  // The active metric set the user is customizing in step 3. Seeded from
+  // ChAi's generated set, but the user can remove or add their own.
+  const [metrics, setMetrics] = useState<PlannerMetric[]>(plannerMetrics);
+  const [customMetricNames, setCustomMetricNames] = useState<Set<string>>(new Set());
   const [recommendedWeights, setRecommendedWeights] = useState<Record<string, number>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState(false);
@@ -78,10 +80,17 @@ function Onboarding() {
     { name: "", min: "", max: "" },
   ]);
 
-  // The metrics shown in step 3: ChAi's generated set once ready, otherwise the
-  // built-in defaults as a fallback.
-  const activeMetrics: PlannerMetric[] =
-    generatedMetrics.length > 0 ? generatedMetrics : plannerMetrics;
+  // Add-metric inline form state.
+  const [addingMetric, setAddingMetric] = useState(false);
+  const [newMetric, setNewMetric] = useState({
+    name: "",
+    category: "Engagement",
+    why: "",
+    weight: 3,
+  });
+  const [addMetricError, setAddMetricError] = useState("");
+
+  const activeMetrics: PlannerMetric[] = metrics;
 
   // When the user reaches the "What matters" step, ask ChAi to GENERATE the
   // retention metrics this specific business should track, tailored to the
@@ -114,9 +123,21 @@ function Onboarding() {
       }
       const weights: Record<string, number> = {};
       for (const m of metrics) weights[m.name] = m.weight ?? 3;
-      setGeneratedMetrics(metrics);
+      // Preserve any custom metrics the user already added; replace the AI ones.
+      setMetrics((prev) => {
+        const customs = prev.filter((p) => customMetricNames.has(p.name));
+        const aiFiltered = metrics.filter((m) => !customMetricNames.has(m.name));
+        return [...aiFiltered, ...customs];
+      });
       setRecommendedWeights(weights);
-      setMetricWeights(weights);
+      setMetricWeights((prev) => {
+        const next: Record<string, number> = { ...weights };
+        // Keep the user's own weights for their custom metrics.
+        for (const name of customMetricNames) {
+          if (prev[name] != null) next[name] = prev[name];
+        }
+        return next;
+      });
       metricsGenerated.current = true;
     } catch {
       setMetricsError(true);
@@ -199,14 +220,62 @@ function Onboarding() {
           form.disengagement.trim() !== "" &&
           form.churnDefinition.trim() !== ""
         );
+      case 3:
+        return metrics.length > 0;
       case 5:
         return channels.length > 0;
       default:
         return true;
     }
-  }, [step, form, segmentsValid, channels]);
+  }, [step, form, segmentsValid, channels, metrics]);
 
   const canContinue = stepValid;
+
+  function removeMetric(name: string) {
+    setMetrics((ms) => ms.filter((m) => m.name !== name));
+    setMetricWeights((w) => {
+      const { [name]: _drop, ...rest } = w;
+      return rest;
+    });
+    setRecommendedWeights((w) => {
+      const { [name]: _drop, ...rest } = w;
+      return rest;
+    });
+    setCustomMetricNames((s) => {
+      if (!s.has(name)) return s;
+      const next = new Set(s);
+      next.delete(name);
+      return next;
+    });
+  }
+
+  function addCustomMetric() {
+    const name = newMetric.name.trim();
+    if (!name) {
+      setAddMetricError("Give the metric a name.");
+      return;
+    }
+    if (metrics.some((m) => m.name.toLowerCase() === name.toLowerCase())) {
+      setAddMetricError("You already have a metric with that name.");
+      return;
+    }
+    const metric: PlannerMetric = {
+      name,
+      category: newMetric.category,
+      why: newMetric.why.trim(),
+      churn: "",
+      weight: newMetric.weight,
+      reason: "Added by you",
+    };
+    setMetrics((ms) => [...ms, metric]);
+    setMetricWeights((w) => ({ ...w, [name]: newMetric.weight }));
+    setCustomMetricNames((s) => new Set(s).add(name));
+    setNewMetric({ name: "", category: "Engagement", why: "", weight: 3 });
+    setAddMetricError("");
+    setAddingMetric(false);
+  }
+
+
 
 
   function finish() {
@@ -545,34 +614,51 @@ function Onboarding() {
                         {activeMetrics.map((m) => {
                           const level = metricWeights[m.name] ?? m.weight ?? 3;
                           const recommended = recommendedWeights[m.name] ?? m.weight ?? 3;
-                          const isRecommended = level === recommended;
+                          const isCustom = customMetricNames.has(m.name);
+                          const isRecommended = !isCustom && level === recommended;
                           const description = m.reason || m.why;
                           return (
                             <div key={m.name} className="rounded-xl border border-border p-4">
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                   <p className="text-sm font-medium">{m.name}</p>
-                                  <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-                                </div>
-                                <div className="flex shrink-0 flex-col items-end gap-1">
-                                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
-                                    {IMPORTANCE_LABELS[level - 1]}
-                                  </span>
-                                  {isRecommended ? (
-                                    <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                                      <Sparkles className="h-2.5 w-2.5" /> ChAi recommended
-                                    </span>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setMetricWeights((w) => ({ ...w, [m.name]: recommended }))
-                                      }
-                                      className="text-[10px] text-primary underline-offset-2 hover:underline"
-                                    >
-                                      Reset to recommended
-                                    </button>
+                                  {description && (
+                                    <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
                                   )}
+                                </div>
+                                <div className="flex shrink-0 items-start gap-2">
+                                  <div className="flex flex-col items-end gap-1">
+                                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                                      {IMPORTANCE_LABELS[level - 1]}
+                                    </span>
+                                    {isCustom ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                                        Custom
+                                      </span>
+                                    ) : isRecommended ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                                        <Sparkles className="h-2.5 w-2.5" /> ChAi recommended
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setMetricWeights((w) => ({ ...w, [m.name]: recommended }))
+                                        }
+                                        className="text-[10px] text-primary underline-offset-2 hover:underline"
+                                      >
+                                        Reset to recommended
+                                      </button>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeMetric(m.name)}
+                                    aria-label={`Remove ${m.name}`}
+                                    className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
                                 </div>
                               </div>
                               <input
@@ -593,6 +679,95 @@ function Onboarding() {
                             </div>
                           );
                         })}
+
+                        {addingMetric ? (
+                          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+                            <p className="text-sm font-medium">Add your own metric</p>
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                placeholder="Metric name (e.g. Weekly logins)"
+                                value={newMetric.name}
+                                onChange={(e) => setNewMetric((n) => ({ ...n, name: e.target.value }))}
+                                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                              />
+                              <select
+                                value={newMetric.category}
+                                onChange={(e) => setNewMetric((n) => ({ ...n, category: e.target.value }))}
+                                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                              >
+                                <option>Engagement</option>
+                                <option>Transactions</option>
+                                <option>Support</option>
+                                <option>Satisfaction</option>
+                                <option>Retention</option>
+                              </select>
+                              <input
+                                type="text"
+                                placeholder="What does it tell you? (optional)"
+                                value={newMetric.why}
+                                onChange={(e) => setNewMetric((n) => ({ ...n, why: e.target.value }))}
+                                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                              />
+                              <div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-muted-foreground">Importance</span>
+                                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                                    {IMPORTANCE_LABELS[newMetric.weight - 1]}
+                                  </span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={1}
+                                  max={5}
+                                  step={1}
+                                  value={newMetric.weight}
+                                  onChange={(e) =>
+                                    setNewMetric((n) => ({ ...n, weight: Number(e.target.value) }))
+                                  }
+                                  className="mt-1 w-full accent-primary"
+                                />
+                              </div>
+                              {addMetricError && (
+                                <p className="text-xs text-destructive">{addMetricError}</p>
+                              )}
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAddingMetric(false);
+                                  setAddMetricError("");
+                                  setNewMetric({ name: "", category: "Engagement", why: "", weight: 3 });
+                                }}
+                                className="rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={addCustomMetric}
+                                className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+                              >
+                                Add metric
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setAddingMetric(true)}
+                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border p-4 text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary"
+                          >
+                            <Plus className="h-4 w-4" /> Add a metric
+                          </button>
+                        )}
+
+                        {metrics.length === 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Add at least one metric to continue.
+                          </p>
+                        )}
                       </div>
                     </>
                   )}
