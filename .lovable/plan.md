@@ -1,60 +1,35 @@
-## Plan: Enterprise navy / royal blue / gold rebrand
+## Goal
 
-Premium B2B SaaS visual system (Stripe / Linear / Vanta feel). Presentation-only — no business logic changes.
+On step 3 of onboarding ("The metrics ChAi will track for you"), let the user remove any of ChAi's suggested metrics and add their own custom ones. Whatever set they end onboarding with is what gets saved to their profile and drives scoring.
 
-### Design tokens (`src/styles.css`)
+## UX
 
-Replace current tokens with:
+Each metric card gets a small "Remove" (X) button in the top-right, next to the importance badge. Clicking it drops the metric from the active set and clears its weight.
 
-- `--background` `#F8FAFC` · `--card` `#FFFFFF` · `--border` `#E6ECF6`
-- `--foreground` `#0F172A` · `--muted-foreground` `#475569` · a `--muted-foreground-2` `#64748B`
-- `--primary` `#1E5ABA` (royal blue) · `--primary-hover` `#174B96` · `--primary-foreground` white
-- `--navy` `#081D3A` (deep navy — hero, nav, footer surfaces)
-- `--accent` `#F2C94C` (gold — sparingly)
-- `--radius` `16px`
-- `--shadow-soft` `0 10px 30px rgba(8,29,58,.08)` and a `--shadow-soft-lg` for hover lift
-- `.dark` mapped to navy-dominant surfaces with the same accent hierarchy
+Below the list, a dashed "+ Add a metric" card opens a small inline form with:
+- Name (required, short)
+- Category (dropdown: Engagement, Transactions, Support, Satisfaction, Retention — defaults to Engagement)
+- Description (optional, one line — becomes the metric's `why`)
+- Importance slider (1–5, defaults to Moderate/3)
 
-All tokens as OKLCH via `@theme inline`. Remove existing amber/orange gradient tokens; add `--gradient-navy` (navy → slightly lighter navy) to replace orange glows.
+Save appends it to the active metric list with a "Custom" badge (instead of "ChAi recommended"), and clears the form. Cancel closes it.
 
-### Typography (`src/routes/__root.tsx`)
+Guardrails:
+- Prevent duplicate names (case-insensitive) — inline error.
+- Require at least 1 metric before allowing "Continue" on step 3.
+- If the user removes everything, show a subtle "Add at least one metric to continue" hint.
 
-Load Inter (400/500/600/700/800) via `<link rel="stylesheet">` on Google Fonts (with preconnect). Set `--font-sans: "Inter"`. Remove any prior display serif.
+Retry/regenerate behaviour is unchanged — regenerating replaces the AI-suggested metrics but keeps custom ones the user added.
 
-### Global components
+## Technical details
 
-- **Buttons** — primary: royal blue bg, white text, `rounded-[14px]`, medium weight, hover `#174B96` + soft shadow. Secondary: white bg, blue border + blue text, hover very light blue (`#F8FAFC` tinted).
-- **Cards** — white, `rounded-2xl`, `--shadow-soft`, hover: small lift + thin blue border.
-- **Icons** — outline style, royal blue stroke; occasional gold detail.
+File: `src/routes/_authenticated.onboarding.tsx`
 
-### Navigation (sticky)
+- Promote the metric list from the derived `activeMetrics` const into real state: `const [metrics, setMetrics] = useState<PlannerMetric[]>([])`. `generateMetricRecommendations` sets it (merging: keep any metric whose name isn't in the AI response and was flagged custom; replace the rest).
+- Track which metrics are custom via a `Set<string>` of names (or a `custom: true` flag on the metric object — easiest is a local `customMetricNames` set kept in state).
+- Remove handler: filter `metrics` by name and delete the entry from `metricWeights` and `recommendedWeights`.
+- Add handler: validate name uniqueness, push a new `PlannerMetric` (name, category, why, churn: "", weight, reason: "Added by you"), set its weight in `metricWeights`, and mark it custom.
+- Continue button on step 3 is disabled when `metrics.length === 0`.
+- Save flow (existing `saveProfile` call): already persists `metrics` and `metricWeights`; no server changes needed. The scoring engine already keys off `profile.metrics` via `useActiveMetrics`, so custom metrics flow through automatically.
 
-Navy background, white logo wordmark with a small gold sparkle mark, white nav links (blue on active/hover), royal blue primary CTA, minimal bottom border.
-
-### Hero
-
-Keep existing layout. Navy `#081D3A` background. White headline with 1–2 gold accent words. White subhead at reduced opacity. Royal blue primary CTA + outlined white secondary CTA. Replace orange glow with subtle navy/blue radial gradient. Dashboard screenshot sits in a white card with `--shadow-soft`.
-
-### Feature cards / sections
-
-Alternate white and `#F8FAFC` section backgrounds for rhythm. Feature cards: white, subtle shadow, royal blue icons, optional tiny gold badge. Hover: lift + shadow bump + thin blue border. Generous vertical padding (increase section spacing ~20%).
-
-### Dashboard mockups
-
-Recolor charts and mock UI: royal blue primary, gold secondary, neutral gray fills. Remove amber/orange/green except for genuine status pills. Applies to hero preview and any in-page dashboard graphics.
-
-### Footer
-
-Deep navy bg, white headings, muted gray (`#94A3B8`) links with royal blue hover, gold accent on the logo mark.
-
-### Audit pass
-
-Grep and replace hardcoded `bg-amber-*`, `text-orange-*`, `bg-[#...]` chai/warm references across: `Navigation`, `HeroSection`, feature/testimonial/pricing sections, `Footer`, dashboard preview components, and any authenticated dashboard views. Route everything through the new semantic tokens (`bg-primary`, `text-primary`, `bg-card`, `border-border`, `text-muted-foreground`, `bg-[hsl(var(--navy))]`, `text-[hsl(var(--accent))]`).
-
-### Animations
-
-Keep to fade-in, small upward translate, button hover, card lift, smooth scroll. Remove any bounce/scale/spin.
-
-### Verify
-
-Load `/` and one authenticated page. Confirm: navy hero + white dashboard card, royal blue CTAs, gold used only as small accents, alternating section backgrounds, consistent radius + soft shadows, no residual amber/orange.
+No database, server function, or AI prompt changes are required.
