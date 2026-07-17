@@ -47,12 +47,11 @@ export function useScoredData(): ScoredDataset {
   const signedIn = useSignedIn();
   const demo = useDemoMode();
   return useMemo(() => {
-    // Demo mode always shows the illustrative sample dataset, even for a
-    // signed-in user viewing the public product demo.
-    if (demo) return buildDataset(weights);
-    // Signed-in users otherwise always see their own real data — never sample
-    // data, even when they've added little or nothing.
+    // Signed-in users ALWAYS see their own real data — never sample data,
+    // even if a `?demo=1` flag leaked into the URL.
     if (signedIn) return buildRealDataset(ingested, weights, profile);
+    // Demo mode (public, no-login) shows the illustrative sample dataset.
+    if (demo) return buildDataset(weights);
     return buildDataset(weights);
   }, [weights, ingested, profile, signedIn, demo]);
 }
