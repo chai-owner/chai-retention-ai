@@ -4,6 +4,7 @@ import { ArrowUpRight, ArrowDownRight, Minus, Sparkles, MessageSquareWarning, Ch
 import { PageHeader, Card } from "@/components/ui/chai";
 import { benchmarks, formatCurrency, type Customer } from "@/lib/mock-data";
 import { useScoredData } from "@/lib/use-scored-data";
+import { useSignedIn } from "@/lib/use-auth-state";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/insights")({
