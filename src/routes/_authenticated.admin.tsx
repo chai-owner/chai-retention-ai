@@ -90,7 +90,14 @@ function AdminPage() {
     }
   }
 
-  const totalTokens = customers.reduce((s, c) => s + c.totalTokens, 0);
+  const totalCostUsd = customers.reduce((s, c) => s + c.totalCostUsd, 0);
+  const formatCost = (n: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: n > 0 && n < 1 ? 4 : 2,
+      maximumFractionDigits: n > 0 && n < 1 ? 4 : 2,
+    }).format(n);
 
   if (loading) {
     return (
@@ -134,7 +141,7 @@ function AdminPage() {
           label="Unlocked"
           value={String(customers.filter((c) => c.unlocked).length)}
         />
-        <Stat icon={Cpu} label="Total AI tokens" value={totalTokens.toLocaleString()} />
+        <Stat icon={Cpu} label="Total AI cost" value={formatCost(totalCostUsd)} />
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -150,7 +157,7 @@ function AdminPage() {
                   <th className="px-4 py-3 font-medium">Customer</th>
                   <th className="px-4 py-3 font-medium">Company</th>
                   <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">AI tokens</th>
+                  <th className="px-4 py-3 font-medium">AI cost</th>
                   <th className="px-4 py-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
@@ -181,7 +188,7 @@ function AdminPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 tabular-nums">{c.totalTokens.toLocaleString()}</td>
+                    <td className="px-4 py-3 tabular-nums">{formatCost(c.totalCostUsd)}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
                         <button

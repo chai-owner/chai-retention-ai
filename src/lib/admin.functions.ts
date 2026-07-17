@@ -24,8 +24,14 @@ export interface AdminCustomer {
   unlocked: boolean;
   bookedAt: string | null;
   createdAt: string;
-  totalTokens: number;
+  totalCostUsd: number;
 }
+
+// USD per 1M tokens. Extend as we add models; unknown models fall back to DEFAULT.
+const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  "google/gemini-3-flash-preview": { input: 0.3, output: 2.5 },
+};
+const DEFAULT_PRICING = { input: 0.3, output: 2.5 };
 
 export const listCustomers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -41,11 +47,15 @@ export const listCustomers = createServerFn({ method: "GET" })
 
     const { data: usage } = await supabaseAdmin
       .from("ai_usage_log")
-      .select("user_id, total_tokens");
+      .select("user_id, model, input_tokens, output_tokens");
 
-    const totals = new Map<string, number>();
+    const costs = new Map<string, number>();
     for (const row of usage ?? []) {
-      totals.set(row.user_id, (totals.get(row.user_id) ?? 0) + (row.total_tokens ?? 0));
+      const price = MODEL_PRICING[row.model] ?? DEFAULT_PRICING;
+      const cost =
+        ((row.input_tokens ?? 0) / 1_000_000) * price.input +
+        ((row.output_tokens ?? 0) / 1_000_000) * price.output;
+      costs.set(row.user_id, (costs.get(row.user_id) ?? 0) + cost);
     }
 
     return (profiles ?? []).map((p) => ({
@@ -57,9 +67,10 @@ export const listCustomers = createServerFn({ method: "GET" })
       unlocked: p.unlocked ?? false,
       bookedAt: p.booked_at ?? null,
       createdAt: p.created_at,
-      totalTokens: totals.get(p.id) ?? 0,
+      totalCostUsd: costs.get(p.id) ?? 0,
     }));
   });
+
 
 export const setUnlocked = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
