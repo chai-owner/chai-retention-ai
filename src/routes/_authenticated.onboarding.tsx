@@ -211,6 +211,7 @@ function Onboarding() {
   const canContinue = stepValid;
 
   function removeMetric(name: string) {
+    if (metrics.length <= MIN_METRICS) return;
     setMetrics((ms) => ms.filter((m) => m.name !== name));
     setMetricWeights((w) => {
       const { [name]: _drop, ...rest } = w;
@@ -220,39 +221,9 @@ function Onboarding() {
       const { [name]: _drop, ...rest } = w;
       return rest;
     });
-    setCustomMetricNames((s) => {
-      if (!s.has(name)) return s;
-      const next = new Set(s);
-      next.delete(name);
-      return next;
-    });
   }
 
-  function addCustomMetric() {
-    const name = newMetric.name.trim();
-    if (!name) {
-      setAddMetricError("Give the metric a name.");
-      return;
-    }
-    if (metrics.some((m) => m.name.toLowerCase() === name.toLowerCase())) {
-      setAddMetricError("You already have a metric with that name.");
-      return;
-    }
-    const metric: PlannerMetric = {
-      name,
-      category: newMetric.category,
-      why: newMetric.why.trim(),
-      churn: "",
-      weight: newMetric.weight,
-      reason: "Added by you",
-    };
-    setMetrics((ms) => [...ms, metric]);
-    setMetricWeights((w) => ({ ...w, [name]: newMetric.weight }));
-    setCustomMetricNames((s) => new Set(s).add(name));
-    setNewMetric({ name: "", category: "Engagement", why: "", weight: 3 });
-    setAddMetricError("");
-    setAddingMetric(false);
-  }
+
 
 
 
