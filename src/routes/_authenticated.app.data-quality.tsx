@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { removePersistedBatch } from "@/lib/ingest-persistence";
+import { useSignedIn } from "@/lib/use-auth-state";
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
   head: () => ({ meta: [{ title: "Data Quality — ChAi" }] }),
