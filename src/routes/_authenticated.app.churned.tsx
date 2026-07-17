@@ -20,6 +20,7 @@ import {
   type Customer,
 } from "@/lib/mock-data";
 import { useChurnOverrides } from "@/lib/churn-store";
+import { useSignedIn } from "@/lib/use-auth-state";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/churned")({
@@ -49,10 +50,21 @@ function winBackTone(score: number) {
 function Churned() {
   // Subscribe so manual overrides re-render this view (used for won-back count).
   useChurnOverrides();
+  const signedIn = useSignedIn();
+  // Signed-in users only ever see their own real data. We don't yet compute
+  // churn analytics from uploaded/synced data, so show an empty state instead
+  // of the illustrative sample dataset.
+  const isReal = signedIn === true;
 
-  const churned = useMemo(() => getChurnedCustomers(), []);
-  const wonBack = useMemo(() => getWonBackCustomers(), []);
-  const stats = useMemo(() => churnAnalytics(activeCustomers.length), []);
+  const churned = useMemo(() => (isReal ? [] : getChurnedCustomers()), [isReal]);
+  const wonBack = useMemo(() => (isReal ? [] : getWonBackCustomers()), [isReal]);
+  const stats = useMemo(
+    () =>
+      isReal
+        ? { churnRate: 0, revenueLost: 0, winBackOpportunity: 0, avgTenureMonths: 0, topReasons: [] as { label: string; share: number }[] }
+        : churnAnalytics(activeCustomers.length),
+    [isReal],
+  );
 
   const candidates = useMemo(
     () => [...churned].sort((a, b) => (b.winBackScore ?? 0) - (a.winBackScore ?? 0)),
