@@ -200,7 +200,7 @@ function Onboarding() {
           form.churnDefinition.trim() !== ""
         );
       case 3:
-        return metrics.length > 0;
+        return metrics.length >= MIN_METRICS;
       case 5:
         return channels.length > 0;
       default:
