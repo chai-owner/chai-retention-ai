@@ -30,7 +30,7 @@ export const Route = createFileRoute("/auth")({
     if (data.user) {
       throw search.redirect
         ? redirect({ href: stripDemo(search.redirect) })
-        : redirect({ to: "/app/dashboard", search: { demo: undefined } });
+        : redirect({ to: "/app/dashboard", search: { demo: false } });
     }
   },
   component: AuthPage,
@@ -54,7 +54,7 @@ function AuthPage() {
 
   function goToDest() {
     if (redirectTo) navigate({ href: stripDemo(redirectTo) });
-    else navigate({ to: "/app/dashboard", search: { demo: undefined } });
+    else navigate({ to: "/app/dashboard", search: { demo: false } });
   }
 
   async function handleGoogle() {
