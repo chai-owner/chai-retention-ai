@@ -188,7 +188,7 @@ function AdminPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 tabular-nums">{c.totalTokens.toLocaleString()}</td>
+                    <td className="px-4 py-3 tabular-nums">{formatCost(c.totalCostUsd)}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
                         <button
