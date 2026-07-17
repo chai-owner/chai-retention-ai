@@ -105,6 +105,7 @@ function Landing() {
             </Link>
             <Link
               to="/auth"
+              search={{ demo: false }}
               className="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               Log in
@@ -112,7 +113,7 @@ function Landing() {
 
             <Link
               to="/auth"
-              search={{ mode: "signup" }}
+              search={{ mode: "signup", demo: false }}
               className="inline-flex items-center gap-1.5 rounded-[14px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-[color:var(--primary-hover)]"
             >
               Sign up <ArrowRight className="h-4 w-4" />
