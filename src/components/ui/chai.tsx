@@ -87,7 +87,7 @@ export function ScoreBar({ value, tone }: { value: number; tone?: string }) {
 
 export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn("rounded-xl border border-border bg-card p-5 shadow-soft", className)}>
+    <div className={cn("rounded-xl border border-border border-t-4 border-t-primary bg-card p-5 shadow-soft", className)}>
       {children}
     </div>
   );
