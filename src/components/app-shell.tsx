@@ -96,10 +96,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className="flex h-16 items-center gap-2 px-5">
           <Link to="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-warm text-primary-foreground">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
               <Sparkles className="h-4 w-4" />
             </span>
-            <span className="text-lg font-semibold tracking-tight">ChAi</span>
+            <span className="text-lg font-semibold tracking-tight text-sidebar-foreground">ChAi</span>
           </Link>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-2">
