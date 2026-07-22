@@ -96,10 +96,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className="flex h-16 items-center gap-2 px-5">
           <Link to="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-warm text-primary-foreground">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
               <Sparkles className="h-4 w-4" />
             </span>
-            <span className="text-lg font-semibold tracking-tight">ChAi</span>
+            <span className="text-lg font-semibold tracking-tight text-sidebar-foreground">ChAi</span>
           </Link>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-2">
@@ -150,11 +150,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Sign in to get started
             </Link>
           )}
-          <div className="rounded-lg bg-accent/60 p-3">
-            <p className="text-xs font-medium text-accent-foreground">
+          <div className="rounded-lg bg-sidebar-accent/60 p-3">
+            <p className="text-xs font-medium text-sidebar-accent-foreground">
               {demo ? "You're exploring the demo" : signedIn ? "Your workspace" : "You're exploring the demo"}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-sidebar-foreground/70">
               {demo || !signedIn
                 ? "Sample data for Northwind Labs. Nothing here is real customer data."
                 : "Your live retention workspace, built from the data you've added."}

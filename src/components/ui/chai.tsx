@@ -46,7 +46,7 @@ export function StatCard({
             ? "text-danger"
             : "text-foreground";
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
+    <div className="rounded-xl border border-border border-t-4 border-t-primary bg-card p-5 shadow-soft">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{label}</p>
         {Icon && <Icon className={cn("h-4 w-4", tone === "default" ? "text-muted-foreground" : toneText)} />}
@@ -87,7 +87,7 @@ export function ScoreBar({ value, tone }: { value: number; tone?: string }) {
 
 export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn("rounded-xl border border-border bg-card p-5 shadow-soft", className)}>
+    <div className={cn("rounded-xl border border-border border-t-4 border-t-primary bg-card p-5 shadow-soft", className)}>
       {children}
     </div>
   );
