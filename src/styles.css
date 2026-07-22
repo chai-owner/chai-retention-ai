@@ -117,14 +117,14 @@
   --chart-4: #CAFFA6; /* Spring Meadow */
   --chart-5: #152238; /* Product Navy */
 
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #152238;
-  --sidebar-primary: #204654;
-  --sidebar-primary-foreground: #F7F9E1;
-  --sidebar-accent: #EEF3E4;
-  --sidebar-accent-foreground: #152238;
-  --sidebar-border: #DDE6D9;
-  --sidebar-ring: #204654;
+  --sidebar: #152238;
+  --sidebar-foreground: #F7F9E1;
+  --sidebar-primary: #E0A93A;
+  --sidebar-primary-foreground: #152238;
+  --sidebar-accent: #204654;
+  --sidebar-accent-foreground: #F7F9E1;
+  --sidebar-border: rgba(247, 249, 225, 0.10);
+  --sidebar-ring: #A9E0F1;
 
   --gradient-warm: linear-gradient(135deg, #204654 0%, #152238 100%);
   --gradient-navy: linear-gradient(135deg, #204654 0%, #152238 100%);
