@@ -66,122 +66,122 @@
 :root {
   --radius: 0.875rem; /* 14px */
 
-  /* Cool enterprise canvas */
-  --background: #F8FAFC;
-  --foreground: #0F172A;
+  /* Ch.ai brand — calm, empowering */
+  --background: #F7F9E1; /* Morning Mist */
+  --foreground: #152238; /* Product Navy */
 
   --card: #FFFFFF;
-  --card-foreground: #0F172A;
+  --card-foreground: #152238;
   --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
+  --popover-foreground: #152238;
 
-  /* Royal blue primary */
-  --primary: #1E5ABA;
-  --primary-foreground: #FFFFFF;
-  --primary-hover: #174B96;
+  /* Teal Waters primary */
+  --primary: #204654;
+  --primary-foreground: #F7F9E1;
+  --primary-hover: #152238;
 
-  --secondary: #F1F5FB;
-  --secondary-foreground: #0F172A;
-  --muted: #F1F5FB;
-  --muted-foreground: #475569;
-  /* Gold accent — use sparingly */
-  --accent: #F2C94C;
-  --accent-foreground: #0F172A;
+  --secondary: #EAF2F5;
+  --secondary-foreground: #152238;
+  --muted: #EEF3E4;
+  --muted-foreground: #4A5A6B;
+  /* Sand accent — sparingly */
+  --accent: #E0A93A;
+  --accent-foreground: #152238;
 
-  /* Deep navy — hero, nav, footer surfaces */
-  --navy: #081D3A;
-  --navy-foreground: #FFFFFF;
-  --gold: #F2C94C;
+  /* Product Navy — hero, nav, footer surfaces */
+  --navy: #152238;
+  --navy-foreground: #F7F9E1;
+  --gold: #E0A93A;
 
-  --destructive: #DC2626;
+  --destructive: #B6423F;
   --destructive-foreground: #FFFFFF;
 
-  --border: #E6ECF6;
-  --input: #E6ECF6;
-  --ring: #1E5ABA;
+  --border: #DDE6D9;
+  --input: #DDE6D9;
+  --ring: #204654;
 
-  --success: #0F9D6E;
+  /* Indicator colors — navy-sand harmony */
+  --success: #2C7A6B; /* Healthy */
   --success-foreground: #FFFFFF;
-  --warning: #F2C94C;
-  --warning-foreground: #0F172A;
-  --caution: #E08E00;
+  --warning: #C7962E; /* Watch */
+  --warning-foreground: #FFFFFF;
+  --caution: #C17A2E; /* At risk */
   --caution-foreground: #FFFFFF;
-  --danger: #DC2626;
+  --danger: #B6423F; /* Critical */
   --danger-foreground: #FFFFFF;
 
-  /* Enterprise chart palette — blue/gold/grays */
-  --chart-1: #1E5ABA;
-  --chart-2: #F2C94C;
-  --chart-3: #7FA3D9;
-  --chart-4: #64748B;
-  --chart-5: #081D3A;
+  /* Chart palette from foundation */
+  --chart-1: #204654; /* Teal Waters */
+  --chart-2: #E0A93A; /* Sand */
+  --chart-3: #A9E0F1; /* Glacial Sky */
+  --chart-4: #CAFFA6; /* Spring Meadow */
+  --chart-5: #152238; /* Product Navy */
 
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #0F172A;
-  --sidebar-primary: #1E5ABA;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F1F5FB;
-  --sidebar-accent-foreground: #0F172A;
-  --sidebar-border: #E6ECF6;
-  --sidebar-ring: #1E5ABA;
+  --sidebar-foreground: #152238;
+  --sidebar-primary: #204654;
+  --sidebar-primary-foreground: #F7F9E1;
+  --sidebar-accent: #EEF3E4;
+  --sidebar-accent-foreground: #152238;
+  --sidebar-border: #DDE6D9;
+  --sidebar-ring: #204654;
 
-  /* Navy gradient replaces old warm/orange gradient */
-  --gradient-warm: linear-gradient(135deg, #0B2551 0%, #081D3A 100%);
-  --gradient-navy: linear-gradient(135deg, #0B2551 0%, #081D3A 100%);
-  --gradient-hero: radial-gradient(120% 120% at 80% 0%, #0F2A55 0%, #081D3A 55%);
-  --shadow-soft: 0 10px 30px rgba(8, 29, 58, 0.08);
-  --shadow-card: 0 12px 40px -12px rgba(8, 29, 58, 0.14), 0 2px 6px rgba(8, 29, 58, 0.04);
-  --shadow-lift: 0 20px 48px -16px rgba(8, 29, 58, 0.18);
+  --gradient-warm: linear-gradient(135deg, #204654 0%, #152238 100%);
+  --gradient-navy: linear-gradient(135deg, #204654 0%, #152238 100%);
+  --gradient-hero: radial-gradient(120% 120% at 80% 0%, #26525F 0%, #152238 55%);
+  --shadow-soft: 0 10px 30px rgba(21, 34, 56, 0.08);
+  --shadow-card: 0 12px 40px -12px rgba(21, 34, 56, 0.14), 0 2px 6px rgba(21, 34, 56, 0.04);
+  --shadow-lift: 0 20px 48px -16px rgba(21, 34, 56, 0.18);
 }
 
 .dark {
-  --background: #081D3A;
-  --foreground: #F8FAFC;
-  --card: #0F2A55;
-  --card-foreground: #F8FAFC;
-  --popover: #0F2A55;
-  --popover-foreground: #F8FAFC;
-  --primary: #4A82D6;
-  --primary-foreground: #FFFFFF;
-  --primary-hover: #1E5ABA;
-  --secondary: #12305C;
-  --secondary-foreground: #F8FAFC;
-  --muted: #12305C;
-  --muted-foreground: #94A3B8;
-  --accent: #F2C94C;
-  --accent-foreground: #081D3A;
-  --navy: #081D3A;
-  --navy-foreground: #FFFFFF;
-  --gold: #F2C94C;
-  --destructive: #EF4444;
+  --background: #152238;
+  --foreground: #F7F9E1;
+  --card: #1D2E48;
+  --card-foreground: #F7F9E1;
+  --popover: #1D2E48;
+  --popover-foreground: #F7F9E1;
+  --primary: #A9E0F1;
+  --primary-foreground: #152238;
+  --primary-hover: #CAFFA6;
+  --secondary: #24384F;
+  --secondary-foreground: #F7F9E1;
+  --muted: #24384F;
+  --muted-foreground: #A9B4C2;
+  --accent: #E0A93A;
+  --accent-foreground: #152238;
+  --navy: #152238;
+  --navy-foreground: #F7F9E1;
+  --gold: #E0A93A;
+  --destructive: #B6423F;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(255, 255, 255, 0.10);
-  --input: rgba(255, 255, 255, 0.14);
-  --ring: #4A82D6;
-  --success: #34D399;
-  --success-foreground: #081D3A;
-  --warning: #F2C94C;
-  --warning-foreground: #081D3A;
-  --caution: #F59E0B;
-  --caution-foreground: #081D3A;
-  --danger: #EF4444;
+  --border: rgba(247, 249, 225, 0.10);
+  --input: rgba(247, 249, 225, 0.14);
+  --ring: #A9E0F1;
+  --success: #2C7A6B;
+  --success-foreground: #FFFFFF;
+  --warning: #C7962E;
+  --warning-foreground: #FFFFFF;
+  --caution: #C17A2E;
+  --caution-foreground: #FFFFFF;
+  --danger: #B6423F;
   --danger-foreground: #FFFFFF;
-  --chart-1: #4A82D6;
-  --chart-2: #F2C94C;
-  --chart-3: #94A3B8;
-  --chart-4: #64748B;
-  --chart-5: #F8FAFC;
-  --sidebar: #0F2A55;
-  --sidebar-foreground: #F8FAFC;
-  --sidebar-primary: #4A82D6;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #12305C;
-  --sidebar-accent-foreground: #F8FAFC;
-  --sidebar-border: rgba(255, 255, 255, 0.10);
-  --sidebar-ring: #4A82D6;
-  --gradient-warm: linear-gradient(135deg, #0B2551 0%, #081D3A 100%);
-  --gradient-navy: linear-gradient(135deg, #0B2551 0%, #081D3A 100%);
-  --gradient-hero: radial-gradient(120% 120% at 80% 0%, #12305C 0%, #081D3A 55%);
+  --chart-1: #A9E0F1;
+  --chart-2: #E0A93A;
+  --chart-3: #CAFFA6;
+  --chart-4: #204654;
+  --chart-5: #F7F9E1;
+  --sidebar: #1D2E48;
+  --sidebar-foreground: #F7F9E1;
+  --sidebar-primary: #A9E0F1;
+  --sidebar-primary-foreground: #152238;
+  --sidebar-accent: #24384F;
+  --sidebar-accent-foreground: #F7F9E1;
+  --sidebar-border: rgba(247, 249, 225, 0.10);
+  --sidebar-ring: #A9E0F1;
+  --gradient-warm: linear-gradient(135deg, #204654 0%, #152238 100%);
+  --gradient-navy: linear-gradient(135deg, #204654 0%, #152238 100%);
+  --gradient-hero: radial-gradient(120% 120% at 80% 0%, #26525F 0%, #152238 55%);
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.35);
   --shadow-card: 0 12px 40px -12px rgba(0, 0, 0, 0.5);
   --shadow-lift: 0 20px 48px -16px rgba(0, 0, 0, 0.55);
