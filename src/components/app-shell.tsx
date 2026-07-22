@@ -150,11 +150,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Sign in to get started
             </Link>
           )}
-          <div className="rounded-lg bg-accent/60 p-3">
-            <p className="text-xs font-medium text-accent-foreground">
+          <div className="rounded-lg bg-sidebar-accent/60 p-3">
+            <p className="text-xs font-medium text-sidebar-accent-foreground">
               {demo ? "You're exploring the demo" : signedIn ? "Your workspace" : "You're exploring the demo"}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-sidebar-foreground/70">
               {demo || !signedIn
                 ? "Sample data for Northwind Labs. Nothing here is real customer data."
                 : "Your live retention workspace, built from the data you've added."}
