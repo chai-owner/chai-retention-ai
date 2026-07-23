@@ -564,6 +564,69 @@ export type Database = {
         }
         Relationships: []
       }
+      zoho_crm_connections: {
+        Row: {
+          access_token: string
+          api_domain: string
+          connected_at: string
+          dc: string
+          expires_at: string | null
+          id: string
+          last_synced_at: string | null
+          org_name: string | null
+          refresh_token: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          api_domain: string
+          connected_at?: string
+          dc: string
+          expires_at?: string | null
+          id?: string
+          last_synced_at?: string | null
+          org_name?: string | null
+          refresh_token?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          api_domain?: string
+          connected_at?: string
+          dc?: string
+          expires_at?: string | null
+          id?: string
+          last_synced_at?: string | null
+          org_name?: string | null
+          refresh_token?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      zoho_crm_oauth_states: {
+        Row: {
+          created_at: string
+          dc: string
+          redirect_uri: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dc: string
+          redirect_uri: string
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dc?: string
+          redirect_uri?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
