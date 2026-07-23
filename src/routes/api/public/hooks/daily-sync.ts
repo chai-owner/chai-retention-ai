@@ -101,6 +101,36 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
           }
         }
 
+        // -------- Support --------
+        const { data: supportRows } = await supabaseAdmin
+          .from("support_sync_state")
+          .select("user_id, provider, last_synced_at");
+        for (const row of supportRows ?? []) {
+          const userId = row.user_id as string;
+          const provider = row.provider as "zendesk";
+          try {
+            const since = (row.last_synced_at as string | null) ?? null;
+            const startedAt = new Date().toISOString();
+            const { datasets, rows } = await runSupportSync(provider, userId, 500, since);
+            const { totalRows } = await persistDatasetsAdmin(
+              userId,
+              "support",
+              provider,
+              datasets,
+            );
+            await markSupportSynced(userId, provider, startedAt);
+            summaries.push({ user_id: userId, source: "support", provider, ok: true, rows: totalRows });
+          } catch (err) {
+            summaries.push({
+              user_id: userId,
+              source: "support",
+              provider,
+              ok: false,
+              error: (err as Error).message,
+            });
+          }
+        }
+
         return new Response(
           JSON.stringify({
             ok: true,
