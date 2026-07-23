@@ -16,6 +16,12 @@ import {
   getSalesforceStatus,
   disconnectSalesforce,
 } from "@/lib/salesforce.functions";
+import {
+  startZohoConnect,
+  getZohoStatus,
+  disconnectZoho,
+  getZohoConfig,
+} from "@/lib/zoho.functions";
 import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import {
   getAccountingStatus,
@@ -105,6 +111,9 @@ function CrmCard({ name, category, desc }: { name: string; category: string; des
   const provider = CRM_PROVIDER_BY_NAME[name];
   if (provider === "salesforce") {
     return <SalesforceCard name={name} category={category} desc={desc} />;
+  }
+  if (provider === "zoho_crm") {
+    return <ZohoCrmCard name={name} category={category} desc={desc} />;
   }
   return <GenericCrmCard name={name} category={category} desc={desc} />;
 }
@@ -315,6 +324,154 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
     </div>
   );
 }
+
+type ZohoStatus =
+  | { connected: false }
+  | { connected: true; orgName: string | null; connectedAt: string };
+
+function ZohoCrmCard({ name, category, desc }: { name: string; category: string; desc: string }) {
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [status, setStatus] = useState<ZohoStatus | null>(null);
+  const [config, setConfig] = useState<{ configured: boolean } | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const uploads = useUploads();
+
+  const fetchStatus = useServerFn(getZohoStatus);
+  const fetchConfig = useServerFn(getZohoConfig);
+  const startConnect = useServerFn(startZohoConnect);
+  const disconnect = useServerFn(disconnectZoho);
+
+  const refresh = async () => {
+    try {
+      const [s, c] = await Promise.all([fetchStatus(), fetchConfig()]);
+      setStatus(s as ZohoStatus);
+      setConfig(c as { configured: boolean });
+    } catch {
+      setStatus({ connected: false });
+      setConfig({ configured: false });
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("zoho_connected");
+    const err = params.get("zoho_error");
+    if (connected) {
+      toast.success("Zoho CRM connected", {
+        description: "You can now sync accounts and deals into ChAi.",
+      });
+    }
+    if (err) toast.error("Zoho CRM connection failed", { description: err });
+    if (connected || err) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const lastSynced = useMemo(() => {
+    const prefix = `${name} —`;
+    let latest: string | undefined;
+    for (const u of uploads) {
+      if (u.fileName.startsWith(prefix) && (!latest || u.uploadedAt > latest)) latest = u.uploadedAt;
+    }
+    return latest;
+  }, [uploads, name]);
+
+  async function handleConnect() {
+    setConnecting(true);
+    try {
+      const r = (await startConnect({ data: { origin: window.location.origin } })) as { url: string };
+      window.location.href = r.url;
+    } catch (e) {
+      setConnecting(false);
+      toast.error("Couldn’t start Zoho connect", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
+  }
+
+  async function handleDisconnect() {
+    try {
+      await disconnect();
+      toast.success("Zoho CRM disconnected");
+      await refresh();
+    } catch (e) {
+      toast.error("Couldn’t disconnect", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
+  }
+
+  const connected = status?.connected === true;
+
+  return (
+    <div className="rounded-xl border border-border p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-primary">
+          <Building2 className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold">{name}</p>
+          <p className="text-[11px] text-muted-foreground">{category}</p>
+        </div>
+        {connected && (
+          <span className="ml-auto flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+            <Check className="h-3 w-3" /> Connected
+          </span>
+        )}
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">{desc}</p>
+
+      {status === null ? (
+        <div className="mt-3 flex items-center justify-center py-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
+      ) : connected ? (
+        <>
+          <button
+            onClick={() => setWizardOpen(true)}
+            className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
+          >
+            Sync now
+          </button>
+          <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px]">
+            {status.connected && status.orgName && (
+              <span className="text-muted-foreground">{status.orgName}</span>
+            )}
+            <button
+              onClick={handleDisconnect}
+              className="text-muted-foreground underline-offset-2 hover:text-danger hover:underline"
+            >
+              Disconnect
+            </button>
+          </div>
+          {lastSynced && (
+            <p className="mt-1 text-center text-[11px] italic text-success">Last synced {lastSynced}</p>
+          )}
+        </>
+      ) : (
+        <button
+          onClick={handleConnect}
+          disabled={connecting || (config !== null && !config.configured)}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+          title={config && !config.configured ? "Zoho CRM isn't configured on this project." : undefined}
+        >
+          {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+          {connecting ? "Redirecting…" : "Connect with OAuth"}
+        </button>
+      )}
+
+      <CrmSyncWizard
+        provider="zoho_crm"
+        providerName={name}
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+      />
+    </div>
+  );
+}
+
+
 
 function AccountingSection() {
   const [status, setStatus] = useState<AccountingStatus[]>([]);
