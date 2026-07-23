@@ -30,11 +30,12 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { fetchAndNormalize } = await import("@/lib/accounting.server");
         const { runCrmSync, markCrmSynced } = await import("@/lib/crm.server");
+        const { runSupportSync, markSupportSynced } = await import("@/lib/support.server");
         const { persistDatasetsAdmin } = await import("@/lib/sync-persist.server");
 
         type Summary = {
           user_id: string;
-          source: "accounting" | "crm";
+          source: "accounting" | "crm" | "support";
           provider: string;
           ok: boolean;
           rows?: number;
