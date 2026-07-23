@@ -37,7 +37,7 @@ export interface PersistResult {
 
 export async function persistDatasetsAdmin(
   userId: string,
-  sourceKind: "crm" | "accounting",
+  sourceKind: "crm" | "accounting" | "support",
   sourceProvider: string,
   datasets: ExtractedDataset[],
 ): Promise<PersistResult> {

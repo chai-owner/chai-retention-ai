@@ -79,6 +79,7 @@ export async function hydrateIngestFromServer() {
 function sourceLabel(kind: string, provider: string) {
   if (kind === "crm") return `${provider} sync`;
   if (kind === "accounting") return `${provider} sync`;
+  if (kind === "support") return `${provider} sync`;
   if (kind === "drop") return "Smart data drop";
   return "Upload";
 }

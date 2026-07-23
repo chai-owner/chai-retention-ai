@@ -10,7 +10,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const IngestRow = z.record(z.string(), z.string());
 
 const SaveBatchInput = z.object({
-  source_kind: z.enum(["upload", "crm", "accounting", "drop"]),
+  source_kind: z.enum(["upload", "crm", "accounting", "support", "drop"]),
   source_provider: z.string().min(1),
   dataset_key: z.string().min(1),
   filename: z.string().nullable().optional(),

@@ -30,11 +30,12 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { fetchAndNormalize } = await import("@/lib/accounting.server");
         const { runCrmSync, markCrmSynced } = await import("@/lib/crm.server");
+        const { runSupportSync, markSupportSynced } = await import("@/lib/support.server");
         const { persistDatasetsAdmin } = await import("@/lib/sync-persist.server");
 
         type Summary = {
           user_id: string;
-          source: "accounting" | "crm";
+          source: "accounting" | "crm" | "support";
           provider: string;
           ok: boolean;
           rows?: number;
@@ -93,6 +94,36 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
             summaries.push({
               user_id: userId,
               source: "crm",
+              provider,
+              ok: false,
+              error: (err as Error).message,
+            });
+          }
+        }
+
+        // -------- Support --------
+        const { data: supportRows } = await supabaseAdmin
+          .from("support_sync_state")
+          .select("user_id, provider, last_synced_at");
+        for (const row of supportRows ?? []) {
+          const userId = row.user_id as string;
+          const provider = row.provider as "zendesk";
+          try {
+            const since = (row.last_synced_at as string | null) ?? null;
+            const startedAt = new Date().toISOString();
+            const { datasets, rows } = await runSupportSync(provider, userId, 500, since);
+            const { totalRows } = await persistDatasetsAdmin(
+              userId,
+              "support",
+              provider,
+              datasets,
+            );
+            await markSupportSynced(userId, provider, startedAt);
+            summaries.push({ user_id: userId, source: "support", provider, ok: true, rows: totalRows });
+          } catch (err) {
+            summaries.push({
+              user_id: userId,
+              source: "support",
               provider,
               ok: false,
               error: (err as Error).message,

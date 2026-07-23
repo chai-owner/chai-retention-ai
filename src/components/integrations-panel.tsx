@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { Building2, Check, Link2, Loader2, Receipt } from "lucide-react";
+import { Building2, Check, Link2, Loader2, Receipt, Ticket } from "lucide-react";
 import { Card } from "@/components/ui/chai";
 import { integrations, crmIntegrations, accountingIntegrations } from "@/lib/mock-data";
 import { CrmSyncWizard } from "@/components/crm-sync-wizard";
@@ -22,6 +22,13 @@ import {
   disconnectZoho,
   getZohoConfig,
 } from "@/lib/zoho.functions";
+import {
+  startZendeskConnect,
+  getZendeskStatus,
+  disconnectZendesk,
+  getZendeskConfig,
+} from "@/lib/zendesk.functions";
+import { syncZendesk } from "@/lib/support.functions";
 import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import {
   getAccountingStatus,
@@ -67,26 +74,7 @@ export function IntegrationsPanel() {
           Support interactions are one of the strongest churn signals. Connect securely with OAuth.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          {integrations.map((it) => (
-            <div key={it.name} className="rounded-xl border border-border p-4">
-              <div className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-primary">
-                  <Link2 className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold">{it.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{it.category}</p>
-                </div>
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">{it.desc}</p>
-              <button
-                onClick={() => toast.info(`Connect ${it.name}`, { description: "Demo mode — OAuth flow not enabled." })}
-                className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
-              >
-                Connect
-              </button>
-            </div>
-          ))}
+          <SupportSection />
         </div>
       </Card>
 
@@ -472,6 +460,210 @@ function ZohoCrmCard({ name, category, desc }: { name: string; category: string;
 }
 
 
+function SupportSection() {
+  return (
+    <>
+      {integrations.map((it) => {
+        if (it.name === "Zendesk") {
+          return <ZendeskCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
+        }
+        return <GenericSupportCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
+      })}
+    </>
+  );
+}
+
+function GenericSupportCard({ name, category, desc }: { name: string; category: string; desc: string }) {
+  return (
+    <div className="rounded-xl border border-border p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-primary">
+          <Link2 className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold">{name}</p>
+          <p className="text-[11px] text-muted-foreground">{category}</p>
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">{desc}</p>
+      <button
+        onClick={() => toast.info(`Connect ${name}`, { description: "Demo mode — OAuth flow not enabled." })}
+        className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
+      >
+        Connect
+      </button>
+    </div>
+  );
+}
+
+type ZendeskStatus =
+  | { connected: false }
+  | { connected: true; orgName: string | null; subdomain: string; connectedAt: string; lastSyncedAt: string | null };
+
+function ZendeskCard({ name, category, desc }: { name: string; category: string; desc: string }) {
+  const [status, setStatus] = useState<ZendeskStatus | null>(null);
+  const [config, setConfig] = useState<{ configured: boolean } | null>(null);
+  const [subdomain, setSubdomain] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const fetchStatus = useServerFn(getZendeskStatus);
+  const fetchConfig = useServerFn(getZendeskConfig);
+  const startConnect = useServerFn(startZendeskConnect);
+  const disconnect = useServerFn(disconnectZendesk);
+  const sync = useServerFn(syncZendesk);
+
+  const refresh = async () => {
+    try {
+      const [s, c] = await Promise.all([fetchStatus(), fetchConfig()]);
+      setStatus(s as ZendeskStatus);
+      setConfig(c as { configured: boolean });
+    } catch {
+      setStatus({ connected: false });
+      setConfig({ configured: false });
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("zendesk_connected");
+    const err = params.get("zendesk_error");
+    if (connected) {
+      toast.success("Zendesk connected", { description: "You can now sync support tickets into ChAi." });
+    }
+    if (err) toast.error("Zendesk connection failed", { description: err });
+    if (connected || err) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleConnect() {
+    if (!subdomain.trim()) return;
+    setConnecting(true);
+    try {
+      const r = (await startConnect({ data: { origin: window.location.origin, subdomain: subdomain.trim() } })) as { url: string };
+      window.location.href = r.url;
+    } catch (e) {
+      setConnecting(false);
+      toast.error("Couldn’t start Zendesk connect", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      const res = (await sync({ data: { provider: "zendesk" } })) as { providerName: string; rows: number };
+      toast.success(`${res.providerName} sync complete`, {
+        description: `${res.rows} ticket${res.rows === 1 ? "" : "s"} imported.`,
+      });
+      await refresh();
+    } catch (e) {
+      toast.error("Couldn’t sync Zendesk", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    try {
+      await disconnect();
+      toast.success("Zendesk disconnected");
+      setSubdomain("");
+      await refresh();
+    } catch (e) {
+      toast.error("Couldn’t disconnect", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
+  }
+
+  const connected = status?.connected === true;
+
+  return (
+    <div className="rounded-xl border border-border p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-primary">
+          <Ticket className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold">{name}</p>
+          <p className="text-[11px] text-muted-foreground">{category}</p>
+        </div>
+        {connected && (
+          <span className="ml-auto flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+            <Check className="h-3 w-3" /> Connected
+          </span>
+        )}
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">{desc}</p>
+
+      {status === null ? (
+        <div className="mt-3 flex items-center justify-center py-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
+      ) : connected ? (
+        <>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+          >
+            {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+            {syncing ? "Syncing…" : "Sync now"}
+          </button>
+          <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px]">
+            {status.connected && status.subdomain && (
+              <span className="text-muted-foreground">{status.subdomain}.zendesk.com</span>
+            )}
+            <button
+              onClick={handleDisconnect}
+              className="text-muted-foreground underline-offset-2 hover:text-danger hover:underline"
+            >
+              Disconnect
+            </button>
+          </div>
+          {status.connected && status.lastSyncedAt && (
+            <p className="mt-1 text-center text-[11px] italic text-success">
+              Last synced {status.lastSyncedAt.slice(0, 16).replace("T", " ")}
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="mt-3">
+            <label className="block text-[11px] font-medium text-muted-foreground">Zendesk subdomain</label>
+            <div className="mt-1 flex items-stretch gap-2">
+              <input
+                type="text"
+                value={subdomain}
+                onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                placeholder="yourcompany"
+                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+              <span className="flex items-center rounded-lg border border-border bg-secondary px-3 text-xs text-muted-foreground">
+                .zendesk.com
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleConnect}
+            disabled={connecting || (config !== null && !config.configured) || !subdomain.trim()}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+            title={config && !config.configured ? "Zendesk isn't configured on this project." : undefined}
+          >
+            {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+            {connecting ? "Redirecting…" : "Connect with OAuth"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 function AccountingSection() {
   const [status, setStatus] = useState<AccountingStatus[]>([]);
