@@ -112,6 +112,9 @@ function CrmCard({ name, category, desc }: { name: string; category: string; des
   if (provider === "salesforce") {
     return <SalesforceCard name={name} category={category} desc={desc} />;
   }
+  if (provider === "zoho_crm") {
+    return <ZohoCrmCard name={name} category={category} desc={desc} />;
+  }
   return <GenericCrmCard name={name} category={category} desc={desc} />;
 }
 
