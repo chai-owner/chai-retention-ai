@@ -519,6 +519,33 @@ export type Database = {
         }
         Relationships: []
       }
+      support_sync_state: {
+        Row: {
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -561,6 +588,75 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      zendesk_connections: {
+        Row: {
+          access_token: string
+          connected_at: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          last_synced_at: string | null
+          org_name: string | null
+          refresh_token: string | null
+          scope: string | null
+          subdomain: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          connected_at?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_synced_at?: string | null
+          org_name?: string | null
+          refresh_token?: string | null
+          scope?: string | null
+          subdomain: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          connected_at?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_synced_at?: string | null
+          org_name?: string | null
+          refresh_token?: string | null
+          scope?: string | null
+          subdomain?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      zendesk_oauth_states: {
+        Row: {
+          created_at: string
+          redirect_uri: string
+          state: string
+          subdomain: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          redirect_uri: string
+          state: string
+          subdomain: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          redirect_uri?: string
+          state?: string
+          subdomain?: string
+          user_id?: string
         }
         Relationships: []
       }
