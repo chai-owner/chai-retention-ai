@@ -16,6 +16,12 @@ import {
   getSalesforceStatus,
   disconnectSalesforce,
 } from "@/lib/salesforce.functions";
+import {
+  startZohoConnect,
+  getZohoStatus,
+  disconnectZoho,
+  getZohoConfig,
+} from "@/lib/zoho.functions";
 import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import {
   getAccountingStatus,
