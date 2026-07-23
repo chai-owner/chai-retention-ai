@@ -248,7 +248,7 @@ export async function runCrmSync(
   switch (provider) {
     case "salesforce": return syncSalesforce(userId, limit, since);
     case "hubspot": return syncHubspot(limit, since);
-    case "zoho_crm": return syncZoho(limit, since);
+    case "zoho_crm": return syncZoho(userId, limit, since);
     default: throw new Error("Unsupported CRM provider");
   }
 }
