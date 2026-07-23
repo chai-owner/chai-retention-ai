@@ -205,34 +205,13 @@ async function syncHubspot(limit: number, since: string | null): Promise<Extract
   return buildDatasets(customers, transactions);
 }
 
-// ---------------- Zoho CRM ----------------
+// ---------------- Zoho CRM (per-user OAuth) ----------------
 
-async function syncZoho(limit: number, since: string | null): Promise<ExtractedDataset[]> {
-  const { lovableKey, connectionKey } = credsFor("zoho_crm");
-  const headers: Record<string, string> = gatewayHeaders(connectionKey, lovableKey);
-  if (since) headers["If-Modified-Since"] = new Date(since).toUTCString();
-  const base = `${GATEWAY_BASE}/zoho_crm`;
-  const cap = Math.min(limit, 200);
-  const accFields = "Account_Name,Created_Time,Annual_Revenue,Industry,Billing_Country";
-  const dealFields = "Deal_Name,Account_Name,Amount,Closing_Date,Stage";
-
-  const [acc, deals] = await Promise.all([
-    gwGet(`${base}/Accounts?fields=${encodeURIComponent(accFields)}&per_page=${cap}`, headers),
-    gwGet(`${base}/Deals?fields=${encodeURIComponent(dealFields)}&per_page=${cap}`, headers),
-  ]);
-
-  const customers: string[][] = (acc?.data ?? []).map((r: Record<string, unknown>) => [
-    toStr(r.id), toStr(r.Account_Name), "", dateOnly(r.Created_Time),
-    num((r.Annual_Revenue as number) ? Number(r.Annual_Revenue) / 12 : ""),
-    toStr(r.Industry), toStr(r.Billing_Country),
-  ]);
-  const transactions: string[][] = (deals?.data ?? []).map((r: Record<string, unknown>) => {
-    const account = r.Account_Name as { id?: string } | string | undefined;
-    const accountId = typeof account === "object" && account ? toStr(account.id) : "";
-    return [accountId, toStr(r.id), num(r.Amount), dateOnly(r.Closing_Date), toStr(r.Deal_Name), "USD"];
-  });
-  return buildDatasets(customers, transactions);
+async function syncZoho(userId: string, limit: number, since: string | null): Promise<ExtractedDataset[]> {
+  const { syncZohoForUser } = await import("./zoho.server");
+  return syncZohoForUser(userId, limit, since);
 }
+
 
 // ---------------- Public entry points ----------------
 
