@@ -17,6 +17,12 @@ import {
   disconnectSalesforce,
 } from "@/lib/salesforce.functions";
 import {
+  startHubspotConnect,
+  saveHubspotConnection,
+  getHubspotStatus,
+  disconnectHubspot,
+} from "@/lib/hubspot.functions";
+import {
   startZohoConnect,
   getZohoStatus,
   disconnectZoho,
