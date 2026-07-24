@@ -55,26 +55,22 @@ const industries = [
   {
     icon: Laptop,
     name: "SaaS & Technology",
-    metrics: ["Net Revenue Retention", "Product Adoption Depth", "Support Ticket Velocity", "CSAT Trend"],
-    insight: "ChAi weights product usage and expansion signals more heavily because in SaaS, churn usually starts with quiet disengagement.",
+    insight: "Usage, expansion, and support signals are weighted to catch quiet disengagement before it becomes churn.",
   },
   {
     icon: Briefcase,
     name: "Professional Services",
-    metrics: ["Project Margin Health", "Client Engagement Score", "Renewal Pipeline", "Deliverable Timeliness"],
-    insight: "ChAi tracks project delivery and engagement patterns because services churn is driven by relationship quality and outcome consistency.",
+    insight: "Project delivery, engagement patterns, and renewal timing are tracked to flag relationship and outcome risk.",
   },
   {
     icon: ShoppingCart,
     name: "Retail & E-commerce",
-    metrics: ["Repeat Purchase Rate", "Average Order Value Trend", "Return Rate", "Loyalty Program Engagement"],
-    insight: "ChAi focuses on purchase frequency and basket dynamics because retail churn is signaled by fading buying behavior, not contracts.",
+    insight: "Purchase behavior, basket dynamics, and return patterns are monitored to spot fading customer loyalty.",
   },
   {
     icon: Factory,
     name: "Manufacturing & Distribution",
-    metrics: ["Order Frequency Stability", "Contract Renewal Risk", "Service Level Compliance", "Payment Cadence"],
-    insight: "ChAi prioritizes contract and fulfillment signals because in B2B manufacturing, churn risk shows up in order and SLA patterns first.",
+    insight: "Order rhythms, contract health, and fulfillment signals are prioritized to catch B2B churn early.",
   },
 ];
 
