@@ -47,29 +47,6 @@ const features = [
   { icon: ShieldCheck, title: "Trust & compliance", desc: "A GDPR-first control center so you can upload customer data with confidence." },
 ];
 
-const industries = [
-  {
-    icon: Laptop,
-    name: "SaaS & Technology",
-    insight: "Usage, expansion, and support signals are weighted to catch quiet disengagement before it becomes churn.",
-  },
-  {
-    icon: Briefcase,
-    name: "Professional Services",
-    insight: "Project delivery, engagement patterns, and renewal timing are tracked to flag relationship and outcome risk.",
-  },
-  {
-    icon: ShoppingCart,
-    name: "Retail & E-commerce",
-    insight: "Purchase behavior, basket dynamics, and return patterns are monitored to spot fading customer loyalty.",
-  },
-  {
-    icon: Factory,
-    name: "Manufacturing & Distribution",
-    insight: "Order rhythms, contract health, and fulfillment signals are prioritized to catch B2B churn early.",
-  },
-];
-
 const showcase = [
   {
     img: customersShot.url,
