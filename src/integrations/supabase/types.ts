@@ -438,6 +438,69 @@ export type Database = {
           },
         ]
       }
+      intercom_connections: {
+        Row: {
+          access_token: string
+          app_id: string | null
+          connected_at: string
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          scope: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+          workspace_name: string | null
+        }
+        Insert: {
+          access_token: string
+          app_id?: string | null
+          connected_at?: string
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          scope?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+          workspace_name?: string | null
+        }
+        Update: {
+          access_token?: string
+          app_id?: string | null
+          connected_at?: string
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          scope?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+          workspace_name?: string | null
+        }
+        Relationships: []
+      }
+      intercom_oauth_states: {
+        Row: {
+          created_at: string
+          redirect_uri: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          redirect_uri: string
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          redirect_uri?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avg_value: string
