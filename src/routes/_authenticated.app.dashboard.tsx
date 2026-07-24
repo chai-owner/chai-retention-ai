@@ -184,14 +184,6 @@ function Dashboard() {
             <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary/60">
               <div className={`h-full rounded-full ${qualityBarTone}`} style={{ width: `${dataQuality}%` }} />
             </div>
-            {showSuggestion && (
-              <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-                <Link to="/app/data" className="font-medium text-primary hover:underline">
-                  Upload recent data
-                </Link>{" "}
-                for a more accurate snapshot.
-              </p>
-            )}
           </div>
         </div>
       </div>
