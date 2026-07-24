@@ -161,8 +161,9 @@ function Landing() {
               <span className="font-semibold text-gold">already worked so hard</span> to win.
             </h1>
             <p className="mt-6 max-w-xl text-lg text-white/70 lg:mx-0">
-              ChAi is an AI retention analyst that understands customer health, predicts who's about to leave,
-              explains why, and tells you what to do — all in plain English. No analytics team required.
+              ChAi is an AI retention analyst built around your industry. It learns how your business operates,
+              picks the metrics that actually matter for your customers, predicts who's about to leave, explains why,
+              and tells you what to do — all in plain English.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
               <Link
