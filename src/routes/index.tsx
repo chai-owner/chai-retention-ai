@@ -13,6 +13,10 @@ import {
   FileText,
   ScanLine,
   Sheet,
+  Briefcase,
+  ShoppingCart,
+  Factory,
+  Laptop,
 } from "lucide-react";
 import heroDashboardShot from "@/assets/screenshots/hero-dashboard.png.asset.json";
 import customersShot from "@/assets/screenshots/customers.png.asset.json";
@@ -45,6 +49,33 @@ const features = [
   { icon: Lightbulb, title: "Recommendations that act", desc: "Prioritized next steps ranked by expected revenue saved." },
   { icon: BarChart3, title: "Industry benchmarks", desc: "Know whether your retention is ahead of or behind comparable businesses." },
   { icon: ShieldCheck, title: "Trust & compliance", desc: "A GDPR-first control center so you can upload customer data with confidence." },
+];
+
+const industries = [
+  {
+    icon: Laptop,
+    name: "SaaS & Technology",
+    metrics: ["Net Revenue Retention", "Product Adoption Depth", "Support Ticket Velocity", "CSAT Trend"],
+    insight: "ChAi weights product usage and expansion signals more heavily because in SaaS, churn usually starts with quiet disengagement.",
+  },
+  {
+    icon: Briefcase,
+    name: "Professional Services",
+    metrics: ["Project Margin Health", "Client Engagement Score", "Renewal Pipeline", "Deliverable Timeliness"],
+    insight: "ChAi tracks project delivery and engagement patterns because services churn is driven by relationship quality and outcome consistency.",
+  },
+  {
+    icon: ShoppingCart,
+    name: "Retail & E-commerce",
+    metrics: ["Repeat Purchase Rate", "Average Order Value Trend", "Return Rate", "Loyalty Program Engagement"],
+    insight: "ChAi focuses on purchase frequency and basket dynamics because retail churn is signaled by fading buying behavior, not contracts.",
+  },
+  {
+    icon: Factory,
+    name: "Manufacturing & Distribution",
+    metrics: ["Order Frequency Stability", "Contract Renewal Risk", "Service Level Compliance", "Payment Cadence"],
+    insight: "ChAi prioritizes contract and fulfillment signals because in B2B manufacturing, churn risk shows up in order and SLA patterns first.",
+  },
 ];
 
 const showcase = [
@@ -138,8 +169,9 @@ function Landing() {
               <span className="font-semibold text-gold">already worked so hard</span> to win.
             </h1>
             <p className="mt-6 max-w-xl text-lg text-white/70 lg:mx-0">
-              ChAi is an AI retention analyst that understands customer health, predicts who's about to leave,
-              explains why, and tells you what to do — all in plain English. No analytics team required.
+              ChAi is an AI retention analyst built around your industry. It learns how your business operates,
+              picks the metrics that actually matter for your customers, predicts who's about to leave, explains why,
+              and tells you what to do — all in plain English.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
               <Link
@@ -198,6 +230,43 @@ function Landing() {
               <p className="mt-2 text-sm text-muted-foreground">{f.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Industry-specific — key selling point */}
+      <section className="overflow-hidden border-y border-border bg-secondary/40">
+        <div className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-primary">
+              <Sparkles className="h-3.5 w-3.5" /> Not a generic dashboard
+            </span>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight">Built for your industry, not every industry</h2>
+            <p className="mt-3 text-muted-foreground">
+              During onboarding, ChAi learns what you sell and who you serve. It then generates the metrics,
+              benchmarks and risk signals that matter for your exact business model.
+            </p>
+          </div>
+          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {industries.map((ind) => (
+              <div key={ind.name} className="group rounded-2xl border border-border bg-card p-6 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lift">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/10">
+                  <ind.icon className="h-5 w-5" strokeWidth={1.75} />
+                </span>
+                <h3 className="mt-4 font-semibold text-foreground">{ind.name}</h3>
+                <ul className="mt-3 space-y-1.5">
+                  {ind.metrics.map((m) => (
+                    <li key={m} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
+                      {m}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                  {ind.insight}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
