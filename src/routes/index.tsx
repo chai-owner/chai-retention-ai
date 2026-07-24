@@ -13,6 +13,10 @@ import {
   FileText,
   ScanLine,
   Sheet,
+  Briefcase,
+  ShoppingCart,
+  Factory,
+  Laptop,
 } from "lucide-react";
 import heroDashboardShot from "@/assets/screenshots/hero-dashboard.png.asset.json";
 import customersShot from "@/assets/screenshots/customers.png.asset.json";
