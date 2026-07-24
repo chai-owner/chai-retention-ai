@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { Building2, Check, Link2, Loader2, Receipt, Ticket } from "lucide-react";
+import { Building2, Check, Link2, Loader2, MessageCircle, Receipt, Ticket } from "lucide-react";
 import { Card } from "@/components/ui/chai";
 import { integrations, crmIntegrations, accountingIntegrations } from "@/lib/mock-data";
 import { CrmSyncWizard } from "@/components/crm-sync-wizard";
@@ -28,6 +28,12 @@ import {
   disconnectZendesk,
   getZendeskConfig,
 } from "@/lib/zendesk.functions";
+import {
+  startIntercomConnect,
+  getIntercomStatus,
+  disconnectIntercom,
+  getIntercomConfig,
+} from "@/lib/intercom.functions";
 import { syncZendesk } from "@/lib/support.functions";
 import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import {
@@ -467,6 +473,9 @@ function SupportSection() {
         if (it.name === "Zendesk") {
           return <ZendeskCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
         }
+        if (it.name === "Intercom") {
+          return <IntercomCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
+        }
         return <GenericSupportCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
       })}
     </>
@@ -858,6 +867,160 @@ function AccountingCard({
           open={wizardOpen}
           onOpenChange={setWizardOpen}
         />
+      )}
+    </div>
+  );
+}
+
+type IntercomStatus =
+  | { connected: false }
+  | { connected: true; workspaceName: string | null; workspaceId: string | null; connectedAt: string; lastSyncedAt: string | null };
+
+function IntercomCard({ name, category, desc }: { name: string; category: string; desc: string }) {
+  const [status, setStatus] = useState<IntercomStatus | null>(null);
+  const [config, setConfig] = useState<{ configured: boolean } | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const fetchStatus = useServerFn(getIntercomStatus);
+  const fetchConfig = useServerFn(getIntercomConfig);
+  const startConnect = useServerFn(startIntercomConnect);
+  const disconnect = useServerFn(disconnectIntercom);
+  const sync = useServerFn(syncZendesk); // shared support sync fn
+
+  const refresh = async () => {
+    try {
+      const [s, c] = await Promise.all([fetchStatus(), fetchConfig()]);
+      setStatus(s as IntercomStatus);
+      setConfig(c as { configured: boolean });
+    } catch {
+      setStatus({ connected: false });
+      setConfig({ configured: false });
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("intercom_connected");
+    const err = params.get("intercom_error");
+    if (connected) {
+      toast.success("Intercom connected", {
+        description: "You can now sync support conversations into ChAi.",
+      });
+    }
+    if (err) toast.error("Intercom connection failed", { description: err });
+    if (connected || err) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleConnect() {
+    setConnecting(true);
+    try {
+      const r = (await startConnect({ data: { origin: window.location.origin } })) as { url: string };
+      window.location.href = r.url;
+    } catch (e) {
+      setConnecting(false);
+      toast.error("Couldn’t start Intercom connect", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      const res = (await sync({ data: { provider: "intercom" } })) as {
+        providerName: string;
+        rows: number;
+      };
+      toast.success(`${res.providerName} sync complete`, {
+        description: `${res.rows} conversation${res.rows === 1 ? "" : "s"} imported.`,
+      });
+      await refresh();
+    } catch (e) {
+      toast.error("Couldn’t sync Intercom", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    try {
+      await disconnect();
+      toast.success("Intercom disconnected");
+      await refresh();
+    } catch (e) {
+      toast.error("Couldn’t disconnect", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
+  }
+
+  const connected = status?.connected === true;
+
+  return (
+    <div className="rounded-xl border border-border p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-primary">
+          <MessageCircle className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold">{name}</p>
+          <p className="text-[11px] text-muted-foreground">{category}</p>
+        </div>
+        {connected && (
+          <span className="ml-auto flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+            <Check className="h-3 w-3" /> Connected
+          </span>
+        )}
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">{desc}</p>
+
+      {status === null ? (
+        <div className="mt-3 flex items-center justify-center py-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
+      ) : connected ? (
+        <>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+          >
+            {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+            {syncing ? "Syncing…" : "Sync now"}
+          </button>
+          <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px]">
+            {status.connected && status.workspaceName && (
+              <span className="text-muted-foreground">{status.workspaceName}</span>
+            )}
+            <button
+              onClick={handleDisconnect}
+              className="text-muted-foreground underline-offset-2 hover:text-danger hover:underline"
+            >
+              Disconnect
+            </button>
+          </div>
+          {status.connected && status.lastSyncedAt && (
+            <p className="mt-1 text-center text-[11px] italic text-success">
+              Last synced {status.lastSyncedAt.slice(0, 16).replace("T", " ")}
+            </p>
+          )}
+        </>
+      ) : (
+        <button
+          onClick={handleConnect}
+          disabled={connecting || (config !== null && !config.configured)}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+          title={config && !config.configured ? "Intercom isn't configured on this project." : undefined}
+        >
+          {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+          {connecting ? "Redirecting…" : "Connect with OAuth"}
+        </button>
       )}
     </div>
   );

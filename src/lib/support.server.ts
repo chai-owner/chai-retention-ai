@@ -1,8 +1,8 @@
-// Server-only helpers for support-tool syncs (Zendesk). Used by both the
-// manual "Sync now" button in the UI and the daily cron hook.
+// Server-only helpers for support-tool syncs (Zendesk, Intercom). Used by both
+// the manual "Sync now" button in the UI and the daily cron hook.
 import type { ExtractedDataset } from "./ingest.functions";
 
-export type SupportProvider = "zendesk";
+export type SupportProvider = "zendesk" | "intercom";
 
 export async function getSupportSince(
   userId: string,
@@ -28,6 +28,18 @@ export async function markSupportSynced(
     { user_id: userId, provider, last_synced_at: when },
     { onConflict: "user_id,provider" },
   );
+  // Also stamp the connection table so the UI can show "last synced".
+  if (provider === "zendesk") {
+    await supabaseAdmin
+      .from("zendesk_connections")
+      .update({ last_synced_at: when })
+      .eq("user_id", userId);
+  } else if (provider === "intercom") {
+    await supabaseAdmin
+      .from("intercom_connections")
+      .update({ last_synced_at: when })
+      .eq("user_id", userId);
+  }
 }
 
 export async function runSupportSync(
@@ -36,9 +48,16 @@ export async function runSupportSync(
   limit: number,
   since: string | null,
 ): Promise<{ datasets: ExtractedDataset[]; rows: number }> {
-  if (provider !== "zendesk") throw new Error("Unsupported support provider");
-  const { syncZendeskForUser } = await import("./zendesk.server");
-  const datasets = await syncZendeskForUser(userId, limit, since);
+  let datasets: ExtractedDataset[];
+  if (provider === "zendesk") {
+    const { syncZendeskForUser } = await import("./zendesk.server");
+    datasets = await syncZendeskForUser(userId, limit, since);
+  } else if (provider === "intercom") {
+    const { syncIntercomForUser } = await import("./intercom.server");
+    datasets = await syncIntercomForUser(userId, limit, since);
+  } else {
+    throw new Error("Unsupported support provider");
+  }
   const rows = datasets.reduce((a, d) => a + d.rows.length, 0);
   return { datasets, rows };
 }
