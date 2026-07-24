@@ -4,11 +4,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const SyncInput = z.object({
-  provider: z.enum(["zendesk", "intercom"]),
+  provider: z.enum(["zendesk", "intercom", "freshdesk"]),
   limit: z.number().int().min(1).max(1000).optional().default(200),
 });
 
-export type SupportProvider = "zendesk" | "intercom";
+export type SupportProvider = "zendesk" | "intercom" | "freshdesk";
 
 export interface SupportSyncResult {
   provider: SupportProvider;
@@ -20,6 +20,7 @@ export interface SupportSyncResult {
 const PROVIDER_NAME: Record<SupportProvider, string> = {
   zendesk: "Zendesk",
   intercom: "Intercom",
+  freshdesk: "Freshdesk",
 };
 
 async function runSync(provider: SupportProvider, userId: string, limit: number) {
