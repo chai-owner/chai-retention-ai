@@ -107,7 +107,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
           .select("user_id, provider, last_synced_at");
         for (const row of supportRows ?? []) {
           const userId = row.user_id as string;
-          const provider = row.provider as "zendesk" | "intercom";
+          const provider = row.provider as "zendesk" | "intercom" | "freshdesk";
           try {
             const since = (row.last_synced_at as string | null) ?? null;
             const startedAt = new Date().toISOString();

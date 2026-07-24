@@ -2,7 +2,7 @@
 // the manual "Sync now" button in the UI and the daily cron hook.
 import type { ExtractedDataset } from "./ingest.functions";
 
-export type SupportProvider = "zendesk" | "intercom";
+export type SupportProvider = "zendesk" | "intercom" | "freshdesk";
 
 export async function getSupportSince(
   userId: string,
@@ -39,6 +39,11 @@ export async function markSupportSynced(
       .from("intercom_connections")
       .update({ last_synced_at: when })
       .eq("user_id", userId);
+  } else if (provider === "freshdesk") {
+    await supabaseAdmin
+      .from("freshdesk_connections")
+      .update({ last_synced_at: when })
+      .eq("user_id", userId);
   }
 }
 
@@ -55,6 +60,9 @@ export async function runSupportSync(
   } else if (provider === "intercom") {
     const { syncIntercomForUser } = await import("./intercom.server");
     datasets = await syncIntercomForUser(userId, limit, since);
+  } else if (provider === "freshdesk") {
+    const { syncFreshdeskForUser } = await import("./freshdesk.server");
+    datasets = await syncFreshdeskForUser(userId, limit, since);
   } else {
     throw new Error("Unsupported support provider");
   }

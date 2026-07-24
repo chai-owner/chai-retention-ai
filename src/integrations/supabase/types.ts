@@ -176,6 +176,39 @@ export type Database = {
         }
         Relationships: []
       }
+      freshdesk_connections: {
+        Row: {
+          api_key_ciphertext: string
+          connected_at: string
+          created_at: string
+          domain: string
+          id: string
+          last_synced_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key_ciphertext: string
+          connected_at?: string
+          created_at?: string
+          domain: string
+          id?: string
+          last_synced_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key_ciphertext?: string
+          connected_at?: string
+          created_at?: string
+          domain?: string
+          id?: string
+          last_synced_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       impersonation_audit: {
         Row: {
           admin_id: string
