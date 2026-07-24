@@ -153,8 +153,16 @@ async function syncSalesforce(
 
 // ---------------- HubSpot ----------------
 
-async function syncHubspot(limit: number, since: string | null): Promise<ExtractedDataset[]> {
-  const { lovableKey, connectionKey } = credsFor("hubspot");
+async function syncHubspot(userId: string, limit: number, since: string | null): Promise<ExtractedDataset[]> {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  if (!lovableKey) throw new Error("Missing LOVABLE_API_KEY");
+  const { getConnectionKeyForUser } = await import("./app-user-connections.server");
+  const connectionKey = await getConnectionKeyForUser(userId, "hubspot");
+  if (!connectionKey) {
+    throw new Error(
+      "HubSpot isn't connected for your account. Connect it under Data → Connect your CRM first.",
+    );
+  }
   const headers = gatewayHeaders(connectionKey, lovableKey);
   const base = `${GATEWAY_BASE}/hubspot`;
   const cap = Math.min(limit, 100);
