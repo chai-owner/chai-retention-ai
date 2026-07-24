@@ -249,15 +249,7 @@ function Landing() {
                   <ind.icon className="h-5 w-5" strokeWidth={1.75} />
                 </span>
                 <h3 className="mt-4 font-semibold text-foreground">{ind.name}</h3>
-                <ul className="mt-3 space-y-1.5">
-                  {ind.metrics.map((m) => (
-                    <li key={m} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
-                      {m}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                   {ind.insight}
                 </p>
               </div>
