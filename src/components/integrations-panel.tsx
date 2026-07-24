@@ -34,7 +34,12 @@ import {
   disconnectIntercom,
   getIntercomConfig,
 } from "@/lib/intercom.functions";
-import { syncZendesk } from "@/lib/support.functions";
+import {
+  connectFreshdesk,
+  getFreshdeskStatus,
+  disconnectFreshdesk,
+} from "@/lib/freshdesk.functions";
+import { syncZendesk, syncSupport } from "@/lib/support.functions";
 import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import {
   getAccountingStatus,
@@ -475,6 +480,9 @@ function SupportSection() {
         }
         if (it.name === "Intercom") {
           return <IntercomCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
+        }
+        if (it.name === "Freshdesk") {
+          return <FreshdeskCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
         }
         return <GenericSupportCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
       })}
