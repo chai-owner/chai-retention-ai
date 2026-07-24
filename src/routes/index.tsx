@@ -202,35 +202,6 @@ function Landing() {
         </div>
       </section>
 
-      {/* Industry-specific — key selling point */}
-      <section className="overflow-hidden border-y border-border bg-secondary/40">
-        <div className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-primary">
-              <Sparkles className="h-3.5 w-3.5" /> Not a generic dashboard
-            </span>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight">Built for your industry, not every industry</h2>
-            <p className="mt-3 text-muted-foreground">
-              During onboarding, ChAi learns what you sell and who you serve. It then generates the metrics,
-              benchmarks and risk signals that matter for your exact business model.
-            </p>
-          </div>
-          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {industries.map((ind) => (
-              <div key={ind.name} className="group rounded-2xl border border-border bg-card p-6 shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lift">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/10">
-                  <ind.icon className="h-5 w-5" strokeWidth={1.75} />
-                </span>
-                <h3 className="mt-4 font-semibold text-foreground">{ind.name}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  {ind.insight}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Product showcase — screenshots next to selling points */}
       <section className="overflow-hidden border-y border-border bg-secondary/40">
         <div className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
