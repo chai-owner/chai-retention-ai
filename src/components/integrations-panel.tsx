@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { Building2, Check, Link2, Loader2, Receipt, Ticket } from "lucide-react";
+import { Building2, Check, Link2, Loader2, MessageCircle, Receipt, Ticket } from "lucide-react";
 import { Card } from "@/components/ui/chai";
 import { integrations, crmIntegrations, accountingIntegrations } from "@/lib/mock-data";
 import { CrmSyncWizard } from "@/components/crm-sync-wizard";
@@ -28,6 +28,12 @@ import {
   disconnectZendesk,
   getZendeskConfig,
 } from "@/lib/zendesk.functions";
+import {
+  startIntercomConnect,
+  getIntercomStatus,
+  disconnectIntercom,
+  getIntercomConfig,
+} from "@/lib/intercom.functions";
 import { syncZendesk } from "@/lib/support.functions";
 import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import {
@@ -466,6 +472,9 @@ function SupportSection() {
       {integrations.map((it) => {
         if (it.name === "Zendesk") {
           return <ZendeskCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
+        }
+        if (it.name === "Intercom") {
+          return <IntercomCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
         }
         return <GenericSupportCard key={it.name} name={it.name} category={it.category} desc={it.desc} />;
       })}
