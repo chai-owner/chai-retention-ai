@@ -47,6 +47,29 @@ const features = [
   { icon: ShieldCheck, title: "Trust & compliance", desc: "A GDPR-first control center so you can upload customer data with confidence." },
 ];
 
+const industries = [
+  {
+    name: "SaaS & Technology",
+    metrics: ["Net Revenue Retention", "Product Adoption Depth", "Support Ticket Velocity", "CSAT Trend"],
+    insight: "ChAi weights product usage and expansion signals more heavily because in SaaS, churn usually starts with quiet disengagement.",
+  },
+  {
+    name: "Professional Services",
+    metrics: ["Project Margin Health", "Client Engagement Score", "Renewal Pipeline", "Deliverable Timeliness"],
+    insight: "ChAi tracks project delivery and engagement patterns because services churn is driven by relationship quality and outcome consistency.",
+  },
+  {
+    name: "Retail & E-commerce",
+    metrics: ["Repeat Purchase Rate", "Average Order Value Trend", "Return Rate", "Loyalty Program Engagement"],
+    insight: "ChAi focuses on purchase frequency and basket dynamics because retail churn is signaled by fading buying behavior, not contracts.",
+  },
+  {
+    name: "Manufacturing & Distribution",
+    metrics: ["Order Frequency Stability", "Contract Renewal Risk", "Service Level Compliance", "Payment Cadence"],
+    insight: "ChAi prioritizes contract and fulfillment signals because in B2B manufacturing, churn risk shows up in order and SLA patterns first.",
+  },
+];
+
 const showcase = [
   {
     img: customersShot.url,
