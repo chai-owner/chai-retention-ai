@@ -28,9 +28,6 @@ export const startHubspotConnect = createServerFn({ method: "POST" })
     const { authorizeAppUserOAuth } = await import(
       "@/integrations/lovable/appUserConnector"
     );
-    const { getConnectionKeyForUser } = await import("./app-user-connections.server");
-    const existing = await getConnectionKeyForUser(context.userId, CONNECTOR_ID);
-
     const { authorizationUrl } = await authorizeAppUserOAuth({
       gatewayBaseUrl: GATEWAY_BASE_URL,
       connectorId: CONNECTOR_ID,
@@ -39,7 +36,6 @@ export const startHubspotConnect = createServerFn({ method: "POST" })
       returnUrl: data.targetOrigin,
       responseMode: "web_message",
       webMessageTargetOrigin: data.targetOrigin,
-      connectionAPIKey: existing ?? undefined,
       credentialsConfiguration: { scopes: HUBSPOT_SCOPES },
     });
     return { authorizationUrl };
