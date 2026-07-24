@@ -30,6 +30,7 @@ import { Route as AuthenticatedAppChurnedRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as ApiPublicZohoCallbackRouteImport } from './routes/api/public/zoho.callback'
 import { Route as ApiPublicZendeskCallbackRouteImport } from './routes/api/public/zendesk.callback'
+import { Route as ApiPublicIntercomCallbackRouteImport } from './routes/api/public/intercom.callback'
 import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public/hooks/daily-sync'
 import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
@@ -145,6 +146,12 @@ const ApiPublicZendeskCallbackRoute =
     path: '/api/public/zendesk/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicIntercomCallbackRoute =
+  ApiPublicIntercomCallbackRouteImport.update({
+    id: '/api/public/intercom/callback',
+    path: '/api/public/intercom/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDailySyncRoute = ApiPublicHooksDailySyncRouteImport.update({
   id: '/api/public/hooks/daily-sync',
   path: '/api/public/hooks/daily-sync',
@@ -184,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
@@ -207,6 +215,7 @@ export interface FileRoutesByTo {
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/app/customers': typeof AuthenticatedAppCustomersIndexRoute
@@ -234,6 +243,7 @@ export interface FileRoutesById {
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/_authenticated/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
     | '/app/customers/'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
     | '/app/customers'
@@ -310,6 +322,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/customers/$id'
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
     | '/_authenticated/app/customers/'
@@ -322,6 +335,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
   ApiPublicHooksDailySyncRoute: typeof ApiPublicHooksDailySyncRoute
+  ApiPublicIntercomCallbackRoute: typeof ApiPublicIntercomCallbackRoute
   ApiPublicZendeskCallbackRoute: typeof ApiPublicZendeskCallbackRoute
   ApiPublicZohoCallbackRoute: typeof ApiPublicZohoCallbackRoute
 }
@@ -475,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicZendeskCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/intercom/callback': {
+      id: '/api/public/intercom/callback'
+      path: '/api/public/intercom/callback'
+      fullPath: '/api/public/intercom/callback'
+      preLoaderRoute: typeof ApiPublicIntercomCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/daily-sync': {
       id: '/api/public/hooks/daily-sync'
       path: '/api/public/hooks/daily-sync'
@@ -569,19 +590,10 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
   ApiPublicHooksDailySyncRoute: ApiPublicHooksDailySyncRoute,
+  ApiPublicIntercomCallbackRoute: ApiPublicIntercomCallbackRoute,
   ApiPublicZendeskCallbackRoute: ApiPublicZendeskCallbackRoute,
   ApiPublicZohoCallbackRoute: ApiPublicZohoCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
