@@ -374,7 +374,7 @@ export function buildRealDataset(
     const lastTs = txg?.lastDate ?? parseDate(r.signup_date);
     const lastActivity = lastTs ? `${Math.max(0, Math.round((now - lastTs) / DAY))} days ago` : "—";
 
-    const factors = buildFactors(subScores, { days, supg });
+    const factors = buildFactors(subScores, { days, supg, customMetrics });
     const recommendations = factors
       .map((f) => {
         const base = REC_FOR[f.label];
