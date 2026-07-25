@@ -235,6 +235,57 @@ export function buildRealDataset(
     srv.set(id, arr);
   }
 
+  // ---- AI-suggested custom metrics: latest value per customer ----
+  // Each AI metric writes to a dataset key like `metric_<column>` with rows
+  // { customer_id, date, <column> }. We keep the most recent value per
+  // customer so the sub-score reflects the current state, not history.
+  const customMetrics = customMetricKeys(profile?.metrics).filter(
+    (cm) => !(METRIC_NAMES as readonly string[]).includes(cm.metric.name),
+  );
+  const customLatest = new Map<string, Map<string, number>>(); // metricName -> cid -> value
+  const customMax = new Map<string, number>();
+  const customMin = new Map<string, number>();
+  for (const cm of customMetrics) {
+    const rows = data[cm.key] ?? [];
+    const latestTs = new Map<string, number>();
+    const latestVal = new Map<string, number>();
+    for (const r of rows) {
+      const id = r.customer_id;
+      if (!id) continue;
+      const v = num(r[cm.column]);
+      if (v == null) continue;
+      const t = parseDate(r.date) ?? 0;
+      const prev = latestTs.get(id);
+      if (prev == null || t >= prev) {
+        latestTs.set(id, t);
+        latestVal.set(id, v);
+      }
+    }
+    if (latestVal.size > 0) {
+      customLatest.set(cm.metric.name, latestVal);
+      const vals = [...latestVal.values()];
+      customMax.set(cm.metric.name, Math.max(...vals));
+      customMin.set(cm.metric.name, Math.min(...vals));
+    }
+  }
+
+  // Normalize a raw metric value to 0–100 using the metric's own valueAt0 /
+  // valueAt100 anchors (invert automatically when "lower is better"). Falls
+  // back to relative scoring against the customer-base max when anchors are
+  // missing.
+  const customSubScore = (cm: CustomMetricKey, v: number): number => {
+    const a0 = cm.metric.valueAt0;
+    const a100 = cm.metric.valueAt100;
+    if (a0 != null && a100 != null && a0 !== a100) {
+      const pct = ((v - a0) / (a100 - a0)) * 100;
+      return clamp(pct);
+    }
+    const mx = customMax.get(cm.metric.name) ?? 1;
+    const mn = customMin.get(cm.metric.name) ?? 0;
+    if (mx === mn) return 60;
+    return clamp(((v - mn) / (mx - mn)) * 100);
+  };
+
   // ---- reference maxima for relative scoring ----
   const aovByCust = new Map<string, number>();
   for (const [id, g] of tx) {
@@ -253,6 +304,7 @@ export function buildRealDataset(
   const maxLogin = Math.max(1, ...loginAvgByCust.values());
   const maxFeat = Math.max(1, ...featAvgByCust.values());
   const maxTickets = Math.max(1, ...[...sup.values()].map((g) => g.count));
+
 
   const csatScore = (id: string): number | null => {
     const scores = [...(srv.get(id) ?? []), ...((sup.get(id)?.sat) ?? [])];
