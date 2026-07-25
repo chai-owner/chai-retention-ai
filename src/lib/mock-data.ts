@@ -374,10 +374,10 @@ export function buildDataset(weights: MetricWeights): ScoredDataset {
   // lower churn probability) are far more winnable than deeply critical ones.
   const retentionOpportunity = atRiskCustomers.reduce((s, c) => {
     const exposure = c.revenue * (c.churnProbability / 100);
-    // Health-based saveability: ramps from ~0.20 (health 0) to ~0.80 (health 55).
-    const healthFactor = 0.2 + (Math.max(0, Math.min(c.health, 55)) / 55) * 0.6;
+    // Health-based saveability: ramps from ~0.40 (health 0) to ~0.90 (health 55).
+    const healthFactor = 0.4 + (Math.max(0, Math.min(c.health, 55)) / 55) * 0.5;
     // Lower churn probability leaves more room to intervene successfully.
-    const momentumFactor = 0.6 + (1 - c.churnProbability / 100) * 0.4;
+    const momentumFactor = 0.8 + (1 - c.churnProbability / 100) * 0.2;
     return s + Math.round(exposure * healthFactor * momentumFactor);
   }, 0);
 

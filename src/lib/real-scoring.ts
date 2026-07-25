@@ -355,8 +355,8 @@ export function buildRealDataset(
   );
   const retentionOpportunity = atRiskCustomers.reduce((s, c) => {
     const exposure = c.revenue * (c.churnProbability / 100);
-    const healthFactor = 0.2 + (Math.max(0, Math.min(c.health, 55)) / 55) * 0.6;
-    const momentumFactor = 0.6 + (1 - c.churnProbability / 100) * 0.4;
+    const healthFactor = 0.4 + (Math.max(0, Math.min(c.health, 55)) / 55) * 0.5;
+    const momentumFactor = 0.8 + (1 - c.churnProbability / 100) * 0.2;
     return s + Math.round(exposure * healthFactor * momentumFactor);
   }, 0);
 
