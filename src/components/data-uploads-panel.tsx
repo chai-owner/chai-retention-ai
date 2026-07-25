@@ -9,7 +9,11 @@ import { UploadWizard } from "@/components/upload-wizard";
 import { SmartIngestWizard } from "@/components/smart-ingest-wizard";
 import { datasetSchemas } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
-import { personalizeDatasets, type PersonalizedDataset } from "@/lib/personalize-data";
+import {
+  personalizeDatasets,
+  buildCustomMetricsDataset,
+  type PersonalizedDataset,
+} from "@/lib/personalize-data";
 import { useUploads } from "@/lib/uploads-store";
 import { useAddons, addonsStore, SMART_INGEST_PRICING } from "@/lib/addons-store";
 import { cn } from "@/lib/utils";
