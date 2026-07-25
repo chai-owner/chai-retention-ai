@@ -22,7 +22,7 @@ import {
 import { useProfile } from "@/lib/profile-store";
 import {
   personalizeDatasets,
-  buildCustomMetricsDataset,
+  buildCustomMetricDatasets,
   type PersonalizedDataset,
 } from "@/lib/personalize-data";
 import { useUploads } from "@/lib/uploads-store";
