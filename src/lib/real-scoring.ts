@@ -15,6 +15,8 @@ import {
 } from "@/lib/mock-data";
 import type { OnboardingProfile, ProfileSegment } from "@/lib/profile-store";
 import type { IngestedData } from "@/lib/ingested-data-store";
+import { customMetricKeys, type CustomMetricKey } from "@/lib/personalize-data";
+
 
 const DAY = 86400000;
 const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
@@ -130,7 +132,7 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
 
 function buildFactors(
   sub: Record<string, number>,
-  ctx: { days: number | null; supg?: { count: number; open: number }; },
+  ctx: { days: number | null; supg?: { count: number; open: number }; customMetrics?: CustomMetricKey[] },
 ): Factor[] {
   const out: Factor[] = [];
   const push = (label: string, score: number, detail: string) =>
@@ -151,8 +153,20 @@ function buildFactors(
   if (sub["Average order value"] != null && sub["Average order value"] < 40)
     push("Low spend", sub["Average order value"], "Average order value is in the lower range of your customer base.");
 
+  // AI-suggested metrics: any that landed below the healthy band get surfaced
+  // with the metric's own name so the customer drawer explains the drag.
+  if (ctx.customMetrics) {
+    for (const cm of ctx.customMetrics) {
+      const s = sub[cm.metric.name];
+      if (s != null && s < 50) {
+        push(cm.metric.name, s, `Below the healthy range for ${cm.metric.name}.`);
+      }
+    }
+  }
+
   return out.sort((a, b) => b.weight - a.weight).slice(0, 3);
 }
+
 
 function segmentFor(monthly: number | null, segs: ProfileSegment[]): string {
   if (monthly != null) {
@@ -221,6 +235,57 @@ export function buildRealDataset(
     srv.set(id, arr);
   }
 
+  // ---- AI-suggested custom metrics: latest value per customer ----
+  // Each AI metric writes to a dataset key like `metric_<column>` with rows
+  // { customer_id, date, <column> }. We keep the most recent value per
+  // customer so the sub-score reflects the current state, not history.
+  const customMetrics = customMetricKeys(profile?.metrics).filter(
+    (cm) => !(METRIC_NAMES as readonly string[]).includes(cm.metric.name),
+  );
+  const customLatest = new Map<string, Map<string, number>>(); // metricName -> cid -> value
+  const customMax = new Map<string, number>();
+  const customMin = new Map<string, number>();
+  for (const cm of customMetrics) {
+    const rows = data[cm.key] ?? [];
+    const latestTs = new Map<string, number>();
+    const latestVal = new Map<string, number>();
+    for (const r of rows) {
+      const id = r.customer_id;
+      if (!id) continue;
+      const v = num(r[cm.column]);
+      if (v == null) continue;
+      const t = parseDate(r.date) ?? 0;
+      const prev = latestTs.get(id);
+      if (prev == null || t >= prev) {
+        latestTs.set(id, t);
+        latestVal.set(id, v);
+      }
+    }
+    if (latestVal.size > 0) {
+      customLatest.set(cm.metric.name, latestVal);
+      const vals = [...latestVal.values()];
+      customMax.set(cm.metric.name, Math.max(...vals));
+      customMin.set(cm.metric.name, Math.min(...vals));
+    }
+  }
+
+  // Normalize a raw metric value to 0–100 using the metric's own valueAt0 /
+  // valueAt100 anchors (invert automatically when "lower is better"). Falls
+  // back to relative scoring against the customer-base max when anchors are
+  // missing.
+  const customSubScore = (cm: CustomMetricKey, v: number): number => {
+    const a0 = cm.metric.valueAt0;
+    const a100 = cm.metric.valueAt100;
+    if (a0 != null && a100 != null && a0 !== a100) {
+      const pct = ((v - a0) / (a100 - a0)) * 100;
+      return clamp(pct);
+    }
+    const mx = customMax.get(cm.metric.name) ?? 1;
+    const mn = customMin.get(cm.metric.name) ?? 0;
+    if (mx === mn) return 60;
+    return clamp(((v - mn) / (mx - mn)) * 100);
+  };
+
   // ---- reference maxima for relative scoring ----
   const aovByCust = new Map<string, number>();
   for (const [id, g] of tx) {
@@ -239,6 +304,7 @@ export function buildRealDataset(
   const maxLogin = Math.max(1, ...loginAvgByCust.values());
   const maxFeat = Math.max(1, ...featAvgByCust.values());
   const maxTickets = Math.max(1, ...[...sup.values()].map((g) => g.count));
+
 
   const csatScore = (id: string): number | null => {
     const scores = [...(srv.get(id) ?? []), ...((sup.get(id)?.sat) ?? [])];
@@ -276,11 +342,23 @@ export function buildRealDataset(
     const cs = csatScore(cid);
     if (cs != null) subScores["CSAT / NPS"] = cs;
 
+    // AI-suggested custom metrics — one sub-score per metric this customer
+    // has an uploaded value for.
+    for (const cm of customMetrics) {
+      const v = customLatest.get(cm.metric.name)?.get(cid);
+      if (v != null) subScores[cm.metric.name] = customSubScore(cm, v);
+    }
+
     let numr = 0;
     let den = 0;
-    for (const m of METRIC_NAMES) {
+    const scoredNames: string[] = [
+      ...METRIC_NAMES,
+      ...customMetrics.map((cm) => cm.metric.name),
+    ];
+    for (const m of scoredNames) {
       if (m in subScores) {
         const w = weights[m] ?? 1;
+        if (w <= 0) continue;
         numr += subScores[m] * w;
         den += w;
       }
@@ -288,6 +366,7 @@ export function buildRealDataset(
     // No behavioural signal for this account → neutral "watch" rather than a
     // fabricated score.
     const health = den > 0 ? Math.round(numr / den) : 60;
+
     const cat = categoryFromHealth(health);
     const risk = Math.round(clamp(100 - health));
     const churnProbability = Math.round(clamp((100 - health) * 0.9 + (cat === "critical" ? 8 : 0), 3, 96));
@@ -295,7 +374,7 @@ export function buildRealDataset(
     const lastTs = txg?.lastDate ?? parseDate(r.signup_date);
     const lastActivity = lastTs ? `${Math.max(0, Math.round((now - lastTs) / DAY))} days ago` : "—";
 
-    const factors = buildFactors(subScores, { days, supg });
+    const factors = buildFactors(subScores, { days, supg, customMetrics });
     const recommendations = factors
       .map((f) => {
         const base = REC_FOR[f.label];

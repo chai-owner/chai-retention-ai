@@ -16,18 +16,32 @@ import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/rea
 import { useSignedIn } from "@/lib/use-auth-state";
 import { useDemoMode } from "@/lib/use-demo-mode";
 
-// Resolve the active importance weights. When the user has saved their own set
-// (from onboarding — which may be an AI-generated metric set with custom names),
-// use it verbatim so scoring keys off exactly those metrics. Otherwise fall
-// back to the built-in defaults.
-export function resolveWeights(saved?: Record<string, number> | null): MetricWeights {
-  if (saved && Object.keys(saved).length > 0) return saved;
-  return DEFAULT_METRIC_WEIGHTS;
+// Resolve the active importance weights. Merges the user's saved importance
+// values (which may be an AI-generated metric set with custom names) with the
+// AI-metric definitions from onboarding so every metric — built-in or
+// AI-suggested — carries a weight into the scorer. Metrics the user hasn't
+// scored yet default to 3 (Moderate). Setting a weight to 0 removes that
+// metric from the blend entirely.
+export function resolveWeights(
+  saved?: Record<string, number> | null,
+  metrics?: PlannerMetric[] | null,
+): MetricWeights {
+  const base: MetricWeights =
+    saved && Object.keys(saved).length > 0 ? { ...saved } : { ...DEFAULT_METRIC_WEIGHTS };
+  if (metrics && metrics.length > 0) {
+    for (const m of metrics) {
+      if (base[m.name] == null) base[m.name] = m.weight ?? 3;
+    }
+  }
+  return base;
 }
 
 export function useMetricWeights(): MetricWeights {
   const profile = useProfile();
-  return useMemo(() => resolveWeights(profile?.metricWeights), [profile?.metricWeights]);
+  return useMemo(
+    () => resolveWeights(profile?.metricWeights, profile?.metrics),
+    [profile?.metricWeights, profile?.metrics],
+  );
 }
 
 // The active metric definitions: the AI-generated set saved during onboarding
@@ -39,6 +53,7 @@ export function useActiveMetrics(): PlannerMetric[] {
     [profile?.metrics],
   );
 }
+
 
 export function useScoredData(): ScoredDataset {
   const weights = useMetricWeights();
