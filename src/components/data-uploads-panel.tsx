@@ -122,66 +122,18 @@ export function SmartIngestCard() {
   );
 }
 
-function DatasetRow({ dataset, lastUpload }: { dataset: PersonalizedDataset; lastUpload?: string }) {
-  const [wizardOpen, setWizardOpen] = useState(false);
-
-  const recencyColor = (date: string) => {
-    const days = (Date.now() - new Date(date.replace(" ", "T")).getTime()) / 86400000;
-    if (days <= 30) return "text-success";
-    if (days <= 90) return "text-warning";
-    return "text-danger";
-  };
-
-  return (
-    <div className="flex flex-col gap-3 py-4 md:flex-row md:items-start md:justify-between">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-semibold">{dataset.label}</p>
-        </div>
-
-        <p className="mt-0.5 text-xs text-muted-foreground">{dataset.description}</p>
-
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {dataset.fields.map((f) => (
-            <span
-              key={f.name}
-              title={f.description}
-              className={cn(
-                "rounded-md border px-1.5 py-0.5 font-mono text-[11px]",
-                f.mandatory
-                  ? "border-danger/30 bg-danger/10 text-danger"
-                  : "border-border bg-secondary text-muted-foreground",
-              )}
-            >
-              {f.name}
-              {f.mandatory && " *"}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex shrink-0 flex-col items-stretch gap-1 md:items-end">
-        <button
-          onClick={() => setWizardOpen(true)}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          <Upload className="h-3.5 w-3.5" /> Upload {dataset.label}
-        </button>
-        {lastUpload && (
-          <span className={cn("text-[11px] italic md:text-right", recencyColor(lastUpload))}>
-            Last uploaded on {lastUpload}
-          </span>
-        )}
-      </div>
-
-      <UploadWizard dataset={dataset} open={wizardOpen} onOpenChange={setWizardOpen} />
-    </div>
-  );
+function recencyColor(date: string) {
+  const days = (Date.now() - new Date(date.replace(" ", "T")).getTime()) / 86400000;
+  if (days <= 30) return "text-success";
+  if (days <= 90) return "text-warning";
+  return "text-danger";
 }
 
 export function UploadDatasetsCard() {
   const uploads = useUploads();
   const profile = useProfile();
+  const [selectedKey, setSelectedKey] = useState<string>("");
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const personalized = useMemo(() => {
     const custom = buildCustomMetricsDataset(profile?.metrics);
@@ -198,25 +150,119 @@ export function UploadDatasetsCard() {
     }
     return map;
   }, [uploads]);
-  const lastUpload = (d: PersonalizedDataset) => lastUploadByLabel.get(d.label.toLowerCase());
+
+  const selected = personalized.find((d) => d.key === selectedKey);
+  const lastUpload = selected ? lastUploadByLabel.get(selected.label.toLowerCase()) : undefined;
 
   return (
     <Card className="mt-6">
-      <h3 className="font-semibold">What to upload for your business</h3>
+      <h3 className="font-semibold">Upload your data</h3>
       <p className="mt-1 text-xs text-muted-foreground">
         {profile
-          ? `Tailored to your ${profile.model} business and how you defined success. Upload each dataset below to power your retention model.`
-          : "Upload each dataset below. Complete onboarding to tailor these to your business and industry."}
+          ? `Pick what you're uploading. ChAi will show you the recommended template for your ${profile.model} business.`
+          : "Pick what you're uploading. ChAi will show you the recommended template. Complete onboarding to tailor these to your business."}
       </p>
 
-      <div className="mt-5 divide-y divide-border border-y border-border">
-        {personalized.map((s) => (
-          <DatasetRow key={s.key} dataset={s} lastUpload={lastUpload(s)} />
-        ))}
+      <div className="mt-5 space-y-2">
+        <label className="text-xs font-medium text-muted-foreground">What are you uploading?</label>
+        <Select value={selectedKey} onValueChange={setSelectedKey}>
+          <SelectTrigger className="w-full md:w-96">
+            <SelectValue placeholder="Choose a dataset or metric…" />
+          </SelectTrigger>
+          <SelectContent>
+            {personalized.map((d) => (
+              <SelectItem key={d.key} value={d.key}>
+                {d.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      {selected && (
+        <div className="mt-5 rounded-xl border border-border bg-accent/20 p-4">
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-semibold">{selected.label}</p>
+            <p className="text-xs text-muted-foreground">{selected.description}</p>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Recommended template
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {selected.fields.map((f) => (
+                <span
+                  key={f.name}
+                  title={f.description}
+                  className={cn(
+                    "rounded-md border px-1.5 py-0.5 font-mono text-[11px]",
+                    f.mandatory
+                      ? "border-danger/30 bg-danger/10 text-danger"
+                      : "border-border bg-secondary text-muted-foreground",
+                  )}
+                >
+                  {f.name}
+                  {f.mandatory && " *"}
+                </span>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Fields marked <span className="text-danger">*</span> are required. Download a starter
+              template to get the exact column names.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                onClick={() => downloadCsvTemplate(selected)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+              >
+                <Download className="h-3.5 w-3.5" /> CSV template
+              </button>
+              <button
+                onClick={() => downloadExcelTemplate(selected)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Excel template
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-col gap-2 border-t border-border pt-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <p className="text-xs font-medium">Ready to upload?</p>
+              {lastUpload ? (
+                <p className={cn("text-[11px] italic", recencyColor(lastUpload))}>
+                  Last uploaded on {lastUpload}
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">No file uploaded yet.</p>
+              )}
+            </div>
+            <button
+              onClick={() => setWizardOpen(true)}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              <Upload className="h-4 w-4" /> Upload file
+            </button>
+          </div>
+
+          <UploadWizard dataset={selected} open={wizardOpen} onOpenChange={setWizardOpen} />
+        </div>
+      )}
     </Card>
   );
 }
+
+// Convenience wrapper: the full "add your data" section (AI drop + CSV uploads).
+export function DataUploadsPanel() {
+  return (
+    <>
+      <SmartIngestCard />
+      <UploadDatasetsCard />
+    </>
+  );
+}
+
 
 // Convenience wrapper: the full "add your data" section (AI drop + CSV uploads).
 export function DataUploadsPanel() {
