@@ -342,11 +342,23 @@ export function buildRealDataset(
     const cs = csatScore(cid);
     if (cs != null) subScores["CSAT / NPS"] = cs;
 
+    // AI-suggested custom metrics — one sub-score per metric this customer
+    // has an uploaded value for.
+    for (const cm of customMetrics) {
+      const v = customLatest.get(cm.metric.name)?.get(cid);
+      if (v != null) subScores[cm.metric.name] = customSubScore(cm, v);
+    }
+
     let numr = 0;
     let den = 0;
-    for (const m of METRIC_NAMES) {
+    const scoredNames: string[] = [
+      ...METRIC_NAMES,
+      ...customMetrics.map((cm) => cm.metric.name),
+    ];
+    for (const m of scoredNames) {
       if (m in subScores) {
         const w = weights[m] ?? 1;
+        if (w <= 0) continue;
         numr += subScores[m] * w;
         den += w;
       }
@@ -354,6 +366,7 @@ export function buildRealDataset(
     // No behavioural signal for this account → neutral "watch" rather than a
     // fabricated score.
     const health = den > 0 ? Math.round(numr / den) : 60;
+
     const cat = categoryFromHealth(health);
     const risk = Math.round(clamp(100 - health));
     const churnProbability = Math.round(clamp((100 - health) * 0.9 + (cat === "critical" ? 8 : 0), 3, 96));
