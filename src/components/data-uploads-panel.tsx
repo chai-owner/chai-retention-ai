@@ -22,7 +22,7 @@ import {
 import { useProfile } from "@/lib/profile-store";
 import {
   personalizeDatasets,
-  buildCustomMetricsDataset,
+  buildCustomMetricDatasets,
   type PersonalizedDataset,
 } from "@/lib/personalize-data";
 import { useUploads } from "@/lib/uploads-store";
@@ -136,9 +136,8 @@ export function UploadDatasetsCard() {
   const [wizardOpen, setWizardOpen] = useState(false);
 
   const personalized = useMemo(() => {
-    const custom = buildCustomMetricsDataset(profile?.metrics);
-    const base = custom ? [...datasetSchemas, custom] : datasetSchemas;
-    return personalizeDatasets(profile, base);
+    const customs = buildCustomMetricDatasets(profile?.metrics);
+    return personalizeDatasets(profile, [...datasetSchemas, ...customs]);
   }, [profile]);
 
   const lastUploadByLabel = useMemo(() => {
