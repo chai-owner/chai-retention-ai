@@ -171,10 +171,11 @@ export function UploadDatasetsCard() {
   const uploads = useUploads();
   const profile = useProfile();
 
-  const personalized = useMemo(
-    () => personalizeDatasets(profile, datasetSchemas),
-    [profile],
-  );
+  const personalized = useMemo(() => {
+    const custom = buildCustomMetricsDataset(profile?.metrics);
+    const base = custom ? [...datasetSchemas, custom] : datasetSchemas;
+    return personalizeDatasets(profile, base);
+  }, [profile]);
 
   const lastUploadByLabel = useMemo(() => {
     const map = new Map<string, string>();
