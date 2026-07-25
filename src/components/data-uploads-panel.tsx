@@ -3,11 +3,22 @@
 // the onboarding "Add your data" step so they stay identical.
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Lock, Sparkles, Upload } from "lucide-react";
+import { Check, Download, FileSpreadsheet, Lock, Sparkles, Upload } from "lucide-react";
 import { Card } from "@/components/ui/chai";
 import { UploadWizard } from "@/components/upload-wizard";
 import { SmartIngestWizard } from "@/components/smart-ingest-wizard";
-import { datasetSchemas } from "@/lib/data-schemas";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  datasetSchemas,
+  downloadCsvTemplate,
+  downloadExcelTemplate,
+} from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
 import {
   personalizeDatasets,
@@ -17,6 +28,7 @@ import {
 import { useUploads } from "@/lib/uploads-store";
 import { useAddons, addonsStore, SMART_INGEST_PRICING } from "@/lib/addons-store";
 import { cn } from "@/lib/utils";
+
 
 export function SmartIngestCard() {
   const { smartIngest } = useAddons();
