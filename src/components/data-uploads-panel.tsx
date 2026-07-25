@@ -262,14 +262,3 @@ export function DataUploadsPanel() {
     </>
   );
 }
-
-
-// Convenience wrapper: the full "add your data" section (AI drop + CSV uploads).
-export function DataUploadsPanel() {
-  return (
-    <>
-      <SmartIngestCard />
-      <UploadDatasetsCard />
-    </>
-  );
-}
