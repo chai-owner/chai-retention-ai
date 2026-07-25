@@ -136,9 +136,8 @@ export function UploadDatasetsCard() {
   const [wizardOpen, setWizardOpen] = useState(false);
 
   const personalized = useMemo(() => {
-    const custom = buildCustomMetricsDataset(profile?.metrics);
-    const base = custom ? [...datasetSchemas, custom] : datasetSchemas;
-    return personalizeDatasets(profile, base);
+    const customs = buildCustomMetricDatasets(profile?.metrics);
+    return personalizeDatasets(profile, [...datasetSchemas, ...customs]);
   }, [profile]);
 
   const lastUploadByLabel = useMemo(() => {
