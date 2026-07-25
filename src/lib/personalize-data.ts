@@ -3,6 +3,7 @@
 // no side effects — safe to run during render and on the server.
 import type { DatasetSchema, SchemaField } from "@/lib/data-schemas";
 import type { OnboardingProfile } from "@/lib/profile-store";
+import type { PlannerMetric } from "@/lib/mock-data";
 
 export interface PersonalizedField extends SchemaField {
   promoted?: boolean; // became required because of the profile
@@ -12,6 +13,63 @@ export interface PersonalizedDataset extends DatasetSchema {
   required: boolean;
   reasons: string[];
   fields: PersonalizedField[];
+}
+
+// Turn a metric name into a safe snake_case column name.
+export function metricColumnName(name: string): string {
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 40) || "metric"
+  );
+}
+
+// Build a synthetic dataset that lets the user upload values for the exact
+// metrics ChAi selected for them during onboarding. One column per metric,
+// plus customer_id and a measurement date.
+export function buildCustomMetricsDataset(
+  metrics: PlannerMetric[] | undefined,
+): DatasetSchema | null {
+  if (!metrics || metrics.length === 0) return null;
+  const seen = new Set<string>(["customer_id", "date"]);
+  const metricFields: SchemaField[] = [];
+  const sampleValues: string[] = [];
+  for (const m of metrics) {
+    const base = metricColumnName(m.name);
+    let col = base;
+    let i = 2;
+    while (seen.has(col)) col = `${base}_${i++}`;
+    seen.add(col);
+    const a0 = m.valueAt0 ?? 0;
+    const a100 = m.valueAt100 ?? 100;
+    const mid = a0 + (a100 - a0) * 0.6;
+    const sample = `${m.prefix ?? ""}${mid.toFixed(m.decimals ?? 0)}`;
+    metricFields.push({
+      name: col,
+      mandatory: false,
+      description: `${m.name}${m.unit ? ` (${m.unit.trim()})` : ""} — ${m.why || m.churn || m.category}`,
+      example: sample,
+    });
+    sampleValues.push(sample);
+  }
+  const fields: SchemaField[] = [
+    { name: "customer_id", mandatory: true, description: "Must match a customer_id", example: "CUS-1001" },
+    { name: "date", mandatory: true, description: "When the metric was measured (YYYY-MM-DD)", example: "2025-05-20" },
+    ...metricFields,
+  ];
+  return {
+    key: "custom_metrics",
+    label: "Your ChAi metrics",
+    description:
+      "Values for the retention metrics ChAi picked for your business during onboarding — one row per customer per measurement date.",
+    fields,
+    sampleRows: [
+      ["CUS-1001", "2025-05-20", ...sampleValues],
+      ["CUS-1002", "2025-05-20", ...sampleValues],
+    ],
+  };
 }
 
 // Which dataset each business model leans on most, plus the fields that matter.
