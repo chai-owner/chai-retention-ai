@@ -2,7 +2,7 @@
 // there is enough of it to score; otherwise falls back to the illustrative
 // sample dataset (used for SSR and the public, no-login demo experience).
 import { useMemo } from "react";
-import { useProfile, type OnboardingProfile } from "@/lib/profile-store";
+import { useProfile } from "@/lib/profile-store";
 import {
   buildDataset,
   DEFAULT_METRIC_WEIGHTS,
