@@ -1,21 +1,24 @@
 ## Goal
-Replace the "AI tokens" numbers on the admin page with a dollar cost, so the top stat and the per-customer column both read as USD.
 
-## Approach
-The `ai_usage_log` table stores `model`, `input_tokens`, `output_tokens` per row. Compute cost per row from a small pricing map (USD per 1M tokens), sum per user, and return dollars from the server function.
+Replace the current per-dataset upload list with a single unified upload point where the user picks the dataset/metric from a dropdown, then sees the recommended template and an upload area.
 
-Currently the app only calls `google/gemini-3-flash-preview`, but we'll build a map that's easy to extend and falls back to a default rate for unknown models.
+## Changes
 
-### Changes
+**`src/components/data-uploads-panel.tsx` — rewrite `UploadDatasetsCard`:**
+- Remove the list of `DatasetRow`s.
+- Show one card with:
+  1. A `Select` dropdown labelled "What are you uploading?" listing every personalized dataset (the standard ones plus the AI-generated "Your ChAi metrics" dataset when present).
+  2. Once a dataset is selected, show a panel with:
+     - Dataset description.
+     - Recommended template summary: required and optional columns rendered as the same field chips used today, plus a "Download CSV template" and "Download Excel template" link (reusing the same template helpers the current wizard exposes; if only CSV exists today, keep CSV only).
+     - "Last uploaded on <date>" if applicable, with the same recency color logic.
+     - An "Upload file" button that opens the existing `UploadWizard` for that dataset.
+- Preserve existing behavior: personalization via `personalizeDatasets`, custom-metrics dataset via `buildCustomMetricsDataset`, upload history via `useUploads`.
 
-1. `src/lib/admin.functions.ts`
-   - Add a `MODEL_PRICING` map: `{ "google/gemini-3-flash-preview": { input: 0.30, output: 2.50 } }` (USD per 1M tokens; matches Gemini 3 Flash public pricing). Default fallback for unknown models.
-   - In `listCustomers`, select `user_id, model, input_tokens, output_tokens` instead of `total_tokens`, compute `cost = input_tokens/1e6 * inRate + output_tokens/1e6 * outRate` per row, and sum per user.
-   - Rename `totalTokens` on `AdminCustomer` to `totalCostUsd: number`.
+**No changes** to `UploadWizard`, dataset schemas, personalize logic, or the `SmartIngestCard`. Business logic and ingestion pipeline stay identical.
 
-2. `src/routes/_authenticated.admin.tsx`
-   - Sum `totalCostUsd` instead of tokens.
-   - Change the Stat label from "Total AI tokens" to "Total AI cost" and format as `$X.XX` (use `Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })`; show 4 decimals when total < $1 for readability).
-   - Change the table column header "AI tokens" -> "AI cost" and format the cell the same way.
+## Out of scope
 
-No schema changes, no new dependencies.
+- Changing what datasets exist or their fields.
+- Changing the wizard flow after a file is chosen.
+- Any backend changes.
