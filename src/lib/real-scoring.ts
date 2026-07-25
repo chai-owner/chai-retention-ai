@@ -15,6 +15,8 @@ import {
 } from "@/lib/mock-data";
 import type { OnboardingProfile, ProfileSegment } from "@/lib/profile-store";
 import type { IngestedData } from "@/lib/ingested-data-store";
+import { customMetricKeys, type CustomMetricKey } from "@/lib/personalize-data";
+
 
 const DAY = 86400000;
 const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
@@ -130,7 +132,7 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
 
 function buildFactors(
   sub: Record<string, number>,
-  ctx: { days: number | null; supg?: { count: number; open: number }; },
+  ctx: { days: number | null; supg?: { count: number; open: number }; customMetrics?: CustomMetricKey[] },
 ): Factor[] {
   const out: Factor[] = [];
   const push = (label: string, score: number, detail: string) =>
@@ -151,8 +153,20 @@ function buildFactors(
   if (sub["Average order value"] != null && sub["Average order value"] < 40)
     push("Low spend", sub["Average order value"], "Average order value is in the lower range of your customer base.");
 
+  // AI-suggested metrics: any that landed below the healthy band get surfaced
+  // with the metric's own name so the customer drawer explains the drag.
+  if (ctx.customMetrics) {
+    for (const cm of ctx.customMetrics) {
+      const s = sub[cm.metric.name];
+      if (s != null && s < 50) {
+        push(cm.metric.name, s, `Below the healthy range for ${cm.metric.name}.`);
+      }
+    }
+  }
+
   return out.sort((a, b) => b.weight - a.weight).slice(0, 3);
 }
+
 
 function segmentFor(monthly: number | null, segs: ProfileSegment[]): string {
   if (monthly != null) {
