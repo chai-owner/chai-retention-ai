@@ -128,7 +128,8 @@ function Settings() {
       metricWeights,
       metrics: activeMetrics.map((m) => ({ ...m, weight: metricWeights[m.name] ?? m.weight ?? 3 })),
     };
-    profileStore.save(payload);
+    const current = profileStore.getSnapshot();
+    profileStore.save({ ...(current ?? {}), ...payload });
     persistProfile({ data: payload }).catch(() => {
       // Non-blocking: localStorage already holds the profile.
     });
