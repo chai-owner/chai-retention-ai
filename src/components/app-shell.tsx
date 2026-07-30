@@ -9,7 +9,6 @@ import {
   Database,
   ClipboardList,
   Lightbulb,
-  ShieldCheck,
   Sparkles,
   Menu,
   X,

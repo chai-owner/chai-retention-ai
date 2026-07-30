@@ -25,7 +25,6 @@ import { Route as AuthenticatedAppDataQualityRouteImport } from './routes/_authe
 import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenticated.app.insights'
 import { Route as AuthenticatedAppPlannerRouteImport } from './routes/_authenticated.app.planner'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated.app.settings'
-import { Route as AuthenticatedAppTrustRouteImport } from './routes/_authenticated.app.trust'
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
@@ -119,11 +118,6 @@ const AuthenticatedAppSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const AuthenticatedAppTrustRoute = AuthenticatedAppTrustRouteImport.update({
-  id: '/trust',
-  path: '/trust',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
 const AuthenticatedAppWelcomeRoute = AuthenticatedAppWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -185,7 +179,6 @@ export interface FileRoutesByFullPath {
   '/app/insights': typeof AuthenticatedAppInsightsRoute
   '/app/planner': typeof AuthenticatedAppPlannerRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
-  '/app/trust': typeof AuthenticatedAppTrustRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -209,7 +202,6 @@ export interface FileRoutesByTo {
   '/app/insights': typeof AuthenticatedAppInsightsRoute
   '/app/planner': typeof AuthenticatedAppPlannerRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
-  '/app/trust': typeof AuthenticatedAppTrustRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -237,7 +229,6 @@ export interface FileRoutesById {
   '/_authenticated/app/insights': typeof AuthenticatedAppInsightsRoute
   '/_authenticated/app/planner': typeof AuthenticatedAppPlannerRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
-  '/_authenticated/app/trust': typeof AuthenticatedAppTrustRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -265,7 +256,6 @@ export interface FileRouteTypes {
     | '/app/insights'
     | '/app/planner'
     | '/app/settings'
-    | '/app/trust'
     | '/app/welcome'
     | '/app/'
     | '/app/customers/$id'
@@ -289,7 +279,6 @@ export interface FileRouteTypes {
     | '/app/insights'
     | '/app/planner'
     | '/app/settings'
-    | '/app/trust'
     | '/app/welcome'
     | '/app'
     | '/app/customers/$id'
@@ -316,7 +305,6 @@ export interface FileRouteTypes {
     | '/_authenticated/app/insights'
     | '/_authenticated/app/planner'
     | '/_authenticated/app/settings'
-    | '/_authenticated/app/trust'
     | '/_authenticated/app/welcome'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
@@ -454,13 +442,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/trust': {
-      id: '/_authenticated/app/trust'
-      path: '/trust'
-      fullPath: '/app/trust'
-      preLoaderRoute: typeof AuthenticatedAppTrustRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
     '/_authenticated/app/welcome': {
       id: '/_authenticated/app/welcome'
       path: '/welcome'
@@ -545,7 +526,6 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppInsightsRoute: typeof AuthenticatedAppInsightsRoute
   AuthenticatedAppPlannerRoute: typeof AuthenticatedAppPlannerRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
-  AuthenticatedAppTrustRoute: typeof AuthenticatedAppTrustRoute
   AuthenticatedAppWelcomeRoute: typeof AuthenticatedAppWelcomeRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
@@ -559,7 +539,6 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppInsightsRoute: AuthenticatedAppInsightsRoute,
   AuthenticatedAppPlannerRoute: AuthenticatedAppPlannerRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
-  AuthenticatedAppTrustRoute: AuthenticatedAppTrustRoute,
   AuthenticatedAppWelcomeRoute: AuthenticatedAppWelcomeRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
@@ -597,3 +576,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
