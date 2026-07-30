@@ -175,6 +175,95 @@ function DataQualityPage() {
           )}
         </div>
       </Card>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Forget a customer */}
+        <Card>
+          <div className="flex items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+              <UserX className="h-4 w-4" />
+            </span>
+            <div>
+              <h3 className="font-semibold">Forget a customer</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Handle a right-to-be-forgotten request. Personal details are removed and the
+                customer's ID is anonymised, while aggregate metrics stay intact.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={forgetId}
+              onChange={(e) => setForgetId(e.target.value)}
+              placeholder="Customer ID or email"
+              aria-label="Customer ID or email to forget"
+            />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  disabled={forgetId.trim().length === 0}
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:border-danger/40 hover:text-danger disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <UserX className="h-4 w-4" /> Forget
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Forget this customer?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    We'll anonymise all records linked to{" "}
+                    <span className="font-medium text-foreground">{forgetId.trim()}</span>. Their
+                    personal details will no longer be recoverable.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={forgetCustomer}
+                    className="bg-danger text-danger-foreground hover:bg-danger/90"
+                  >
+                    Forget customer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </Card>
+
+        {/* Audit log */}
+        <Card>
+          <div className="flex items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+              <ScrollText className="h-4 w-4" />
+            </span>
+            <div>
+              <h3 className="font-semibold">Audit log</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                A record of data access, imports and deletions.
+              </p>
+            </div>
+          </div>
+          {isReal ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No activity recorded yet.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {sampleAuditLog.map((a, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                  <div>
+                    <p>{a.action}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {a.who} · {a.when}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
