@@ -37,7 +37,6 @@ const nav = [
   { to: "/app/data-quality", label: "Data Quality", icon: BadgeCheck },
   { to: "/app/planner", label: "Intelligence Planner", icon: ClipboardList },
   { to: "/app/insights", label: "Insights & Benchmarks", icon: Lightbulb },
-  { to: "/app/trust", label: "Trust & Compliance", icon: ShieldCheck },
   { to: "/app/data", label: "Data Uploads & Integrations", icon: Database },
   { to: "/app/settings", label: "Business Profile", icon: Settings },
 ];
