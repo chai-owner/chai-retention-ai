@@ -4,9 +4,9 @@
 // the ingested_* tables (so records with the same natural key are updated,
 // not duplicated).
 //
-// Auth: pg_cron passes the Supabase publishable/anon key as the `apikey`
-// header; we compare it (in a timing-safe way) to SUPABASE_PUBLISHABLE_KEY
-// so random public callers can't trigger a sync run.
+// Auth: pg_cron sends a dedicated server-only secret (CRON_SECRET) in the
+// `x-cron-secret` header. It is never exposed to the client bundle, so random
+// public callers can't trigger a sync run.
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 
@@ -14,8 +14,8 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
-        const provided = request.headers.get("apikey") ?? "";
+        const expected = process.env.CRON_SECRET ?? "";
+        const provided = request.headers.get("x-cron-secret") ?? "";
         if (
           !expected ||
           provided.length !== expected.length ||
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
             headers: { "Content-Type": "application/json" },
           });
         }
+
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { fetchAndNormalize } = await import("@/lib/accounting.server");

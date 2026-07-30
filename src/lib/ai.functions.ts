@@ -3,6 +3,7 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { logAiUsage } from "./ai-usage.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = "google/gemini-3-flash-preview";
 
@@ -24,6 +25,7 @@ const AskChAiInput = z.object({
 export type AskChAiInput = z.infer<typeof AskChAiInput>;
 
 export const askChai = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => AskChAiInput.parse(input))
   .handler(async ({ data }): Promise<{ reply: string }> => {
     const key = process.env.LOVABLE_API_KEY;
@@ -76,6 +78,7 @@ const RiskSummaryInput = z.object({
 export type RiskSummaryInput = z.infer<typeof RiskSummaryInput>;
 
 export const summarizeRiskReasons = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => RiskSummaryInput.parse(input))
   .handler(async ({ data }): Promise<Record<string, string>> => {
     const key = process.env.LOVABLE_API_KEY;
@@ -122,6 +125,7 @@ const CollectiveInsightsInput = z.object({
 export type CollectiveInsightsInput = z.infer<typeof CollectiveInsightsInput>;
 
 export const generateCollectiveInsights = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => CollectiveInsightsInput.parse(input))
   .handler(async ({ data }): Promise<{ insights: string[] }> => {
     const key = process.env.LOVABLE_API_KEY;
@@ -183,6 +187,7 @@ export type RecommendMetricWeightsInput = z.infer<typeof RecommendMetricWeightsI
 export type MetricRecommendation = { name: string; weight: number; reason: string };
 
 export const recommendMetricWeights = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => RecommendMetricWeightsInput.parse(input))
   .handler(async ({ data }): Promise<{ recommendations: MetricRecommendation[] }> => {
     const key = process.env.LOVABLE_API_KEY;
@@ -290,6 +295,7 @@ export type GeneratedMetric = {
 };
 
 export const recommendMetrics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => RecommendMetricsInput.parse(input))
   .handler(async ({ data }): Promise<{ metrics: GeneratedMetric[] }> => {
     const key = process.env.LOVABLE_API_KEY;

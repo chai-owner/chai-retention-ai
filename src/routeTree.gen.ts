@@ -9,35 +9,39 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
-import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
-import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
-import { Route as AuthenticatedAppTrustRouteImport } from './routes/_authenticated.app.trust'
-import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated.app.settings'
-import { Route as AuthenticatedAppPlannerRouteImport } from './routes/_authenticated.app.planner'
-import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenticated.app.insights'
-import { Route as AuthenticatedAppDataQualityRouteImport } from './routes/_authenticated.app.data-quality'
-import { Route as AuthenticatedAppDataRouteImport } from './routes/_authenticated.app.data'
-import { Route as AuthenticatedAppDashboardRouteImport } from './routes/_authenticated.app.dashboard'
-import { Route as AuthenticatedAppCustomersRouteImport } from './routes/_authenticated.app.customers'
 import { Route as AuthenticatedAppChurnedRouteImport } from './routes/_authenticated.app.churned'
+import { Route as AuthenticatedAppCustomersRouteImport } from './routes/_authenticated.app.customers'
+import { Route as AuthenticatedAppDashboardRouteImport } from './routes/_authenticated.app.dashboard'
+import { Route as AuthenticatedAppDataRouteImport } from './routes/_authenticated.app.data'
+import { Route as AuthenticatedAppDataQualityRouteImport } from './routes/_authenticated.app.data-quality'
+import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenticated.app.insights'
+import { Route as AuthenticatedAppPlannerRouteImport } from './routes/_authenticated.app.planner'
+import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated.app.settings'
+import { Route as AuthenticatedAppTrustRouteImport } from './routes/_authenticated.app.trust'
+import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
-import { Route as ApiPublicZohoCallbackRouteImport } from './routes/api/public/zoho.callback'
-import { Route as ApiPublicZendeskCallbackRouteImport } from './routes/api/public/zendesk.callback'
-import { Route as ApiPublicIntercomCallbackRouteImport } from './routes/api/public/intercom.callback'
-import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public/hooks/daily-sync'
-import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
+import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
+import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public/hooks/daily-sync'
+import { Route as ApiPublicIntercomCallbackRouteImport } from './routes/api/public/intercom.callback'
+import { Route as ApiPublicZendeskCallbackRouteImport } from './routes/api/public/zendesk.callback'
+import { Route as ApiPublicZohoCallbackRouteImport } from './routes/api/public/zoho.callback'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -45,18 +49,14 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
@@ -64,9 +64,9 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   path: '/app',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
@@ -74,14 +74,43 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AuthenticatedAppWelcomeRoute = AuthenticatedAppWelcomeRouteImport.update({
-  id: '/welcome',
-  path: '/welcome',
+const AuthenticatedAppChurnedRoute = AuthenticatedAppChurnedRouteImport.update({
+  id: '/churned',
+  path: '/churned',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AuthenticatedAppTrustRoute = AuthenticatedAppTrustRouteImport.update({
-  id: '/trust',
-  path: '/trust',
+const AuthenticatedAppCustomersRoute =
+  AuthenticatedAppCustomersRouteImport.update({
+    id: '/customers',
+    path: '/customers',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppDashboardRoute =
+  AuthenticatedAppDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppDataRoute = AuthenticatedAppDataRouteImport.update({
+  id: '/data',
+  path: '/data',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppDataQualityRoute =
+  AuthenticatedAppDataQualityRouteImport.update({
+    id: '/data-quality',
+    path: '/data-quality',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppInsightsRoute =
+  AuthenticatedAppInsightsRouteImport.update({
+    id: '/insights',
+    path: '/insights',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppPlannerRoute = AuthenticatedAppPlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
 const AuthenticatedAppSettingsRoute =
@@ -90,43 +119,14 @@ const AuthenticatedAppSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
-const AuthenticatedAppPlannerRoute = AuthenticatedAppPlannerRouteImport.update({
-  id: '/planner',
-  path: '/planner',
+const AuthenticatedAppTrustRoute = AuthenticatedAppTrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
-const AuthenticatedAppInsightsRoute =
-  AuthenticatedAppInsightsRouteImport.update({
-    id: '/insights',
-    path: '/insights',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppDataQualityRoute =
-  AuthenticatedAppDataQualityRouteImport.update({
-    id: '/data-quality',
-    path: '/data-quality',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppDataRoute = AuthenticatedAppDataRouteImport.update({
-  id: '/data',
-  path: '/data',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppDashboardRoute =
-  AuthenticatedAppDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppCustomersRoute =
-  AuthenticatedAppCustomersRouteImport.update({
-    id: '/customers',
-    path: '/customers',
-    getParentRoute: () => AuthenticatedAppRoute,
-  } as any)
-const AuthenticatedAppChurnedRoute = AuthenticatedAppChurnedRouteImport.update({
-  id: '/churned',
-  path: '/churned',
+const AuthenticatedAppWelcomeRoute = AuthenticatedAppWelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
 const AuthenticatedAppCustomersIndexRoute =
@@ -135,21 +135,16 @@ const AuthenticatedAppCustomersIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAppCustomersRoute,
   } as any)
-const ApiPublicZohoCallbackRoute = ApiPublicZohoCallbackRouteImport.update({
-  id: '/api/public/zoho/callback',
-  path: '/api/public/zoho/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicZendeskCallbackRoute =
-  ApiPublicZendeskCallbackRouteImport.update({
-    id: '/api/public/zendesk/callback',
-    path: '/api/public/zendesk/callback',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAppCustomersIdRoute =
+  AuthenticatedAppCustomersIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedAppCustomersRoute,
   } as any)
-const ApiPublicIntercomCallbackRoute =
-  ApiPublicIntercomCallbackRouteImport.update({
-    id: '/api/public/intercom/callback',
-    path: '/api/public/intercom/callback',
+const ApiPublicAccountingCallbackRoute =
+  ApiPublicAccountingCallbackRouteImport.update({
+    id: '/api/public/accounting/callback',
+    path: '/api/public/accounting/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksDailySyncRoute = ApiPublicHooksDailySyncRouteImport.update({
@@ -157,18 +152,23 @@ const ApiPublicHooksDailySyncRoute = ApiPublicHooksDailySyncRouteImport.update({
   path: '/api/public/hooks/daily-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAccountingCallbackRoute =
-  ApiPublicAccountingCallbackRouteImport.update({
-    id: '/api/public/accounting/callback',
-    path: '/api/public/accounting/callback',
+const ApiPublicIntercomCallbackRoute =
+  ApiPublicIntercomCallbackRouteImport.update({
+    id: '/api/public/intercom/callback',
+    path: '/api/public/intercom/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAppCustomersIdRoute =
-  AuthenticatedAppCustomersIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedAppCustomersRoute,
+const ApiPublicZendeskCallbackRoute =
+  ApiPublicZendeskCallbackRouteImport.update({
+    id: '/api/public/zendesk/callback',
+    path: '/api/public/zendesk/callback',
+    getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicZohoCallbackRoute = ApiPublicZohoCallbackRouteImport.update({
+  id: '/api/public/zoho/callback',
+  path: '/api/public/zoho/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -342,18 +342,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -363,18 +356,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/onboarding': {
-      id: '/_authenticated/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/app': {
@@ -384,11 +384,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/app/': {
@@ -398,60 +398,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/welcome': {
-      id: '/_authenticated/app/welcome'
-      path: '/welcome'
-      fullPath: '/app/welcome'
-      preLoaderRoute: typeof AuthenticatedAppWelcomeRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/trust': {
-      id: '/_authenticated/app/trust'
-      path: '/trust'
-      fullPath: '/app/trust'
-      preLoaderRoute: typeof AuthenticatedAppTrustRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/settings': {
-      id: '/_authenticated/app/settings'
-      path: '/settings'
-      fullPath: '/app/settings'
-      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/planner': {
-      id: '/_authenticated/app/planner'
-      path: '/planner'
-      fullPath: '/app/planner'
-      preLoaderRoute: typeof AuthenticatedAppPlannerRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/insights': {
-      id: '/_authenticated/app/insights'
-      path: '/insights'
-      fullPath: '/app/insights'
-      preLoaderRoute: typeof AuthenticatedAppInsightsRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/data-quality': {
-      id: '/_authenticated/app/data-quality'
-      path: '/data-quality'
-      fullPath: '/app/data-quality'
-      preLoaderRoute: typeof AuthenticatedAppDataQualityRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/data': {
-      id: '/_authenticated/app/data'
-      path: '/data'
-      fullPath: '/app/data'
-      preLoaderRoute: typeof AuthenticatedAppDataRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/dashboard': {
-      id: '/_authenticated/app/dashboard'
-      path: '/dashboard'
-      fullPath: '/app/dashboard'
-      preLoaderRoute: typeof AuthenticatedAppDashboardRouteImport
+    '/_authenticated/app/churned': {
+      id: '/_authenticated/app/churned'
+      path: '/churned'
+      fullPath: '/app/churned'
+      preLoaderRoute: typeof AuthenticatedAppChurnedRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/customers': {
@@ -461,11 +412,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCustomersRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
-    '/_authenticated/app/churned': {
-      id: '/_authenticated/app/churned'
-      path: '/churned'
-      fullPath: '/app/churned'
-      preLoaderRoute: typeof AuthenticatedAppChurnedRouteImport
+    '/_authenticated/app/dashboard': {
+      id: '/_authenticated/app/dashboard'
+      path: '/dashboard'
+      fullPath: '/app/dashboard'
+      preLoaderRoute: typeof AuthenticatedAppDashboardRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/data': {
+      id: '/_authenticated/app/data'
+      path: '/data'
+      fullPath: '/app/data'
+      preLoaderRoute: typeof AuthenticatedAppDataRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/data-quality': {
+      id: '/_authenticated/app/data-quality'
+      path: '/data-quality'
+      fullPath: '/app/data-quality'
+      preLoaderRoute: typeof AuthenticatedAppDataQualityRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/insights': {
+      id: '/_authenticated/app/insights'
+      path: '/insights'
+      fullPath: '/app/insights'
+      preLoaderRoute: typeof AuthenticatedAppInsightsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/planner': {
+      id: '/_authenticated/app/planner'
+      path: '/planner'
+      fullPath: '/app/planner'
+      preLoaderRoute: typeof AuthenticatedAppPlannerRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/settings': {
+      id: '/_authenticated/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/trust': {
+      id: '/_authenticated/app/trust'
+      path: '/trust'
+      fullPath: '/app/trust'
+      preLoaderRoute: typeof AuthenticatedAppTrustRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/welcome': {
+      id: '/_authenticated/app/welcome'
+      path: '/welcome'
+      fullPath: '/app/welcome'
+      preLoaderRoute: typeof AuthenticatedAppWelcomeRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/customers/': {
@@ -475,25 +475,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCustomersIndexRouteImport
       parentRoute: typeof AuthenticatedAppCustomersRoute
     }
-    '/api/public/zoho/callback': {
-      id: '/api/public/zoho/callback'
-      path: '/api/public/zoho/callback'
-      fullPath: '/api/public/zoho/callback'
-      preLoaderRoute: typeof ApiPublicZohoCallbackRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/app/customers/$id': {
+      id: '/_authenticated/app/customers/$id'
+      path: '/$id'
+      fullPath: '/app/customers/$id'
+      preLoaderRoute: typeof AuthenticatedAppCustomersIdRouteImport
+      parentRoute: typeof AuthenticatedAppCustomersRoute
     }
-    '/api/public/zendesk/callback': {
-      id: '/api/public/zendesk/callback'
-      path: '/api/public/zendesk/callback'
-      fullPath: '/api/public/zendesk/callback'
-      preLoaderRoute: typeof ApiPublicZendeskCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/intercom/callback': {
-      id: '/api/public/intercom/callback'
-      path: '/api/public/intercom/callback'
-      fullPath: '/api/public/intercom/callback'
-      preLoaderRoute: typeof ApiPublicIntercomCallbackRouteImport
+    '/api/public/accounting/callback': {
+      id: '/api/public/accounting/callback'
+      path: '/api/public/accounting/callback'
+      fullPath: '/api/public/accounting/callback'
+      preLoaderRoute: typeof ApiPublicAccountingCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/daily-sync': {
@@ -503,19 +496,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailySyncRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/accounting/callback': {
-      id: '/api/public/accounting/callback'
-      path: '/api/public/accounting/callback'
-      fullPath: '/api/public/accounting/callback'
-      preLoaderRoute: typeof ApiPublicAccountingCallbackRouteImport
+    '/api/public/intercom/callback': {
+      id: '/api/public/intercom/callback'
+      path: '/api/public/intercom/callback'
+      fullPath: '/api/public/intercom/callback'
+      preLoaderRoute: typeof ApiPublicIntercomCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/app/customers/$id': {
-      id: '/_authenticated/app/customers/$id'
-      path: '/$id'
-      fullPath: '/app/customers/$id'
-      preLoaderRoute: typeof AuthenticatedAppCustomersIdRouteImport
-      parentRoute: typeof AuthenticatedAppCustomersRoute
+    '/api/public/zendesk/callback': {
+      id: '/api/public/zendesk/callback'
+      path: '/api/public/zendesk/callback'
+      fullPath: '/api/public/zendesk/callback'
+      preLoaderRoute: typeof ApiPublicZendeskCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/zoho/callback': {
+      id: '/api/public/zoho/callback'
+      path: '/api/public/zoho/callback'
+      fullPath: '/api/public/zoho/callback'
+      preLoaderRoute: typeof ApiPublicZohoCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
