@@ -45,10 +45,29 @@ function scoreChip(v: number) {
         : "bg-danger/10 text-danger border-danger/20";
 }
 
+const sampleAuditLog = [
+  { who: "you@northwind.co", action: "Viewed customer Acme Labs", when: "2 minutes ago" },
+  { who: "system", action: "Synced 142 tickets from Zendesk", when: "4 minutes ago" },
+  { who: "you@northwind.co", action: "Exported risk report (CSV)", when: "Yesterday" },
+  { who: "casey@northwind.co", action: "Deleted upload: transactions_q2.csv", when: "3 days ago" },
+];
+
 function DataQualityPage() {
   const uploads = useUploads();
   const signedIn = useSignedIn();
   const isReal = signedIn === true;
+  const [forgetId, setForgetId] = useState("");
+
+  function forgetCustomer() {
+    const id = forgetId.trim();
+    if (!id) return;
+    setForgetId("");
+    toast.success("Erasure request logged", {
+      description: `Records for ${id} will be anonymised.`,
+    });
+  }
+
+
 
   function deleteUpload(u: UploadRecord) {
     uploadsStore.remove(u.id);
