@@ -42,6 +42,7 @@ import {
   churnAnalytics,
 } from "@/lib/mock-data";
 import { useScoredData } from "@/lib/use-scored-data";
+import { useSignedIn } from "@/lib/use-auth-state";
 
 export const Route = createFileRoute("/_authenticated/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
@@ -135,7 +136,10 @@ function Dashboard() {
     };
   }, [baseExecutive, period]);
 
-  const churn = useMemo(() => churnAnalytics(), []);
+  // Signed-in users only ever see their own real data — the illustrative
+  // churn/win-back sample analytics are demo-only.
+  const signedIn = useSignedIn();
+  const churn = useMemo(() => (signedIn === true ? null : churnAnalytics()), [signedIn]);
 
   // Overall data quality across uploaded datasets, for the selected period.
   // Current month relies on fewer, more recent files, so it's modestly lower.
@@ -224,6 +228,7 @@ function Dashboard() {
         />
       </div>
 
+      {churn && (
       <Link to="/app/churned" className="mt-4 block">
         <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-soft transition-colors hover:border-primary/40 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -246,6 +251,7 @@ function Dashboard() {
           </span>
         </div>
       </Link>
+      )}
 
 
       <div className="mt-6 grid items-start gap-6 lg:grid-cols-3">

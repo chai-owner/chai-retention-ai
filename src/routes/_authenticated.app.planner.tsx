@@ -4,6 +4,8 @@ import { ClipboardList } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { IMPORTANCE_LABELS, metricActualValue } from "@/lib/mock-data";
 import { useActiveMetrics, useMetricWeights, useScoredData } from "@/lib/use-scored-data";
+import { useSignedIn } from "@/lib/use-auth-state";
+import { useProfile } from "@/lib/profile-store";
 
 export const Route = createFileRoute("/_authenticated/app/planner")({
   head: () => ({ meta: [{ title: "Intelligence Planner — ChAi" }] }),
@@ -12,7 +14,13 @@ export const Route = createFileRoute("/_authenticated/app/planner")({
 
 function Planner() {
   const weights = useMetricWeights();
-  const plannerMetrics = useActiveMetrics();
+  const signedIn = useSignedIn();
+  const profile = useProfile();
+  const activeMetrics = useActiveMetrics();
+  // Signed-in users only ever see metrics generated for their own business.
+  // The built-in sample metric set is demo-only — never fall back to it.
+  const plannerMetrics =
+    signedIn === true ? (profile?.metrics ?? []) : activeMetrics;
   const { customers } = useScoredData();
 
   const total = plannerMetrics.length;
@@ -29,7 +37,7 @@ function Planner() {
       });
     }
     return byMetric;
-  }, [customers]);
+  }, [customers, plannerMetrics]);
 
   return (
     <div>
@@ -46,6 +54,15 @@ function Planner() {
           <p className="mt-2 text-2xl font-semibold">{total}</p>
         </Card>
       </div>
+
+      {plannerMetrics.length === 0 && (
+        <Card>
+          <p className="text-sm text-muted-foreground">
+            No metrics yet. Complete your business profile in onboarding and ChAi will
+            generate the metrics that matter for your industry.
+          </p>
+        </Card>
+      )}
 
       <div className="space-y-4">
         {plannerMetrics.map((m) => {
