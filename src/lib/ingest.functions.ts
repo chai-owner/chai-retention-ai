@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ---------------------------------------------------------------------------
 // Smart Data Ingestion — AI extraction of arbitrary documents into ChAi
@@ -49,6 +50,7 @@ export interface ExtractResult {
 }
 
 export const extractRecords = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ExtractInput.parse(input))
   .handler(async ({ data }): Promise<ExtractResult> => {
     const key = process.env.LOVABLE_API_KEY;
