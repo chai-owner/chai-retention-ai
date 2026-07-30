@@ -135,7 +135,10 @@ function Dashboard() {
     };
   }, [baseExecutive, period]);
 
-  const churn = useMemo(() => churnAnalytics(), []);
+  // Signed-in users only ever see their own real data — the illustrative
+  // churn/win-back sample analytics are demo-only.
+  const signedIn = useSignedIn();
+  const churn = useMemo(() => (signedIn === true ? null : churnAnalytics()), [signedIn]);
 
   // Overall data quality across uploaded datasets, for the selected period.
   // Current month relies on fewer, more recent files, so it's modestly lower.
