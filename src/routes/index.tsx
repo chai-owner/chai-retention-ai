@@ -14,10 +14,10 @@ import {
   ScanLine,
   Sheet,
 } from "lucide-react";
-import heroDashboardShot from "@/assets/screenshots/hero-dashboard.png.asset.json";
-import customersShot from "@/assets/screenshots/customers.png.asset.json";
-import insightsShot from "@/assets/screenshots/insights.png.asset.json";
-import plannerShot from "@/assets/screenshots/planner.png.asset.json";
+const heroDashboardShot = { url: "/screenshots/hero-dashboard.png" };
+const customersShot = { url: "/screenshots/customers.png" };
+const insightsShot = { url: "/screenshots/insights.png" };
+const plannerShot = { url: "/screenshots/planner.png" };
 
 export const Route = createFileRoute("/")({
   head: () => ({
