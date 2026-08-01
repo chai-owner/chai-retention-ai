@@ -38,14 +38,14 @@ export function makeProfile(overrides: Partial<OnboardingProfile> = {}): Onboard
     successActions: "Customers renew and log in weekly",
     disengagement: "They stop logging in",
     tracked: {},
-    channels: {},
-    onboarded: true,
+    channels: [],
     metricWeights: {},
     metrics: [],
     fullName: "Test User",
     email: "test@example.com",
     unlocked: true,
-  } as unknown as OnboardingProfile;
+    ...overrides,
+  };
 }
 
 /** A small but complete real dataset: 3 customers with mixed health signals. */
