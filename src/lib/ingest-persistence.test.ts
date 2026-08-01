@@ -3,7 +3,7 @@
 // the data the user just added locally.
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const saveIngestBatch = vi.fn(async () => ({ batchId: "batch-99" }));
+const saveIngestBatch = vi.fn(async (_args?: unknown) => ({ batchId: "batch-99" }));
 const listAllIngested = vi.fn(async () => ({}) as Record<string, unknown>);
 const listIngestBatches = vi.fn(async () => [] as unknown[]);
 const deleteIngestBatch = vi.fn(async () => ({ ok: true }));
@@ -87,7 +87,7 @@ describe("persistBatch", () => {
       localUploadId: "local-1",
     });
 
-    expect(uploadsStore.get().map((u) => u.id)).toEqual(["batch-99"]);
+    expect(uploadsStore.getSnapshot().map((u: { id: string }) => u.id)).toEqual(["batch-99"]);
   });
 
   it("warns the user but keeps the local data when the save fails", async () => {
@@ -116,7 +116,7 @@ describe("hydrateIngestFromServer", () => {
 
     await hydrateIngestFromServer();
 
-    const snap = ingestedStore.get();
+    const snap = ingestedStore.getSnapshot();
     expect(snap.customers).toHaveLength(1);
     expect(snap.transactions).toHaveLength(1);
   });
@@ -147,8 +147,8 @@ describe("hydrateIngestFromServer", () => {
 
     await hydrateIngestFromServer();
 
-    const uploads = uploadsStore.get();
-    expect(uploads.map((u) => u.id)).toEqual(["b2", "b1"]);
+    const uploads = uploadsStore.getSnapshot();
+    expect(uploads.map((u: { id: string }) => u.id)).toEqual(["b2", "b1"]);
     expect(uploads[0]).toMatchObject({
       fileName: "hubspot sync",
       datasetLabel: "Customers",
