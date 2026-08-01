@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { FileSpreadsheet, Trash2, UserX, ScrollText } from "lucide-react";
+import { FileSpreadsheet, Trash2, UserX, ScrollText, Link2, CheckCircle2 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { Input } from "@/components/ui/input";
 import { dataReadiness, readinessOverall } from "@/lib/mock-data";
@@ -25,6 +25,16 @@ import {
 import { cn } from "@/lib/utils";
 import { removePersistedBatch } from "@/lib/ingest-persistence";
 import { useSignedIn } from "@/lib/use-auth-state";
+import { useIngested } from "@/lib/ingested-data-store";
+import { useCustomerAliases } from "@/lib/customer-aliases";
+import {
+  customerOptions,
+  describeCounts,
+  findUnmatched,
+  type CustomerOption,
+  type UnmatchedGroup,
+} from "@/lib/customer-matching";
+import { CustomerLinkWizard } from "@/components/customer-link-wizard";
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
   head: () => ({ meta: [{ title: "Data Quality — ChAi" }] }),
@@ -52,11 +62,60 @@ const sampleAuditLog = [
   { who: "casey@northwind.co", action: "Deleted upload: transactions_q2.csv", when: "3 days ago" },
 ];
 
+
+// Illustrative unmatched records for the public demo (no DB writes there).
+const demoCustomers: CustomerOption[] = [
+  { customer_id: "CUS-1001", name: "Acme Corporation", email: "ops@acme.com" },
+  { customer_id: "CUS-1042", name: "Northwind Labs", email: "hello@northwind.co" },
+  { customer_id: "CUS-1180", name: "Brightpath Health", email: "billing@brightpath.io" },
+];
+const demoUnmatched: UnmatchedGroup[] = [
+  {
+    sourceId: "acme-corp-1",
+    counts: { transactions: 12 },
+    total: 12,
+    trivial: false,
+    suggestions: [
+      { customer_id: "CUS-1001", name: "Acme Corporation", reason: "Similar name or ID", confidence: 0.8 },
+    ],
+  },
+  {
+    sourceId: "CUS-1042 ",
+    counts: { usage: 4 },
+    total: 4,
+    trivial: true,
+    suggestions: [
+      { customer_id: "CUS-1042", name: "Northwind Labs", reason: "Same ID after trimming spaces / casing", confidence: 1 },
+    ],
+  },
+  {
+    sourceId: "0053k00000XqPl",
+    counts: { transactions: 7 },
+    total: 7,
+    trivial: false,
+    suggestions: [],
+  },
+];
+
 function DataQualityPage() {
   const uploads = useUploads();
   const signedIn = useSignedIn();
   const isReal = signedIn === true;
   const [forgetId, setForgetId] = useState("");
+  const ingested = useIngested();
+  const aliases = useCustomerAliases();
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  const customers = useMemo(
+    () => (isReal ? customerOptions(ingested) : demoCustomers),
+    [isReal, ingested],
+  );
+  const unmatched = useMemo(
+    () => (isReal ? findUnmatched(ingested, aliases) : demoUnmatched),
+    [isReal, ingested, aliases],
+  );
+  const unmatchedRows = unmatched.reduce((s, g) => s + g.total, 0);
+
 
   function forgetCustomer() {
     const id = forgetId.trim();
@@ -113,6 +172,76 @@ function DataQualityPage() {
           </div>
         </Card>
       )}
+
+      {/* Unmatched records */}
+      {(customers.length > 0 || unmatched.length > 0) && (
+        <Card className="mt-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+                <Link2 className="h-4 w-4" />
+              </span>
+              <div>
+                <h3 className="font-semibold">
+                  Unmatched records{unmatched.length > 0 ? ` (${unmatched.length})` : ""}
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Rows whose customer reference doesn't match anyone in your customer list. They
+                  don't count towards any health score until you link them.
+                </p>
+              </div>
+            </div>
+            {unmatched.length > 0 && (
+              <button
+                onClick={() => setWizardOpen(true)}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <Link2 className="h-4 w-4" /> Resolve matches
+              </button>
+            )}
+          </div>
+
+          {unmatched.length === 0 ? (
+            <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle2 className="h-4 w-4 text-success" /> All records are matched to a customer.
+            </p>
+          ) : (
+            <>
+              <ul className="mt-4 space-y-2">
+                {unmatched.slice(0, 5).map((g) => (
+                  <li
+                    key={g.sourceId}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm"
+                  >
+                    <span className="font-mono text-xs font-medium">{g.sourceId || "(blank)"}</span>
+                    <span className="text-xs text-muted-foreground">{describeCounts(g.counts)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {g.suggestions[0]
+                        ? `Suggested: ${g.suggestions[0].name}`
+                        : "No suggestion — search manually"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-muted-foreground">
+                {unmatchedRows.toLocaleString()} row{unmatchedRows === 1 ? "" : "s"} currently
+                excluded from scoring
+                {unmatched.length > 5 ? ` · showing 5 of ${unmatched.length} references` : ""}.
+              </p>
+            </>
+          )}
+        </Card>
+      )}
+
+      <CustomerLinkWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        groups={unmatched}
+        customers={customers}
+        readOnly={!isReal}
+      />
+
+
 
       <Card className="mt-6">
         <div className="flex items-center justify-between">

@@ -12,6 +12,8 @@ import {
   type ScoredDataset,
 } from "@/lib/mock-data";
 import { useIngested } from "@/lib/ingested-data-store";
+import { useCustomerAliases } from "@/lib/customer-aliases";
+import { applyAliases } from "@/lib/customer-matching";
 import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/real-scoring";
 import { useSignedIn } from "@/lib/use-auth-state";
 import { useDemoMode } from "@/lib/use-demo-mode";
@@ -57,7 +59,9 @@ export function useActiveMetrics(): PlannerMetric[] {
 
 export function useScoredData(): ScoredDataset {
   const weights = useMetricWeights();
-  const ingested = useIngested();
+  const raw = useIngested();
+  const aliases = useCustomerAliases();
+  const ingested = useMemo(() => applyAliases(raw, aliases), [raw, aliases]);
   const profile = useProfile();
   const signedIn = useSignedIn();
   const demo = useDemoMode();
@@ -77,7 +81,9 @@ export function useScoredData(): ScoredDataset {
 // data" message instead of a fabricated snapshot.
 export function useRealAssessment(): { sufficiency: Sufficiency; dataset: ScoredDataset | null } {
   const weights = useMetricWeights();
-  const ingested = useIngested();
+  const raw = useIngested();
+  const aliases = useCustomerAliases();
+  const ingested = useMemo(() => applyAliases(raw, aliases), [raw, aliases]);
   const profile = useProfile();
   return useMemo(() => {
     const sufficiency = assessSufficiency(ingested);
