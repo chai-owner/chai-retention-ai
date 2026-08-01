@@ -20,6 +20,7 @@ const customers: ExtractedDataset = {
     ["", "Missing id"],
   ],
   confidence: 90,
+  note: "",
 };
 
 const transactions: ExtractedDataset = {
@@ -28,6 +29,7 @@ const transactions: ExtractedDataset = {
   headers: ["transaction_id", "customer_id", "amount", "transaction_date"],
   rows: [["TX-1", "CUST-1", "$1,250.50", "2026-05-02"]],
   confidence: 90,
+  note: "",
 };
 
 const support: ExtractedDataset = {
@@ -36,6 +38,7 @@ const support: ExtractedDataset = {
   headers: ["ticket_id", "customer_id", "status"],
   rows: [["T-1", "CUST-1", "open"]],
   confidence: 90,
+  note: "",
 };
 
 describe("persistDatasetsAdmin", () => {
