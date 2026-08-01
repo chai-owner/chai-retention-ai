@@ -173,3 +173,51 @@ export function describeCounts(counts: Record<string, number>): string {
     .map(([k, n]) => `${n} ${DATASET_LABELS[k] ?? k.replace(/^metric_/, "").replace(/_/g, " ") + " rows"}`)
     .join(" · ");
 }
+
+/**
+ * Count how many rows each saved alias is currently resolving, using the RAW
+ * (pre-alias) ingested data. Returns a map of source_id -> per-dataset counts.
+ */
+export function countAliasUsage(
+  data: IngestedData,
+  aliases: CustomerAlias[],
+): Record<string, Record<string, number>> {
+  const out: Record<string, Record<string, number>> = {};
+  if (!aliases.length) return out;
+  const wanted = new Set(aliases.map((a) => a.source_id));
+  for (const key of signalDatasetKeys(data)) {
+    for (const row of data[key] ?? []) {
+      const raw = row.customer_id ?? "";
+      if (!wanted.has(raw)) continue;
+      const bucket = (out[raw] ??= {});
+      bucket[key] = (bucket[key] ?? 0) + 1;
+    }
+  }
+  return out;
+}
+
+/** Build a single-group payload so the wizard can re-run on one saved link. */
+export function groupForSourceId(
+  data: IngestedData,
+  sourceId: string,
+  counts: Record<string, number>,
+): UnmatchedGroup {
+  const customers = customerOptions(data);
+  const hit = customers.find((c) => norm(c.customer_id) === norm(sourceId));
+  return {
+    sourceId,
+    counts,
+    total: Object.values(counts).reduce((s, n) => s + n, 0),
+    trivial: Boolean(hit),
+    suggestions: hit
+      ? [
+          {
+            customer_id: hit.customer_id,
+            name: hit.name,
+            reason: "Same ID after trimming spaces / casing",
+            confidence: 1,
+          },
+        ]
+      : [],
+  };
+}

@@ -31,9 +31,13 @@ import {
   customerOptions,
   describeCounts,
   findUnmatched,
+  countAliasUsage,
+  groupForSourceId,
   type CustomerOption,
   type UnmatchedGroup,
 } from "@/lib/customer-matching";
+import type { CustomerAlias } from "@/lib/customer-matching";
+import { unlinkSourceId } from "@/lib/customer-aliases";
 import { CustomerLinkWizard } from "@/components/customer-link-wizard";
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
@@ -97,24 +101,75 @@ const demoUnmatched: UnmatchedGroup[] = [
   },
 ];
 
+// Illustrative saved links for the public demo.
+const demoAliases: CustomerAlias[] = [
+  { source_id: "ACME-CORP-01", customer_id: "CUS-1001", status: "linked" },
+  { source_id: "northwind labs", customer_id: "CUS-1042", status: "linked" },
+  { source_id: "INTERNAL-TEST", customer_id: null, status: "ignored" },
+];
+const demoAliasUsage: Record<string, Record<string, number>> = {
+  "ACME-CORP-01": { transactions: 34, usage: 9 },
+  "northwind labs": { support: 11 },
+  "INTERNAL-TEST": { transactions: 3 },
+};
+
 function DataQualityPage() {
   const uploads = useUploads();
   const signedIn = useSignedIn();
   const isReal = signedIn === true;
   const [forgetId, setForgetId] = useState("");
   const ingested = useIngested();
-  const aliases = useCustomerAliases();
+  const liveAliases = useCustomerAliases();
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardGroups, setWizardGroups] = useState<UnmatchedGroup[] | null>(null);
+
+  const aliases = isReal ? liveAliases : demoAliases;
 
   const customers = useMemo(
     () => (isReal ? customerOptions(ingested) : demoCustomers),
     [isReal, ingested],
   );
   const unmatched = useMemo(
-    () => (isReal ? findUnmatched(ingested, aliases) : demoUnmatched),
-    [isReal, ingested, aliases],
+    () => (isReal ? findUnmatched(ingested, liveAliases) : demoUnmatched),
+    [isReal, ingested, liveAliases],
   );
   const unmatchedRows = unmatched.reduce((s, g) => s + g.total, 0);
+
+  const aliasUsage = useMemo(
+    () => (isReal ? countAliasUsage(ingested, liveAliases) : demoAliasUsage),
+    [isReal, ingested, liveAliases],
+  );
+
+  const customerName = (id: string | null) =>
+    customers.find((c) => c.customer_id === id)?.name ?? null;
+
+  async function handleUnlink(a: CustomerAlias) {
+    if (!isReal) {
+      toast.info("Demo mode", { description: "Saved links can be managed once you're signed in." });
+      return;
+    }
+    try {
+      await unlinkSourceId(a.source_id);
+      toast.success("Link removed", {
+        description: `${a.source_id} will show up as unmatched again.`,
+      });
+    } catch (e) {
+      toast.error("Couldn't remove the link", { description: (e as Error).message });
+    }
+  }
+
+  function handleChange(a: CustomerAlias) {
+    const group = groupForSourceId(ingested, a.source_id, aliasUsage[a.source_id] ?? {});
+    setWizardGroups([group]);
+    setWizardOpen(true);
+  }
+
+  function openUnmatchedWizard() {
+    setWizardGroups(null);
+    setWizardOpen(true);
+  }
+
+
 
 
   function forgetCustomer() {
@@ -193,7 +248,7 @@ function DataQualityPage() {
             </div>
             {unmatched.length > 0 && (
               <button
-                onClick={() => setWizardOpen(true)}
+                onClick={openUnmatchedWizard}
                 className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Link2 className="h-4 w-4" /> Resolve matches
@@ -233,13 +288,96 @@ function DataQualityPage() {
         </Card>
       )}
 
+      {/* Saved links */}
+      <Card className="mt-6">
+        <div className="flex items-start gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+            <Link2 className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="font-semibold">
+              Saved links{aliases.length > 0 ? ` (${aliases.length})` : ""}
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Links you confirm are remembered permanently and applied automatically to every
+              future upload and integration refresh — you'll never match the same ID twice.
+            </p>
+          </div>
+        </div>
+
+        {aliases.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            No saved links yet. Matches you confirm are remembered and applied automatically to
+            future uploads and syncs.
+          </p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {aliases.map((a) => {
+              const counts = aliasUsage[a.source_id] ?? {};
+              const rows = Object.values(counts).reduce((s, n) => s + n, 0);
+              const name = customerName(a.customer_id);
+              return (
+                <li
+                  key={a.source_id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs font-medium">
+                        {a.source_id || "(blank)"}
+                      </span>
+                      <span className="text-muted-foreground">→</span>
+                      {a.status === "ignored" ? (
+                        <span className="rounded-md border border-border bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+                          Ignored — not a customer
+                        </span>
+                      ) : name ? (
+                        <span className="text-xs font-medium">{name}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          <span className="font-mono">{a.customer_id}</span> · customer not found
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {rows > 0
+                        ? `Currently resolving ${describeCounts(counts)}`
+                        : "No rows in your current data use this reference"}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => handleChange(a)}
+                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-secondary"
+                    >
+                      Change
+                    </button>
+                    <button
+                      onClick={() => void handleUnlink(a)}
+                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary"
+                    >
+                      Unlink
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+
       <CustomerLinkWizard
         open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        groups={unmatched}
+        onOpenChange={(v) => {
+          setWizardOpen(v);
+          if (!v) setWizardGroups(null);
+        }}
+        groups={wizardGroups ?? unmatched}
         customers={customers}
         readOnly={!isReal}
       />
+
+
 
 
 
