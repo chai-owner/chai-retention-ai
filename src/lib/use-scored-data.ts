@@ -12,6 +12,8 @@ import {
   type ScoredDataset,
 } from "@/lib/mock-data";
 import { useIngested } from "@/lib/ingested-data-store";
+import { useCustomerAliases } from "@/lib/customer-aliases";
+import { applyAliases } from "@/lib/customer-matching";
 import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/real-scoring";
 import { useSignedIn } from "@/lib/use-auth-state";
 import { useDemoMode } from "@/lib/use-demo-mode";
