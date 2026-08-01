@@ -6,10 +6,16 @@ import { persistDatasetsAdmin } from "@/lib/sync-persist.server";
 import { setSupabaseResult, setDefaultSupabaseResult, supabaseMock } from "@/test/setup";
 import type { ExtractedDataset } from "@/lib/ingest.functions";
 
-function builderFor(table: string) {
-  const idx = supabaseMock.from.mock.calls.findIndex((c) => c[0] === table);
-  return idx === -1 ? undefined : (supabaseMock.from.mock.results[idx].value as Record<string, any>);
+// Each `from(table)` call returns a fresh chainable builder; pick the one
+// matching the given call occurrence (defaults to the first).
+function builderFor(table: string, occurrence = 0) {
+  const idxs = supabaseMock.from.mock.calls
+    .map((c, i) => (c[0] === table ? i : -1))
+    .filter((i) => i !== -1);
+  const idx = idxs[occurrence];
+  return idx == null ? undefined : (supabaseMock.from.mock.results[idx].value as Record<string, any>);
 }
+
 
 const customers: ExtractedDataset = {
   key: "customers",
