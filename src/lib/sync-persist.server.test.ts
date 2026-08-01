@@ -118,7 +118,7 @@ describe("persistDatasetsAdmin", () => {
     await expect(persistDatasetsAdmin("user-1", "crm", "hubspot", [customers])).rejects.toThrow(
       /row write failed/,
     );
-    const batches = builderFor("ingest_batches")!;
+    const batches = builderFor("ingest_batches", 1)!;
     expect(batches.update).toHaveBeenCalledWith(
       expect.objectContaining({ status: "error", error: "row write failed" }),
     );
