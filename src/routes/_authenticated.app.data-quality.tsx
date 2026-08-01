@@ -62,11 +62,60 @@ const sampleAuditLog = [
   { who: "casey@northwind.co", action: "Deleted upload: transactions_q2.csv", when: "3 days ago" },
 ];
 
+
+// Illustrative unmatched records for the public demo (no DB writes there).
+const demoCustomers: CustomerOption[] = [
+  { customer_id: "CUS-1001", name: "Acme Corporation", email: "ops@acme.com" },
+  { customer_id: "CUS-1042", name: "Northwind Labs", email: "hello@northwind.co" },
+  { customer_id: "CUS-1180", name: "Brightpath Health", email: "billing@brightpath.io" },
+];
+const demoUnmatched: UnmatchedGroup[] = [
+  {
+    sourceId: "acme-corp-1",
+    counts: { transactions: 12 },
+    total: 12,
+    trivial: false,
+    suggestions: [
+      { customer_id: "CUS-1001", name: "Acme Corporation", reason: "Similar name or ID", confidence: 0.8 },
+    ],
+  },
+  {
+    sourceId: "CUS-1042 ",
+    counts: { usage: 4 },
+    total: 4,
+    trivial: true,
+    suggestions: [
+      { customer_id: "CUS-1042", name: "Northwind Labs", reason: "Same ID after trimming spaces / casing", confidence: 1 },
+    ],
+  },
+  {
+    sourceId: "0053k00000XqPl",
+    counts: { transactions: 7 },
+    total: 7,
+    trivial: false,
+    suggestions: [],
+  },
+];
+
 function DataQualityPage() {
   const uploads = useUploads();
   const signedIn = useSignedIn();
   const isReal = signedIn === true;
   const [forgetId, setForgetId] = useState("");
+  const ingested = useIngested();
+  const aliases = useCustomerAliases();
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  const customers = useMemo(
+    () => (isReal ? customerOptions(ingested) : demoCustomers),
+    [isReal, ingested],
+  );
+  const unmatched = useMemo(
+    () => (isReal ? findUnmatched(ingested, aliases) : demoUnmatched),
+    [isReal, ingested, aliases],
+  );
+  const unmatchedRows = unmatched.reduce((s, g) => s + g.total, 0);
+
 
   function forgetCustomer() {
     const id = forgetId.trim();
