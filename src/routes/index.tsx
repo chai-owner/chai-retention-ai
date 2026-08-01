@@ -50,8 +50,8 @@ const features = [
 const showcase = [
   {
     img: customersShot.url,
-    w: 2400,
-    h: 2020,
+    w: 1888,
+    h: 1908,
     eyebrow: "Customer Risk Center",
     title: "See exactly why a customer is leaving",
     desc: "Click any account to get its churn probability, the precise reasons driving the risk, and recommended actions ranked by revenue saved.",
@@ -59,8 +59,8 @@ const showcase = [
   },
   {
     img: insightsShot.url,
-    w: 2400,
-    h: 2600,
+    w: 1888,
+    h: 2488,
     eyebrow: "Insights & Benchmarks",
     title: "Recommendations ranked by revenue saved",
     desc: "ChAi turns raw data into prioritized actions and shows how your retention compares to similar businesses.",
@@ -68,8 +68,8 @@ const showcase = [
   },
   {
     img: plannerShot.url,
-    w: 2400,
-    h: 2240,
+    w: 1888,
+    h: 2128,
     eyebrow: "Intelligence Planner",
     title: "Learn what to measure — and why",
     desc: "For each metric, see why it matters, how it predicts churn, and where you stand. Prediction accuracy improves as you track more.",
@@ -170,8 +170,8 @@ function Landing() {
               <img
                 src={heroDashboardShot.url}
                 alt="ChAi executive dashboard showing customer health scores, revenue at risk and revenue by segment"
-                width={2400}
-                height={1760}
+                width={1888}
+                height={1648}
                 className="w-full rounded-xl border border-border bg-card"
               />
             </div>
