@@ -288,13 +288,96 @@ function DataQualityPage() {
         </Card>
       )}
 
+      {/* Saved links */}
+      <Card className="mt-6">
+        <div className="flex items-start gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+            <Link2 className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="font-semibold">
+              Saved links{aliases.length > 0 ? ` (${aliases.length})` : ""}
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Links you confirm are remembered permanently and applied automatically to every
+              future upload and integration refresh — you'll never match the same ID twice.
+            </p>
+          </div>
+        </div>
+
+        {aliases.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            No saved links yet. Matches you confirm are remembered and applied automatically to
+            future uploads and syncs.
+          </p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {aliases.map((a) => {
+              const counts = aliasUsage[a.source_id] ?? {};
+              const rows = Object.values(counts).reduce((s, n) => s + n, 0);
+              const name = customerName(a.customer_id);
+              return (
+                <li
+                  key={a.source_id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs font-medium">
+                        {a.source_id || "(blank)"}
+                      </span>
+                      <span className="text-muted-foreground">→</span>
+                      {a.status === "ignored" ? (
+                        <span className="rounded-md border border-border bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+                          Ignored — not a customer
+                        </span>
+                      ) : name ? (
+                        <span className="text-xs font-medium">{name}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          <span className="font-mono">{a.customer_id}</span> · customer not found
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {rows > 0
+                        ? `Currently resolving ${describeCounts(counts)}`
+                        : "No rows in your current data use this reference"}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => handleChange(a)}
+                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-secondary"
+                    >
+                      Change
+                    </button>
+                    <button
+                      onClick={() => void handleUnlink(a)}
+                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary"
+                    >
+                      Unlink
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+
       <CustomerLinkWizard
         open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        groups={unmatched}
+        onOpenChange={(v) => {
+          setWizardOpen(v);
+          if (!v) setWizardGroups(null);
+        }}
+        groups={wizardGroups ?? unmatched}
         customers={customers}
         readOnly={!isReal}
       />
+
+
 
 
 
