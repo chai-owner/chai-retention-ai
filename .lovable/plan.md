@@ -1,32 +1,41 @@
-## Context
+## Goal
 
-Matching is already permanent. When you link an unrecognised ID to a customer, the mapping is stored in your account's database, reloaded on every sign-in, and applied to all data — including newly uploaded files and daily integration refreshes — before health scores are calculated. The same ID never returns to the matching wizard.
+Produce a polished, non-technical PDF that explains what ChAi does, its feature set, and how it works end to end — suitable for sharing with prospects, investors, or new users.
 
-What's missing is a way to see and manage that memory.
+## Content outline
 
-## What to build
+1. **Cover page** — ChAi wordmark, tagline ("AI retention intelligence built for your industry"), date.
+2. **What ChAi is** — 3-4 sentence plain-language overview: predicts which customers are about to leave, why, and what to do about it.
+3. **How it works (4 steps)**
+   - Tell ChAi about your business (onboarding profile: industry, model, customers, cadence, concerns)
+   - ChAi picks your metrics (industry-specific health signals, you set the importance weight of each, remove ones that don't apply)
+   - Bring in your data (integrations, AI data drop, or manual upload per metric)
+   - Get scores, insights and actions (health score, churn risk, revenue at risk, recommended next steps)
+4. **Feature list**, grouped:
+   - Customer health & churn scoring (weighted, metric-driven, per-customer factors)
+   - Dashboard (health distribution, revenue at risk, retention opportunity, accounts needing attention)
+   - Customers & customer detail views
+   - Risk Center / accounts needing attention with AI-written reasons
+   - Churned & win-back analysis
+   - Insights & benchmarks
+   - Intelligence Planner (metric plan and actions)
+   - Ask ChAi assistant (chat with your retention analyst)
+   - Data Quality Engine (coverage, unmatched records + linking wizard, saved links, forget-a-customer, audit log)
+   - Integrations (Salesforce, HubSpot, Zoho CRM, Zendesk, Intercom, Freshdesk, QuickBooks, Xero, FreshBooks) with daily incremental refresh
+   - Manual uploads with per-metric templates
+   - Security & privacy (per-account data isolation, encrypted connections, right-to-be-forgotten)
+   - Admin & usage visibility
+5. **What makes ChAi different** — industry-specific metrics rather than a generic template; you control the weights; explanations in plain language.
+6. **Getting started** — short 3-line closing.
 
-A **Saved links** card on the Data Quality Engine page, placed directly under the "Unmatched records" card.
+## Approach
 
-For each remembered mapping, show:
-- the raw incoming ID (e.g. `ACME-CORP-01`)
-- an arrow to the customer it resolves to, by name
-- how many rows in the current data that link is currently resolving, broken down by dataset (transactions, usage, support, etc.)
-- for entries marked "Not a customer", an "Ignored" badge instead of a target customer
+- Verify the feature list against the actual app pages and onboarding flow before writing, so nothing is claimed that doesn't exist.
+- Generate the PDF with ReportLab using the current brand palette (Product Navy `#152238`, Teal Waters `#204654`, Sand `#E0A93A`, Soft Sand `#F5F0E6`) and a Unicode-safe font.
+- No invented metrics, customer names, or statistics — descriptive copy only.
+- Render every page to images and visually QA (overflow, spacing, contrast, orphaned headings) before delivering.
+- Deliver as a downloadable artifact: `chai-features-overview.pdf`.
 
-Actions per row:
-- **Unlink** — removes the mapping; the ID returns to the unmatched list on the next check
-- **Change** — reopens the linking wizard for that single ID so a different customer can be chosen
+## Notes
 
-Empty state: "No saved links yet. Matches you confirm are remembered and applied automatically to future uploads and syncs."
-
-A short line at the top of the card makes the behaviour explicit: links are remembered permanently and applied to new data automatically.
-
-In demo mode the card shows a couple of illustrative saved links, consistent with the other demo content on the page.
-
-## Technical notes
-
-- Read from the existing `useCustomerAliases()` store; no new database work — `customer_id_aliases` already holds these rows with the right access rules.
-- Row counts come from a small helper next to `findUnmatched` in `src/lib/customer-matching.ts` that counts occurrences of each alias `source_id` across the raw (pre-alias) ingested datasets.
-- Unlink uses the existing `unlinkSourceId()`; "Change" reuses `customer-link-wizard.tsx` seeded with a single group.
-- Customer names resolve via the existing `customerOptions()`; if a linked target no longer exists in the roster, show the raw id with a "customer not found" note.
+This is a one-off document, not an in-app page — no application code changes.
