@@ -7,7 +7,10 @@ import { setDefaultSupabaseResult } from "@/test/setup";
 const fetchAndNormalize = vi.fn(async () => []);
 const runCrmSync = vi.fn(async () => []);
 const runSupportSync = vi.fn(async () => ({ datasets: [], rows: 0 }));
-const persistDatasetsAdmin = vi.fn(async () => ({ batchIds: [], totalRows: 0 }));
+const persistDatasetsAdmin = vi.fn(
+  async (): Promise<{ batchIds: string[]; totalRows: number }> => ({ batchIds: [], totalRows: 0 }),
+);
+
 
 vi.mock("@/lib/accounting.server", () => ({ fetchAndNormalize: (...a: unknown[]) => fetchAndNormalize(...(a as [])) }));
 vi.mock("@/lib/crm.server", () => ({
