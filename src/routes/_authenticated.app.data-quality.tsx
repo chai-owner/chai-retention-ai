@@ -25,6 +25,16 @@ import {
 import { cn } from "@/lib/utils";
 import { removePersistedBatch } from "@/lib/ingest-persistence";
 import { useSignedIn } from "@/lib/use-auth-state";
+import { useIngested } from "@/lib/ingested-data-store";
+import { useCustomerAliases } from "@/lib/customer-aliases";
+import {
+  customerOptions,
+  describeCounts,
+  findUnmatched,
+  type CustomerOption,
+  type UnmatchedGroup,
+} from "@/lib/customer-matching";
+import { CustomerLinkWizard } from "@/components/customer-link-wizard";
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
   head: () => ({ meta: [{ title: "Data Quality — ChAi" }] }),
