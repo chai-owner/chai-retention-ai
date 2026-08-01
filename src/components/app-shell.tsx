@@ -65,11 +65,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       const isIn = !!data.session;
       setSignedIn(isIn);
-      if (isIn && !demo) void hydrateIngestFromServer();
+      if (isIn && !demo) {
+        void hydrateIngestFromServer();
+        void hydrateCustomerAliases();
+      }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setSignedIn(!!session);
-      if (event === "SIGNED_IN" && !demo) void hydrateIngestFromServer();
+      if (event === "SIGNED_IN" && !demo) {
+        void hydrateIngestFromServer();
+        void hydrateCustomerAliases();
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [demo]);
