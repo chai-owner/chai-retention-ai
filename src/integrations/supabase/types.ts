@@ -176,6 +176,36 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_id_aliases: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          id: string
+          source_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          source_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          source_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       freshdesk_connections: {
         Row: {
           api_key_ciphertext: string
