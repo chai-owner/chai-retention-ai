@@ -27,6 +27,7 @@ import { useDemoMode } from "@/lib/use-demo-mode";
 import { impersonationStore, useImpersonation } from "@/lib/impersonation";
 import { endImpersonation } from "@/lib/admin.functions";
 import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
+import { hydrateCustomerAliases } from "@/lib/customer-aliases";
 
 const nav = [
   { to: "/app/welcome", label: "Welcome", icon: Sparkles },
