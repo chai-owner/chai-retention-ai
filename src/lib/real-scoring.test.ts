@@ -196,18 +196,18 @@ describe("revenue at risk vs retention opportunity", () => {
   it("retention opportunity is positive and never exceeds revenue at risk", () => {
     const ds = buildRealDataset(makeIngested(), W, makeProfile());
     expect(ds.revenueAtRisk).toBeGreaterThan(0);
-    expect(ds.retentionOpportunity).toBeGreaterThan(0);
-    expect(ds.retentionOpportunity).toBeLessThanOrEqual(ds.revenueAtRisk);
+    expect(ds.executive.retentionOpportunity).toBeGreaterThan(0);
+    expect(ds.executive.retentionOpportunity).toBeLessThanOrEqual(ds.revenueAtRisk);
   });
 
   it("recovers at least ~32% of at-risk revenue (post-adjustment floor)", () => {
     const ds = buildRealDataset(makeIngested(), W, makeProfile());
-    expect(ds.retentionOpportunity / ds.revenueAtRisk).toBeGreaterThanOrEqual(0.32);
+    expect(ds.executive.retentionOpportunity / ds.revenueAtRisk).toBeGreaterThanOrEqual(0.32);
   });
 
   it("both are zero when nobody is at risk", () => {
     const ds = buildRealDataset({ customers: [{ customer_id: "A" }] }, W, makeProfile());
     expect(ds.revenueAtRisk).toBe(0);
-    expect(ds.retentionOpportunity).toBe(0);
+    expect(ds.executive.retentionOpportunity).toBe(0);
   });
 });
