@@ -101,24 +101,75 @@ const demoUnmatched: UnmatchedGroup[] = [
   },
 ];
 
+// Illustrative saved links for the public demo.
+const demoAliases: CustomerAlias[] = [
+  { source_id: "ACME-CORP-01", customer_id: "CUS-1001", status: "linked" },
+  { source_id: "northwind labs", customer_id: "CUS-1042", status: "linked" },
+  { source_id: "INTERNAL-TEST", customer_id: null, status: "ignored" },
+];
+const demoAliasUsage: Record<string, Record<string, number>> = {
+  "ACME-CORP-01": { transactions: 34, usage: 9 },
+  "northwind labs": { support: 11 },
+  "INTERNAL-TEST": { transactions: 3 },
+};
+
 function DataQualityPage() {
   const uploads = useUploads();
   const signedIn = useSignedIn();
   const isReal = signedIn === true;
   const [forgetId, setForgetId] = useState("");
   const ingested = useIngested();
-  const aliases = useCustomerAliases();
+  const liveAliases = useCustomerAliases();
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardGroups, setWizardGroups] = useState<UnmatchedGroup[] | null>(null);
+
+  const aliases = isReal ? liveAliases : demoAliases;
 
   const customers = useMemo(
     () => (isReal ? customerOptions(ingested) : demoCustomers),
     [isReal, ingested],
   );
   const unmatched = useMemo(
-    () => (isReal ? findUnmatched(ingested, aliases) : demoUnmatched),
-    [isReal, ingested, aliases],
+    () => (isReal ? findUnmatched(ingested, liveAliases) : demoUnmatched),
+    [isReal, ingested, liveAliases],
   );
   const unmatchedRows = unmatched.reduce((s, g) => s + g.total, 0);
+
+  const aliasUsage = useMemo(
+    () => (isReal ? countAliasUsage(ingested, liveAliases) : demoAliasUsage),
+    [isReal, ingested, liveAliases],
+  );
+
+  const customerName = (id: string | null) =>
+    customers.find((c) => c.customer_id === id)?.name ?? null;
+
+  async function handleUnlink(a: CustomerAlias) {
+    if (!isReal) {
+      toast.info("Demo mode", { description: "Saved links can be managed once you're signed in." });
+      return;
+    }
+    try {
+      await unlinkSourceId(a.source_id);
+      toast.success("Link removed", {
+        description: `${a.source_id} will show up as unmatched again.`,
+      });
+    } catch (e) {
+      toast.error("Couldn't remove the link", { description: (e as Error).message });
+    }
+  }
+
+  function handleChange(a: CustomerAlias) {
+    const group = groupForSourceId(ingested, a.source_id, aliasUsage[a.source_id] ?? {});
+    setWizardGroups([group]);
+    setWizardOpen(true);
+  }
+
+  function openUnmatchedWizard() {
+    setWizardGroups(null);
+    setWizardOpen(true);
+  }
+
+
 
 
   function forgetCustomer() {
