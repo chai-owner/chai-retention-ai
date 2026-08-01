@@ -248,7 +248,7 @@ function DataQualityPage() {
             </div>
             {unmatched.length > 0 && (
               <button
-                onClick={() => setWizardOpen(true)}
+                onClick={openUnmatchedWizard}
                 className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Link2 className="h-4 w-4" /> Resolve matches
