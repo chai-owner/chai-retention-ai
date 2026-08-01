@@ -173,6 +173,76 @@ function DataQualityPage() {
         </Card>
       )}
 
+      {/* Unmatched records */}
+      {(customers.length > 0 || unmatched.length > 0) && (
+        <Card className="mt-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+                <Link2 className="h-4 w-4" />
+              </span>
+              <div>
+                <h3 className="font-semibold">
+                  Unmatched records{unmatched.length > 0 ? ` (${unmatched.length})` : ""}
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Rows whose customer reference doesn't match anyone in your customer list. They
+                  don't count towards any health score until you link them.
+                </p>
+              </div>
+            </div>
+            {unmatched.length > 0 && (
+              <button
+                onClick={() => setWizardOpen(true)}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <Link2 className="h-4 w-4" /> Resolve matches
+              </button>
+            )}
+          </div>
+
+          {unmatched.length === 0 ? (
+            <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle2 className="h-4 w-4 text-success" /> All records are matched to a customer.
+            </p>
+          ) : (
+            <>
+              <ul className="mt-4 space-y-2">
+                {unmatched.slice(0, 5).map((g) => (
+                  <li
+                    key={g.sourceId}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm"
+                  >
+                    <span className="font-mono text-xs font-medium">{g.sourceId || "(blank)"}</span>
+                    <span className="text-xs text-muted-foreground">{describeCounts(g.counts)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {g.suggestions[0]
+                        ? `Suggested: ${g.suggestions[0].name}`
+                        : "No suggestion — search manually"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-muted-foreground">
+                {unmatchedRows.toLocaleString()} row{unmatchedRows === 1 ? "" : "s"} currently
+                excluded from scoring
+                {unmatched.length > 5 ? ` · showing 5 of ${unmatched.length} references` : ""}.
+              </p>
+            </>
+          )}
+        </Card>
+      )}
+
+      <CustomerLinkWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        groups={unmatched}
+        customers={customers}
+        readOnly={!isReal}
+      />
+
+
+
       <Card className="mt-6">
         <div className="flex items-center justify-between">
           <div>
