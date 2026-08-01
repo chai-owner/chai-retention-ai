@@ -31,9 +31,13 @@ import {
   customerOptions,
   describeCounts,
   findUnmatched,
+  countAliasUsage,
+  groupForSourceId,
   type CustomerOption,
   type UnmatchedGroup,
 } from "@/lib/customer-matching";
+import type { CustomerAlias } from "@/lib/customer-matching";
+import { unlinkSourceId } from "@/lib/customer-aliases";
 import { CustomerLinkWizard } from "@/components/customer-link-wizard";
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
