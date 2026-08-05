@@ -71,6 +71,35 @@ export const listCustomers = createServerFn({ method: "GET" })
     }));
   });
 
+export interface DemoLead {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  website: string | null;
+  createdAt: string;
+}
+
+// Visitors who submitted their details to view the public demo.
+export const listDemoLeads = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<DemoLead[]> => {
+    await assertAdmin(context);
+    const { data, error } = await context.supabase
+      .from("demo_leads")
+      .select("id, name, email, company, website, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((r) => ({
+      id: r.id,
+      name: r.name ?? "",
+      email: r.email ?? "",
+      company: r.company ?? "",
+      website: r.website ?? null,
+      createdAt: r.created_at,
+    }));
+  });
+
 
 export const setUnlocked = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

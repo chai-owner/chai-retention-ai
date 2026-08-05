@@ -206,6 +206,33 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_leads: {
+        Row: {
+          company: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          website: string | null
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          website?: string | null
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       freshdesk_connections: {
         Row: {
           api_key_ciphertext: string
