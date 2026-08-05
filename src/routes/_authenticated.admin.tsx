@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { Lock, Loader2, Users, Cpu, Lock as LockIcon, Unlock, LogIn, CalendarCheck } from "lucide-react";
+import { Lock, Loader2, Users, Cpu, Lock as LockIcon, Unlock, LogIn, CalendarCheck, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Card } from "@/components/ui/chai";
 import {
   listCustomers,
+  listDemoLeads,
+  type DemoLead,
   setUnlocked,
   startImpersonation,
   type AdminCustomer,
@@ -30,12 +32,19 @@ function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const fetchDemoLeads = useServerFn(listDemoLeads);
+  const [demoLeads, setDemoLeads] = useState<DemoLead[]>([]);
 
   async function load() {
     try {
       const rows = await fetchCustomers();
       setCustomers(rows as AdminCustomer[]);
       setIsAdmin(true);
+      try {
+        setDemoLeads((await fetchDemoLeads()) as DemoLead[]);
+      } catch {
+        setDemoLeads([]);
+      }
     } catch {
       setIsAdmin(false);
     } finally {
@@ -227,6 +236,66 @@ function AdminPage() {
           </div>
         )}
       </Card>
+
+      <div className="mt-10">
+        <PageHeader
+          title="Demo requests"
+          description="People who entered their details to view the ChAi demo."
+        />
+        <Card className="overflow-hidden p-0">
+          {demoLeads.length === 0 ? (
+            <div className="px-6 py-16 text-center text-sm text-muted-foreground">
+              No demo requests yet.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-border bg-secondary/50 text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Name</th>
+                    <th className="px-4 py-3 font-medium">Company</th>
+                    <th className="px-4 py-3 font-medium">Website</th>
+                    <th className="px-4 py-3 font-medium">Requested</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {demoLeads.map((l) => (
+                    <tr key={l.id} className="hover:bg-accent/40">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 font-medium">
+                          <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                          {l.name || "\u2014"}
+                        </div>
+                        <a href={`mailto:${l.email}`} className="text-xs text-primary hover:underline">
+                          {l.email}
+                        </a>
+                      </td>
+                      <td className="px-4 py-3">{l.company || "\u2014"}</td>
+                      <td className="px-4 py-3">
+                        {l.website ? (
+                          <a
+                            href={l.website.startsWith("http") ? l.website : `https://${l.website}`}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="text-primary hover:underline"
+                          >
+                            {l.website}
+                          </a>
+                        ) : (
+                          "\u2014"
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {new Date(l.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
