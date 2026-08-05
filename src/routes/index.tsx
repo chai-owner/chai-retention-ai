@@ -25,7 +25,6 @@ import { DashboardMockup } from "@/components/landing/dashboard-mockup";
 const customersShot = "/screenshots/customers.png";
 const insightsShot = "/screenshots/insights.png";
 const plannerShot = "/screenshots/planner.png";
-const heroShot = "/screenshots/hero-dashboard.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
