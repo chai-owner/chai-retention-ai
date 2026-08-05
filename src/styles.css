@@ -226,3 +226,79 @@
     box-shadow: var(--shadow-lift);
   }
 }
+
+/* ── Landing page scope ───────────────────────────────────────────────
+   Premium marketing palette, isolated from the product app tokens. */
+.landing {
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #1D4ED8;
+  --secondary: #EFF4FB;
+  --secondary-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #D4AF37;
+  --accent-foreground: #0B1220;
+  --navy: #0B1220;
+  --navy-foreground: #F8FAFC;
+  --gold: #D4AF37;
+  --border: #E2E8F0;
+  --ring: #2563EB;
+  --radius: 1.25rem;
+  --shadow-soft: 0 4px 20px -6px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 18px 50px -22px rgba(15, 23, 42, 0.22), 0 2px 6px rgba(15, 23, 42, 0.03);
+  --shadow-lift: 0 30px 70px -30px rgba(15, 23, 42, 0.35);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+@layer utilities {
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+  .reveal-in {
+    opacity: 1;
+    transform: none;
+  }
+  .mesh-drift {
+    animation: mesh-drift 18s ease-in-out infinite alternate;
+  }
+  .float-slow {
+    animation: float-slow 8s ease-in-out infinite;
+  }
+  .perspective-hero {
+    perspective: 1600px;
+  }
+  .tilt-hero {
+    transform: rotateY(-9deg) rotateX(3deg) rotate(0.4deg);
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .tilt-hero:hover {
+    transform: rotateY(-4deg) rotateX(1deg);
+  }
+}
+
+@keyframes mesh-drift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(4%, -5%, 0) scale(1.12); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .mesh-drift, .float-slow { animation: none; }
+}
