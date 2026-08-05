@@ -21,6 +21,13 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DashboardMockup } from "@/components/landing/dashboard-mockup";
+import {
+  ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
+  FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
+  SalesforceIcon, SalesforceColor, ZohoIcon, ZohoColor,
+  QuickBooksIcon, QuickBooksColor, FreshBooksIcon, FreshBooksColor,
+  XeroIcon, XeroColor,
+} from "@/components/landing/brand-icons";
 
 const customersShot = "/screenshots/customers.png";
 const insightsShot = "/screenshots/insights.png";
