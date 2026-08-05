@@ -278,8 +278,11 @@ function Landing() {
             {integrations.map((it, i) => (
               <Reveal key={it.name} delay={(i % 3) * 70}>
                 <div className="group flex h-full items-center gap-4 rounded-[20px] border border-border/70 bg-card p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-card">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary text-sm font-bold text-primary transition-transform duration-300 group-hover:scale-110">
-                    {it.initials}
+                  <span
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary transition-transform duration-300 group-hover:scale-110"
+                    style={{ color: it.color }}
+                  >
+                    <it.Icon className="h-6 w-6" />
                   </span>
                   <div>
                     <p className="font-semibold">{it.name}</p>
