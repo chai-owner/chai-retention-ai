@@ -132,6 +132,8 @@ const showcase = [
 
 function Landing() {
   const [scrolled, setScrolled] = useState(false);
+  const { open: demoOpen, openGate, closeGate } = useDemoGate();
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
