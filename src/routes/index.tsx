@@ -21,6 +21,13 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DashboardMockup } from "@/components/landing/dashboard-mockup";
+import {
+  ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
+  FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
+  SalesforceIcon, SalesforceColor, ZohoIcon, ZohoColor,
+  QuickBooksIcon, QuickBooksColor, FreshBooksIcon, FreshBooksColor,
+  XeroIcon, XeroColor,
+} from "@/components/landing/brand-icons";
 
 const customersShot = "/screenshots/customers.png";
 const insightsShot = "/screenshots/insights.png";
@@ -65,16 +72,17 @@ const trust = [
 ];
 
 const integrations = [
-  { name: "HubSpot", initials: "HS" },
-  { name: "Stripe", initials: "S" },
-  { name: "QuickBooks", initials: "QB" },
-  { name: "Slack", initials: "SL" },
-  { name: "Microsoft 365", initials: "M" },
-  { name: "Google Workspace", initials: "G" },
-  { name: "Zendesk", initials: "ZD" },
-  { name: "Intercom", initials: "IC" },
-  { name: "Salesforce", initials: "SF" },
+  { name: "Zendesk", Icon: ZendeskIcon, color: ZendeskColor },
+  { name: "Intercom", Icon: IntercomIcon, color: IntercomColor },
+  { name: "Freshdesk", Icon: FreshdeskIcon, color: FreshdeskColor },
+  { name: "HubSpot", Icon: HubSpotIcon, color: HubSpotColor },
+  { name: "Salesforce", Icon: SalesforceIcon, color: SalesforceColor },
+  { name: "Zoho CRM", Icon: ZohoIcon, color: ZohoColor },
+  { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor },
+  { name: "FreshBooks", Icon: FreshBooksIcon, color: FreshBooksColor },
+  { name: "Xero", Icon: XeroIcon, color: XeroColor },
 ];
+
 
 const steps = [
   { n: "01", icon: Plug, title: "Connect your tools", desc: "Bring in CRM, billing, support and spreadsheets. ChAi maps the fields and checks quality for you." },
@@ -270,8 +278,11 @@ function Landing() {
             {integrations.map((it, i) => (
               <Reveal key={it.name} delay={(i % 3) * 70}>
                 <div className="group flex h-full items-center gap-4 rounded-[20px] border border-border/70 bg-card p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-card">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary text-sm font-bold text-primary transition-transform duration-300 group-hover:scale-110">
-                    {it.initials}
+                  <span
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary transition-transform duration-300 group-hover:scale-110"
+                    style={{ color: it.color }}
+                  >
+                    <it.Icon className="h-6 w-6" />
                   </span>
                   <div>
                     <p className="font-semibold">{it.name}</p>
