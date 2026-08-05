@@ -51,6 +51,7 @@ const featureList = [
   "AI-powered churn prediction",
   "Personalized Customer Health Scores",
   "AI Insights that update as your data changes",
+  "ChAi AI assistant included",
   "Recommended Actions",
   "Customer Timeline",
   "Reports & Analytics",
