@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated")({
 
     if (!user) {
       if (isDemo) return { user: null };
-      throw redirect({ to: "/auth", search: { redirect: location.href } });
+      throw redirect({ to: "/auth", search: { redirect: location.href, mode: undefined, demo: false } });
     }
 
     if (demoMode && !user) return { user: null };
