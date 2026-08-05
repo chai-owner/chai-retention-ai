@@ -535,6 +535,8 @@ function Landing() {
           </div>
         </div>
       </footer>
+
+      <DemoGateDialog open={demoOpen} onClose={closeGate} />
     </div>
   );
 }
