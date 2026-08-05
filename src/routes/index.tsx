@@ -286,7 +286,6 @@ function Landing() {
                   </span>
                   <div>
                     <p className="font-semibold">{it.name}</p>
-                    <p className="text-xs text-muted-foreground">Secure two-way sync</p>
                   </div>
                 </div>
               </Reveal>
