@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { Reveal } from "@/components/landing/reveal";
+import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 import { DashboardMockup } from "@/components/landing/dashboard-mockup";
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
@@ -174,12 +175,18 @@ function Landing() {
             >
               Log in
             </Link>
+            <button
+              onClick={openGate}
+              className="hidden rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
+            >
+              View Demo
+            </button>
             <Link
-              to="/app/dashboard"
-              search={{ demo: true }}
+              to="/auth"
+              search={signup}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(37,99,235,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
             >
-              Book a Demo
+              Sign Up
             </Link>
           </div>
         </nav>
@@ -211,18 +218,18 @@ function Landing() {
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Link
-                to="/app/dashboard"
-                search={{ demo: true }}
+                to="/auth"
+                search={signup}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(37,99,235,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
               >
-                Book a Demo <ArrowRight className="h-4.5 w-4.5" />
+                Sign Up <ArrowRight className="h-4.5 w-4.5" />
               </Link>
-              <a
-                href="#product"
+              <button
+                onClick={openGate}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-7 py-4 text-base font-semibold text-white backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10"
               >
-                <PlayCircle className="h-5 w-5" /> Watch 2-minute Overview
-              </a>
+                <PlayCircle className="h-5 w-5" /> View Demo
+              </button>
             </div>
             <p className="mt-5 text-sm text-white/45">
               Set up your retention engine in minutes — no analytics team required.
@@ -409,18 +416,18 @@ function Landing() {
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link
-                  to="/app/dashboard"
-                  search={{ demo: true }}
+                  to="/auth"
+                  search={signup}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(37,99,235,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
                 >
-                  Book a Demo <ArrowRight className="h-4.5 w-4.5" />
+                  Sign Up <ArrowRight className="h-4.5 w-4.5" />
                 </Link>
-                <a
-                  href="#product"
+                <button
+                  onClick={openGate}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-7 py-4 text-base font-semibold text-white backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10"
                 >
-                  See how it works
-                </a>
+                  View Demo
+                </button>
               </div>
             </div>
           </div>
@@ -469,9 +476,9 @@ function Landing() {
               <p className="text-sm font-semibold">Resources</p>
               <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
                 <li>
-                  <Link className="transition-colors hover:text-primary" to="/app/dashboard" search={{ demo: true }}>
+                  <button className="transition-colors hover:text-primary" onClick={openGate}>
                     Live demo
-                  </Link>
+                  </button>
                 </li>
                 <li><a className="transition-colors hover:text-primary" href="#top">Privacy Policy</a></li>
                 <li><a className="transition-colors hover:text-primary" href="#top">Terms</a></li>
