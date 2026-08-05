@@ -130,14 +130,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="space-y-2 border-t border-sidebar-border p-3">
           {demo ? (
-            <Link
-              to="/"
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
-            >
-              <LogOut className="h-[18px] w-[18px]" />
-              Exit demo
-            </Link>
+            <>
+              <Link
+                to="/auth"
+                search={{ demo: false, redirect: undefined, mode: "signup" }}
+                className="flex w-full items-center gap-3 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <LogIn className="h-[18px] w-[18px]" />
+                Sign up
+              </Link>
+              <Link
+                to="/"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+              >
+                <LogOut className="h-[18px] w-[18px]" />
+                Exit demo
+              </Link>
+            </>
           ) : signedIn ? (
+
             <button
               onClick={handleSignOut}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
