@@ -62,7 +62,6 @@ const navItems = [
   { label: "Product", href: "#product" },
   { label: "Integrations", href: "#integrations" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Resources", href: "#features" },
 ];
 
 const trust = [

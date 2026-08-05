@@ -43,7 +43,6 @@ const login = { mode: undefined, demo: false, redirect: undefined };
 const navItems = [
   { label: "Product", href: "/#product" },
   { label: "Integrations", href: "/#integrations" },
-  { label: "Resources", href: "/#features" },
 ];
 
 const featureList = [
