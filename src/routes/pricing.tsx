@@ -49,15 +49,13 @@ const navItems = [
 const featureList = [
   "Unlimited team members",
   "AI-powered churn prediction",
-  "Customer Health Scores",
-  "AI Insights",
+  "Personalized Customer Health Scores",
+  "AI Insights that update as your data changes",
   "Recommended Actions",
   "Customer Timeline",
   "Reports & Analytics",
-  "Native integrations",
-  "Unlimited dashboards",
+  "Native integrations + CSV uploads",
   "Email support",
-  "Product updates",
   "Secure cloud infrastructure",
   "Automatic feature updates",
 ];
