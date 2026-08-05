@@ -61,7 +61,7 @@ const login = { mode: undefined, demo: false, redirect: undefined };
 const navItems = [
   { label: "Product", href: "#product" },
   { label: "Integrations", href: "#integrations" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Pricing", href: "/pricing" },
   { label: "Resources", href: "#features" },
 ];
 
@@ -470,7 +470,7 @@ function Landing() {
                 <li><a className="transition-colors hover:text-primary" href="#product">Overview</a></li>
                 <li><a className="transition-colors hover:text-primary" href="#features">Features</a></li>
                 <li><a className="transition-colors hover:text-primary" href="#integrations">Integrations</a></li>
-                <li><a className="transition-colors hover:text-primary" href="#pricing">Pricing</a></li>
+                <li><Link className="transition-colors hover:text-primary" to="/pricing">Pricing</Link></li>
               </ul>
             </div>
 
