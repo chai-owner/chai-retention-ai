@@ -58,7 +58,12 @@ function AuthPage() {
   }
 
   async function handleGoogle() {
+    if (mode === "register" && !acceptedTerms) {
+      toast.error("Please accept the Terms of Service to continue.");
+      return;
+    }
     setLoading(true);
+
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin + dest,
     });
