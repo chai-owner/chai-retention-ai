@@ -273,6 +273,21 @@ function Landing() {
             </Reveal>
           ))}
         </div>
+
+        {/* Customer detail screenshot */}
+        <Reveal delay={200} className="perspective-hero mt-16 lg:mt-24">
+          <div className="float-slow mx-auto max-w-5xl">
+            <div className="tilt-hero overflow-hidden rounded-[22px] ring-1 ring-border/60 shadow-[0_32px_80px_-24px_rgba(21,34,56,0.25)]">
+              <img
+                src="/screenshots/customer-detail.png"
+                alt="ChAi customer detail view showing health score, churn probability, risk drivers and recommended actions"
+                width={1587}
+                height={896}
+                className="block w-full"
+              />
+            </div>
+          </div>
+        </Reveal>
       </section>
 
       {/* ── Integrations ────────────────────────────────── */}
