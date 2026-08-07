@@ -230,28 +230,28 @@
 /* ── Landing page scope ───────────────────────────────────────────────
    Premium marketing palette, isolated from the product app tokens. */
 .landing {
-  --background: #F8FAFC;
-  --foreground: #0F172A;
+  --background: #F5F0E6;
+  --foreground: #152238;
   --card: #FFFFFF;
-  --card-foreground: #0F172A;
-  --primary: #2563EB;
-  --primary-foreground: #FFFFFF;
-  --primary-hover: #1D4ED8;
-  --secondary: #EFF4FB;
-  --secondary-foreground: #0F172A;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --accent: #D4AF37;
-  --accent-foreground: #0B1220;
-  --navy: #0B1220;
-  --navy-foreground: #F8FAFC;
-  --gold: #D4AF37;
-  --border: #E2E8F0;
-  --ring: #2563EB;
+  --card-foreground: #152238;
+  --primary: #204654;
+  --primary-foreground: #F7F9E1;
+  --primary-hover: #152238;
+  --secondary: #EAF2F5;
+  --secondary-foreground: #152238;
+  --muted: #EEF3E4;
+  --muted-foreground: #4A5A6B;
+  --accent: #E0A93A;
+  --accent-foreground: #152238;
+  --navy: #152238;
+  --navy-foreground: #F7F9E1;
+  --gold: #E0A93A;
+  --border: #DDE6D9;
+  --ring: #204654;
   --radius: 1.25rem;
-  --shadow-soft: 0 4px 20px -6px rgba(15, 23, 42, 0.08);
-  --shadow-card: 0 18px 50px -22px rgba(15, 23, 42, 0.22), 0 2px 6px rgba(15, 23, 42, 0.03);
-  --shadow-lift: 0 30px 70px -30px rgba(15, 23, 42, 0.35);
+  --shadow-soft: 0 4px 20px -6px rgba(21, 34, 56, 0.08);
+  --shadow-card: 0 18px 50px -22px rgba(21, 34, 56, 0.22), 0 2px 6px rgba(21, 34, 56, 0.03);
+  --shadow-lift: 0 30px 70px -30px rgba(21, 34, 56, 0.35);
   background-color: var(--background);
   color: var(--foreground);
 }

@@ -182,7 +182,7 @@ function Landing() {
             <Link
               to="/auth"
               search={signup}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(37,99,235,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(32,70,84,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
             >
               Sign Up
             </Link>
@@ -194,9 +194,9 @@ function Landing() {
       <section id="top" className="relative overflow-hidden bg-navy pt-36 pb-28 lg:pt-44 lg:pb-36">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="mesh-drift absolute -right-40 -top-52 h-[38rem] w-[38rem] rounded-full bg-primary/25 blur-[120px]" />
-          <div className="mesh-drift absolute -bottom-56 -left-40 h-[34rem] w-[34rem] rounded-full bg-[#1E40AF]/30 blur-[130px]" />
+          <div className="mesh-drift absolute -bottom-56 -left-40 h-[34rem] w-[34rem] rounded-full bg-[#204654]/30 blur-[130px]" />
           <div className="absolute left-1/3 top-1/4 h-72 w-72 rounded-full bg-gold/10 blur-[110px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_70%_0%,rgba(37,99,235,0.18),transparent_60%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_70%_0%,rgba(169,224,241,0.18),transparent_60%)]" />
         </div>
 
         <div className="relative mx-auto grid max-w-[1280px] items-center gap-16 px-6 lg:grid-cols-[1fr_1.05fr] lg:px-8">
@@ -218,7 +218,7 @@ function Landing() {
               <Link
                 to="/auth"
                 search={signup}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(37,99,235,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
               >
                 Sign Up <ArrowRight className="h-4.5 w-4.5" />
               </Link>
@@ -400,7 +400,7 @@ function Landing() {
           <div className="relative overflow-hidden rounded-[24px] bg-navy px-8 py-20 text-center shadow-lift lg:px-16">
             <div aria-hidden className="pointer-events-none absolute inset-0">
               <div className="mesh-drift absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary/35 blur-[110px]" />
-              <div className="absolute -bottom-28 -left-20 h-96 w-96 rounded-full bg-[#1E40AF]/30 blur-[120px]" />
+              <div className="absolute -bottom-28 -left-20 h-96 w-96 rounded-full bg-[#204654]/30 blur-[120px]" />
             </div>
             <div className="relative">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur">
@@ -416,7 +416,7 @@ function Landing() {
                 <Link
                   to="/auth"
                   search={signup}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(37,99,235,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
                 >
                   Sign Up <ArrowRight className="h-4.5 w-4.5" />
                 </Link>
