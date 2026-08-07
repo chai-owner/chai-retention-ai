@@ -147,12 +147,12 @@ function Landing() {
           scrolled ? "border-b border-white/10 bg-navy/70 backdrop-blur-xl" : "border-b border-transparent"
         }`}
       >
-        <nav className="mx-auto flex h-20 max-w-[1280px] items-center justify-between px-6 lg:px-8">
+        <nav className="mx-auto flex h-20 max-w-[1280px] items-center justify-start px-6 lg:px-8">
           <a href="#top" className="flex items-center gap-2.5">
-            <img src="/logo-light.png" alt="ChAi" className="h-9 w-auto" />
+            <img src="/logo-light.png" alt="ChAi" className="h-[2.925rem] w-auto" />
           </a>
 
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-1 md:flex ml-8">
             {navItems.map((n) => (
               <a
                 key={n.label}
@@ -164,7 +164,7 @@ function Landing() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 ml-auto">
             <Link
               to="/auth"
               search={login}
