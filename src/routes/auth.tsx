@@ -79,6 +79,10 @@ function AuthPage() {
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
+    if (mode === "register" && !acceptedTerms) {
+      toast.error("Please accept the Terms of Service to continue.");
+      return;
+    }
     setLoading(true);
     if (mode === "register") {
       const { error } = await supabase.auth.signUp({
@@ -86,9 +90,13 @@ function AuthPage() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}${dest}`,
-          data: { full_name: name.trim() },
+          data: {
+            full_name: name.trim(),
+            terms_accepted_at: new Date().toISOString(),
+          },
         },
       });
+
       if (error) {
         toast.error(error.message);
         setLoading(false);
