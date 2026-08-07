@@ -43,9 +43,9 @@ const navItems = [
 ];
 
 const featureList = [
-  "AI-powered churn prediction",
   "Personalized Customer Health Scores",
   "AI Insights that update as your data changes",
+  "AI-powered churn prediction",
   "ChAi AI assistant included",
   "Recommended Actions",
   "Customer Timeline",
