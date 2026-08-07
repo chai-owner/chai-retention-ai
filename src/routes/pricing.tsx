@@ -156,10 +156,7 @@ function PricingPage() {
       >
         <nav className="mx-auto flex h-20 max-w-[1280px] items-center justify-between px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-gold ring-1 ring-white/15">
-              <Sparkles className="h-4.5 w-4.5" />
-            </span>
-            <span className="text-lg font-semibold tracking-tight text-white">ChAi</span>
+            <img src="/logo-light.png" alt="ChAi" className="h-9 w-auto" />
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">
