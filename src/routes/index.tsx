@@ -398,13 +398,13 @@ function Landing() {
                   </ul>
                 </div>
                 <div className={i % 2 === 1 ? "lg:order-1" : ""}>
-                  <div className="overflow-hidden rounded-[22px] bg-card p-2 shadow-card transition-transform duration-500 hover:-translate-y-2">
+                  <div className="overflow-hidden rounded-[22px] shadow-card transition-transform duration-500 hover:-translate-y-2">
                     <img
                       src={s.img}
                       alt={`${s.eyebrow} — ${s.title}`}
                       width={s.w}
                       height={s.h}
-                      className="block h-auto w-full rounded-[16px]"
+                      className="block h-auto w-full"
                       loading="lazy"
                     />
                   </div>
