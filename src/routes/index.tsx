@@ -14,9 +14,7 @@ import {
   Brain,
   Rocket,
   Check,
-  Linkedin,
-  Twitter,
-  Github,
+  ArrowRight,
 } from "lucide-react";
 
 import { Reveal } from "@/components/landing/reveal";
