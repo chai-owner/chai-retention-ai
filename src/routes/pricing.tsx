@@ -387,7 +387,9 @@ function PricingPage() {
                   </button>
                 </li>
                 <li>
-                  <a className="transition-colors hover:text-primary" href="/">Terms</a>
+                  <Link className="transition-colors hover:text-primary" to="/terms">
+                    Terms
+                  </Link>
                 </li>
                 <li>
                   <Link className="transition-colors hover:text-primary" to="/auth" search={login}>
