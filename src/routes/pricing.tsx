@@ -5,9 +5,6 @@ import {
   ArrowRight,
   Check,
   ChevronDown,
-  Linkedin,
-  Twitter,
-  Github,
   Users,
   DollarSign,
   TrendingDown,
@@ -369,48 +366,23 @@ function PricingPage() {
 
       {/* ── Footer ──────────────────────────────────────── */}
       <footer className="border-t border-border bg-background">
-        <div className="mx-auto max-w-[1280px] px-6 py-16 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr_1fr_1.4fr]">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <img src="/logo-dark.png" alt="ChAi" className="h-9 w-auto" />
-              </div>
-              <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-                Customer intelligence and retention, in plain English.
-              </p>
-              <div className="mt-6 flex items-center gap-2">
-                {[Linkedin, Twitter, Github].map((Icon, i) => (
-                  <a
-                    key={i}
-                    href="/"
-                    aria-label="Social link"
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-primary"
-                  >
-                    <Icon className="h-4 w-4" />
-                  </a>
-                ))}
-              </div>
+        <div className="mx-auto max-w-[1280px] px-6 py-12 lg:px-8">
+          <div className="flex flex-col items-center justify-between gap-8 sm:flex-row">
+            <div className="flex items-center gap-2.5">
+              <img src="/logo-dark.png" alt="ChAi" className="h-9 w-auto" />
             </div>
 
-            <div>
-              <p className="text-sm font-semibold">Product</p>
-              <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-                <li><a className="transition-colors hover:text-primary" href="/#product">Overview</a></li>
-                <li><a className="transition-colors hover:text-primary" href="/#features">Features</a></li>
-                <li><a className="transition-colors hover:text-primary" href="/#integrations">Integrations</a></li>
-                <li><Link className="transition-colors hover:text-primary" to="/pricing">Pricing</Link></li>
-              </ul>
-            </div>
-
-            <div>
+            <div className="flex flex-col items-center sm:items-end">
               <p className="text-sm font-semibold">Resources</p>
-              <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
+              <ul className="mt-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground sm:justify-end">
                 <li>
                   <button className="transition-colors hover:text-primary" onClick={openGate}>
-                    Live demo
+                    Live Demo
                   </button>
                 </li>
-                <li><Link className="transition-colors hover:text-primary" to="/">Home</Link></li>
+                <li>
+                  <a className="transition-colors hover:text-primary" href="/">Terms</a>
+                </li>
                 <li>
                   <Link className="transition-colors hover:text-primary" to="/auth" search={login}>
                     Log in
@@ -418,23 +390,9 @@ function PricingPage() {
                 </li>
               </ul>
             </div>
-
-            <div>
-              <p className="text-sm font-semibold">Ready when you are</p>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Start protecting revenue in minutes — no analytics team required.
-              </p>
-              <Link
-                to="/auth"
-                search={signup}
-                className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
-              >
-                Create an account <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
           </div>
 
-          <div className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-border pt-8 text-sm text-muted-foreground sm:flex-row">
+          <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 text-sm text-muted-foreground sm:flex-row">
             <p>© {new Date().getFullYear()} ChAi. All rights reserved.</p>
             <p className="hidden sm:block">Built for modern SaaS teams.</p>
           </div>
