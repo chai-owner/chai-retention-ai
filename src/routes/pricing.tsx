@@ -373,10 +373,7 @@ function PricingPage() {
           <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr_1fr_1.4fr]">
             <div>
               <div className="flex items-center gap-2.5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Sparkles className="h-4 w-4" />
-                </span>
-                <span className="text-lg font-semibold tracking-tight">ChAi</span>
+                <img src="/logo-dark.png" alt="ChAi" className="h-9 w-auto" />
               </div>
               <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
                 Customer intelligence and retention, in plain English.
