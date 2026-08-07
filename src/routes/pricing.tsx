@@ -43,7 +43,6 @@ const navItems = [
 ];
 
 const featureList = [
-  "Unlimited team members",
   "AI-powered churn prediction",
   "Personalized Customer Health Scores",
   "AI Insights that update as your data changes",
@@ -55,6 +54,7 @@ const featureList = [
   "Email support",
   "Secure cloud infrastructure",
   "Automatic feature updates",
+  "Forget-a-customer anonymization",
 ];
 
 const builtFor = [
