@@ -103,6 +103,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link to="/" className="flex items-center gap-2">
             <img src="/logo-light.png" alt="ChAi" className="h-8 w-auto" />
           </Link>
+        </div>
         <nav className="flex-1 space-y-1 px-3 py-2">
           {visibleNav.map((item) => {
             const active = pathname === item.to || pathname.startsWith(item.to + "/");
