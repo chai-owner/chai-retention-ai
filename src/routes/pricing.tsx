@@ -255,12 +255,14 @@ function PricingPage() {
         <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
           <Reveal className="mx-auto max-w-[42rem]">
             <div className="group relative rounded-[20px] bg-card p-8 shadow-card ring-1 ring-border/70 transition-all duration-300 hover:-translate-y-2 hover:shadow-lift sm:p-10">
-              <div className="flex justify-center">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[color:var(--accent-foreground)]">
-                  <Sparkles className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-                  Most Popular
-                </span>
-              </div>
+              {annual && (
+                <div className="flex justify-center">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[color:var(--accent-foreground)]">
+                    <Sparkles className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+                    Most Popular
+                  </span>
+                </div>
+              )}
 
               <div className="mt-6 text-center">
                 <h2 className="text-2xl font-semibold tracking-tight">ChAi</h2>
@@ -274,8 +276,12 @@ function PricingPage() {
                       {annual ? "/year" : "/month"}
                     </span>
                   </div>
-                  <p className="mt-4 text-sm font-semibold text-primary">Save 16%</p>
-                  <p className="mt-1 text-sm text-muted-foreground">(Equivalent to 2 months free)</p>
+                  {annual && (
+                    <>
+                      <p className="mt-4 text-sm font-semibold text-primary">Save 16%</p>
+                      <p className="mt-1 text-sm text-muted-foreground">(Equivalent to 2 months free)</p>
+                    </>
+                  )}
                 </div>
 
                 <div className="mt-8 flex flex-col items-center gap-3">
