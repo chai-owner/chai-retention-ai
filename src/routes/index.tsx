@@ -239,8 +239,8 @@ function Landing() {
                 <img
                   src="/screenshots/hero-dashboard.png"
                   alt="ChAi retention dashboard showing customer health, revenue at risk and revenue by segment"
-                  width={2504}
-                  height={886}
+                  width={1560}
+                  height={1057}
                   className="block w-full"
                 />
               </div>
