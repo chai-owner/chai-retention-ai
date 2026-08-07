@@ -49,6 +49,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
 
   function goToDest() {
     if (redirectTo) navigate({ href: stripDemo(redirectTo) });
@@ -56,7 +58,12 @@ function AuthPage() {
   }
 
   async function handleGoogle() {
+    if (mode === "register" && !acceptedTerms) {
+      toast.error("Please accept the Terms of Service to continue.");
+      return;
+    }
     setLoading(true);
+
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin + dest,
     });
@@ -72,6 +79,10 @@ function AuthPage() {
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
+    if (mode === "register" && !acceptedTerms) {
+      toast.error("Please accept the Terms of Service to continue.");
+      return;
+    }
     setLoading(true);
     if (mode === "register") {
       const { error } = await supabase.auth.signUp({
@@ -79,9 +90,13 @@ function AuthPage() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}${dest}`,
-          data: { full_name: name.trim() },
+          data: {
+            full_name: name.trim(),
+            terms_accepted_at: new Date().toISOString(),
+          },
         },
       });
+
       if (error) {
         toast.error(error.message);
         setLoading(false);
@@ -153,6 +168,30 @@ function AuthPage() {
                 </p>
               </div>
 
+              {mode === "register" && (
+                <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background/60 p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
+                  />
+                  <span className="text-muted-foreground">
+                    I have read and agree to the{" "}
+                    <Link
+                      to="/terms"
+                      target="_blank"
+                      className="font-medium text-primary hover:underline"
+                    >
+                      Terms of Service
+                    </Link>
+                    .
+                  </span>
+                </label>
+              )}
+
+
+
               <button
                 onClick={handleGoogle}
                 disabled={loading}
@@ -212,7 +251,8 @@ function AuthPage() {
                 </div>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || (mode === "register" && !acceptedTerms)}
+
                   className={cn(
                     "flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60",
                   )}
