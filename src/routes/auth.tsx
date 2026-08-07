@@ -49,6 +49,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
 
   function goToDest() {
     if (redirectTo) navigate({ href: stripDemo(redirectTo) });
