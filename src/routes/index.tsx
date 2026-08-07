@@ -399,14 +399,16 @@ function Landing() {
                 </div>
                 <div className={i % 2 === 1 ? "lg:order-1" : ""}>
                   <div className="overflow-hidden rounded-[22px] shadow-[0_20px_60px_-18px_rgba(21,34,56,0.55)] transition-transform duration-500 hover:-translate-y-2">
-                    <img
-                      src={s.img}
-                      alt={`${s.eyebrow} — ${s.title}`}
-                      width={s.w}
-                      height={s.h}
-                      className="block h-auto w-full"
-                      loading="lazy"
-                    />
+                    <div className="-mt-px">
+                      <img
+                        src={s.img}
+                        alt={`${s.eyebrow} — ${s.title}`}
+                        width={s.w}
+                        height={s.h}
+                        className="block h-auto w-full"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
