@@ -14,7 +14,6 @@ import {
   Brain,
   Rocket,
   Check,
-  ArrowRight,
 } from "lucide-react";
 
 import { Reveal } from "@/components/landing/reveal";
