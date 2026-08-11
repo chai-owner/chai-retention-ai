@@ -675,6 +675,60 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          amount: number | null
+          billing_interval: string
+          cancelled_at: string | null
+          created_at: string
+          currency: string | null
+          current_period_end: string | null
+          id: string
+          payer_email: string | null
+          plan_id: string | null
+          provider: string
+          provider_subscription_id: string
+          raw: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          billing_interval?: string
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string | null
+          current_period_end?: string | null
+          id?: string
+          payer_email?: string | null
+          plan_id?: string | null
+          provider?: string
+          provider_subscription_id: string
+          raw?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          billing_interval?: string
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string | null
+          current_period_end?: string | null
+          id?: string
+          payer_email?: string | null
+          plan_id?: string | null
+          provider?: string
+          provider_subscription_id?: string
+          raw?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_sync_state: {
         Row: {
           created_at: string
