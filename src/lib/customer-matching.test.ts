@@ -1,6 +1,7 @@
 // Tier 1 — orphaned-row detection, suggestions, and saved alias behaviour.
 import { describe, it, expect } from "vitest";
 import {
+  autoLinkable,
   findUnmatched,
   applyAliases,
   customerOptions,
