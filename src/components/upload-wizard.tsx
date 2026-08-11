@@ -330,7 +330,7 @@ export function UploadWizard({
       source_provider: "csv",
       dataset_key: dataset.key,
       filename: fileName,
-      rows: rowObjects,
+      rows: taggedRows,
       meta: {
         datasetLabel: dataset.label,
         reliability,
