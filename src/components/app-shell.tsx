@@ -13,6 +13,8 @@ import {
   Menu,
   X,
   BadgeCheck,
+  Link2,
+
   Settings,
   LogOut,
   LogIn,
@@ -35,6 +37,8 @@ const nav = [
   { to: "/app/customers", label: "Customer Risk Center", icon: Users },
   { to: "/app/churned", label: "Churned & Win-back", icon: UserMinus },
   { to: "/app/data-quality", label: "Data Quality", icon: BadgeCheck },
+  { to: "/app/identity", label: "Identity Resolution", icon: Link2 },
+
   { to: "/app/planner", label: "Intelligence Planner", icon: ClipboardList },
   { to: "/app/insights", label: "Insights & Benchmarks", icon: Lightbulb },
   { to: "/app/data", label: "Data Uploads & Integrations", icon: Database },
