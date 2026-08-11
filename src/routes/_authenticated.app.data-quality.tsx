@@ -42,6 +42,7 @@ import {
 import type { CustomerAlias } from "@/lib/customer-matching";
 import { unlinkSourceId, linkCustomer } from "@/lib/customer-aliases";
 import { CustomerLinkWizard } from "@/components/customer-link-wizard";
+import { DuplicateCustomersCard } from "@/components/duplicate-customers-card";
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
   head: () => ({ meta: [{ title: "Data Quality — ChAi" }] }),
@@ -333,6 +334,9 @@ function DataQualityPage() {
           )}
         </Card>
       )}
+
+      {/* Possible duplicate customers */}
+      <DuplicateCustomersCard isReal={isReal} />
 
       {/* Saved links */}
       <Card className="mt-6">
