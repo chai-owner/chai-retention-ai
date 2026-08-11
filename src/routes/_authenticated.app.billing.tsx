@@ -90,7 +90,7 @@ function Billing() {
     <div>
       <PageHeader
         title="Billing & subscription"
-        subtitle="Your ChAi plan, billed monthly through PayPal."
+        description="Your ChAi plan, billed monthly through PayPal."
       />
 
       {isLoading ? (
