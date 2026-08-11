@@ -86,7 +86,7 @@ const faqs = [
   },
   {
     q: "How secure is my customer data?",
-    a: "Data is encrypted in transit and at rest, isolated per workspace, and handled GDPR-first. Integration credentials are encrypted, and you can anonymise or erase any customer on request.",
+    a: "Data is encrypted in transit and at rest, and isolated per workspace. Integration credentials are encrypted, and you can anonymise or erase any customer on request.",
   },
   {
     q: "Do you offer onboarding?",

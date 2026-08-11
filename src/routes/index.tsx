@@ -62,7 +62,7 @@ const navItems = [
 
 const trust = [
   { icon: Brain, title: "AI-powered insights", desc: "Root causes and next steps written in plain English, not dashboards to decode." },
-  { icon: ShieldCheck, title: "Secure integrations", desc: "GDPR-first data handling with encrypted, per-workspace connections." },
+  { icon: ShieldCheck, title: "Secure integrations", desc: "Encrypted, per-workspace connections with careful data handling." },
   { icon: Rocket, title: "Built for modern teams", desc: "Live in minutes — no analytics team, no data warehouse required." },
   { icon: Lightbulb, title: "Actionable recommendations", desc: "Every insight is ranked by the revenue it can realistically save." },
 ];
