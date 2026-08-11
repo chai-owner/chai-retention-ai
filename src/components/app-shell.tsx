@@ -13,6 +13,8 @@ import {
   Menu,
   X,
   BadgeCheck,
+  Link2,
+
   Settings,
   LogOut,
   LogIn,
