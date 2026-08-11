@@ -1,12 +1,17 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, isRedirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { getProfile } from "@/lib/profile.functions";
+import { isDemoValue } from "@/lib/use-demo-mode";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async ({ location, search }) => {
     // The /app/* pages run on sample data, so anyone can explore them as a
     // public demo without signing in. Everything else still requires login.
     const isDemo = location.pathname.startsWith("/app");
+    // Explicit demo mode (?demo=1): show the sample-data product demo even to a
+    // signed-in user, and never redirect them into onboarding/welcome.
+    const demoMode = isDemoValue((search as { demo?: unknown })?.demo);
 
     let user = null;
     try {
@@ -22,39 +27,35 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/auth", search: { redirect: location.href, mode: undefined, demo: false } });
     }
 
-    const path = location.pathname;
+    if (demoMode && !user) return { user: null };
 
-    // New signups must add payment details (2-week free trial) before we ask
-    // for company information in onboarding.
-    if (path !== "/start-trial" && path !== "/admin" && !path.startsWith("/app/billing")) {
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("status")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      const lapsed = !sub || sub.status === "CANCELLED" || sub.status === "EXPIRED";
-      if (lapsed) throw redirect({ to: "/start-trial" });
-    }
+
 
     // Force signed-in users who haven't finished onboarding into the flow.
-    if (path !== "/onboarding" && path !== "/admin" && path !== "/start-trial") {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarded, unlocked")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      // Fail closed: if we can't confirm onboarding, send them through it.
-      if (!profile?.onboarded) throw redirect({ to: "/onboarding" });
-
-      // Onboarded but not yet unlocked by an admin: keep them on the
-      // insights/booking screen. They may still revisit Business Profile
-      // and Data to improve their inputs.
-      const lockedAllowed = new Set(["/app/welcome", "/app/settings", "/app/data"]);
-      if (!profile.unlocked && path.startsWith("/app") && !lockedAllowed.has(path)) {
-        throw redirect({ to: "/app/welcome" });
+    if (location.pathname !== "/onboarding" && location.pathname !== "/admin") {
+      try {
+        const profile = await getProfile();
+        if (!profile?.onboarded) {
+          throw redirect({ to: "/onboarding" });
+        }
+        // Onboarded but not yet unlocked by an admin: keep them on the
+        // insights/booking screen. They may still revisit Business Profile
+        // and Data to improve their inputs.
+        const lockedAllowed = new Set([
+          "/app/welcome",
+          "/app/settings",
+          "/app/data",
+        ]);
+        if (
+          !profile.unlocked &&
+          location.pathname.startsWith("/app") &&
+          !lockedAllowed.has(location.pathname)
+        ) {
+          throw redirect({ to: "/app/welcome" });
+        }
+      } catch (err) {
+        if (isRedirect(err)) throw err;
+        // If the profile can't be loaded, don't block the app.
       }
     }
 
@@ -62,4 +63,3 @@ export const Route = createFileRoute("/_authenticated")({
   },
   component: () => <Outlet />,
 });
-

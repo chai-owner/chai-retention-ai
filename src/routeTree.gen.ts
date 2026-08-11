@@ -18,9 +18,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
-import { Route as AuthenticatedStartTrialRouteImport } from './routes/_authenticated.start-trial'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
-import { Route as AuthenticatedAppBillingRouteImport } from './routes/_authenticated.app.billing'
 import { Route as AuthenticatedAppChurnedRouteImport } from './routes/_authenticated.app.churned'
 import { Route as AuthenticatedAppCustomersRouteImport } from './routes/_authenticated.app.customers'
 import { Route as AuthenticatedAppDashboardRouteImport } from './routes/_authenticated.app.dashboard'
@@ -83,19 +81,9 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedStartTrialRoute = AuthenticatedStartTrialRouteImport.update({
-  id: '/start-trial',
-  path: '/start-trial',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedAppRoute,
-} as any)
-const AuthenticatedAppBillingRoute = AuthenticatedAppBillingRouteImport.update({
-  id: '/billing',
-  path: '/billing',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
 const AuthenticatedAppChurnedRoute = AuthenticatedAppChurnedRouteImport.update({
@@ -204,8 +192,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
-  '/start-trial': typeof AuthenticatedStartTrialRoute
-  '/app/billing': typeof AuthenticatedAppBillingRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
   '/app/customers': typeof AuthenticatedAppCustomersRouteWithChildren
   '/app/dashboard': typeof AuthenticatedAppDashboardRoute
@@ -233,8 +219,6 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
-  '/start-trial': typeof AuthenticatedStartTrialRoute
-  '/app/billing': typeof AuthenticatedAppBillingRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardRoute
   '/app/data': typeof AuthenticatedAppDataRoute
@@ -264,8 +248,6 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
-  '/_authenticated/start-trial': typeof AuthenticatedStartTrialRoute
-  '/_authenticated/app/billing': typeof AuthenticatedAppBillingRoute
   '/_authenticated/app/churned': typeof AuthenticatedAppChurnedRoute
   '/_authenticated/app/customers': typeof AuthenticatedAppCustomersRouteWithChildren
   '/_authenticated/app/dashboard': typeof AuthenticatedAppDashboardRoute
@@ -296,8 +278,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/onboarding'
-    | '/start-trial'
-    | '/app/billing'
     | '/app/churned'
     | '/app/customers'
     | '/app/dashboard'
@@ -325,8 +305,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/onboarding'
-    | '/start-trial'
-    | '/app/billing'
     | '/app/churned'
     | '/app/dashboard'
     | '/app/data'
@@ -355,8 +333,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/app'
     | '/_authenticated/onboarding'
-    | '/_authenticated/start-trial'
-    | '/_authenticated/app/billing'
     | '/_authenticated/app/churned'
     | '/_authenticated/app/customers'
     | '/_authenticated/app/dashboard'
@@ -456,25 +432,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/start-trial': {
-      id: '/_authenticated/start-trial'
-      path: '/start-trial'
-      fullPath: '/start-trial'
-      preLoaderRoute: typeof AuthenticatedStartTrialRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
-    }
-    '/_authenticated/app/billing': {
-      id: '/_authenticated/app/billing'
-      path: '/billing'
-      fullPath: '/app/billing'
-      preLoaderRoute: typeof AuthenticatedAppBillingRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/churned': {
@@ -616,7 +578,6 @@ const AuthenticatedAppCustomersRouteWithChildren =
   )
 
 interface AuthenticatedAppRouteChildren {
-  AuthenticatedAppBillingRoute: typeof AuthenticatedAppBillingRoute
   AuthenticatedAppChurnedRoute: typeof AuthenticatedAppChurnedRoute
   AuthenticatedAppCustomersRoute: typeof AuthenticatedAppCustomersRouteWithChildren
   AuthenticatedAppDashboardRoute: typeof AuthenticatedAppDashboardRoute
@@ -631,7 +592,6 @@ interface AuthenticatedAppRouteChildren {
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
-  AuthenticatedAppBillingRoute: AuthenticatedAppBillingRoute,
   AuthenticatedAppChurnedRoute: AuthenticatedAppChurnedRoute,
   AuthenticatedAppCustomersRoute: AuthenticatedAppCustomersRouteWithChildren,
   AuthenticatedAppDashboardRoute: AuthenticatedAppDashboardRoute,
@@ -652,14 +612,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
-  AuthenticatedStartTrialRoute: typeof AuthenticatedStartTrialRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
-  AuthenticatedStartTrialRoute: AuthenticatedStartTrialRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

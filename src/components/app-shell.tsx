@@ -16,7 +16,6 @@ import {
   Link2,
 
   Settings,
-  CreditCard,
   LogOut,
   LogIn,
   Eye,
@@ -44,11 +43,10 @@ const nav = [
   { to: "/app/insights", label: "Insights & Benchmarks", icon: Lightbulb },
   { to: "/app/data", label: "Data Uploads & Integrations", icon: Database },
   { to: "/app/settings", label: "Business Profile", icon: Settings },
-  { to: "/app/billing", label: "Billing", icon: CreditCard },
 ];
 
 // Pages a locked (onboarded but not yet unlocked) customer can still access.
-const LOCKED_ALLOWED = new Set(["/app/welcome", "/app/settings", "/app/data", "/app/billing"]);
+const LOCKED_ALLOWED = new Set(["/app/welcome", "/app/settings", "/app/data"]);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
