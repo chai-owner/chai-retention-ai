@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const AliasInput = z.object({
+  source: z.string().min(1).max(60).default("unknown"),
   source_id: z.string().min(1).max(200),
   customer_id: z.string().max(200).nullable(),
   status: z.enum(["linked", "ignored"]),
@@ -16,10 +17,15 @@ export const listCustomerAliases = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("customer_id_aliases")
-      .select("source_id, customer_id, status")
+      .select("source, source_id, customer_id, status")
       .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
-    return (data ?? []) as { source_id: string; customer_id: string | null; status: string }[];
+    return (data ?? []) as {
+      source: string;
+      source_id: string;
+      customer_id: string | null;
+      status: string;
+    }[];
   });
 
 export const saveCustomerAlias = createServerFn({ method: "POST" })
@@ -29,11 +35,12 @@ export const saveCustomerAlias = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("customer_id_aliases").upsert(
       {
         user_id: context.userId,
+        source: data.source,
         source_id: data.source_id,
         customer_id: data.status === "ignored" ? null : data.customer_id,
         status: data.status,
       },
-      { onConflict: "user_id,source_id" },
+      { onConflict: "user_id,source,source_id" },
     );
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -41,12 +48,13 @@ export const saveCustomerAlias = createServerFn({ method: "POST" })
 
 export const deleteCustomerAlias = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => z.object({ source_id: z.string().min(1) }).parse(v))
+  .inputValidator((v: unknown) => z.object({ source: z.string().min(1).default("unknown"), source_id: z.string().min(1) }).parse(v))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("customer_id_aliases")
       .delete()
       .eq("user_id", context.userId)
+      .eq("source", data.source)
       .eq("source_id", data.source_id);
     if (error) throw new Error(error.message);
     return { ok: true };
