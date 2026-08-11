@@ -83,7 +83,7 @@ describe("findUnmatched", () => {
   });
 
   it("excludes source ids that already have a saved alias", () => {
-    const aliases: CustomerAlias[] = [{ source_id: "ZZZ-999", customer_id: "CUS-2", status: "linked" }];
+    const aliases: CustomerAlias[] = [{ source: "unknown", source_id: "ZZZ-999", customer_id: "CUS-2", status: "linked" }];
     const ids = findUnmatched(base, aliases).map((g) => g.sourceId);
     expect(ids).not.toContain("ZZZ-999");
   });
@@ -91,9 +91,9 @@ describe("findUnmatched", () => {
 
 describe("applyAliases", () => {
   const aliases: CustomerAlias[] = [
-    { source_id: "ZZZ-999", customer_id: "CUS-2", status: "linked" },
-    { source_id: "Northwind Labs", customer_id: "CUS-1", status: "linked" },
-    { source_id: " cus-1 ", customer_id: null, status: "ignored" },
+    { source: "unknown", source_id: "ZZZ-999", customer_id: "CUS-2", status: "linked" },
+    { source: "unknown", source_id: "Northwind Labs", customer_id: "CUS-1", status: "linked" },
+    { source: "unknown", source_id: " cus-1 ", customer_id: null, status: "ignored" },
   ];
 
   it("rewrites linked rows to the canonical customer id across every dataset", () => {
@@ -128,9 +128,9 @@ describe("applyAliases", () => {
 describe("saved links reporting", () => {
   it("counts how many raw rows each saved alias resolves", () => {
     const usage = countAliasUsage(base, [
-      { source_id: "ZZZ-999", customer_id: "CUS-2", status: "linked" },
+      { source: "unknown", source_id: "ZZZ-999", customer_id: "CUS-2", status: "linked" },
     ]);
-    expect(usage["ZZZ-999"]).toEqual({ transactions: 1, usage: 1 });
+    expect(usage["unknown::ZZZ-999"]).toEqual({ transactions: 1, usage: 1 });
   });
 
   it("returns nothing when there are no aliases", () => {
@@ -148,5 +148,41 @@ describe("saved links reporting", () => {
     expect(describeCounts({ transactions: 3, support: 1 })).toBe(
       "3 transactions · 1 support tickets",
     );
+  });
+});
+
+describe("cross-platform identities", () => {
+  const data = {
+    customers: [
+      { customer_id: "CUS-1", customer_name: "Northwind Labs", email: "ops@northwind.co" },
+      { customer_id: "CUS-2", customer_name: "Acme Corp", email: "ap@acme.com" },
+    ],
+    support: [
+      { ticket_id: "T1", customer_id: "4471", email: "ops@northwind.co", __source: "zendesk" },
+    ],
+    transactions: [
+      { transaction_id: "X1", customer_id: "4471", amount: "500", __source: "xero" },
+    ],
+  };
+
+  it("treats the same raw id from two platforms as two separate identities", () => {
+    const groups = findUnmatched(data);
+    expect(groups).toHaveLength(2);
+    expect(groups.map((g) => g.source).sort()).toEqual(["xero", "zendesk"]);
+  });
+
+  it("auto-suggests an exact email match and marks it safe to link", () => {
+    const zendesk = findUnmatched(data).find((g) => g.source === "zendesk")!;
+    expect(zendesk.suggestions[0].customer_id).toBe("CUS-1");
+    expect(zendesk.suggestions[0].auto).toBe(true);
+    expect(autoLinkable(findUnmatched(data)).map((g) => g.source)).toEqual(["zendesk"]);
+  });
+
+  it("applies a saved link only to the platform it was saved for", () => {
+    const out = applyAliases(data, [
+      { source: "zendesk", source_id: "4471", customer_id: "CUS-1", status: "linked" },
+    ]);
+    expect(out.support[0].customer_id).toBe("CUS-1");
+    expect(out.transactions[0].customer_id).toBe("4471");
   });
 });
