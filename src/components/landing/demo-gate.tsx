@@ -42,8 +42,13 @@ export function DemoGateDialog({ open, onClose }: { open: boolean; onClose: () =
     const { error } = await supabase.from("demo_leads").insert(trimmed);
     setBusy(false);
     if (error) {
-      toast.error("Couldn't start the demo. Please try again.");
-      return;
+      // Duplicate email (unique index on lower(email)) — don't save again, just let them in.
+      if (error.code === "23505") {
+        toast.success("We've already got your details! You'll hear from us soon.");
+      } else {
+        toast.error("Couldn't start the demo. Please try again.");
+        return;
+      }
     }
     onClose();
     navigate({ to: "/app/dashboard", search: { demo: true } });

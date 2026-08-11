@@ -1,0 +1,2 @@
+DELETE FROM public.demo_leads a USING public.demo_leads b WHERE lower(a.email) = lower(b.email) AND (a.created_at, a.id) > (b.created_at, b.id);
+CREATE UNIQUE INDEX IF NOT EXISTS demo_leads_email_unique ON public.demo_leads (lower(email));
