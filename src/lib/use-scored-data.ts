@@ -14,6 +14,7 @@ import {
 import { useIngested } from "@/lib/ingested-data-store";
 import { useCustomerAliases } from "@/lib/customer-aliases";
 import { applyAliases } from "@/lib/customer-matching";
+import { mergeRoster } from "@/lib/customer-merge";
 import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/real-scoring";
 import { useSignedIn } from "@/lib/use-auth-state";
 import { useDemoMode } from "@/lib/use-demo-mode";
@@ -61,7 +62,7 @@ export function useScoredData(): ScoredDataset {
   const weights = useMetricWeights();
   const raw = useIngested();
   const aliases = useCustomerAliases();
-  const ingested = useMemo(() => applyAliases(raw, aliases), [raw, aliases]);
+  const ingested = useMemo(() => mergeRoster(applyAliases(raw, aliases), aliases), [raw, aliases]);
   const profile = useProfile();
   const signedIn = useSignedIn();
   const demo = useDemoMode();
@@ -83,7 +84,7 @@ export function useRealAssessment(): { sufficiency: Sufficiency; dataset: Scored
   const weights = useMetricWeights();
   const raw = useIngested();
   const aliases = useCustomerAliases();
-  const ingested = useMemo(() => applyAliases(raw, aliases), [raw, aliases]);
+  const ingested = useMemo(() => mergeRoster(applyAliases(raw, aliases), aliases), [raw, aliases]);
   const profile = useProfile();
   return useMemo(() => {
     const sufficiency = assessSufficiency(ingested);

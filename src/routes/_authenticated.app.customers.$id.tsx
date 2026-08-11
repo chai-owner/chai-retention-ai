@@ -29,6 +29,10 @@ import {
 } from "@/lib/mock-data";
 import { useScoredData } from "@/lib/use-scored-data";
 import { churnStore, useChurnOverrides } from "@/lib/churn-store";
+import { useIngested } from "@/lib/ingested-data-store";
+import { useCustomerAliases } from "@/lib/customer-aliases";
+import { sourceLabel } from "@/lib/customer-matching";
+import { customerIdentities } from "@/lib/customer-merge";
 import { cn } from "@/lib/utils";
 
 
@@ -172,6 +176,8 @@ function CustomerDetail() {
         <StatCard label="Sentiment" value={sentimentLabel} icon={Smile} tone={c.sentiment >= 60 ? "success" : c.sentiment >= 40 ? "warning" : "danger"} hint={`Score ${c.sentiment}/100`} />
       </div>
 
+      <ConnectedIdentities customerId={c.id} />
+
 
 
 
@@ -266,3 +272,38 @@ function CustomerDetail() {
 }
 
 
+
+
+// Every platform id that rolls up to this customer — the record's own id plus
+// any ids linked or merged from other connected tools.
+function ConnectedIdentities({ customerId }: { customerId: string }) {
+  const ingested = useIngested();
+  const aliases = useCustomerAliases();
+  const identities = customerIdentities(ingested, aliases, customerId);
+  if (identities.length === 0) return null;
+  return (
+    <Card className="mt-6">
+      <h3 className="font-semibold">Connected identities</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        This customer's records across your connected platforms. Data from all of them feeds one
+        health score.
+      </p>
+      <ul className="mt-3 flex flex-wrap gap-2">
+        {identities.map((i) => (
+          <li
+            key={`${i.source}::${i.source_id}`}
+            className="flex items-center gap-2 rounded-lg border border-border/60 px-2.5 py-1.5 text-xs"
+          >
+            <span className="font-medium">{sourceLabel(i.source)}</span>
+            <span className="font-mono text-[11px] text-muted-foreground">{i.source_id}</span>
+            {i.primary && (
+              <span className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                master
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
