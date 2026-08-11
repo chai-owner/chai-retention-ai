@@ -31,13 +31,35 @@ export const Route = createFileRoute("/_authenticated")({
 
 
 
+    // New signups must add payment details (2-week free trial) before we ask
+    // for company information in onboarding.
+    if (
+      location.pathname !== "/start-trial" &&
+      location.pathname !== "/admin" &&
+      !location.pathname.startsWith("/app/billing")
+    ) {
+      try {
+        const sub = await getMySubscription();
+        const lapsed = !sub || sub.status === "CANCELLED" || sub.status === "EXPIRED";
+        if (lapsed) throw redirect({ to: "/start-trial" });
+      } catch (err) {
+        if (isRedirect(err)) throw err;
+        // If billing can't be read, don't block the app.
+      }
+    }
+
     // Force signed-in users who haven't finished onboarding into the flow.
-    if (location.pathname !== "/onboarding" && location.pathname !== "/admin") {
+    if (
+      location.pathname !== "/onboarding" &&
+      location.pathname !== "/admin" &&
+      location.pathname !== "/start-trial"
+    ) {
       try {
         const profile = await getProfile();
         if (!profile?.onboarded) {
           throw redirect({ to: "/onboarding" });
         }
+
         // Onboarded but not yet unlocked by an admin: keep them on the
         // insights/booking screen. They may still revisit Business Profile
         // and Data to improve their inputs.
