@@ -16,6 +16,7 @@ import {
   Link2,
 
   Settings,
+  CreditCard,
   LogOut,
   LogIn,
   Eye,
