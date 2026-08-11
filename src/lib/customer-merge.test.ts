@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { findDuplicateCustomers, mergeRoster, customerIdentities } from "@/lib/customer-merge";
 import type { CustomerAlias } from "@/lib/customer-matching";
+import type { IngestedData } from "@/lib/ingested-data-store";
 
-const data = {
+const data: IngestedData = {
   customers: [
     { customer_id: "HS-1", __source: "hubspot", customer_name: "Acme Corporation", email: "ops@acme.com", plan: "Pro" },
     { customer_id: "XR-9", __source: "xero", customer_name: "Acme Corp", email: "ops@acme.com" },
