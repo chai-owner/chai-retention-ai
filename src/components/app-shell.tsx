@@ -48,7 +48,7 @@ const nav = [
 ];
 
 // Pages a locked (onboarded but not yet unlocked) customer can still access.
-const LOCKED_ALLOWED = new Set(["/app/welcome", "/app/settings", "/app/data"]);
+const LOCKED_ALLOWED = new Set(["/app/welcome", "/app/settings", "/app/data", "/app/billing"]);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
