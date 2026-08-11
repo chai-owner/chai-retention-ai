@@ -37,7 +37,7 @@ import {
   type UploadRecord,
 } from "@/lib/uploads-store";
 import { mergeTickets, formatDuration, type MergeSummary } from "@/lib/tickets-store";
-import { ingestedStore } from "@/lib/ingested-data-store";
+import { ingestedStore, tagSource } from "@/lib/ingested-data-store";
 import { persistBatch } from "@/lib/ingest-persistence";
 
 // ---------- CSV parsing ----------
@@ -322,7 +322,8 @@ export function UploadWizard({
       }
       return obj;
     });
-    ingestedStore.addRows(dataset.key, rowObjects);
+    const taggedRows = tagSource(rowObjects, "csv");
+    ingestedStore.addRows(dataset.key, taggedRows);
     void persistBatch({
       localUploadId: record.id,
       source_kind: "upload",

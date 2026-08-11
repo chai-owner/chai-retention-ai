@@ -23,7 +23,7 @@ import {
   type QualityFinding,
   type UploadRecord,
 } from "@/lib/uploads-store";
-import { ingestedStore, rowsToObjects } from "@/lib/ingested-data-store";
+import { ingestedStore, rowsToObjects, tagSource } from "@/lib/ingested-data-store";
 import { persistBatch } from "@/lib/ingest-persistence";
 
 type FieldType = "date" | "number" | "email" | "text";
@@ -222,7 +222,7 @@ export function CrmSyncWizard({
         fieldChecks,
       };
       uploadsStore.add(record);
-      const rowObjects = rowsToObjects(d.schema.fields.map((f) => f.name), d.rows);
+      const rowObjects = tagSource(rowsToObjects(d.schema.fields.map((f) => f.name), d.rows), provider);
       ingestedStore.addRows(d.key, rowObjects);
       void persistBatch({
         localUploadId: record.id,
