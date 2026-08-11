@@ -230,9 +230,9 @@ function Landing() {
             </p>
           </Reveal>
 
-          <Reveal delay={120} className="perspective-hero">
-            <div className="float-slow">
-              <div className="tilt-hero overflow-hidden rounded-[22px] ring-1 ring-white/10 shadow-[0_40px_90px_-30px_rgba(2,8,23,0.65)]">
+          <Reveal delay={120}>
+            <div>
+              <div className="overflow-hidden rounded-[22px] ring-1 ring-white/10 shadow-[0_40px_90px_-30px_rgba(2,8,23,0.65)]">
                 <img
                   src="/screenshots/hero-dashboard.png"
                   alt="ChAi retention dashboard showing customer health, revenue at risk and revenue by segment"
