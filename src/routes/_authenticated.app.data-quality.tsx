@@ -32,12 +32,15 @@ import {
   describeCounts,
   findUnmatched,
   countAliasUsage,
+  aliasKey,
+  autoLinkable,
+  sourceLabel,
   groupForSourceId,
   type CustomerOption,
   type UnmatchedGroup,
 } from "@/lib/customer-matching";
 import type { CustomerAlias } from "@/lib/customer-matching";
-import { unlinkSourceId } from "@/lib/customer-aliases";
+import { unlinkSourceId, linkCustomer } from "@/lib/customer-aliases";
 import { CustomerLinkWizard } from "@/components/customer-link-wizard";
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
@@ -76,6 +79,7 @@ const demoCustomers: CustomerOption[] = [
 const demoUnmatched: UnmatchedGroup[] = [
   {
     sourceId: "acme-corp-1",
+    source: "xero",
     counts: { transactions: 12 },
     total: 12,
     trivial: false,
@@ -85,6 +89,7 @@ const demoUnmatched: UnmatchedGroup[] = [
   },
   {
     sourceId: "CUS-1042 ",
+    source: "zendesk",
     counts: { usage: 4 },
     total: 4,
     trivial: true,
@@ -94,6 +99,7 @@ const demoUnmatched: UnmatchedGroup[] = [
   },
   {
     sourceId: "0053k00000XqPl",
+    source: "salesforce",
     counts: { transactions: 7 },
     total: 7,
     trivial: false,
@@ -103,14 +109,14 @@ const demoUnmatched: UnmatchedGroup[] = [
 
 // Illustrative saved links for the public demo.
 const demoAliases: CustomerAlias[] = [
-  { source_id: "ACME-CORP-01", customer_id: "CUS-1001", status: "linked" },
-  { source_id: "northwind labs", customer_id: "CUS-1042", status: "linked" },
-  { source_id: "INTERNAL-TEST", customer_id: null, status: "ignored" },
+  { source: "xero", source_id: "ACME-CORP-01", customer_id: "CUS-1001", status: "linked" },
+  { source: "zendesk", source_id: "northwind labs", customer_id: "CUS-1042", status: "linked" },
+  { source: "hubspot", source_id: "INTERNAL-TEST", customer_id: null, status: "ignored" },
 ];
 const demoAliasUsage: Record<string, Record<string, number>> = {
-  "ACME-CORP-01": { transactions: 34, usage: 9 },
-  "northwind labs": { support: 11 },
-  "INTERNAL-TEST": { transactions: 3 },
+  "xero::ACME-CORP-01": { transactions: 34, usage: 9 },
+  "zendesk::northwind labs": { support: 11 },
+  "hubspot::INTERNAL-TEST": { transactions: 3 },
 };
 
 function DataQualityPage() {
@@ -149,7 +155,7 @@ function DataQualityPage() {
       return;
     }
     try {
-      await unlinkSourceId(a.source_id);
+      await unlinkSourceId(a.source, a.source_id);
       toast.success("Link removed", {
         description: `${a.source_id} will show up as unmatched again.`,
       });
@@ -159,7 +165,12 @@ function DataQualityPage() {
   }
 
   function handleChange(a: CustomerAlias) {
-    const group = groupForSourceId(ingested, a.source_id, aliasUsage[a.source_id] ?? {});
+    const group = groupForSourceId(
+      ingested,
+      a.source_id,
+      aliasUsage[aliasKey(a.source, a.source_id)] ?? {},
+      a.source,
+    );
     setWizardGroups([group]);
     setWizardOpen(true);
   }
@@ -168,6 +179,36 @@ function DataQualityPage() {
     setWizardGroups(null);
     setWizardOpen(true);
   }
+
+  // Identities that resolve on an exact email (or an exact id after trimming)
+  // are linked automatically — the user only ever confirms ambiguous ones.
+  const autoLinked = useRef(new Set<string>());
+  useEffect(() => {
+    if (!isReal) return;
+    const candidates = autoLinkable(unmatched).filter(
+      (g) => !autoLinked.current.has(aliasKey(g.source, g.sourceId)),
+    );
+    if (!candidates.length) return;
+    for (const g of candidates) autoLinked.current.add(aliasKey(g.source, g.sourceId));
+    void (async () => {
+      let linked = 0;
+      for (const g of candidates) {
+        const s = g.suggestions[0];
+        if (!s) continue;
+        try {
+          await linkCustomer(g.source, g.sourceId, s.customer_id);
+          linked++;
+        } catch {
+          autoLinked.current.delete(aliasKey(g.source, g.sourceId));
+        }
+      }
+      if (linked > 0) {
+        toast.success(`Matched ${linked} reference${linked === 1 ? "" : "s"} automatically`, {
+          description: "Same email address or ID across platforms — saved so it won't be asked again.",
+        });
+      }
+    })();
+  }, [isReal, unmatched]);
 
 
 
@@ -265,10 +306,15 @@ function DataQualityPage() {
               <ul className="mt-4 space-y-2">
                 {unmatched.slice(0, 5).map((g) => (
                   <li
-                    key={g.sourceId}
+                    key={aliasKey(g.source, g.sourceId)}
                     className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm"
                   >
-                    <span className="font-mono text-xs font-medium">{g.sourceId || "(blank)"}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-medium">{g.sourceId || "(blank)"}</span>
+                      <span className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {sourceLabel(g.source)}
+                      </span>
+                    </span>
                     <span className="text-xs text-muted-foreground">{describeCounts(g.counts)}</span>
                     <span className="text-xs text-muted-foreground">
                       {g.suggestions[0]
@@ -313,18 +359,21 @@ function DataQualityPage() {
         ) : (
           <ul className="mt-4 space-y-2">
             {aliases.map((a) => {
-              const counts = aliasUsage[a.source_id] ?? {};
+              const counts = aliasUsage[aliasKey(a.source, a.source_id)] ?? {};
               const rows = Object.values(counts).reduce((s, n) => s + n, 0);
               const name = customerName(a.customer_id);
               return (
                 <li
-                  key={a.source_id}
+                  key={aliasKey(a.source, a.source_id)}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm"
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono text-xs font-medium">
                         {a.source_id || "(blank)"}
+                      </span>
+                      <span className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {sourceLabel(a.source)}
                       </span>
                       <span className="text-muted-foreground">→</span>
                       {a.status === "ignored" ? (
