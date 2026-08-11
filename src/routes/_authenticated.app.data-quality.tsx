@@ -270,165 +270,31 @@ function DataQualityPage() {
         </Card>
       )}
 
-      {/* Unmatched records */}
-      {(customers.length > 0 || unmatched.length > 0) && (
-        <Card className="mt-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
-                <Link2 className="h-4 w-4" />
-              </span>
-              <div>
-                <h3 className="font-semibold">
-                  Unmatched records{unmatched.length > 0 ? ` (${unmatched.length})` : ""}
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Rows whose customer reference doesn't match anyone in your customer list. They
-                  don't count towards any health score until you link them.
-                </p>
-              </div>
-            </div>
-            {unmatched.length > 0 && (
-              <button
-                onClick={openUnmatchedWizard}
-                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                <Link2 className="h-4 w-4" /> Resolve matches
-              </button>
-            )}
-          </div>
-
-          {unmatched.length === 0 ? (
-            <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 className="h-4 w-4 text-success" /> All records are matched to a customer.
-            </p>
-          ) : (
-            <>
-              <ul className="mt-4 space-y-2">
-                {unmatched.slice(0, 5).map((g) => (
-                  <li
-                    key={aliasKey(g.source, g.sourceId)}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-medium">{g.sourceId || "(blank)"}</span>
-                      <span className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        {sourceLabel(g.source)}
-                      </span>
-                    </span>
-                    <span className="text-xs text-muted-foreground">{describeCounts(g.counts)}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {g.suggestions[0]
-                        ? `Suggested: ${g.suggestions[0].name}`
-                        : "No suggestion — search manually"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-xs text-muted-foreground">
-                {unmatchedRows.toLocaleString()} row{unmatchedRows === 1 ? "" : "s"} currently
-                excluded from scoring
-                {unmatched.length > 5 ? ` · showing 5 of ${unmatched.length} references` : ""}.
-              </p>
-            </>
-          )}
-        </Card>
-      )}
-
-      {/* Possible duplicate customers */}
-      <DuplicateCustomersCard isReal={isReal} />
-
-      {/* Saved links */}
+      {/* Identity resolution pointer */}
       <Card className="mt-6">
-        <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
-            <Link2 className="h-4 w-4" />
-          </span>
-          <div>
-            <h3 className="font-semibold">
-              Saved links{aliases.length > 0 ? ` (${aliases.length})` : ""}
-            </h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Links you confirm are remembered permanently and applied automatically to every
-              future upload and integration refresh — you'll never match the same ID twice.
-            </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+              <Link2 className="h-4 w-4" />
+            </span>
+            <div>
+              <h3 className="font-semibold">Identity Resolution</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Unmatched records, saved links, duplicate customers and connected identities all
+                live in one hub.
+              </p>
+            </div>
           </div>
+          <Link
+            to="/app/identity"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Open Identity Resolution
+          </Link>
         </div>
-
-        {aliases.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            No saved links yet. Matches you confirm are remembered and applied automatically to
-            future uploads and syncs.
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-2">
-            {aliases.map((a) => {
-              const counts = aliasUsage[aliasKey(a.source, a.source_id)] ?? {};
-              const rows = Object.values(counts).reduce((s, n) => s + n, 0);
-              const name = customerName(a.customer_id);
-              return (
-                <li
-                  key={aliasKey(a.source, a.source_id)}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm"
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-medium">
-                        {a.source_id || "(blank)"}
-                      </span>
-                      <span className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        {sourceLabel(a.source)}
-                      </span>
-                      <span className="text-muted-foreground">→</span>
-                      {a.status === "ignored" ? (
-                        <span className="rounded-md border border-border bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
-                          Ignored — not a customer
-                        </span>
-                      ) : name ? (
-                        <span className="text-xs font-medium">{name}</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          <span className="font-mono">{a.customer_id}</span> · customer not found
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {rows > 0
-                        ? `Currently resolving ${describeCounts(counts)}`
-                        : "No rows in your current data use this reference"}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      onClick={() => handleChange(a)}
-                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-secondary"
-                    >
-                      Change
-                    </button>
-                    <button
-                      onClick={() => void handleUnlink(a)}
-                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary"
-                    >
-                      Unlink
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
       </Card>
 
-      <CustomerLinkWizard
-        open={wizardOpen}
-        onOpenChange={(v) => {
-          setWizardOpen(v);
-          if (!v) setWizardGroups(null);
-        }}
-        groups={wizardGroups ?? unmatched}
-        customers={customers}
-        readOnly={!isReal}
-      />
+
 
 
 
