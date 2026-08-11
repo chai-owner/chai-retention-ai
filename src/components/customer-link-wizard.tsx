@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { CustomerOption, UnmatchedGroup } from "@/lib/customer-matching";
-import { describeCounts } from "@/lib/customer-matching";
+import { describeCounts, sourceLabel } from "@/lib/customer-matching";
 import { ignoreSourceId, linkCustomer } from "@/lib/customer-aliases";
 
 interface Props {
@@ -64,7 +64,7 @@ export function CustomerLinkWizard({ open, onOpenChange, groups, customers, read
     }
     setBusy(true);
     try {
-      await linkCustomer(group.sourceId, customerId);
+      await linkCustomer(group.source, group.sourceId, customerId);
       toast.success("Records linked", {
         description: `${group.total} row${group.total === 1 ? "" : "s"} now count towards ${name}.`,
       });
@@ -84,7 +84,7 @@ export function CustomerLinkWizard({ open, onOpenChange, groups, customers, read
     }
     setBusy(true);
     try {
-      await ignoreSourceId(group.sourceId);
+      await ignoreSourceId(group.source, group.sourceId);
       toast.success("Marked as not a customer");
       next();
     } catch (e) {
@@ -113,7 +113,12 @@ export function CustomerLinkWizard({ open, onOpenChange, groups, customers, read
         ) : (
           <div>
             <div className="rounded-xl border border-border bg-secondary/40 p-3">
-              <p className="font-mono text-sm font-medium">{group.sourceId || "(blank)"}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-mono text-sm font-medium">{group.sourceId || "(blank)"}</p>
+                <span className="rounded-md border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  {sourceLabel(group.source)}
+                </span>
+              </div>
               <p className="mt-1 text-xs text-muted-foreground">{describeCounts(group.counts)}</p>
             </div>
 
