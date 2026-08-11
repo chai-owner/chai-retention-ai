@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState, useRef, useEffect } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { toast } from "sonner";
-import { FileSpreadsheet, Trash2, UserX, ScrollText, Link2, CheckCircle2 } from "lucide-react";
+import { FileSpreadsheet, Trash2, UserX, ScrollText, Link2 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
 import { Input } from "@/components/ui/input";
 import { dataReadiness, readinessOverall } from "@/lib/mock-data";
@@ -25,24 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { removePersistedBatch } from "@/lib/ingest-persistence";
 import { useSignedIn } from "@/lib/use-auth-state";
-import { useIngested } from "@/lib/ingested-data-store";
-import { useCustomerAliases } from "@/lib/customer-aliases";
-import {
-  customerOptions,
-  describeCounts,
-  findUnmatched,
-  countAliasUsage,
-  aliasKey,
-  autoLinkable,
-  sourceLabel,
-  groupForSourceId,
-  type CustomerOption,
-  type UnmatchedGroup,
-} from "@/lib/customer-matching";
-import type { CustomerAlias } from "@/lib/customer-matching";
-import { unlinkSourceId, linkCustomer } from "@/lib/customer-aliases";
-import { CustomerLinkWizard } from "@/components/customer-link-wizard";
-import { DuplicateCustomersCard } from "@/components/duplicate-customers-card";
+
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
   head: () => ({ meta: [{ title: "Data Quality — ChAi" }] }),
