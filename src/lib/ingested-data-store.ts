@@ -8,6 +8,18 @@ import { useSyncExternalStore } from "react";
 export type IngestRow = Record<string, string>;
 export type IngestedData = Record<string, IngestRow[]>;
 
+// Every row remembers which platform it came from. The same raw customer id
+// can mean different companies in Zendesk vs Xero, so identity is always the
+// pair (source, customer_id) — see customer-matching.ts.
+export const SOURCE_FIELD = "__source";
+export const UNKNOWN_SOURCE = "unknown";
+
+/** Stamp rows with the platform they were ingested from. */
+export function tagSource(rows: IngestRow[], source: string): IngestRow[] {
+  const s = (source || "").trim() || UNKNOWN_SOURCE;
+  return rows.map((r) => (r[SOURCE_FIELD] ? r : { ...r, [SOURCE_FIELD]: s }));
+}
+
 // The natural primary key per dataset, used to de-duplicate on re-upload.
 // Datasets without a single row-key (usage, surveys) simply append.
 const ID_FIELD: Record<string, string> = {
