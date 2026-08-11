@@ -181,6 +181,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           id: string
+          source: string
           source_id: string
           status: string
           updated_at: string
@@ -190,6 +191,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           id?: string
+          source?: string
           source_id: string
           status?: string
           updated_at?: string
@@ -199,6 +201,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           id?: string
+          source?: string
           source_id?: string
           status?: string
           updated_at?: string

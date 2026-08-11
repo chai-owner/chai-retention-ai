@@ -2,6 +2,7 @@
 // Hydrated from the DB on sign-in; writes go through the server functions.
 import { useSyncExternalStore } from "react";
 import type { CustomerAlias, AliasStatus } from "@/lib/customer-matching";
+import { UNKNOWN_SOURCE } from "@/lib/ingested-data-store";
 import {
   listCustomerAliases,
   saveCustomerAlias,
@@ -25,11 +26,14 @@ export const aliasStore = {
     emit();
   },
   upsert(a: CustomerAlias) {
-    aliases = [...aliases.filter((x) => x.source_id !== a.source_id), a];
+    aliases = [
+      ...aliases.filter((x) => !(x.source_id === a.source_id && x.source === a.source)),
+      a,
+    ];
     emit();
   },
-  remove(sourceId: string) {
-    aliases = aliases.filter((x) => x.source_id !== sourceId);
+  remove(source: string, sourceId: string) {
+    aliases = aliases.filter((x) => !(x.source_id === sourceId && x.source === source));
     emit();
   },
   clear() {
@@ -47,6 +51,7 @@ export async function hydrateCustomerAliases() {
     const rows = await listCustomerAliases();
     aliasStore.set(
       rows.map((r) => ({
+        source: r.source || UNKNOWN_SOURCE,
         source_id: r.source_id,
         customer_id: r.customer_id,
         status: (r.status === "ignored" ? "ignored" : "linked") as AliasStatus,
@@ -57,17 +62,24 @@ export async function hydrateCustomerAliases() {
   }
 }
 
-export async function linkCustomer(sourceId: string, customerId: string) {
-  aliasStore.upsert({ source_id: sourceId, customer_id: customerId, status: "linked" });
-  await saveCustomerAlias({ data: { source_id: sourceId, customer_id: customerId, status: "linked" } });
+export async function linkCustomer(source: string, sourceId: string, customerId: string) {
+  const src = source || UNKNOWN_SOURCE;
+  aliasStore.upsert({ source: src, source_id: sourceId, customer_id: customerId, status: "linked" });
+  await saveCustomerAlias({
+    data: { source: src, source_id: sourceId, customer_id: customerId, status: "linked" },
+  });
 }
 
-export async function ignoreSourceId(sourceId: string) {
-  aliasStore.upsert({ source_id: sourceId, customer_id: null, status: "ignored" });
-  await saveCustomerAlias({ data: { source_id: sourceId, customer_id: null, status: "ignored" } });
+export async function ignoreSourceId(source: string, sourceId: string) {
+  const src = source || UNKNOWN_SOURCE;
+  aliasStore.upsert({ source: src, source_id: sourceId, customer_id: null, status: "ignored" });
+  await saveCustomerAlias({
+    data: { source: src, source_id: sourceId, customer_id: null, status: "ignored" },
+  });
 }
 
-export async function unlinkSourceId(sourceId: string) {
-  aliasStore.remove(sourceId);
-  await deleteCustomerAlias({ data: { source_id: sourceId } });
+export async function unlinkSourceId(source: string, sourceId: string) {
+  const src = source || UNKNOWN_SOURCE;
+  aliasStore.remove(src, sourceId);
+  await deleteCustomerAlias({ data: { source: src, source_id: sourceId } });
 }
