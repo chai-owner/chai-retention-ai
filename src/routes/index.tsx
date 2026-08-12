@@ -347,7 +347,7 @@ function Landing() {
           <Reveal className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Everything you need to stop churn</h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              From knowing what to measure to knowing exactly who to call today.
+              Industry-specific metrics, weighted health scores, AI insights, identity resolution and privacy-safe anonymization — in one place.
             </p>
           </Reveal>
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
