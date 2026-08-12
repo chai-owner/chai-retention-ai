@@ -55,7 +55,7 @@ const signup = { mode: "signup" as const, demo: false, redirect: undefined };
 const login = { mode: undefined, demo: false, redirect: undefined };
 
 const navItems = [
-  { label: "Product", href: "#product" },
+  { label: "Features", href: "#features" },
   { label: "Integrations", href: "#integrations" },
   { label: "Pricing", href: "/pricing" },
 ];
@@ -87,12 +87,12 @@ const steps = [
 ];
 
 const features = [
-  { icon: AlertTriangle, title: "Predict churn", desc: "See who is likely to leave next month and how much revenue is on the line." },
-  { icon: Sparkles, title: "AI insights", desc: "Plain-English explanations of what changed and why it matters." },
-  { icon: Lightbulb, title: "Recommended actions", desc: "Prioritised next steps ranked by expected revenue saved." },
-  { icon: HeartPulse, title: "Customer health scores", desc: "A 0–100 score blending usage, spend, support and sentiment." },
-  { icon: BarChart3, title: "Reports & analytics", desc: "Executive-ready views of retention, risk and benchmark performance." },
-  { icon: History, title: "Customer timeline", desc: "Every signal, ticket and transaction in one chronological story." },
+  { icon: Brain, title: "Industry-specific metrics", desc: "ChAi picks the metrics that actually matter for your industry and business model — no generic templates." },
+  { icon: HeartPulse, title: "Weighted health scores", desc: "You control how much each metric contributes to a customer's 0–100 health score." },
+  { icon: AlertTriangle, title: "Predict churn & revenue at risk", desc: "See who's likely to leave, how much revenue is exposed, and what's realistically recoverable." },
+  { icon: Sparkles, title: "AI insights & actions", desc: "Plain-English root causes and prioritised next steps ranked by the revenue they can save." },
+  { icon: Plug, title: "Cross-platform identity resolution", desc: "Automatically link the same customer across CRM, billing and support tools — and fix duplicates." },
+  { icon: ShieldCheck, title: "Forget-a-customer anonymization", desc: "Honour data-erasure requests in seconds while keeping your aggregate retention intelligence intact." },
 ];
 
 const showcase = [
@@ -347,7 +347,7 @@ function Landing() {
           <Reveal className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Everything you need to stop churn</h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              From knowing what to measure to knowing exactly who to call today.
+              Industry-specific metrics, weighted health scores, AI insights, identity resolution and privacy-safe anonymization — in one place.
             </p>
           </Reveal>
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
