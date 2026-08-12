@@ -55,7 +55,7 @@ const signup = { mode: "signup" as const, demo: false, redirect: undefined };
 const login = { mode: undefined, demo: false, redirect: undefined };
 
 const navItems = [
-  { label: "Product", href: "#product" },
+  { label: "Features", href: "#features" },
   { label: "Integrations", href: "#integrations" },
   { label: "Pricing", href: "/pricing" },
 ];
