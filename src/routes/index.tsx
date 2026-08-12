@@ -180,7 +180,7 @@ function Landing() {
               search={signup}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(32,70,84,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
             >
-              Sign Up
+              Try it for free
             </Link>
           </div>
         </nav>
@@ -208,7 +208,7 @@ function Landing() {
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/65">
               ChAi learns how your business operates, picks the metrics that actually matter for your
               industry, predicts who's about to churn, explains why, and tells you what to do — all in
-              plain English.
+              plain English. Get your 2-week free trial now!
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -216,7 +216,7 @@ function Landing() {
                 search={signup}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
               >
-                Sign Up <ArrowRight className="h-4.5 w-4.5" />
+                Try it for free <ArrowRight className="h-4.5 w-4.5" />
               </Link>
               <button
                 onClick={openGate}
