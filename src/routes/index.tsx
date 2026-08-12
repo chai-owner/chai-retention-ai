@@ -87,12 +87,12 @@ const steps = [
 ];
 
 const features = [
-  { icon: AlertTriangle, title: "Predict churn", desc: "See who is likely to leave next month and how much revenue is on the line." },
-  { icon: Sparkles, title: "AI insights", desc: "Plain-English explanations of what changed and why it matters." },
-  { icon: Lightbulb, title: "Recommended actions", desc: "Prioritised next steps ranked by expected revenue saved." },
-  { icon: HeartPulse, title: "Customer health scores", desc: "A 0–100 score blending usage, spend, support and sentiment." },
-  { icon: BarChart3, title: "Reports & analytics", desc: "Executive-ready views of retention, risk and benchmark performance." },
-  { icon: History, title: "Customer timeline", desc: "Every signal, ticket and transaction in one chronological story." },
+  { icon: Brain, title: "Industry-specific metrics", desc: "ChAi picks the metrics that actually matter for your industry and business model — no generic templates." },
+  { icon: HeartPulse, title: "Weighted health scores", desc: "You control how much each metric contributes to a customer's 0–100 health score." },
+  { icon: AlertTriangle, title: "Predict churn & revenue at risk", desc: "See who's likely to leave, how much revenue is exposed, and what's realistically recoverable." },
+  { icon: Sparkles, title: "AI insights & actions", desc: "Plain-English root causes and prioritised next steps ranked by the revenue they can save." },
+  { icon: Plug, title: "Cross-platform identity resolution", desc: "Automatically link the same customer across CRM, billing and support tools — and fix duplicates." },
+  { icon: ShieldCheck, title: "Forget-a-customer anonymization", desc: "Honour data-erasure requests in seconds while keeping your aggregate retention intelligence intact." },
 ];
 
 const showcase = [
