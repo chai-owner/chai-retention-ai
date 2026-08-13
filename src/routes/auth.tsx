@@ -41,7 +41,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
   const dest = stripDemo(redirectTo ?? "/app/dashboard");
-  const [mode, setMode] = useState<"login" | "register">(
+  const [mode, setMode] = useState<"login" | "register" | "forgot">(
     initialMode === "signup" ? "register" : "login",
   );
   const [name, setName] = useState("");
@@ -84,6 +84,19 @@ function AuthPage() {
       return;
     }
     setLoading(true);
+    if (mode === "forgot") {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        toast.error(error.message);
+        setLoading(false);
+        return;
+      }
+      setEmailSent(true);
+      setLoading(false);
+      return;
+    }
     if (mode === "register") {
       const { error } = await supabase.auth.signUp({
         email,
@@ -159,12 +172,18 @@ function AuthPage() {
             <>
               <div className="text-center">
                 <h1 className="text-xl font-semibold">
-                  {mode === "login" ? "Welcome back" : "Create your account"}
+                  {mode === "login"
+                    ? "Welcome back"
+                    : mode === "register"
+                      ? "Create your account"
+                      : "Reset your password"}
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {mode === "login"
                     ? "Sign in to your retention workspace."
-                    : "Start understanding your customer retention."}
+                    : mode === "register"
+                      ? "Start understanding your customer retention."
+                      : "Enter your email and we'll send you a reset link."}
                 </p>
               </div>
 
@@ -192,19 +211,23 @@ function AuthPage() {
 
 
 
-              <button
-                onClick={handleGoogle}
-                disabled={loading}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
-              >
-                <GoogleIcon /> Continue with Google
-              </button>
+              {mode !== "forgot" && (
+                <>
+                  <button
+                    onClick={handleGoogle}
+                    disabled={loading}
+                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+                  >
+                    <GoogleIcon /> Continue with Google
+                  </button>
 
-              <div className="my-5 flex items-center gap-3">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">or</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
+                  <div className="my-5 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs text-muted-foreground">or</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                </>
+              )}
 
               <form onSubmit={handleEmail} className="space-y-3">
                 {mode === "register" && (
@@ -235,20 +258,33 @@ function AuthPage() {
                     placeholder="you@company.com"
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={inputCls}
-                    placeholder="••••••••"
-                  />
-                </div>
+                {mode !== "forgot" && (
+                  <div>
+                    <div className="mb-1 flex items-center justify-between">
+                      <label className="block text-xs font-medium text-muted-foreground">
+                        Password
+                      </label>
+                      {mode === "login" && (
+                        <button
+                          type="button"
+                          onClick={() => setMode("forgot")}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className={inputCls}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={loading || (mode === "register" && !acceptedTerms)}
@@ -261,7 +297,11 @@ function AuthPage() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      {mode === "login" ? "Sign in" : "Create account"}
+                      {mode === "login"
+                        ? "Sign in"
+                        : mode === "register"
+                          ? "Create account"
+                          : "Send reset link"}
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
@@ -269,12 +309,18 @@ function AuthPage() {
               </form>
 
               <p className="mt-5 text-center text-sm text-muted-foreground">
-                {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
+                {mode === "login"
+                  ? "Don't have an account?"
+                  : mode === "register"
+                    ? "Already have an account?"
+                    : "Remember your password?"}{" "}
                 <button
-                  onClick={() => setMode(mode === "login" ? "register" : "login")}
+                  onClick={() =>
+                    setMode(mode === "register" ? "login" : "login")
+                  }
                   className="font-medium text-primary hover:underline"
                 >
-                  {mode === "login" ? "Sign up" : "Sign in"}
+                  {mode === "register" ? "Sign in" : "Sign in"}
                 </button>
               </p>
             </>
