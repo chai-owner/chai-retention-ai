@@ -41,7 +41,7 @@ export const getProfile = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "full_name, email, company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, segments, success_actions, disengagement, tracked, channels, metric_weights, onboarded, unlocked, booked_at",
+        "full_name, email, company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, segments, success_actions, disengagement, churn_definition, tracked, channels, metric_weights, metrics, onboarded, unlocked, booked_at",
       )
       .eq("id", userId)
       .maybeSingle();
@@ -66,6 +66,8 @@ export const getProfile = createServerFn({ method: "GET" })
       tracked: (data.tracked ?? {}) as unknown as Record<string, boolean>,
       channels: (data.channels ?? []) as unknown as string[],
       metricWeights: (data.metric_weights ?? {}) as unknown as Record<string, number>,
+      metrics: (data.metrics ?? []) as unknown as Record<string, unknown>[],
+      churnDefinition: (data.churn_definition ?? "") as string,
       onboarded: data.onboarded,
       unlocked: data.unlocked ?? false,
       bookedAt: data.booked_at ?? null,
@@ -95,6 +97,8 @@ export const saveProfile = createServerFn({ method: "POST" })
       tracked: data.tracked,
       channels: data.channels,
       metric_weights: data.metricWeights ?? {},
+      metrics: data.metrics ?? [],
+      churn_definition: data.churnDefinition ?? "",
       onboarded: true,
       updated_at: new Date().toISOString(),
     });
