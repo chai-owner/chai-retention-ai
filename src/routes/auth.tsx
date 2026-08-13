@@ -41,7 +41,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
   const dest = stripDemo(redirectTo ?? "/app/dashboard");
-  const [mode, setMode] = useState<"login" | "register">(
+  const [mode, setMode] = useState<"login" | "register" | "forgot">(
     initialMode === "signup" ? "register" : "login",
   );
   const [name, setName] = useState("");
