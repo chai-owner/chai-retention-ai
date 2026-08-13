@@ -19,7 +19,23 @@ export function useProfileSync() {
         return fetchProfile();
       })
       .then((remote) => {
-        if (cancelled || !remote || !remote.onboarded) return;
+        if (cancelled || !remote) return;
+        if (!remote.onboarded) {
+          // Account was reset (or never finished onboarding): drop every local
+          // cache so no stale data survives in this browser.
+          profileStore.clear();
+          if (typeof window !== "undefined") {
+            try {
+              for (const key of Object.keys(window.localStorage)) {
+                if (key.startsWith("chai.")) window.localStorage.removeItem(key);
+              }
+            } catch {
+              // ignore storage failures
+            }
+          }
+          return;
+        }
+
         profileStore.save({
           fullName: remote.fullName,
           email: remote.email,
