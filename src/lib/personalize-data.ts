@@ -152,6 +152,20 @@ export function personalizeDatasets(
   };
 
   if (profile) {
+    // Metrics ChAi nominated (and the user kept with a non-zero weight) drive
+    // the health score, so their uploads are required. Weight 0 = removed.
+    for (const { metric, key } of customMetricKeys(profile.metrics)) {
+      const weight = profile.metricWeights?.[metric.name] ?? metric.weight ?? 3;
+      if (weight > 0) {
+        required.add(key);
+        addReason(
+          key,
+          `ChAi picked "${metric.name}" as a retention metric for your business, and it feeds your customer health score.`,
+        );
+      }
+    }
+
+
     // Business model rule.
     const modelRule = MODEL_RULES[profile.model];
     if (modelRule) {
