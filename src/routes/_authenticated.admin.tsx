@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { Lock, Loader2, Users, Cpu, Lock as LockIcon, Unlock, LogIn, CalendarCheck, Eye } from "lucide-react";
+import { Lock, Loader2, Users, Cpu, Lock as LockIcon, Unlock, LogIn, CalendarCheck, Eye, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Card } from "@/components/ui/chai";
@@ -12,6 +12,7 @@ import {
   type DemoLead,
   setUnlocked,
   startImpersonation,
+  resetAccount,
   type AdminCustomer,
 } from "@/lib/admin.functions";
 import { impersonationStore } from "@/lib/impersonation";
@@ -27,6 +28,7 @@ function AdminPage() {
   const fetchCustomers = useServerFn(listCustomers);
   const toggleUnlock = useServerFn(setUnlocked);
   const impersonate = useServerFn(startImpersonation);
+  const wipeAccount = useServerFn(resetAccount);
 
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -67,6 +69,28 @@ function AdminPage() {
       toast.success(!c.unlocked ? "Account unlocked" : "Account locked");
     } catch {
       toast.error("Couldn't update this account");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleReset(c: AdminCustomer) {
+    const label = c.company || c.fullName || c.email;
+    if (
+      !window.confirm(
+        `Delete ALL data for ${label}?\n\nThis removes every uploaded file, connected integration, saved customer link and their business profile. ${label} will be sent back to the start of onboarding. This cannot be undone.`,
+      )
+    )
+      return;
+    setBusyId(c.id);
+    try {
+      await wipeAccount({ data: { userId: c.id } });
+      setCustomers((list) =>
+        list.map((x) => (x.id === c.id ? { ...x, onboarded: false, company: "" } : x)),
+      );
+      toast.success(`${label} reset — account is empty and back at onboarding`);
+    } catch {
+      toast.error("Couldn't reset this account");
     } finally {
       setBusyId(null);
     }
@@ -214,6 +238,14 @@ function AdminPage() {
                               <Unlock className="h-3.5 w-3.5" /> Unlock
                             </>
                           )}
+                        </button>
+                        <button
+                          onClick={() => handleReset(c)}
+                          disabled={busyId === c.id}
+                          title="Delete all data and restart onboarding"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                        >
+                          <Eraser className="h-3.5 w-3.5" /> Reset data
                         </button>
                         <button
                           onClick={() => handleImpersonate(c)}
