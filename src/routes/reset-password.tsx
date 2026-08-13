@@ -127,7 +127,7 @@ function ResetPasswordPage() {
           )}
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
-            <Link href="/auth" className="font-medium text-primary hover:underline">
+            <Link to="/auth" search={{ demo: false }} className="font-medium text-primary hover:underline">
               Back to sign in
             </Link>
           </p>
