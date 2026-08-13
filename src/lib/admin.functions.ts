@@ -174,3 +174,72 @@ export const endImpersonation = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+// Wipes every piece of customer data for one account and sends the user back to
+// the start of onboarding. Auth login, billing history and AI usage records are
+// intentionally preserved; everything the user brought in is removed.
+const USER_DATA_TABLES = [
+  "ingested_customers",
+  "ingested_support",
+  "ingested_surveys",
+  "ingested_transactions",
+  "ingested_usage",
+  "ingest_batches",
+  "customer_id_aliases",
+  "crm_sync_state",
+  "support_sync_state",
+  "accounting_connections",
+  "accounting_oauth_states",
+  "app_user_connections",
+  "freshdesk_connections",
+  "intercom_connections",
+  "intercom_oauth_states",
+  "zendesk_connections",
+  "zendesk_oauth_states",
+  "zoho_crm_connections",
+  "zoho_crm_oauth_states",
+] as const;
+
+export const resetAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ userId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    for (const table of USER_DATA_TABLES) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabaseAdmin.from(table as any) as any)
+        .delete()
+        .eq("user_id", data.userId);
+      if (error) throw new Error(`${table}: ${error.message}`);
+    }
+
+    const { error: profileErr } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        company: "",
+        industry: "",
+        model: "",
+        size: "",
+        customers: "",
+        avg_value: "",
+        what_buy: "",
+        cadence: "",
+        lifespan: "",
+        concerns: "",
+        segments: [],
+        success_actions: "",
+        disengagement: "",
+        tracked: {},
+        channels: [],
+        metric_weights: null,
+        onboarded: false,
+      })
+      .eq("id", data.userId);
+    if (profileErr) throw profileErr;
+
+    return { ok: true };
+  });
