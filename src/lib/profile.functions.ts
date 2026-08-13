@@ -28,6 +28,10 @@ const profileInput = z.object({
   tracked: z.record(z.string(), z.boolean()),
   channels: z.array(z.string()),
   metricWeights: z.record(z.string(), z.number()).optional(),
+  churnDefinition: z.string().optional(),
+  // The AI-nominated metric definitions; stored as-is so upload templates and
+  // scoring stay aligned with what ChAi picked during onboarding.
+  metrics: z.array(z.record(z.string(), z.unknown())).optional(),
 });
 
 export const getProfile = createServerFn({ method: "GET" })
