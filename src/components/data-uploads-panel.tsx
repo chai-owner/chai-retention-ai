@@ -14,17 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  datasetSchemas,
-  downloadCsvTemplate,
-  downloadExcelTemplate,
-} from "@/lib/data-schemas";
+import { downloadCsvTemplate, downloadExcelTemplate } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
-import {
-  personalizeDatasets,
-  buildCustomMetricDatasets,
-  type PersonalizedDataset,
-} from "@/lib/personalize-data";
+import { type PersonalizedDataset } from "@/lib/personalize-data";
+import { useAllDatasets } from "@/lib/all-datasets";
 import { useUploads } from "@/lib/uploads-store";
 import { useAddons, addonsStore, SMART_INGEST_PRICING } from "@/lib/addons-store";
 import { cn } from "@/lib/utils";
@@ -135,10 +128,7 @@ export function UploadDatasetsCard() {
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [wizardOpen, setWizardOpen] = useState(false);
 
-  const personalized = useMemo(() => {
-    const customs = buildCustomMetricDatasets(profile?.metrics);
-    return personalizeDatasets(profile, [...datasetSchemas, ...customs]);
-  }, [profile]);
+  const personalized = useAllDatasets();
 
   const lastUploadByLabel = useMemo(() => {
     const map = new Map<string, string>();
