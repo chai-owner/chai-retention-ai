@@ -57,6 +57,13 @@ export function useProfileSync() {
           tracked: remote.tracked,
           channels: remote.channels,
           metricWeights: remote.metricWeights,
+          churnDefinition: remote.churnDefinition,
+          // Keep the locally cached metric set if the account predates metric
+          // persistence, so upload templates never fall back to the generic set.
+          metrics:
+            remote.metrics && remote.metrics.length > 0
+              ? (remote.metrics as unknown as PlannerMetric[])
+              : local?.metrics,
         });
       })
       .catch(() => {
