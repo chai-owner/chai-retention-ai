@@ -686,6 +686,10 @@ function Onboarding() {
                       now, or skip and add them later from Data &amp; Integrations — nothing here is
                       required to continue.
                     </p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Can't connect a tool right now? No problem — on the next screen you can upload
+                      your data directly instead.
+                    </p>
                   </div>
                   <IntegrationsPanel />
                 </div>
@@ -697,12 +701,21 @@ function Onboarding() {
                     <h2 className="text-xl font-semibold">Add your data</h2>
                     <p className="mt-1 text-sm text-muted-foreground">
                       ChAi runs its first assessment on the data you add here — nothing is made up.
-                      Drop in documents or upload CSVs. The more you add, the more accurate your first
-                      snapshot. You can skip and add data later, too.
+                      Upload CSVs, or drop in documents and let ChAi extract them. The more you add,
+                      the more accurate your first snapshot. You can skip and add data later, too.
                     </p>
                   </div>
-                  <SmartIngestCard />
                   <UploadDatasetsCard />
+
+                  <div className="my-8 flex items-center gap-4">
+                    <span className="h-px flex-1 bg-border" />
+                    <span className="rounded-full border border-border bg-secondary px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Or use ChAi's AI data drop
+                    </span>
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <SmartIngestCard />
                   <div className="rounded-lg bg-accent/40 p-4 text-sm text-muted-foreground">
                     <p className="font-medium text-foreground">Ready when you are.</p>
                     ChAi will build a {form.model} retention framework and run its first assessment on
