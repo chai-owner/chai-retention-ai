@@ -172,12 +172,18 @@ function AuthPage() {
             <>
               <div className="text-center">
                 <h1 className="text-xl font-semibold">
-                  {mode === "login" ? "Welcome back" : "Create your account"}
+                  {mode === "login"
+                    ? "Welcome back"
+                    : mode === "register"
+                      ? "Create your account"
+                      : "Reset your password"}
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {mode === "login"
                     ? "Sign in to your retention workspace."
-                    : "Start understanding your customer retention."}
+                    : mode === "register"
+                      ? "Start understanding your customer retention."
+                      : "Enter your email and we'll send you a reset link."}
                 </p>
               </div>
 
