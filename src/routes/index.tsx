@@ -206,7 +206,7 @@ function Landing() {
               <span className="block text-white/55">Before they do.</span>
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/65">
-              ChAi learns how your business operates, picks the metrics that actually matter for your
+              ChAi learns how your business operates, helps you pick the metrics that actually matter for your
               industry, predicts who's about to churn, explains why, and tells you what to do — all in
               plain English. Get your 2-week free trial now!
             </p>
