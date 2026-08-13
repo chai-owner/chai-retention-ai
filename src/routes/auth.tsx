@@ -297,7 +297,11 @@ function AuthPage() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      {mode === "login" ? "Sign in" : "Create account"}
+                      {mode === "login"
+                        ? "Sign in"
+                        : mode === "register"
+                          ? "Create account"
+                          : "Send reset link"}
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
@@ -305,12 +309,18 @@ function AuthPage() {
               </form>
 
               <p className="mt-5 text-center text-sm text-muted-foreground">
-                {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
+                {mode === "login"
+                  ? "Don't have an account?"
+                  : mode === "register"
+                    ? "Already have an account?"
+                    : "Remember your password?"}{" "}
                 <button
-                  onClick={() => setMode(mode === "login" ? "register" : "login")}
+                  onClick={() =>
+                    setMode(mode === "register" ? "login" : "login")
+                  }
                   className="font-medium text-primary hover:underline"
                 >
-                  {mode === "login" ? "Sign up" : "Sign in"}
+                  {mode === "register" ? "Sign in" : "Sign in"}
                 </button>
               </p>
             </>
