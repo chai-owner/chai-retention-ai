@@ -155,10 +155,23 @@ function AuthPage() {
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent">
                 <Mail className="h-6 w-6 text-primary" />
               </span>
-              <h1 className="mt-4 text-xl font-semibold">Confirm your email</h1>
+              <h1 className="mt-4 text-xl font-semibold">
+                {emailSent === "register"
+                  ? "Confirm your email"
+                  : "Check your inbox"}
+              </h1>
               <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-                We sent a confirmation link to <strong>{email}</strong>. Click it to
-                activate your account, then come back to sign in.
+                {emailSent === "register" ? (
+                  <>
+                    We sent a confirmation link to <strong>{email}</strong>. Click
+                    it to activate your account, then come back to sign in.
+                  </>
+                ) : (
+                  <>
+                    We sent a password reset link to <strong>{email}</strong>.
+                    Click it to choose a new password.
+                  </>
+                )}
               </p>
               <button
                 onClick={() => {
