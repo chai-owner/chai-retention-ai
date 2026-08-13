@@ -211,19 +211,23 @@ function AuthPage() {
 
 
 
-              <button
-                onClick={handleGoogle}
-                disabled={loading}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
-              >
-                <GoogleIcon /> Continue with Google
-              </button>
+              {mode !== "forgot" && (
+                <>
+                  <button
+                    onClick={handleGoogle}
+                    disabled={loading}
+                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+                  >
+                    <GoogleIcon /> Continue with Google
+                  </button>
 
-              <div className="my-5 flex items-center gap-3">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">or</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
+                  <div className="my-5 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs text-muted-foreground">or</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                </>
+              )}
 
               <form onSubmit={handleEmail} className="space-y-3">
                 {mode === "register" && (
