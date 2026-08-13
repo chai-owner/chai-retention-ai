@@ -280,7 +280,12 @@ function Onboarding() {
         <span className="text-sm text-muted-foreground">Let's set you up</span>
       </header>
 
-      <div className="mx-auto max-w-2xl px-4 pb-16">
+      <div
+        className={cn(
+          "mx-auto px-4 pb-16 transition-[max-width]",
+          step === 6 || step === 7 ? "max-w-5xl" : "max-w-2xl",
+        )}
+      >
         {/* Progress */}
         <div className="mb-8 flex items-center gap-2">
           {steps.map((s, i) => (
