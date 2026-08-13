@@ -176,6 +176,7 @@ export function SmartIngestWizard({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const runExtract = useServerFn(extractRecords);
+  const allSchemas = useAllSchemas();
   const [step, setStep] = useState<Step>("select");
   const [busy, setBusy] = useState(false);
   const [fileNames, setFileNames] = useState<string[]>([]);

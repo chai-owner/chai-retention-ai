@@ -105,6 +105,7 @@ export function CrmSyncWizard({
   onImported?: () => void;
 }) {
   const runSync = useServerFn(syncCrm);
+  const allSchemas = useAllSchemas();
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [datasets, setDatasets] = useState<EditableDataset[]>([]);
