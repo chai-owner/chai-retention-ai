@@ -4,6 +4,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ProfileSegment } from "@/lib/profile-store";
+import type { PlannerMetric } from "@/lib/mock-data";
+import type { Json } from "@/integrations/supabase/types";
 
 const segmentSchema = z.object({
   name: z.string(),
@@ -31,7 +33,7 @@ const profileInput = z.object({
   churnDefinition: z.string().optional(),
   // The AI-nominated metric definitions; stored as-is so upload templates and
   // scoring stay aligned with what ChAi picked during onboarding.
-  metrics: z.array(z.record(z.string(), z.unknown())).optional(),
+  metrics: z.array(z.any()).optional(),
 });
 
 export const getProfile = createServerFn({ method: "GET" })
@@ -66,7 +68,7 @@ export const getProfile = createServerFn({ method: "GET" })
       tracked: (data.tracked ?? {}) as unknown as Record<string, boolean>,
       channels: (data.channels ?? []) as unknown as string[],
       metricWeights: (data.metric_weights ?? {}) as unknown as Record<string, number>,
-      metrics: (data.metrics ?? []) as unknown as Record<string, unknown>[],
+      metrics: (data.metrics ?? []) as unknown as PlannerMetric[],
       churnDefinition: (data.churn_definition ?? "") as string,
       onboarded: data.onboarded,
       unlocked: data.unlocked ?? false,
@@ -97,7 +99,7 @@ export const saveProfile = createServerFn({ method: "POST" })
       tracked: data.tracked,
       channels: data.channels,
       metric_weights: data.metricWeights ?? {},
-      metrics: data.metrics ?? [],
+      metrics: (data.metrics ?? []) as unknown as Json,
       churn_definition: data.churnDefinition ?? "",
       onboarded: true,
       updated_at: new Date().toISOString(),
