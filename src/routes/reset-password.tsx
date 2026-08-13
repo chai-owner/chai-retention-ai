@@ -47,7 +47,7 @@ function ResetPasswordPage() {
       return;
     }
     toast.success("Password updated successfully. Please sign in.");
-    navigate({ to: "/auth", search: {} });
+    navigate({ href: "/auth" });
   }
 
   return (
