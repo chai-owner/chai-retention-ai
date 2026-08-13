@@ -14,7 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { datasetSchemas, type DatasetSchema } from "@/lib/data-schemas";
+import { type DatasetSchema } from "@/lib/data-schemas";
+import { useAllSchemas } from "@/lib/all-datasets";
 import { syncCrm, type CrmProvider } from "@/lib/crm.functions";
 import type { ExtractedDataset } from "@/lib/ingest.functions";
 import {
@@ -64,10 +65,13 @@ interface EditableDataset {
   confidence: number;
 }
 
-function buildEditable(extracted: ExtractedDataset[]): EditableDataset[] {
+function buildEditable(
+  extracted: ExtractedDataset[],
+  schemas: DatasetSchema[],
+): EditableDataset[] {
   const out: EditableDataset[] = [];
   for (const d of extracted) {
-    const schema = datasetSchemas.find((s) => s.key === d.key);
+    const schema = schemas.find((s) => s.key === d.key);
     if (!schema) continue;
     const headers = schema.fields.map((f) => f.name);
     const idxFor = (name: string) =>
@@ -101,6 +105,7 @@ export function CrmSyncWizard({
   onImported?: () => void;
 }) {
   const runSync = useServerFn(syncCrm);
+  const allSchemas = useAllSchemas();
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [datasets, setDatasets] = useState<EditableDataset[]>([]);
@@ -124,7 +129,7 @@ export function CrmSyncWizard({
       try {
         const result = await runSync({ data: { provider } });
         if (cancelled) return;
-        const editable = buildEditable(result.datasets);
+        const editable = buildEditable(result.datasets, allSchemas);
         if (editable.length === 0) {
           toast.error("No records found", {
             description: `ChAi couldn't find any importable records in ${providerName}.`,

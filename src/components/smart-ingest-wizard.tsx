@@ -23,7 +23,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { datasetSchemas, type DatasetSchema } from "@/lib/data-schemas";
+import { type DatasetSchema } from "@/lib/data-schemas";
+import { useAllSchemas } from "@/lib/all-datasets";
 import { extractRecords, type ExtractedDataset } from "@/lib/ingest.functions";
 import {
   uploadsStore,
@@ -143,10 +144,13 @@ interface EditableDataset {
   note: string;
 }
 
-function buildEditable(extracted: ExtractedDataset[]): EditableDataset[] {
+function buildEditable(
+  extracted: ExtractedDataset[],
+  schemas: DatasetSchema[],
+): EditableDataset[] {
   const out: EditableDataset[] = [];
   for (const d of extracted) {
-    const schema = datasetSchemas.find((s) => s.key === d.key);
+    const schema = schemas.find((s) => s.key === d.key);
     if (!schema) continue;
     // Normalize to the schema's field order so validation lines up.
     const headers = schema.fields.map((f) => f.name);
@@ -172,6 +176,7 @@ export function SmartIngestWizard({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const runExtract = useServerFn(extractRecords);
+  const allSchemas = useAllSchemas();
   const [step, setStep] = useState<Step>("select");
   const [busy, setBusy] = useState(false);
   const [fileNames, setFileNames] = useState<string[]>([]);
@@ -237,7 +242,7 @@ export function SmartIngestWizard({
   }
 
   function buildSchemas() {
-    return datasetSchemas.map((s) => ({
+    return allSchemas.map((s) => ({
       key: s.key,
       label: s.label,
       description: s.description,
@@ -266,7 +271,7 @@ export function SmartIngestWizard({
         try {
           const result = await extractOne(file, schemas);
           if (!result) continue;
-          const editable = buildEditable(result.datasets);
+          const editable = buildEditable(result.datasets, allSchemas);
           if (editable.length === 0) {
             toast.error(`No data in ${file.name}`, {
               description: "ChAi couldn't match this file to your datasets.",

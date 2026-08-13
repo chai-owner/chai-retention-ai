@@ -15,7 +15,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { datasetSchemas, type DatasetSchema } from "@/lib/data-schemas";
+import { type DatasetSchema } from "@/lib/data-schemas";
+import { useAllSchemas } from "@/lib/all-datasets";
 import {
   syncAccounting,
   type AccountingProvider,
@@ -69,10 +70,13 @@ interface EditableDataset {
   confidence: number;
 }
 
-function buildEditable(extracted: ExtractedDataset[]): EditableDataset[] {
+function buildEditable(
+  extracted: ExtractedDataset[],
+  schemas: DatasetSchema[],
+): EditableDataset[] {
   const out: EditableDataset[] = [];
   for (const d of extracted) {
-    const schema = datasetSchemas.find((s) => s.key === d.key);
+    const schema = schemas.find((s) => s.key === d.key);
     if (!schema) continue;
     const headers = schema.fields.map((f) => f.name);
     const idxFor = (name: string) =>
@@ -105,6 +109,7 @@ export function AccountingSyncWizard({
   onOpenChange: (v: boolean) => void;
   onImported?: () => void;
 }) {
+  const allSchemas = useAllSchemas();
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [datasets, setDatasets] = useState<EditableDataset[]>([]);
@@ -131,7 +136,7 @@ export function AccountingSyncWizard({
     runSync({ data: { provider } })
       .then((res) => {
         if (cancelled) return;
-        const editable = buildEditable(res.datasets as ExtractedDataset[]);
+        const editable = buildEditable(res.datasets as ExtractedDataset[], allSchemas);
         setDatasets(editable);
         setLoaded(true);
         setBusy(false);
