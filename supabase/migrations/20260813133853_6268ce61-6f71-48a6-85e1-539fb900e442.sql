@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS metrics jsonb NOT NULL DEFAULT '[]'::jsonb, ADD COLUMN IF NOT EXISTS churn_definition text NOT NULL DEFAULT '';
