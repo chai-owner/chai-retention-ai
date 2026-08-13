@@ -36,6 +36,7 @@ import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public
 import { Route as ApiPublicIntercomCallbackRouteImport } from './routes/api/public/intercom.callback'
 import { Route as ApiPublicZendeskCallbackRouteImport } from './routes/api/public/zendesk.callback'
 import { Route as ApiPublicZohoCallbackRouteImport } from './routes/api/public/zoho.callback'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -182,6 +183,12 @@ const ApiPublicZohoCallbackRoute = ApiPublicZohoCallbackRouteImport.update({
   path: '/api/public/zoho/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -209,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -235,6 +243,7 @@ export interface FileRoutesByTo {
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/app/customers': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRoutesById {
@@ -265,6 +274,7 @@ export interface FileRoutesById {
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRouteTypes {
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
+    | '/lovable/email/queue/process'
     | '/app/customers/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -321,6 +332,7 @@ export interface FileRouteTypes {
     | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
+    | '/lovable/email/queue/process'
     | '/app/customers'
   id:
     | '__root__'
@@ -350,6 +362,7 @@ export interface FileRouteTypes {
     | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
+    | '/lovable/email/queue/process'
     | '/_authenticated/app/customers/'
   fileRoutesById: FileRoutesById
 }
@@ -365,6 +378,7 @@ export interface RootRouteChildren {
   ApiPublicIntercomCallbackRoute: typeof ApiPublicIntercomCallbackRoute
   ApiPublicZendeskCallbackRoute: typeof ApiPublicZendeskCallbackRoute
   ApiPublicZohoCallbackRoute: typeof ApiPublicZohoCallbackRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -558,6 +572,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicZohoCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -636,6 +657,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicIntercomCallbackRoute: ApiPublicIntercomCallbackRoute,
   ApiPublicZendeskCallbackRoute: ApiPublicZendeskCallbackRoute,
   ApiPublicZohoCallbackRoute: ApiPublicZohoCallbackRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
