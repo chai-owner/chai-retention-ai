@@ -95,7 +95,7 @@ function AuthPage() {
         setLoading(false);
         return;
       }
-      setEmailSent(true);
+      setEmailSent("forgot");
       setLoading(false);
       return;
     }
@@ -117,7 +117,7 @@ function AuthPage() {
         setLoading(false);
         return;
       }
-      setEmailSent(true);
+      setEmailSent("register");
       setLoading(false);
       return;
     }
