@@ -48,7 +48,9 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const [emailSent, setEmailSent] = useState<false | "register" | "forgot">(
+    false,
+  );
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
 
