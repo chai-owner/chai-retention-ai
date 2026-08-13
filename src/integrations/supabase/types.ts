@@ -687,6 +687,7 @@ export type Database = {
           booked_at: string | null
           cadence: string
           channels: Json
+          churn_definition: string
           company: string
           concerns: string
           created_at: string
@@ -698,6 +699,7 @@ export type Database = {
           industry: string
           lifespan: string
           metric_weights: Json | null
+          metrics: Json
           model: string
           onboarded: boolean
           segments: Json
@@ -713,6 +715,7 @@ export type Database = {
           booked_at?: string | null
           cadence?: string
           channels?: Json
+          churn_definition?: string
           company?: string
           concerns?: string
           created_at?: string
@@ -724,6 +727,7 @@ export type Database = {
           industry?: string
           lifespan?: string
           metric_weights?: Json | null
+          metrics?: Json
           model?: string
           onboarded?: boolean
           segments?: Json
@@ -739,6 +743,7 @@ export type Database = {
           booked_at?: string | null
           cadence?: string
           channels?: Json
+          churn_definition?: string
           company?: string
           concerns?: string
           created_at?: string
@@ -750,6 +755,7 @@ export type Database = {
           industry?: string
           lifespan?: string
           metric_weights?: Json | null
+          metrics?: Json
           model?: string
           onboarded?: boolean
           segments?: Json

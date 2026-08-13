@@ -4,6 +4,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ProfileSegment } from "@/lib/profile-store";
+import type { PlannerMetric } from "@/lib/mock-data";
+import type { Json } from "@/integrations/supabase/types";
 
 const segmentSchema = z.object({
   name: z.string(),
@@ -28,6 +30,10 @@ const profileInput = z.object({
   tracked: z.record(z.string(), z.boolean()),
   channels: z.array(z.string()),
   metricWeights: z.record(z.string(), z.number()).optional(),
+  churnDefinition: z.string().optional(),
+  // The AI-nominated metric definitions; stored as-is so upload templates and
+  // scoring stay aligned with what ChAi picked during onboarding.
+  metrics: z.array(z.any()).optional(),
 });
 
 export const getProfile = createServerFn({ method: "GET" })
@@ -37,7 +43,7 @@ export const getProfile = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "full_name, email, company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, segments, success_actions, disengagement, tracked, channels, metric_weights, onboarded, unlocked, booked_at",
+        "full_name, email, company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, segments, success_actions, disengagement, churn_definition, tracked, channels, metric_weights, metrics, onboarded, unlocked, booked_at",
       )
       .eq("id", userId)
       .maybeSingle();
@@ -62,6 +68,8 @@ export const getProfile = createServerFn({ method: "GET" })
       tracked: (data.tracked ?? {}) as unknown as Record<string, boolean>,
       channels: (data.channels ?? []) as unknown as string[],
       metricWeights: (data.metric_weights ?? {}) as unknown as Record<string, number>,
+      metrics: (data.metrics ?? []) as unknown as PlannerMetric[],
+      churnDefinition: (data.churn_definition ?? "") as string,
       onboarded: data.onboarded,
       unlocked: data.unlocked ?? false,
       bookedAt: data.booked_at ?? null,
@@ -91,6 +99,8 @@ export const saveProfile = createServerFn({ method: "POST" })
       tracked: data.tracked,
       channels: data.channels,
       metric_weights: data.metricWeights ?? {},
+      metrics: (data.metrics ?? []) as unknown as Json,
+      churn_definition: data.churnDefinition ?? "",
       onboarded: true,
       updated_at: new Date().toISOString(),
     });
