@@ -14,9 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { CustomerOption, UnmatchedGroup } from "@/lib/customer-matching";
-import { describeCounts, sourceLabel
-  identifierLabel,
-} from "@/lib/customer-matching";
+import { describeCounts, sourceLabel, identifierLabel } from "@/lib/customer-matching";
 import { ignoreSourceId, linkCustomer } from "@/lib/customer-aliases";
 
 interface Props {
