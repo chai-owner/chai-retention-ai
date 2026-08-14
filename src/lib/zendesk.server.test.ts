@@ -28,8 +28,8 @@ const TICKETS = {
     },
   ],
   users: [
-    { id: 55, email: "a@acme.com" },
-    { id: 56, email: "b@acme.com" },
+    { id: 55, email: "a@acme.com", name: "Ann", organization_name: "Acme Ltd" },
+    { id: 56, email: "b@acme.com", name: "Ben" },
   ],
 };
 
@@ -84,6 +84,8 @@ describe("syncZendeskForUser", () => {
     expect(ds.key).toBe("support");
     expect(ds.headers).toEqual([
       "customer_id",
+      "email",
+      "customer_name",
       "ticket_id",
       "created_date",
       "status",
@@ -91,8 +93,8 @@ describe("syncZendeskForUser", () => {
       "satisfaction_score",
     ]);
     expect(ds.rows).toEqual([
-      ["a@acme.com", "101", "2026-05-01", "resolved", "Billing question", "4"],
-      ["b@acme.com", "102", "2026-05-04", "open", "Cannot log in", ""],
+      ["55", "a@acme.com", "Acme Ltd", "101", "2026-05-01", "resolved", "Billing question", "4"],
+      ["56", "b@acme.com", "Ben", "102", "2026-05-04", "open", "Cannot log in", ""],
     ]);
   });
 
@@ -112,7 +114,7 @@ describe("syncZendeskForUser", () => {
       },
     ]);
     const [ds] = await syncZendeskForUser("user-1", 10, null);
-    expect(ds.rows.map((r) => r[3])).toEqual(["resolved", "open", "open"]);
+    expect(ds.rows.map((r) => r[5])).toEqual(["resolved", "open", "open"]);
   });
 
   it("passes the last_synced_at cursor as the incremental start_time", async () => {
