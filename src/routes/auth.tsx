@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Sparkles, Loader2, Mail, ArrowRight } from "lucide-react";
+import { Loader2, Mail, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { cn } from "@/lib/utils";
