@@ -276,6 +276,35 @@ export function UploadWizard({
       if (f.mandatory) totalMandatoryCells += dataRows.length;
     }
 
+    // "Who is this row about?" — a signal row needs ANY of customer_id,
+    // email or customer_name, not specifically the ID.
+    const idFields = dataset.fields.filter((f) => f.identifier);
+    if (idFields.length > 0) {
+      const idCols = idFields
+        .map((f) => (mapping[f.name] ? headers.indexOf(mapping[f.name]!) : -1))
+        .filter((i) => i >= 0);
+      if (idCols.length === 0) {
+        errs.push({
+          rowNumber: 0,
+          field: "customer identifier",
+          column: "—",
+          message:
+            "map at least one of customer_id, email or customer_name so ChAi knows which customer each row belongs to",
+        });
+      } else {
+        dataRows.forEach((r, i) => {
+          if (idCols.every((c) => (r[c] ?? "").trim() === "")) {
+            errs.push({
+              rowNumber: i + 1,
+              field: "customer identifier",
+              column: idFields.map((f) => f.name).join(" / "),
+              message: "no customer identifier (needs a customer_id, email or customer_name)",
+            });
+          }
+        });
+      }
+    }
+
     const totalCells = dataRows.length * dataset.fields.length || 1;
     return {
       errors: errs,
@@ -283,6 +312,7 @@ export function UploadWizard({
       fill: Math.round((filledCells / totalCells) * 100),
     };
   }, [mapping, headers, dataRows, dataset.fields]);
+
 
   const errorsByRow = useMemo(() => {
     const sorted = [...errors].sort((a, b) => a.rowNumber - b.rowNumber);
