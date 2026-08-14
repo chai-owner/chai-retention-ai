@@ -4,6 +4,7 @@
 // already exist get updated instead of duplicated.
 import type { ExtractedDataset } from "./ingest.functions";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { SOURCE_FIELD, UNKNOWN_SOURCE } from "./ingested-data-store";
 
 function toNumberOrNull(v: unknown): number | null {
   if (v == null || v === "") return null;
@@ -15,10 +16,13 @@ function toDateOrNull(v: unknown): string | null {
   const d = new Date(String(v));
   return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
 }
-function rowsAsObjects(ds: ExtractedDataset): Record<string, string>[] {
+function rowsAsObjects(ds: ExtractedDataset, source: string): Record<string, string>[] {
   return ds.rows.map((r) => {
     const o: Record<string, string> = {};
     ds.headers.forEach((h, i) => (o[h] = r[i] ?? ""));
+    // Tag the originating platform so Identity Resolution can group and label
+    // these rows correctly after they're re-hydrated from the database.
+    o[SOURCE_FIELD] = source || UNKNOWN_SOURCE;
     return o;
   });
 }
@@ -45,7 +49,7 @@ export async function persistDatasetsAdmin(
   let totalRows = 0;
 
   for (const ds of datasets) {
-    const rowObjs = rowsAsObjects(ds);
+    const rowObjs = rowsAsObjects(ds, sourceProvider);
     if (rowObjs.length === 0) continue;
 
     const { data: batch, error: bErr } = await supabaseAdmin

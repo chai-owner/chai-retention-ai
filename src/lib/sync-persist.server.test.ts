@@ -67,7 +67,7 @@ describe("persistDatasetsAdmin", () => {
         user_id: "user-1",
         batch_id: "batch-1",
         customer_id: "CUST-1",
-        data: { customer_id: "CUST-1", name: "Acme" },
+        data: { customer_id: "CUST-1", name: "Acme", __source: "hubspot" },
       },
     ]);
   });

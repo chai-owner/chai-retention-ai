@@ -70,9 +70,13 @@ describe("syncIntercomForUser", () => {
 
     const [ds] = await syncIntercomForUser("user-1", 100, null);
     expect(ds.key).toBe("support");
-    expect(ds.rows[0]).toEqual(["a@acme.com", "900", "2026-01-01", "resolved", "Renewal help", "5"]);
-    // No email → falls back to the contact's external id, and snoozed reads as open.
-    expect(ds.rows[1]).toEqual(["CUST-2", "901", "2026-01-02", "open", "Feature request", ""]);
+    expect(ds.rows[0]).toEqual([
+      "a@acme.com", "a@acme.com", "", "900", "2026-01-01", "resolved", "Renewal help", "5",
+    ]);
+    // No email → the contact's external id carries the identity, and snoozed reads as open.
+    expect(ds.rows[1]).toEqual([
+      "CUST-2", "", "", "901", "2026-01-02", "open", "Feature request", "",
+    ]);
   });
 
   it("queries only conversations updated since the last sync", async () => {

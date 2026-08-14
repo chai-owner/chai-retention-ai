@@ -5,6 +5,7 @@
 // Callable from both authenticated server functions (manual "Sync now") and
 // the daily cron runner. Never import this file from client code.
 import type { ExtractedDataset } from "./ingest.functions";
+import { domainEmailHint } from "./crm-identity";
 
 const GATEWAY_BASE = "https://connector-gateway.lovable.dev";
 
@@ -120,8 +121,10 @@ async function syncSalesforce(
   const { callAsAppUser } = await import("@/integrations/lovable/appUserConnector");
 
   const where = since ? ` WHERE SystemModstamp >= ${since}` : "";
-  const accSoql = `SELECT Id, Name, CreatedDate, AnnualRevenue, Type, BillingCountry FROM Account${where} ORDER BY SystemModstamp DESC LIMIT ${limit}`;
+  const accSoql = `SELECT Id, Name, Website, CreatedDate, AnnualRevenue, Type, BillingCountry FROM Account${where} ORDER BY SystemModstamp DESC LIMIT ${limit}`;
   const oppSoql = `SELECT Id, AccountId, Name, Amount, CloseDate, StageName FROM Opportunity${where} ORDER BY SystemModstamp DESC LIMIT ${limit}`;
+  // Primary contact email per account — the strongest cross-platform match signal.
+  const conSoql = `SELECT Id, AccountId, Email FROM Contact WHERE Email != null ORDER BY CreatedDate ASC LIMIT ${limit}`;
 
   async function soql(q: string) {
     const res = await callAsAppUser({
@@ -136,10 +139,23 @@ async function syncSalesforce(
     return body ? JSON.parse(body) : null;
   }
 
-  const [acc, opp] = await Promise.all([soql(accSoql), soql(oppSoql)]);
+  const [acc, opp, con] = await Promise.all([
+    soql(accSoql),
+    soql(oppSoql),
+    soql(conSoql).catch(() => null),
+  ]);
+
+  const emailByAccount = new Map<string, string>();
+  for (const c of (con?.records ?? []) as Record<string, unknown>[]) {
+    const accId = toStr(c.AccountId);
+    const email = toStr(c.Email);
+    if (accId && email && !emailByAccount.has(accId)) emailByAccount.set(accId, email);
+  }
 
   const customers: string[][] = (acc?.records ?? []).map((r: Record<string, unknown>) => [
-    toStr(r.Id), toStr(r.Name), "", dateOnly(r.CreatedDate),
+    toStr(r.Id), toStr(r.Name),
+    emailByAccount.get(toStr(r.Id)) ?? domainEmailHint(toStr(r.Website)),
+    dateOnly(r.CreatedDate),
     num((r.AnnualRevenue as number) ? Number(r.AnnualRevenue) / 12 : ""),
     toStr(r.Type), toStr(r.BillingCountry),
   ]);
@@ -166,7 +182,7 @@ async function syncHubspot(userId: string, limit: number, since: string | null):
   const headers = gatewayHeaders(connectionKey, lovableKey);
   const base = `${GATEWAY_BASE}/hubspot`;
   const cap = Math.min(limit, 100);
-  const companyProps = ["name", "createdate", "annualrevenue", "industry", "country"];
+  const companyProps = ["name", "domain", "createdate", "annualrevenue", "industry", "country"];
   const dealProps = ["dealname", "amount", "closedate", "pipeline", "dealstage"];
 
   let companies: unknown, deals: unknown;
@@ -199,7 +215,7 @@ async function syncHubspot(userId: string, limit: number, since: string | null):
   const customers: string[][] = ((companies as { results?: Record<string, unknown>[] } | null)?.results ?? []).map((r) => {
     const p = (r.properties ?? {}) as Record<string, unknown>;
     return [
-      toStr(r.id), toStr(p.name), "", dateOnly(p.createdate),
+      toStr(r.id), toStr(p.name), domainEmailHint(toStr(p.domain)), dateOnly(p.createdate),
       num((p.annualrevenue as string) ? Number(p.annualrevenue) / 12 : ""),
       toStr(p.industry), toStr(p.country),
     ];

@@ -58,8 +58,8 @@ describe("syncFreshdeskForUser", () => {
     const [ds] = await syncFreshdeskForUser("user-1", 100, null);
     expect(ds.key).toBe("support");
     expect(ds.rows).toEqual([
-      ["a@acme.com", "11", "2026-04-02", "resolved", "Invoice mismatch", "103"],
-      ["b@acme.com", "12", "2026-04-06", "open", "Onboarding question", ""],
+      ["501", "a@acme.com", "", "11", "2026-04-02", "resolved", "Invoice mismatch", "103"],
+      ["502", "b@acme.com", "", "12", "2026-04-06", "open", "Onboarding question", ""],
     ]);
   });
 
@@ -92,7 +92,7 @@ describe("syncFreshdeskForUser", () => {
     mockFetch(routes({ csatOk: false }));
 
     const [ds] = await syncFreshdeskForUser("user-1", 100, null);
-    expect(ds.rows.map((r) => r[5])).toEqual(["", ""]);
+    expect(ds.rows.map((r) => r[7])).toEqual(["", ""]);
   });
 
   it("falls back to the requester id when a contact lookup fails", async () => {

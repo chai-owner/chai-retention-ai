@@ -201,6 +201,8 @@ function num(v: unknown): string {
   return s === "" || isNaN(Number(s)) ? "" : String(Number(s));
 }
 
+import { domainEmailHint } from "./crm-identity";
+
 const CUSTOMER_HEADERS = ["customer_id","name","email","signup_date","monthly_revenue","plan","region"];
 const TRANSACTION_HEADERS = ["customer_id","transaction_id","amount","transaction_date","product","currency"];
 
@@ -217,7 +219,7 @@ export async function syncZohoForUser(
   if (since) auth["If-Modified-Since"] = new Date(since).toUTCString();
 
   const cap = Math.min(limit, 200);
-  const accFields = "Account_Name,Created_Time,Annual_Revenue,Industry,Billing_Country";
+  const accFields = "Account_Name,Website,Created_Time,Annual_Revenue,Industry,Billing_Country";
   const dealFields = "Deal_Name,Account_Name,Amount,Closing_Date,Stage";
 
   async function get(path: string) {
@@ -228,13 +230,25 @@ export async function syncZohoForUser(
     return body ? JSON.parse(body) : null;
   }
 
-  const [acc, deals] = await Promise.all([
+  const [acc, deals, contacts] = await Promise.all([
     get(`/Accounts?fields=${encodeURIComponent(accFields)}&per_page=${cap}`),
     get(`/Deals?fields=${encodeURIComponent(dealFields)}&per_page=${cap}`),
+    // Primary contact email per account — the strongest cross-platform signal.
+    get(`/Contacts?fields=${encodeURIComponent("Email,Account_Name")}&per_page=${cap}`).catch(() => null),
   ]);
 
+  const emailByAccount = new Map<string, string>();
+  for (const c of (contacts?.data ?? []) as Record<string, unknown>[]) {
+    const account = c.Account_Name as { id?: string } | undefined;
+    const accId = account && typeof account === "object" ? toStr(account.id) : "";
+    const email = toStr(c.Email);
+    if (accId && email && !emailByAccount.has(accId)) emailByAccount.set(accId, email);
+  }
+
   const customers: string[][] = (acc?.data ?? []).map((r: Record<string, unknown>) => [
-    toStr(r.id), toStr(r.Account_Name), "", dateOnly(r.Created_Time),
+    toStr(r.id), toStr(r.Account_Name),
+    emailByAccount.get(toStr(r.id)) ?? domainEmailHint(toStr(r.Website)),
+    dateOnly(r.Created_Time),
     num((r.Annual_Revenue as number) ? Number(r.Annual_Revenue) / 12 : ""),
     toStr(r.Industry), toStr(r.Billing_Country),
   ]);

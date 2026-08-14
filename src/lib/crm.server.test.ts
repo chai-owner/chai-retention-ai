@@ -72,7 +72,11 @@ describe("Salesforce sync", () => {
     const http = mockFetch(routeSoql());
     await runCrmSync("salesforce", "user-1", 200, "2026-05-01T00:00:00Z");
     const queries = http.urls().map((u) => decodeURIComponent(u));
-    expect(queries.every((q) => q.includes("WHERE SystemModstamp >= 2026-05-01T00:00:00Z"))).toBe(true);
+    // Account + Opportunity pulls are incremental; the contact-email lookup is
+    // a separate roster query and keeps its own filter.
+    const incremental = queries.filter((q) => /FROM (Account|Opportunity)/.test(q));
+    expect(incremental.length).toBeGreaterThan(0);
+    expect(incremental.every((q) => q.includes("WHERE SystemModstamp >= 2026-05-01T00:00:00Z"))).toBe(true);
   });
 
   it("does not filter on the first full pull", async () => {

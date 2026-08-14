@@ -203,6 +203,8 @@ function num(v: unknown): string {
 
 const SUPPORT_HEADERS = [
   "customer_id",
+  "email",
+  "customer_name",
   "ticket_id",
   "created_date",
   "status",
@@ -247,11 +249,19 @@ export async function syncZendeskForUser(
     const u = userById.get(String(id));
     return u ? String(u.email ?? "") : "";
   };
+  const requesterName = (id: unknown) => {
+    const u = userById.get(String(id));
+    return u ? String(u.organization_name ?? u.name ?? "") : "";
+  };
 
   const rows: string[][] = tickets.slice(0, cap).map((t) => {
     const sat = (t.satisfaction_rating as { score?: string | number } | undefined)?.score;
     return [
-      requesterEmail(t.requester_id) || toStr(t.requester_id),
+      // Keep the platform's own id here; email/name are separate identifiers so
+      // Identity Resolution can auto-match against the customer roster.
+      toStr(t.requester_id),
+      requesterEmail(t.requester_id),
+      requesterName(t.requester_id),
       toStr(t.id),
       dateOnly(t.created_at),
       mapZendeskStatus(toStr(t.status)),

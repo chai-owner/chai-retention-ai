@@ -160,6 +160,8 @@ function dateFromEpoch(v: unknown): string {
 
 const SUPPORT_HEADERS = [
   "customer_id",
+  "email",
+  "customer_name",
   "ticket_id",
   "created_date",
   "status",
@@ -178,8 +180,8 @@ interface IntercomConversation {
   created_at?: number;
   updated_at?: number;
   state?: string;
-  source?: { subject?: string; author?: { email?: string; id?: string } };
-  contacts?: { contacts?: Array<{ id?: string; external_id?: string }> };
+  source?: { subject?: string; author?: { email?: string; id?: string; name?: string } };
+  contacts?: { contacts?: Array<{ id?: string; external_id?: string; email?: string; name?: string }> };
   conversation_rating?: { rating?: number };
 }
 
@@ -223,11 +225,17 @@ export async function syncIntercomForUser(
 
   const rows: string[][] = conversations.slice(0, cap).map((c) => {
     const contact = c.contacts?.contacts?.[0];
-    const authorEmail = c.source?.author?.email ?? "";
-    const customerId = authorEmail || contact?.external_id || contact?.id || toStr(c.source?.author?.id);
+    const authorEmail = c.source?.author?.email ?? contact?.email ?? "";
+    // Platform id first (external_id is the customer's own id when Intercom has it),
+    // with email / name carried alongside for identity matching.
+    const customerId =
+      contact?.external_id || contact?.id || toStr(c.source?.author?.id) || authorEmail;
+    const customerName = contact?.name ?? c.source?.author?.name ?? "";
     const rating = c.conversation_rating?.rating;
     return [
       toStr(customerId),
+      toStr(authorEmail),
+      toStr(customerName),
       toStr(c.id),
       dateFromEpoch(c.created_at),
       mapIntercomState(toStr(c.state)),
