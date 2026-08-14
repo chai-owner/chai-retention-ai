@@ -100,6 +100,8 @@ function dateOnly(v: unknown): string {
 
 const SUPPORT_HEADERS = [
   "customer_id",
+  "email",
+  "customer_name",
   "ticket_id",
   "created_date",
   "status",
