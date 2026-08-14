@@ -32,12 +32,15 @@ function AdminPage() {
 
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const fetchDemoLeads = useServerFn(listDemoLeads);
   const [demoLeads, setDemoLeads] = useState<DemoLead[]>([]);
 
   async function load() {
+    setLoading(true);
+    setLoadError(null);
     try {
       const rows = await fetchCustomers();
       setCustomers(rows as AdminCustomer[]);
@@ -47,12 +50,17 @@ function AdminPage() {
       } catch {
         setDemoLeads([]);
       }
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       setIsAdmin(false);
+      // Only a real role failure means "not an admin"; anything else (expired
+      // session, network, server error) should be reported so it can be retried.
+      setLoadError(/forbidden/i.test(message) ? null : message);
     } finally {
       setLoading(false);
     }
   }
+
 
   useEffect(() => {
     load();
