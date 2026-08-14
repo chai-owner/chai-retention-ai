@@ -1,7 +1,7 @@
 // Derives which datasets and fields the user should upload based on their
 // onboarding answers (business model + how they defined success). Pure logic,
 // no side effects — safe to run during render and on the server.
-import type { DatasetSchema, SchemaField } from "@/lib/data-schemas";
+import { customerIdentifierFields, IDENTIFIER_HINT, type DatasetSchema, type SchemaField } from "@/lib/data-schemas";
 import type { OnboardingProfile } from "@/lib/profile-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 
@@ -87,9 +87,9 @@ export function buildCustomMetricDatasets(
       label: `${m.name}${unitSuffix}`,
       description:
         (m.why || m.churn || `Values for ${m.name} — one of the retention metrics ChAi picked for your business during onboarding.`) +
-        " One row per customer per measurement date.",
+        ` One row per customer per measurement date. ${IDENTIFIER_HINT}`,
       fields: [
-        { name: "customer_id", mandatory: true, description: "Must match a customer_id", example: "CUS-1001" },
+        ...customerIdentifierFields(),
         { name: "date", mandatory: true, description: "When the metric was measured (YYYY-MM-DD)", example: "2025-05-20" },
         {
           name: col,
@@ -99,8 +99,8 @@ export function buildCustomMetricDatasets(
         },
       ],
       sampleRows: [
-        ["CUS-1001", "2025-05-20", sample],
-        ["CUS-1002", "2025-05-20", sample],
+        ["CUS-1001", "ops@northwind.com", "Northwind Labs", "2025-05-20", sample],
+        ["", "team@globex.com", "Globex Co", "2025-05-20", sample],
       ],
     });
   }
