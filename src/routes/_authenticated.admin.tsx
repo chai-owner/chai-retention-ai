@@ -154,19 +154,40 @@ function AdminPage() {
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
           <Lock className="h-5 w-5" />
         </span>
-        <h1 className="mt-4 text-xl font-semibold">Admin access only</h1>
+        <h1 className="mt-4 text-xl font-semibold">
+          {loadError ? "Couldn't load the admin console" : "Admin access only"}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          You're signed in, but this page is restricted to ChAi admins.
+          {loadError
+            ? "Your session may have expired. Try again — if it keeps failing, sign out and back in."
+            : "You're signed in, but this page is restricted to ChAi admins."}
         </p>
-        <Link
-          to="/"
-          className="mt-6 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
-        >
-          Back to home
-        </Link>
+        {loadError && (
+          <p className="mt-2 break-words text-xs text-muted-foreground/80">{loadError}</p>
+        )}
+        <div className="mt-6 flex items-center justify-center gap-2">
+          {loadError && (
+            <button
+              onClick={async () => {
+                await supabase.auth.refreshSession();
+                void load();
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Try again
+            </button>
+          )}
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
+          >
+            Back to home
+          </Link>
+        </div>
       </div>
     );
   }
+
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 lg:px-6">
