@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Sparkles, Loader2, Mail, ArrowRight } from "lucide-react";
+import { Loader2, Mail, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { cn } from "@/lib/utils";
@@ -142,11 +142,8 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-hero px-4 py-12">
       <div className="w-full max-w-md">
-        <Link to="/" className="mb-8 flex items-center justify-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-warm text-primary-foreground">
-            <Sparkles className="h-5 w-5" />
-          </span>
-          <span className="text-xl font-semibold tracking-tight">ChAi</span>
+        <Link to="/" className="mb-8 flex items-center justify-center">
+          <img src="/logo-light.png" alt="ChAi" className="h-11 w-auto" />
         </Link>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-card sm:p-8">
