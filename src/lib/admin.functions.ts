@@ -4,7 +4,7 @@
 // service-role client.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireConnectedAuth } from "@/lib/connected-auth-middleware";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertAdmin(context: { supabase: any; userId: string }) {
@@ -34,7 +34,7 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
 const DEFAULT_PRICING = { input: 0.3, output: 2.5 };
 
 export const listCustomers = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .handler(async ({ context }): Promise<AdminCustomer[]> => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -82,7 +82,7 @@ export interface DemoLead {
 
 // Visitors who submitted their details to view the public demo.
 export const listDemoLeads = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .handler(async ({ context }): Promise<DemoLead[]> => {
     await assertAdmin(context);
     const { data, error } = await context.supabase
@@ -102,7 +102,7 @@ export const listDemoLeads = createServerFn({ method: "GET" })
 
 
 export const setUnlocked = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) =>
     z.object({ userId: z.string().uuid(), unlocked: z.boolean() }).parse(input),
   )
@@ -120,7 +120,7 @@ export const setUnlocked = createServerFn({ method: "POST" })
 // Starts full impersonation: records an audit row and mints a one-time
 // magic-link token the client verifies to become the target user.
 export const startImpersonation = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) =>
     z.object({ userId: z.string().uuid() }).parse(input),
   )
@@ -159,7 +159,7 @@ export const startImpersonation = createServerFn({ method: "POST" })
 // Ends an impersonation session. Called while acting as the target user, so it
 // verifies the caller is that target before stamping ended_at (service role).
 export const endImpersonation = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) =>
     z.object({ auditId: z.string().uuid() }).parse(input),
   )
@@ -201,7 +201,7 @@ const USER_DATA_TABLES = [
 ] as const;
 
 export const resetAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) =>
     z.object({ userId: z.string().uuid() }).parse(input),
   )
