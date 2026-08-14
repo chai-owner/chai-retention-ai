@@ -130,6 +130,8 @@ interface FreshdeskTicket {
 interface FreshdeskContact {
   id: number;
   email?: string | null;
+  name?: string | null;
+  company_id?: number | null;
 }
 
 interface FreshdeskCsat {
@@ -141,8 +143,8 @@ async function fetchAllContactsById(
   domain: string,
   apiKey: string,
   ids: number[],
-): Promise<Map<number, string>> {
-  const out = new Map<number, string>();
+): Promise<Map<number, { email: string; name: string }>> {
+  const out = new Map<number, { email: string; name: string }>();
   // Batch lookups by id — Freshdesk contacts endpoint doesn't accept filter by array,
   // so fetch one page (100) at a time using ?_updated_since and rely on caller providing ids.
   // Simpler: fetch each id (up to 50) — bounded by ticket page size.
@@ -155,7 +157,7 @@ async function fetchAllContactsById(
         });
         if (!res.ok) return;
         const c = (await res.json()) as FreshdeskContact;
-        if (c.email) out.set(id, c.email);
+        if (c.email || c.name) out.set(id, { email: c.email ?? "", name: c.name ?? "" });
       } catch {
         /* ignore individual contact errors */
       }
@@ -191,7 +193,7 @@ export async function syncFreshdeskForUser(
   const requesterIds = sliced
     .map((t) => t.requester_id)
     .filter((x): x is number => typeof x === "number");
-  const emailById = await fetchAllContactsById(conn.domain, conn.apiKey, requesterIds);
+  const contactById = await fetchAllContactsById(conn.domain, conn.apiKey, requesterIds);
 
   // Try to pull CSAT scores for these tickets. Best-effort — silently skip if the
   // account doesn't have satisfaction surveys enabled.
@@ -214,10 +216,13 @@ export async function syncFreshdeskForUser(
   }
 
   const rows: string[][] = sliced.map((t) => {
-    const email = t.requester_id ? emailById.get(t.requester_id) : undefined;
+    const contact = t.requester_id ? contactById.get(t.requester_id) : undefined;
     const rating = csatByTicket.get(t.id);
     return [
-      email || toStr(t.requester_id),
+      // Freshdesk requester id stays the platform id; email/name ride alongside.
+      toStr(t.requester_id),
+      contact?.email ?? "",
+      contact?.name ?? "",
       toStr(t.id),
       dateOnly(t.created_at),
       mapFreshdeskStatus(t.status),
