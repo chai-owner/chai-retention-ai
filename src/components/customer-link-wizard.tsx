@@ -14,7 +14,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { CustomerOption, UnmatchedGroup } from "@/lib/customer-matching";
-import { describeCounts, sourceLabel } from "@/lib/customer-matching";
+import { describeCounts, sourceLabel
+  identifierLabel,
+} from "@/lib/customer-matching";
 import { ignoreSourceId, linkCustomer } from "@/lib/customer-aliases";
 
 interface Props {
@@ -114,7 +116,7 @@ export function CustomerLinkWizard({ open, onOpenChange, groups, customers, read
           <div>
             <div className="rounded-xl border border-border bg-secondary/40 p-3">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-mono text-sm font-medium">{group.sourceId || "(blank)"}</p>
+                <p className="font-mono text-sm font-medium">{identifierLabel(group.sourceId) || "(blank)"}</p>
                 <span className="rounded-md border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                   {sourceLabel(group.source)}
                 </span>

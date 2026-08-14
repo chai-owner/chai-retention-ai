@@ -10,6 +10,8 @@ import {
   customerOptions,
   describeCounts,
   findUnmatched,
+  resolveIdentities,
+  identifierLabel,
   countAliasUsage,
   aliasKey,
   autoLinkable,
@@ -85,7 +87,7 @@ export function IdentityResolution() {
     [isReal, ingested],
   );
   const unmatched = useMemo(
-    () => (isReal ? findUnmatched(ingested, liveAliases) : demoUnmatched),
+    () => (isReal ? findUnmatched(resolveIdentities(ingested), liveAliases) : demoUnmatched),
     [isReal, ingested, liveAliases],
   );
   const unmatchedRows = unmatched.reduce((s, g) => s + g.total, 0);
@@ -216,7 +218,7 @@ export function IdentityResolution() {
                     className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm"
                   >
                     <span className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-medium">{g.sourceId || "(blank)"}</span>
+                      <span className="font-mono text-xs font-medium">{identifierLabel(g.sourceId) || "(blank)"}</span>
                       <span className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                         {sourceLabel(g.source)}
                       </span>
