@@ -174,6 +174,54 @@ function aliasLookup(aliases: CustomerAlias[]) {
   return (source: string, id: string) => exact.get(aliasKey(source, id)) ?? legacy.get(id);
 }
 
+/**
+ * Fill in `customer_id` for signal rows that only carry an email or a company
+ * name. Exact email match wins, then an exact (normalized) name match against
+ * the roster. When nothing matches we stamp a stable placeholder id
+ * (`email:…` / `name:…`) so the row still groups in Identity Resolution — and
+ * can be linked once — instead of being silently dropped.
+ */
+export function resolveIdentities(data: IngestedData): IngestedData {
+  const customers = customerOptions(data);
+  const byEmail = new Map<string, string>();
+  const byName = new Map<string, string>();
+  for (const c of customers) {
+    const e = norm(c.email ?? "");
+    if (e.includes("@") && !byEmail.has(e)) byEmail.set(e, c.customer_id);
+    const n = norm(c.name).replace(/[^a-z0-9]+/g, " ").trim();
+    if (n && !byName.has(n)) byName.set(n, c.customer_id);
+  }
+
+  const out: IngestedData = { ...data };
+  for (const key of Object.keys(data)) {
+    if (key === "customers") continue;
+    const rows = data[key] ?? [];
+    let changed = false;
+    const next: IngestRow[] = rows.map((row) => {
+      if ((row.customer_id ?? "").trim()) return row;
+      const email = rowEmail(row);
+      const name = rowName(row);
+      let id = "";
+      if (email) id = byEmail.get(email) ?? "";
+      if (!id && name) id = byName.get(norm(name).replace(/[^a-z0-9]+/g, " ").trim()) ?? "";
+      if (!id && email) id = `email:${email}`;
+      if (!id && name) id = `name:${name}`;
+      if (!id) return row;
+      changed = true;
+      return { ...row, customer_id: id };
+    });
+    if (changed) out[key] = next;
+  }
+  return out;
+}
+
+/** Human label for a placeholder id created by `resolveIdentities`. */
+export function identifierLabel(sourceId: string): string {
+  if (sourceId.startsWith("email:")) return `email ${sourceId.slice(6)}`;
+  if (sourceId.startsWith("name:")) return `name "${sourceId.slice(5)}"`;
+  return `ID ${sourceId}`;
+}
+
 export function findUnmatched(
   data: IngestedData,
   aliases: CustomerAlias[] = [],
