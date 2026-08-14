@@ -5,6 +5,7 @@
 // Callable from both authenticated server functions (manual "Sync now") and
 // the daily cron runner. Never import this file from client code.
 import type { ExtractedDataset } from "./ingest.functions";
+import { domainEmailHint } from "./crm-identity";
 
 const GATEWAY_BASE = "https://connector-gateway.lovable.dev";
 
@@ -52,18 +53,6 @@ function dateOnly(v: unknown): string {
   const d = new Date(s);
   return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
 }
-/**
- * CRMs often expose only a company website/domain, not a contact email. We keep
- * the bare domain (prefixed with "@") so email-domain matching in Identity
- * Resolution still has something to work with, without inventing an address.
- */
-export function domainEmailHint(website: string): string {
-  const raw = (website || "").trim().toLowerCase();
-  if (!raw) return "";
-  const host = raw.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0] ?? "";
-  return host.includes(".") ? `@${host}` : "";
-}
-
 function num(v: unknown): string {
   const s = toStr(v).replace(/[^0-9.\-]/g, "");
   return s === "" || isNaN(Number(s)) ? "" : String(Number(s));
