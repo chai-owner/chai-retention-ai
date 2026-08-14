@@ -63,15 +63,24 @@ describe("buildCustomMetricDatasets", () => {
     expect(out.map((d) => d.key)).toEqual(["metric_class_attendance_rate", "metric_refill_spend"]);
   });
 
-  it("each schema takes customer_id, date and the metric value column", () => {
+  it("takes any customer identifier plus date and the metric value column", () => {
     const [ds] = buildCustomMetricDatasets(metrics);
     expect(ds.fields.map((f) => f.name)).toEqual([
       "customer_id",
+      "email",
+      "customer_name",
       "date",
       "class_attendance_rate",
     ]);
-    expect(ds.fields.every((f) => f.mandatory)).toBe(true);
+    // Identifier columns are optional individually — at least one is needed.
+    expect(ds.fields.filter((f) => f.identifier).map((f) => f.mandatory)).toEqual([
+      false,
+      false,
+      false,
+    ]);
+    expect(ds.fields.filter((f) => !f.identifier).every((f) => f.mandatory)).toBe(true);
   });
+
 
   it("labels the dataset with the metric name and unit and ships sample rows", () => {
     const [ds] = buildCustomMetricDatasets(metrics);

@@ -7,6 +7,54 @@ export interface SchemaField {
   mandatory: boolean;
   description: string;
   example: string;
+  /**
+   * Part of the "who is this row about?" group. A signal row is valid when it
+   * carries ANY of these (customer_id, email or customer_name) — not all.
+   */
+  identifier?: boolean;
+}
+
+/** Identifier columns accepted on every non-roster dataset, in match order. */
+export const IDENTIFIER_FIELDS = ["customer_id", "email", "customer_name"] as const;
+
+export const IDENTIFIER_HINT =
+  "Provide at least one of customer_id, email or customer_name.";
+
+/** Identifier fields declared on a schema. */
+export function identifierFields(schema: DatasetSchema): SchemaField[] {
+  return schema.fields.filter((f) => f.identifier);
+}
+
+/** True when a row carries at least one usable customer identifier. */
+export function hasIdentifier(row: Record<string, string | undefined>): boolean {
+  return IDENTIFIER_FIELDS.some((f) => (row[f] ?? "").trim().length > 0);
+}
+
+/** The three identifier columns every signal dataset accepts. */
+export function customerIdentifierFields(): SchemaField[] {
+  return [
+    {
+      name: "customer_id",
+      mandatory: false,
+      identifier: true,
+      description: `Your ID for the customer. ${IDENTIFIER_HINT}`,
+      example: "CUS-1001",
+    },
+    {
+      name: "email",
+      mandatory: false,
+      identifier: true,
+      description: `Contact email — used to match the row when the ID is missing or differs. ${IDENTIFIER_HINT}`,
+      example: "ops@northwind.com",
+    },
+    {
+      name: "customer_name",
+      mandatory: false,
+      identifier: true,
+      description: `Customer or company name — used to match the row when the ID is missing or differs. ${IDENTIFIER_HINT}`,
+      example: "Northwind Labs",
+    },
+  ];
 }
 
 export interface DatasetSchema {
@@ -39,9 +87,9 @@ export const datasetSchemas: DatasetSchema[] = [
   {
     key: "transactions",
     label: "Transactions",
-    description: "Purchases, invoices or renewals — one row per transaction.",
+    description: "Purchases, invoices or renewals — one row per transaction. " + IDENTIFIER_HINT,
     fields: [
-      { name: "customer_id", mandatory: true, description: "Must match a customer_id", example: "CUS-1001" },
+      ...customerIdentifierFields(),
       { name: "transaction_id", mandatory: true, description: "Unique transaction ID", example: "TXN-90021" },
       { name: "amount", mandatory: true, description: "Transaction amount ($)", example: "1200" },
       { name: "transaction_date", mandatory: true, description: "Date of transaction (YYYY-MM-DD)", example: "2025-05-01" },
@@ -49,32 +97,32 @@ export const datasetSchemas: DatasetSchema[] = [
       { name: "currency", mandatory: false, description: "Currency code", example: "USD" },
     ],
     sampleRows: [
-      ["CUS-1001", "TXN-90021", "1200", "2025-05-01", "Annual plan", "USD"],
-      ["CUS-1002", "TXN-90022", "450", "2025-04-18", "Monthly plan", "USD"],
+      ["CUS-1001", "ops@northwind.com", "Northwind Labs", "TXN-90021", "1200", "2025-05-01", "Annual plan", "USD"],
+      ["", "team@globex.com", "Globex Co", "TXN-90022", "450", "2025-04-18", "Monthly plan", "USD"],
     ],
   },
   {
     key: "usage",
     label: "Product usage",
-    description: "Engagement signals — one row per customer per day or week.",
+    description: "Engagement signals — one row per customer per day or week. " + IDENTIFIER_HINT,
     fields: [
-      { name: "customer_id", mandatory: true, description: "Must match a customer_id", example: "CUS-1001" },
+      ...customerIdentifierFields(),
       { name: "date", mandatory: true, description: "Activity date (YYYY-MM-DD)", example: "2025-05-20" },
       { name: "logins", mandatory: false, description: "Number of logins", example: "12" },
       { name: "active_minutes", mandatory: false, description: "Active minutes in product", example: "340" },
       { name: "features_used", mandatory: false, description: "Distinct features used", example: "5" },
     ],
     sampleRows: [
-      ["CUS-1001", "2025-05-20", "12", "340", "5"],
-      ["CUS-1002", "2025-05-20", "1", "8", "1"],
+      ["CUS-1001", "ops@northwind.com", "Northwind Labs", "2025-05-20", "12", "340", "5"],
+      ["", "team@globex.com", "Globex Co", "2025-05-20", "1", "8", "1"],
     ],
   },
   {
     key: "support",
     label: "Support tickets",
-    description: "Support interactions — one row per ticket.",
+    description: "Support interactions — one row per ticket. " + IDENTIFIER_HINT,
     fields: [
-      { name: "customer_id", mandatory: true, description: "Must match a customer_id", example: "CUS-1001" },
+      ...customerIdentifierFields(),
       { name: "ticket_id", mandatory: true, description: "Unique ticket ID", example: "TKT-5512" },
       { name: "created_date", mandatory: true, description: "When the ticket was opened", example: "2025-05-12" },
       { name: "status", mandatory: true, description: "open / resolved / reopened", example: "open" },
@@ -82,24 +130,24 @@ export const datasetSchemas: DatasetSchema[] = [
       { name: "satisfaction_score", mandatory: false, description: "CSAT 1–5", example: "3" },
     ],
     sampleRows: [
-      ["CUS-1001", "TKT-5512", "2025-05-12", "open", "Billing", "3"],
-      ["CUS-1002", "TKT-5513", "2025-05-09", "resolved", "Technical", "5"],
+      ["CUS-1001", "ops@northwind.com", "Northwind Labs", "TKT-5512", "2025-05-12", "open", "Billing", "3"],
+      ["", "team@globex.com", "Globex Co", "TKT-5513", "2025-05-09", "resolved", "Technical", "5"],
     ],
   },
   {
     key: "surveys",
     label: "Surveys & CSAT",
-    description: "Satisfaction and NPS responses — one row per response.",
+    description: "Satisfaction and NPS responses — one row per response. " + IDENTIFIER_HINT,
     fields: [
-      { name: "customer_id", mandatory: true, description: "Must match a customer_id", example: "CUS-1001" },
+      ...customerIdentifierFields(),
       { name: "survey_date", mandatory: true, description: "Date of response", example: "2025-05-15" },
       { name: "score", mandatory: true, description: "NPS or CSAT score", example: "9" },
       { name: "type", mandatory: false, description: "NPS / CSAT", example: "NPS" },
       { name: "comment", mandatory: false, description: "Free-text feedback", example: "Great product" },
     ],
     sampleRows: [
-      ["CUS-1001", "2025-05-15", "9", "NPS", "Great product"],
-      ["CUS-1002", "2025-05-15", "4", "CSAT", "Support was slow"],
+      ["CUS-1001", "ops@northwind.com", "Northwind Labs", "2025-05-15", "9", "NPS", "Great product"],
+      ["", "team@globex.com", "Globex Co", "2025-05-15", "4", "CSAT", "Support was slow"],
     ],
   },
 ];

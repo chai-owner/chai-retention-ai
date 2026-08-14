@@ -9,6 +9,8 @@ import {
   groupForSourceId,
   describeCounts,
   signalDatasetKeys,
+  resolveIdentities,
+  identifierLabel,
   type CustomerAlias,
 } from "@/lib/customer-matching";
 import type { IngestedData } from "@/lib/ingested-data-store";
@@ -185,5 +187,51 @@ describe("cross-platform identities", () => {
     ]);
     expect(out.support[0].customer_id).toBe("CUS-1");
     expect(out.transactions[0].customer_id).toBe("4471");
+  });
+});
+
+describe("resolveIdentities", () => {
+  const roster: IngestedData = {
+    customers: [
+      { customer_id: "CUS-1", name: "Northwind Labs", email: "ops@northwind.com" },
+      { customer_id: "CUS-2", name: "Globex Co", email: "team@globex.com" },
+    ],
+  };
+
+  it("matches an id-less row on exact email", () => {
+    const out = resolveIdentities({
+      ...roster,
+      transactions: [{ email: "OPS@northwind.com", transaction_id: "T1", amount: "10" }],
+    });
+    expect(out.transactions![0].customer_id).toBe("CUS-1");
+  });
+
+  it("matches an id-less row on customer name", () => {
+    const out = resolveIdentities({
+      ...roster,
+      usage: [{ customer_name: "globex co", date: "2026-01-01", logins: "2" }],
+    });
+    expect(out.usage![0].customer_id).toBe("CUS-2");
+  });
+
+  it("stamps a placeholder id when nothing matches, so the row is linkable", () => {
+    const out = resolveIdentities({
+      ...roster,
+      usage: [{ customer_name: "Unknown Ltd", date: "2026-01-01", logins: "2" }],
+    });
+    expect(out.usage![0].customer_id).toBe("name:Unknown Ltd");
+    const groups = findUnmatched(out);
+    expect(groups.map((g) => g.sourceId)).toContain("name:Unknown Ltd");
+  });
+
+  it("leaves rows that already have an id untouched", () => {
+    const out = resolveIdentities(base);
+    expect(out.transactions).toBe(base.transactions);
+  });
+
+  it("labels placeholder ids in a readable way", () => {
+    expect(identifierLabel("email:a@b.com")).toBe("email a@b.com");
+    expect(identifierLabel('name:Acme')).toBe('name "Acme"');
+    expect(identifierLabel("CUS-1")).toBe("ID CUS-1");
   });
 });

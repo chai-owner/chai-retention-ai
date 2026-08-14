@@ -123,16 +123,28 @@ function norm(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+// Common header spellings for the customer identifier columns.
+const SYNONYMS: Record<string, string[]> = {
+  customer_id: ["customerid", "custid", "accountid", "clientid", "id"],
+  email: ["contactemail", "customeremail", "billingemail", "emailaddress"],
+  customer_name: ["company", "companyname", "accountname", "clientname", "organisation", "organization", "name"],
+};
+
 function autoMap(headers: string[], fields: PersonalizedField[]): Record<string, string> {
   const map: Record<string, string> = {};
   const used = new Set<number>();
   for (const f of fields) {
     const target = norm(f.name);
+    const alts = (SYNONYMS[f.name] ?? []).map(norm);
     let bestIdx = -1;
     for (let i = 0; i < headers.length; i++) {
       if (used.has(i)) continue;
       const h = norm(headers[i]);
       if (h === target) {
+        bestIdx = i;
+        break;
+      }
+      if (alts.includes(h)) {
         bestIdx = i;
         break;
       }
@@ -276,6 +288,35 @@ export function UploadWizard({
       if (f.mandatory) totalMandatoryCells += dataRows.length;
     }
 
+    // "Who is this row about?" — a signal row needs ANY of customer_id,
+    // email or customer_name, not specifically the ID.
+    const idFields = dataset.fields.filter((f) => f.identifier);
+    if (idFields.length > 0) {
+      const idCols = idFields
+        .map((f) => (mapping[f.name] ? headers.indexOf(mapping[f.name]!) : -1))
+        .filter((i) => i >= 0);
+      if (idCols.length === 0) {
+        errs.push({
+          rowNumber: 0,
+          field: "customer identifier",
+          column: "—",
+          message:
+            "map at least one of customer_id, email or customer_name so ChAi knows which customer each row belongs to",
+        });
+      } else {
+        dataRows.forEach((r, i) => {
+          if (idCols.every((c) => (r[c] ?? "").trim() === "")) {
+            errs.push({
+              rowNumber: i + 1,
+              field: "customer identifier",
+              column: idFields.map((f) => f.name).join(" / "),
+              message: "no customer identifier (needs a customer_id, email or customer_name)",
+            });
+          }
+        });
+      }
+    }
+
     const totalCells = dataRows.length * dataset.fields.length || 1;
     return {
       errors: errs,
@@ -283,6 +324,7 @@ export function UploadWizard({
       fill: Math.round((filledCells / totalCells) * 100),
     };
   }, [mapping, headers, dataRows, dataset.fields]);
+
 
   const errorsByRow = useMemo(() => {
     const sorted = [...errors].sort((a, b) => a.rowNumber - b.rowNumber);
