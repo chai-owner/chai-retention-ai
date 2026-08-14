@@ -123,16 +123,28 @@ function norm(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+// Common header spellings for the customer identifier columns.
+const SYNONYMS: Record<string, string[]> = {
+  customer_id: ["customerid", "custid", "accountid", "clientid", "id"],
+  email: ["contactemail", "customeremail", "billingemail", "emailaddress"],
+  customer_name: ["company", "companyname", "accountname", "clientname", "organisation", "organization", "name"],
+};
+
 function autoMap(headers: string[], fields: PersonalizedField[]): Record<string, string> {
   const map: Record<string, string> = {};
   const used = new Set<number>();
   for (const f of fields) {
     const target = norm(f.name);
+    const alts = (SYNONYMS[f.name] ?? []).map(norm);
     let bestIdx = -1;
     for (let i = 0; i < headers.length; i++) {
       if (used.has(i)) continue;
       const h = norm(headers[i]);
       if (h === target) {
+        bestIdx = i;
+        break;
+      }
+      if (alts.includes(h)) {
         bestIdx = i;
         break;
       }
