@@ -191,18 +191,29 @@ export function UploadDatasetsCard({ metrics }: { metrics?: PlannerMetric[] } = 
                     "rounded-md border px-1.5 py-0.5 font-mono text-[11px]",
                     f.mandatory
                       ? "border-danger/30 bg-danger/10 text-danger"
-                      : "border-border bg-secondary text-muted-foreground",
+                      : f.identifier
+                        ? "border-warning/40 bg-warning/10 text-warning"
+                        : "border-border bg-secondary text-muted-foreground",
                   )}
                 >
                   {f.name}
-                  {f.mandatory && " *"}
+                  {f.mandatory ? " *" : f.identifier ? " †" : ""}
                 </span>
               ))}
             </div>
             <p className="mt-2 text-[11px] text-muted-foreground">
-              Fields marked <span className="text-danger">*</span> are required. Download a starter
-              template to get the exact column names.
+              Fields marked <span className="text-danger">*</span> are required.
+              {selected.fields.some((f) => f.identifier) && (
+                <>
+                  {" "}
+                  Fields marked <span className="text-warning">†</span> identify the customer — you
+                  must provide at least one of them (customer_id, email or customer_name) on every
+                  row.
+                </>
+              )}{" "}
+              Download a starter template to get the exact column names.
             </p>
+
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 onClick={() => downloadCsvTemplate(selected)}
