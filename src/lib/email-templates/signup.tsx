@@ -7,6 +7,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Text,
@@ -19,6 +20,8 @@ interface SignupEmailProps {
   confirmationUrl: string
 }
 
+const LOGO_URL = 'https://chai-retention-ai.lovable.app/logo-dark.png'
+
 export const SignupEmail = ({
   siteName,
   siteUrl,
@@ -30,6 +33,7 @@ export const SignupEmail = ({
     <Preview>Confirm your email for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
+        <Img src={LOGO_URL} alt={`${siteName} logo`} width={120} style={logo} />
         <Heading style={h1}>Confirm your email</Heading>
         <Text style={text}>
           Thanks for signing up for{' '}
@@ -58,27 +62,29 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Inter, Arial, sans-serif' }
+const container = { padding: '32px 24px' }
+const logo = { margin: '0 0 28px' }
 const h1 = {
-  fontSize: '22px',
+  fontSize: '24px',
   fontWeight: 'bold' as const,
-  color: '#000000',
+  color: '#152238',
   margin: '0 0 20px',
 }
 const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
+  fontSize: '15px',
+  color: '#4A5A6B',
+  lineHeight: '1.6',
+  margin: '0 0 20px',
 }
-const link = { color: 'inherit', textDecoration: 'underline' }
+const link = { color: '#204654', textDecoration: 'underline' }
 const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  backgroundColor: '#204654',
+  color: '#F7F9E1',
+  fontSize: '15px',
+  fontWeight: '600' as const,
+  borderRadius: '10px',
+  padding: '14px 28px',
   textDecoration: 'none',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const footer = { fontSize: '13px', color: '#8A96A3', margin: '32px 0 0' }
