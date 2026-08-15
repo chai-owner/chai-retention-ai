@@ -24,6 +24,7 @@ const profileInput = z.object({
   cadence: z.string().optional(),
   lifespan: z.string().optional(),
   concerns: z.string().optional(),
+  mustTrack: z.string().optional(),
   segments: z.array(segmentSchema),
   successActions: z.string(),
   disengagement: z.string(),
