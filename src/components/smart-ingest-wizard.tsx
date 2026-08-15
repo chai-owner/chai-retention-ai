@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { type DatasetSchema } from "@/lib/data-schemas";
 import { useAllSchemas } from "@/lib/all-datasets";
+import type { PlannerMetric } from "@/lib/mock-data";
 import { extractRecords, type ExtractedDataset } from "@/lib/ingest.functions";
 import {
   uploadsStore,
@@ -170,13 +171,15 @@ function buildEditable(
 export function SmartIngestWizard({
   open,
   onOpenChange,
+  metrics,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  metrics?: PlannerMetric[];
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const runExtract = useServerFn(extractRecords);
-  const allSchemas = useAllSchemas();
+  const allSchemas = useAllSchemas(metrics);
   const [step, setStep] = useState<Step>("select");
   const [busy, setBusy] = useState(false);
   const [fileNames, setFileNames] = useState<string[]>([]);
@@ -250,6 +253,9 @@ export function SmartIngestWizard({
         name: f.name,
         mandatory: f.mandatory,
         type: inferType(f.name, f.example),
+        description: f.description,
+        example: f.example,
+        identifier: f.identifier ?? false,
       })),
     }));
   }

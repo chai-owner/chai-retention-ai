@@ -794,7 +794,7 @@ function Onboarding() {
                     <span className="h-px flex-1 bg-border" />
                   </div>
 
-                  <SmartIngestCard />
+                  <SmartIngestCard metrics={activeMetrics} />
                   <div className="rounded-lg bg-accent/40 p-4 text-sm text-muted-foreground">
                     <p className="font-medium text-foreground">Ready when you are.</p>
                     ChAi will build a {form.model} retention framework and run its first assessment on

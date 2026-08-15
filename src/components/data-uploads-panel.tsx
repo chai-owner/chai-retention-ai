@@ -25,7 +25,7 @@ import { useAddons, addonsStore, SMART_INGEST_PRICING } from "@/lib/addons-store
 import { cn } from "@/lib/utils";
 
 
-export function SmartIngestCard() {
+export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {}) {
   const { smartIngest } = useAddons();
   const [wizardOpen, setWizardOpen] = useState(false);
 
@@ -112,7 +112,7 @@ export function SmartIngestCard() {
           <Upload className="h-4 w-4" /> Upload documents
         </button>
       </div>
-      <SmartIngestWizard open={wizardOpen} onOpenChange={setWizardOpen} />
+      <SmartIngestWizard open={wizardOpen} onOpenChange={setWizardOpen} metrics={metrics} />
     </Card>
   );
 }

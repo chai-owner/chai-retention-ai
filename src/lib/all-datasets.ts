@@ -17,9 +17,14 @@ export function allDatasetSchemas(profile: OnboardingProfile | null): DatasetSch
   return [...datasetSchemas, ...buildCustomMetricDatasets(profile?.metrics)];
 }
 
-export function useAllSchemas(): DatasetSchema[] {
-  const profile = useProfile();
-  return useMemo(() => allDatasetSchemas(profile), [profile]);
+export function useAllSchemas(metricsOverride?: PlannerMetric[]): DatasetSchema[] {
+  const stored = useProfile();
+  return useMemo(() => {
+    const profile: OnboardingProfile | null = metricsOverride
+      ? ({ ...(stored ?? {}), metrics: metricsOverride } as OnboardingProfile)
+      : stored;
+    return allDatasetSchemas(profile);
+  }, [stored, metricsOverride]);
 }
 
 // `metricsOverride` lets callers (e.g. onboarding, before the profile is saved)

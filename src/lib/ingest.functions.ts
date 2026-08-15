@@ -14,6 +14,9 @@ const SchemaFieldInput = z.object({
   name: z.string(),
   mandatory: z.boolean(),
   type: z.string(),
+  description: z.string().optional(),
+  example: z.string().optional(),
+  identifier: z.boolean().optional(),
 });
 
 const DatasetSchemaInput = z.object({
@@ -61,9 +64,13 @@ export const extractRecords = createServerFn({ method: "POST" })
     const schemaSpec = data.schemas
       .map((s) => {
         const fields = s.fields
-          .map((f) => `${f.name} (${f.type}${f.mandatory ? ", required" : ""})`)
-          .join(", ");
-        return `- ${s.key} ("${s.label}" — ${s.description})\n    fields: ${fields}`;
+          .map(
+            (f) =>
+              `      • ${f.name} — ${f.type}${f.mandatory ? ", required" : ""}${f.identifier ? ", customer identifier" : ""}` +
+              `${f.description ? `: ${f.description}` : ""}${f.example ? ` (e.g. "${f.example}")` : ""}`,
+          )
+          .join("\n");
+        return `- ${s.key} ("${s.label}" — ${s.description})\n    fields:\n${fields}`;
       })
       .join("\n");
 
@@ -72,8 +79,14 @@ export const extractRecords = createServerFn({ method: "POST" })
 Available datasets and their fields:
 ${schemaSpec}
 
+Several of these datasets are bespoke retention metrics this specific business chose to track. Their field descriptions tell you exactly what the metric means — use that meaning, not the column name, when deciding whether a document contains the metric. A document rarely uses the same wording: match on meaning (e.g. "no-show", "DNA", "patient did not attend" all populate a missed-appointment metric; "days since last order" can come from order dates).
+
 Rules:
 - Only output data you can actually find in the document. Do not invent values.
+- Consider EVERY dataset above, custom metrics included, and populate each one the document supports — a single document often feeds several.
+- You may derive a metric value from the document when the derivation is unambiguous (count occurrences, sum amounts, compute days between two dates, convert a percentage). Do not guess otherwise.
+- Every row must carry at least one customer identifier (customer_id, email or customer_name) — pick whichever the document provides; fill the others with "".
+- If a custom metric appears only as a per-customer total with no explicit measurement date, use the document's date (invoice/report/statement date) for the date field.
 - Format dates as YYYY-MM-DD. Strip currency symbols and thousands separators from numeric fields.
 - For each dataset you populate, return its exact field names as headers and one array of string values per row, in the same order as headers.
 - If a value is unknown for a row, use an empty string "".
