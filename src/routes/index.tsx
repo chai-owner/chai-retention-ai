@@ -247,6 +247,31 @@ function Landing() {
         </div>
       </section>
 
+      {/* ── Features ────────────────────────────────────── */}
+      <section id="features" className="bg-card py-24 lg:py-[7.5rem]">
+        <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
+          <Reveal className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Everything you need to stop churn</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Industry-specific metrics, weighted health scores, AI insights, identity resolution and privacy-safe anonymization — in one place.
+            </p>
+          </Reveal>
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((f, i) => (
+              <Reveal key={f.title} delay={(i % 3) * 80}>
+                <div className="group h-full rounded-[20px] bg-card p-10 shadow-soft ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1.5 hover:ring-primary/25 hover:shadow-card">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
+                    <f.icon className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
+                  <h3 className="mt-5 text-lg font-semibold">{f.title}</h3>
+                  <p className="mt-2 leading-relaxed text-muted-foreground">{f.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Trust ───────────────────────────────────────── */}
       <section className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8 lg:py-[7.5rem]">
         <Reveal className="mx-auto max-w-2xl text-center">
@@ -334,31 +359,6 @@ function Landing() {
                   <div>
                     <p className="font-semibold">{it.name}</p>
                   </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Features ────────────────────────────────────── */}
-      <section id="features" className="bg-card py-24 lg:py-[7.5rem]">
-        <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Everything you need to stop churn</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Industry-specific metrics, weighted health scores, AI insights, identity resolution and privacy-safe anonymization — in one place.
-            </p>
-          </Reveal>
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f, i) => (
-              <Reveal key={f.title} delay={(i % 3) * 80}>
-                <div className="group h-full rounded-[20px] bg-card p-10 shadow-soft ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1.5 hover:ring-primary/25 hover:shadow-card">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
-                    <f.icon className="h-5 w-5" strokeWidth={1.75} />
-                  </span>
-                  <h3 className="mt-5 text-lg font-semibold">{f.title}</h3>
-                  <p className="mt-2 leading-relaxed text-muted-foreground">{f.desc}</p>
                 </div>
               </Reveal>
             ))}
