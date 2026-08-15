@@ -17,6 +17,8 @@ import {
 import { downloadCsvTemplate, downloadExcelTemplate } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
 import { type PersonalizedDataset } from "@/lib/personalize-data";
+import type { PlannerMetric } from "@/lib/mock-data";
+
 import { useAllDatasets } from "@/lib/all-datasets";
 import { useUploads } from "@/lib/uploads-store";
 import { useAddons, addonsStore, SMART_INGEST_PRICING } from "@/lib/addons-store";
@@ -122,13 +124,14 @@ function recencyColor(date: string) {
   return "text-danger";
 }
 
-export function UploadDatasetsCard() {
+export function UploadDatasetsCard({ metrics }: { metrics?: PlannerMetric[] } = {}) {
   const uploads = useUploads();
   const profile = useProfile();
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [wizardOpen, setWizardOpen] = useState(false);
 
-  const personalized = useAllDatasets();
+  const personalized = useAllDatasets(metrics);
+
 
   const lastUploadByLabel = useMemo(() => {
     const map = new Map<string, string>();

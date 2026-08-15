@@ -784,7 +784,7 @@ function Onboarding() {
                       the more accurate your first snapshot. You can skip and add data later, too.
                     </p>
                   </div>
-                  <UploadDatasetsCard />
+                  <UploadDatasetsCard metrics={activeMetrics} />
 
                   <div className="my-8 flex items-center gap-4">
                     <span className="h-px flex-1 bg-border" />
