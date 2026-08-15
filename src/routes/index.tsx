@@ -287,6 +287,30 @@ function Landing() {
         </Reveal>
       </section>
 
+      {/* ── How it works ────────────────────────────────── */}
+      <section className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8 lg:py-[7.5rem]">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">How it works</h2>
+          <p className="mt-4 text-lg text-muted-foreground">Three steps from raw data to retained revenue.</p>
+        </Reveal>
+        <div className="mt-14 grid gap-6 md:grid-cols-3">
+          {steps.map((s, i) => (
+            <Reveal key={s.n} delay={i * 100}>
+              <div className="group h-full rounded-[20px] bg-card p-10 shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card">
+                <div className="flex items-center justify-between">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
+                    <s.icon className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
+                  <span className="text-3xl font-semibold tracking-tight text-border">{s.n}</span>
+                </div>
+                <h3 className="mt-6 text-xl font-semibold">{s.title}</h3>
+                <p className="mt-3 leading-relaxed text-muted-foreground">{s.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
       {/* ── Integrations ────────────────────────────────── */}
       <section id="integrations" className="bg-card py-24 lg:py-[7.5rem]">
         <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
@@ -314,30 +338,6 @@ function Landing() {
               </Reveal>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── How it works ────────────────────────────────── */}
-      <section className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8 lg:py-[7.5rem]">
-        <Reveal className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">How it works</h2>
-          <p className="mt-4 text-lg text-muted-foreground">Three steps from raw data to retained revenue.</p>
-        </Reveal>
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {steps.map((s, i) => (
-            <Reveal key={s.n} delay={i * 100}>
-              <div className="group h-full rounded-[20px] bg-card p-10 shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card">
-                <div className="flex items-center justify-between">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
-                    <s.icon className="h-5 w-5" strokeWidth={1.75} />
-                  </span>
-                  <span className="text-3xl font-semibold tracking-tight text-border">{s.n}</span>
-                </div>
-                <h3 className="mt-6 text-xl font-semibold">{s.title}</h3>
-                <p className="mt-3 leading-relaxed text-muted-foreground">{s.desc}</p>
-              </div>
-            </Reveal>
-          ))}
         </div>
       </section>
 
