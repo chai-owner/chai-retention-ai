@@ -199,27 +199,6 @@ function AuthPage() {
                 </p>
               </div>
 
-              {mode === "register" && (
-                <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background/60 p-3 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={acceptedTerms}
-                    onChange={(e) => setAcceptedTerms(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
-                  />
-                  <span className="text-muted-foreground">
-                    I have read and agree to the{" "}
-                    <Link
-                      to="/terms"
-                      target="_blank"
-                      className="font-medium text-primary hover:underline"
-                    >
-                      Terms of Service
-                    </Link>
-                    .
-                  </span>
-                </label>
-              )}
 
 
 
@@ -296,6 +275,27 @@ function AuthPage() {
                       placeholder="••••••••"
                     />
                   </div>
+                )}
+                {mode === "register" && (
+                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background/60 p-3 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
+                    />
+                    <span className="text-muted-foreground">
+                      I have read and agree to the{" "}
+                      <Link
+                        to="/terms"
+                        target="_blank"
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Terms of Service
+                      </Link>
+                      .
+                    </span>
+                  </label>
                 )}
                 <button
                   type="submit"
