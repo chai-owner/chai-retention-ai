@@ -321,61 +321,108 @@ export const recommendMetrics = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n");
 
-    const prompt = `You are ChAi, a customer-retention analyst. A business owner is setting up churn tracking. Based ONLY on their business below, decide the 6-8 retention/health metrics THIS specific business should track to predict churn. Invent the metrics that fit their industry and model — do not use a generic template. For an e-commerce store you might pick "Days since last order" or "Repeat purchase rate"; for a gym "Weekly check-ins"; for B2B SaaS "Feature adoption" or "Seats activated". Make the names specific and natural for their business.
+    const industry = (p.industry ?? "").trim();
+    const model = (p.model ?? "").trim();
+
+    const prompt = `You are ChAi, a customer-retention analyst. A business owner is setting up churn tracking. Based ONLY on their business below, decide the 6-8 retention/health metrics THIS specific business should track to predict churn.
+
+CRITICAL: the metrics must be written in the everyday vocabulary of ${industry ? `the ${industry} industry` : "their industry"}${model ? ` and a ${model} business` : ""}, using the words that industry actually uses for its customers, visits, orders or appointments. Never return a generic SaaS/engagement template. Examples of the right level of specificity: a medical or dental practice → "Missed appointment rate", "Days since last visit", "Recall appointment booked", "Treatment plan completion"; an e-commerce store → "Days since last order", "Repeat purchase rate"; a gym → "Weekly check-ins"; B2B SaaS → "Feature adoption", "Seats activated". At least 4 of the metrics must be ones that would only make sense for ${industry || "this specific industry"}.
 
 Business profile:
 ${profileLines || "(limited profile provided)"}
 
 For each metric provide:
-- name: short metric name (2-4 words), specific to this business
+- name: short metric name (2-4 words), specific to this business and industry
 - category: one of Engagement, Transactions, Support, Satisfaction, Retention
 - why: one sentence on what it tells them (max ~16 words)
 - churn: one sentence on how it signals churn (max ~16 words)
-- weight: integer 1-5 importance for THIS business (1=Unimportant, 5=Critical)
+- weight: WHOLE NUMBER from 1 to 5 — importance for THIS business (1=Unimportant, 5=Critical). Never a decimal or a percentage.
 - reason: short reason for the weight, grounded in their business (max ~14 words)
 
-Return ONLY a JSON array (no markdown, no code fences) of 6-8 objects with keys: name, category, why, churn, weight, reason.`;
+Return ONLY a JSON array (no prose, no markdown, no code fences) of 6-8 objects with keys: name, category, why, churn, weight, reason.`;
 
-    const { text, usage } = await generateText({
-      model: gateway(MODEL),
-      prompt,
+    const metricRow = z.object({
+      name: z.string(),
+      category: z.string().optional(),
+      why: z.string().optional(),
+      churn: z.string().optional(),
+      weight: z.union([z.number(), z.string()]).optional(),
+      reason: z.string().optional(),
     });
-    await logAiUsage("recommendMetrics", MODEL, usage);
 
-    const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
-    let metrics: GeneratedMetric[] = [];
-    try {
-      const parsed = z
-        .array(
-          z.object({
-            name: z.string(),
-            category: z.string().optional(),
-            why: z.string().optional(),
-            churn: z.string().optional(),
-            weight: z.number(),
-            reason: z.string().optional(),
-          }),
-        )
-        .parse(JSON.parse(jsonText));
-      const seen = new Set<string>();
-      metrics = parsed
-        .filter((m) => {
-          const k = m.name.trim().toLowerCase();
-          if (!k || seen.has(k)) return false;
-          seen.add(k);
-          return true;
-        })
-        .slice(0, 8)
-        .map((m) => ({
-          name: m.name.trim(),
-          category: (m.category ?? "Engagement").trim(),
-          why: (m.why ?? "").trim(),
-          churn: (m.churn ?? "").trim(),
-          weight: Math.max(1, Math.min(5, Math.round(m.weight))),
-          reason: (m.reason ?? "").trim(),
-        }));
-    } catch {
-      metrics = [];
+    // Models sometimes wrap the array in prose, fences or an object — pull the
+    // first JSON array out of the text rather than failing to a generic set.
+    function extractMetrics(raw: string): GeneratedMetric[] {
+      const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+      const candidates: string[] = [cleaned];
+      const start = cleaned.indexOf("[");
+      const end = cleaned.lastIndexOf("]");
+      if (start !== -1 && end > start) candidates.push(cleaned.slice(start, end + 1));
+      const objStart = cleaned.indexOf("{");
+      const objEnd = cleaned.lastIndexOf("}");
+      if (objStart !== -1 && objEnd > objStart) candidates.push(cleaned.slice(objStart, objEnd + 1));
+
+      for (const candidate of candidates) {
+        let parsedJson: unknown;
+        try {
+          parsedJson = JSON.parse(candidate);
+        } catch {
+          continue;
+        }
+        // Accept either a bare array or an object with an array property.
+        let arr: unknown = parsedJson;
+        if (!Array.isArray(arr) && parsedJson && typeof parsedJson === "object") {
+          arr = Object.values(parsedJson as Record<string, unknown>).find(Array.isArray);
+        }
+        const rows = z.array(metricRow).safeParse(arr);
+        if (!rows.success) continue;
+
+        const seen = new Set<string>();
+        const out = rows.data
+          .filter((m) => {
+            const k = m.name.trim().toLowerCase();
+            if (!k || seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          })
+          .slice(0, 8)
+          .map((m) => {
+            // Some models answer with fractional "importance shares" (0.35) or
+            // 0-100 scores; normalise everything onto the 1-5 scale.
+            const rawWeight = typeof m.weight === "string" ? Number(m.weight) : (m.weight ?? 3);
+            let w = Number.isFinite(rawWeight) ? (rawWeight as number) : 3;
+            if (w > 0 && w <= 1) w = w * 5;
+            else if (w > 5) w = (w / 100) * 5;
+            return {
+              name: m.name.trim(),
+              category: (m.category ?? "Engagement").trim(),
+              why: (m.why ?? "").trim(),
+              churn: (m.churn ?? "").trim(),
+              weight: Math.max(1, Math.min(5, Math.round(w) || 3)),
+              reason: (m.reason ?? "").trim(),
+            };
+          });
+        if (out.length >= 4) return out;
+      }
+      return [];
     }
+
+    const first = await generateText({ model: gateway(MODEL), prompt });
+    await logAiUsage("recommendMetrics", MODEL, first.usage);
+    let metrics = extractMetrics(first.text);
+
+    // One strict retry before we give up and show the generic fallback set.
+    if (metrics.length === 0) {
+      const retry = await generateText({
+        model: gateway(MODEL),
+        prompt: `${prompt}
+
+Your previous answer could not be parsed. Reply with the raw JSON array only — start with "[" and end with "]".`,
+      });
+      await logAiUsage("recommendMetrics", MODEL, retry.usage);
+      metrics = extractMetrics(retry.text);
+    }
+
     return { metrics };
   });
+
