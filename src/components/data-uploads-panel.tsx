@@ -122,13 +122,14 @@ function recencyColor(date: string) {
   return "text-danger";
 }
 
-export function UploadDatasetsCard() {
+export function UploadDatasetsCard({ metrics }: { metrics?: PlannerMetric[] } = {}) {
   const uploads = useUploads();
   const profile = useProfile();
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [wizardOpen, setWizardOpen] = useState(false);
 
-  const personalized = useAllDatasets();
+  const personalized = useAllDatasets(metrics);
+
 
   const lastUploadByLabel = useMemo(() => {
     const map = new Map<string, string>();
