@@ -336,36 +336,6 @@ function Landing() {
         </div>
       </section>
 
-      {/* ── Integrations ────────────────────────────────── */}
-      <section id="integrations" className="bg-card py-24 lg:py-[7.5rem]">
-        <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Connect your existing tools</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              ChAi works with the systems you already run on — CRM, billing, support and productivity.
-              No migration, no rebuild.
-            </p>
-          </Reveal>
-          <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
-            {integrations.map((it, i) => (
-              <Reveal key={it.name} delay={(i % 3) * 70}>
-                <div className="group flex h-full items-center gap-4 rounded-[20px] border border-border/70 bg-card p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-card">
-                  <span
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary transition-transform duration-300 group-hover:scale-110"
-                    style={{ color: it.color }}
-                  >
-                    <it.Icon className="h-6 w-6" />
-                  </span>
-                  <div>
-                    <p className="font-semibold">{it.name}</p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Product showcase ────────────────────────────── */}
       <section id="product" className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8 lg:py-[7.5rem]">
         <Reveal className="mx-auto max-w-2xl text-center">
@@ -409,6 +379,36 @@ function Landing() {
               </div>
             </Reveal>
           ))}
+        </div>
+      </section>
+
+      {/* ── Integrations ────────────────────────────────── */}
+      <section id="integrations" className="bg-card py-24 lg:py-[7.5rem]">
+        <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
+          <Reveal className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Connect your existing tools</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              ChAi works with the systems you already run on — CRM, billing, support and productivity.
+              No migration, no rebuild.
+            </p>
+          </Reveal>
+          <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
+            {integrations.map((it, i) => (
+              <Reveal key={it.name} delay={(i % 3) * 70}>
+                <div className="group flex h-full items-center gap-4 rounded-[20px] border border-border/70 bg-card p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-card">
+                  <span
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary transition-transform duration-300 group-hover:scale-110"
+                    style={{ color: it.color }}
+                  >
+                    <it.Icon className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <p className="font-semibold">{it.name}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
