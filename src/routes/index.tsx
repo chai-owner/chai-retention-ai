@@ -87,7 +87,7 @@ const steps = [
 ];
 
 const features = [
-  { icon: Brain, title: "Industry-specific metrics", desc: "ChAi picks the metrics that actually matter for your industry and business model — no generic templates." },
+  { icon: Brain, title: "Industry-specific metrics", desc: "ChAi helps you pick the metrics that actually matter for your industry and business model — no generic templates." },
   { icon: HeartPulse, title: "Weighted health scores", desc: "You control how much each metric contributes to a customer's 0–100 health score." },
   { icon: AlertTriangle, title: "Predict churn & revenue at risk", desc: "See who's likely to leave, how much revenue is exposed, and what's realistically recoverable." },
   { icon: Sparkles, title: "AI insights & actions", desc: "Plain-English root causes and prioritised next steps ranked by the revenue they can save." },
