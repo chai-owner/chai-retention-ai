@@ -4,6 +4,8 @@
 // integration sync wizards all recognise the same set.
 import { useMemo } from "react";
 import { datasetSchemas, type DatasetSchema } from "@/lib/data-schemas";
+import type { PlannerMetric } from "@/lib/mock-data";
+
 import { useProfile, type OnboardingProfile } from "@/lib/profile-store";
 import {
   buildCustomMetricDatasets,
