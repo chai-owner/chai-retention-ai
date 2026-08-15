@@ -24,6 +24,7 @@ const profileInput = z.object({
   cadence: z.string().optional(),
   lifespan: z.string().optional(),
   concerns: z.string().optional(),
+  mustTrack: z.string().optional(),
   segments: z.array(segmentSchema),
   successActions: z.string(),
   disengagement: z.string(),
@@ -43,7 +44,7 @@ export const getProfile = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "full_name, email, company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, segments, success_actions, disengagement, churn_definition, tracked, channels, metric_weights, metrics, onboarded, unlocked, booked_at",
+        "full_name, email, company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, must_track, segments, success_actions, disengagement, churn_definition, tracked, channels, metric_weights, metrics, onboarded, unlocked, booked_at",
       )
       .eq("id", userId)
       .maybeSingle();
@@ -62,6 +63,7 @@ export const getProfile = createServerFn({ method: "GET" })
       cadence: data.cadence ?? "",
       lifespan: data.lifespan ?? "",
       concerns: data.concerns ?? "",
+      mustTrack: (data.must_track ?? "") as string,
       segments: (data.segments ?? []) as unknown as ProfileSegment[],
       successActions: data.success_actions,
       disengagement: data.disengagement,
@@ -93,6 +95,7 @@ export const saveProfile = createServerFn({ method: "POST" })
       cadence: data.cadence ?? "",
       lifespan: data.lifespan ?? "",
       concerns: data.concerns ?? "",
+      must_track: data.mustTrack ?? "",
       segments: data.segments,
       success_actions: data.successActions,
       disengagement: data.disengagement,

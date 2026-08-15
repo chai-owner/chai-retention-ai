@@ -280,6 +280,7 @@ const RecommendMetricsInput = z.object({
     concerns: z.string().optional(),
     successActions: z.string().optional(),
     disengagement: z.string().optional(),
+    mustTrack: z.string().optional(),
   }),
 });
 
@@ -317,6 +318,7 @@ export const recommendMetrics = createServerFn({ method: "POST" })
       p.successActions && `What a successful/engaged customer does: ${p.successActions}`,
       p.disengagement && `Signs of disengagement: ${p.disengagement}`,
       p.concerns && `Owner's concerns: ${p.concerns}`,
+      p.mustTrack && `Metrics the owner explicitly wants tracked: ${p.mustTrack}`,
     ]
       .filter(Boolean)
       .join("\n");
@@ -330,6 +332,8 @@ CRITICAL: the metrics must be written in the everyday vocabulary of ${industry ?
 
 Business profile:
 ${profileLines || "(limited profile provided)"}
+
+${(p.mustTrack ?? "").trim() ? `MUST INCLUDE: the owner explicitly asked to track "${p.mustTrack}". Represent every one of those as its own metric in your answer (clean up the wording into a proper 2-4 word metric name), then fill the remaining slots with metrics you choose.` : ""}
 
 For each metric provide:
 - name: short metric name (2-4 words), specific to this business and industry

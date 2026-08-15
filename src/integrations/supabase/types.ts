@@ -701,6 +701,7 @@ export type Database = {
           metric_weights: Json | null
           metrics: Json
           model: string
+          must_track: string
           onboarded: boolean
           segments: Json
           size: string
@@ -729,6 +730,7 @@ export type Database = {
           metric_weights?: Json | null
           metrics?: Json
           model?: string
+          must_track?: string
           onboarded?: boolean
           segments?: Json
           size?: string
@@ -757,6 +759,7 @@ export type Database = {
           metric_weights?: Json | null
           metrics?: Json
           model?: string
+          must_track?: string
           onboarded?: boolean
           segments?: Json
           size?: string

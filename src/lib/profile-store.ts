@@ -26,6 +26,8 @@ export interface OnboardingProfile {
   cadence?: string;
   lifespan?: string;
   concerns?: string;
+  // Metrics the user explicitly said they want tracked (free text, onboarding).
+  mustTrack?: string;
   segments: ProfileSegment[];
   successActions: string;
   disengagement: string;

@@ -119,6 +119,7 @@ function Settings() {
       cadence,
       lifespan,
       concerns,
+      mustTrack: profileStore.getSnapshot()?.mustTrack ?? "",
       segments,
       successActions,
       disengagement,

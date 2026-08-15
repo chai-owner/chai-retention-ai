@@ -52,6 +52,7 @@ export function useProfileSync() {
           cadence: remote.cadence,
           lifespan: remote.lifespan,
           concerns: remote.concerns,
+          mustTrack: remote.mustTrack,
           segments: remote.segments,
           successActions: remote.successActions,
           disengagement: remote.disengagement,
