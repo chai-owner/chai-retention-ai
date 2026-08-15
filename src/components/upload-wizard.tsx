@@ -472,11 +472,16 @@ export function UploadWizard({
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-medium">{f.name}</span>
-                      {f.mandatory && (
+                      {f.mandatory ? (
                         <span className="rounded bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger">
                           required
                         </span>
-                      )}
+                      ) : f.identifier ? (
+                        <span className="rounded bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold text-warning">
+                          at least one identifier
+                        </span>
+                      ) : null}
+
                       <span className="text-[11px] text-muted-foreground">{inferType(f)}</span>
                     </div>
                     <div className="flex items-center gap-2">
