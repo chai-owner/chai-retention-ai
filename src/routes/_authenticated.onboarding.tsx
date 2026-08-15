@@ -64,6 +64,7 @@ function Onboarding() {
     disengagement: "",
     churnDefinition: "",
     concerns: "",
+    mustTrack: "",
   });
   const [tracked, setTracked] = useState<Record<string, boolean>>({});
   const [channels, setChannels] = useState<string[]>([]);
@@ -105,6 +106,7 @@ function Onboarding() {
             concerns: form.concerns,
             successActions: form.successActions,
             disengagement: form.disengagement,
+            mustTrack: form.mustTrack,
           },
         },
       });
@@ -210,6 +212,32 @@ function Onboarding() {
 
   const canContinue = stepValid;
 
+  const MAX_METRICS = 12;
+  const [newMetric, setNewMetric] = useState("");
+
+  function addMetric() {
+    const name = newMetric.trim();
+    if (!name) return;
+    if (metrics.length >= MAX_METRICS) return;
+    if (metrics.some((m) => m.name.trim().toLowerCase() === name.toLowerCase())) {
+      setNewMetric("");
+      return;
+    }
+    setMetrics((ms) => [
+      ...ms,
+      {
+        name,
+        category: "Engagement",
+        why: "",
+        churn: "",
+        weight: 3,
+        reason: "You asked ChAi to track this metric.",
+      } as PlannerMetric,
+    ]);
+    setMetricWeights((w) => ({ ...w, [name]: 3 }));
+    setNewMetric("");
+  }
+
   function removeMetric(name: string) {
     if (metrics.length <= MIN_METRICS) return;
     setMetrics((ms) => ms.filter((m) => m.name !== name));
@@ -251,6 +279,7 @@ function Onboarding() {
       cadence: form.cadence,
       lifespan: form.lifespan,
       concerns: form.concerns,
+      mustTrack: form.mustTrack,
       segments,
       successActions: form.successActions,
       disengagement: form.disengagement,
@@ -482,6 +511,18 @@ function Onboarding() {
                     </div>
                   </div>
 
+                  <Field label="Anything specific you already want to track? (optional)">
+                    <textarea
+                      className={cn(inputCls, "min-h-20 resize-none")}
+                      value={form.mustTrack}
+                      onChange={(e) => update("mustTrack", e.target.value)}
+                      placeholder="e.g. missed appointments, repeat orders, support response time"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      ChAi will include these in the metric set it builds for you.
+                    </p>
+                  </Field>
+
                   <Field label="What are your biggest retention concerns?">
                     <textarea className={cn(inputCls, "min-h-20 resize-none")} value={form.concerns} onChange={(e) => update("concerns", e.target.value)} placeholder="e.g. customers go quiet before renewal" />
                   </Field>
@@ -586,7 +627,9 @@ function Onboarding() {
                                     <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
                                       {IMPORTANCE_LABELS[level - 1]}
                                     </span>
-                                    {isRecommended ? (
+                                    {!(m.name in recommendedWeights) ? (
+                                      <span className="text-[10px] text-muted-foreground">Your metric</span>
+                                    ) : isRecommended ? (
                                       <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                                         <Sparkles className="h-2.5 w-2.5" /> ChAi recommended
                                       </span>
@@ -632,6 +675,42 @@ function Onboarding() {
                             </div>
                           );
                         })}
+
+                        <div className="rounded-xl border border-dashed border-border p-4">
+                          <p className="text-sm font-medium">Add your own metric</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            Something ChAi missed that you want tracked? Add it here.
+                          </p>
+                          <div className="mt-3 flex gap-2">
+                            <input
+                              type="text"
+                              value={newMetric}
+                              onChange={(e) => setNewMetric(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  addMetric();
+                                }
+                              }}
+                              disabled={metrics.length >= MAX_METRICS}
+                              placeholder="e.g. Missed appointment rate"
+                              className={cn(inputCls, "flex-1")}
+                            />
+                            <button
+                              type="button"
+                              onClick={addMetric}
+                              disabled={!newMetric.trim() || metrics.length >= MAX_METRICS}
+                              className="shrink-0 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Add
+                            </button>
+                          </div>
+                          {metrics.length >= MAX_METRICS && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              You've reached the maximum of {MAX_METRICS} metrics.
+                            </p>
+                          )}
+                        </div>
 
                         {metrics.length <= MIN_METRICS && (
                           <p className="text-xs text-muted-foreground">
