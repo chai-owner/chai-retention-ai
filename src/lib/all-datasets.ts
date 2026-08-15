@@ -20,7 +20,15 @@ export function useAllSchemas(): DatasetSchema[] {
   return useMemo(() => allDatasetSchemas(profile), [profile]);
 }
 
-export function useAllDatasets(): PersonalizedDataset[] {
-  const profile = useProfile();
-  return useMemo(() => personalizeDatasets(profile, allDatasetSchemas(profile)), [profile]);
+// `metricsOverride` lets callers (e.g. onboarding, before the profile is saved)
+// use the metric set currently in flight instead of the persisted profile.
+export function useAllDatasets(metricsOverride?: PlannerMetric[]): PersonalizedDataset[] {
+  const stored = useProfile();
+  return useMemo(() => {
+    const profile: OnboardingProfile | null = metricsOverride
+      ? ({ ...(stored ?? {}), metrics: metricsOverride } as OnboardingProfile)
+      : stored;
+    return personalizeDatasets(profile, allDatasetSchemas(profile));
+  }, [stored, metricsOverride]);
 }
+
