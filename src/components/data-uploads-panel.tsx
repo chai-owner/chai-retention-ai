@@ -17,6 +17,8 @@ import {
 import { downloadCsvTemplate, downloadExcelTemplate } from "@/lib/data-schemas";
 import { useProfile } from "@/lib/profile-store";
 import { type PersonalizedDataset } from "@/lib/personalize-data";
+import type { PlannerMetric } from "@/lib/mock-data";
+
 import { useAllDatasets } from "@/lib/all-datasets";
 import { useUploads } from "@/lib/uploads-store";
 import { useAddons, addonsStore, SMART_INGEST_PRICING } from "@/lib/addons-store";
