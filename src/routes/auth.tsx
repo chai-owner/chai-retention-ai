@@ -127,12 +127,14 @@ function AuthPage() {
       if (error.message.includes("Email not confirmed")) {
         toast.error("Please confirm your email first — check your inbox.");
       } else {
-        // Supabase returns a generic "Invalid login credentials" for both
-        // wrong password and unknown email. Nudge the user to sign up in case
-        // they don't have an account yet.
-        toast.error("No account found for that email. Please sign up first.");
-        setMode("register");
+        // Supabase returns a generic "Invalid login credentials" for both a
+        // wrong password and an unknown email — don't claim the account is
+        // missing, just say the details didn't match.
+        toast.error(
+          "Incorrect email or password. Try again, or use 'Forgot password?' to reset it.",
+        );
       }
+
       setLoading(false);
       return;
     }
