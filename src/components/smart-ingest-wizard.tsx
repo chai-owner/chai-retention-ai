@@ -26,7 +26,8 @@ import { cn } from "@/lib/utils";
 import { type DatasetSchema } from "@/lib/data-schemas";
 import { useAllSchemas } from "@/lib/all-datasets";
 import type { PlannerMetric } from "@/lib/mock-data";
-import { extractRecords, type ExtractedDataset } from "@/lib/ingest.functions";
+import { extractRecords, mapColumns, type ExtractedDataset } from "@/lib/ingest.functions";
+import { applyMapping, type MappedSchema } from "@/lib/ingest-mapping";
 import {
   uploadsStore,
   type FieldCheck,
