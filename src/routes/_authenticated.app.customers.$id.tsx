@@ -27,7 +27,9 @@ import {
   type TimelineEvent,
   type Customer,
 } from "@/lib/mock-data";
-import { useScoredData } from "@/lib/use-scored-data";
+import { useScoredData, useActiveMetrics } from "@/lib/use-scored-data";
+import { useSignedIn } from "@/lib/use-auth-state";
+import { useIngestHydrated } from "@/lib/ingested-data-store";
 import { churnStore, useChurnOverrides } from "@/lib/churn-store";
 import { useIngested } from "@/lib/ingested-data-store";
 import { useCustomerAliases } from "@/lib/customer-aliases";
