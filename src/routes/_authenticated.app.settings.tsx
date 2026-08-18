@@ -338,7 +338,7 @@ function Settings() {
                           type="button"
                           aria-label={`Remove ${m.name}`}
                           title="Remove this metric (admin only)"
-                          onClick={() => setRemovedMetrics((r) => [...r, m.name])}
+                          onClick={() => handleRemoveMetric(m.name)}
                           className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
