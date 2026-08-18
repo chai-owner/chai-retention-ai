@@ -70,12 +70,26 @@ const priorityChip: Record<string, string> = {
 };
 
 function CustomerDetail() {
-  const { id } = Route.useLoaderData() as { id: string };
+  const { id } = Route.useParams();
   const { customers } = useScoredData();
+  const signedIn = useSignedIn();
+  const hydrated = useIngestHydrated();
   const overrides = useChurnOverrides();
-  // Active customers come from the scored dataset; churned/won-back accounts
-  // live outside it, so fall back to the full lookup.
-  const c = (customers.find((x) => x.id === id) ?? getCustomer(id) ?? customers[0]) as Customer;
+  const metrics = useActiveMetrics();
+  const [dismissed, setDismissed] = useState(false);
+  // Resolve strictly from the live dataset. Signed-out (demo) visitors can also
+  // reach seeded churned/won-back accounts, which live outside the scored set.
+  const found =
+    customers.find((x) => x.id === id) ?? (signedIn === false ? getCustomer(id) : undefined);
+
+  if (!found) {
+    // Real data loads client-side; don't declare "not found" until it's in.
+    if (signedIn !== false && !hydrated) {
+      return <p className="py-16 text-center text-sm text-muted-foreground">Loading customer…</p>;
+    }
+    return <CustomerMissing />;
+  }
+  const c = found as Customer;
   const cat = categoryFromHealth(c.health);
   const sentimentLabel = c.sentiment >= 60 ? "Positive" : c.sentiment >= 40 ? "Neutral" : "Negative";
 
