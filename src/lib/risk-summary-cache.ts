@@ -40,3 +40,13 @@ export function setCachedRiskSummaries(key: string, summaries: Record<string, st
     // ignore write failures (private mode / quota)
   }
 }
+
+// Drops any cached summaries so the next render regenerates them from the model.
+export function clearCachedRiskSummaries() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
