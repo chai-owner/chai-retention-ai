@@ -121,10 +121,17 @@ export const disconnectHubspot = createServerFn({ method: "POST" })
           connectionAPIKey: key,
           connectorId: CONNECTOR_ID,
         });
-      } catch {
-        /* still delete local row so the UI resets */
+      } catch (err) {
+        // Still delete the local row so the UI resets.
+        console.error(
+          "HubSpot gateway disconnect failed:",
+          err instanceof Error ? err.message : err,
+        );
       }
     }
     await deleteConnectionForUser(context.userId, CONNECTOR_ID);
+    const { clearCrmSyncState } = await import("./crm.server");
+    await clearCrmSyncState(context.userId, "hubspot");
+
     return { ok: true };
   });
