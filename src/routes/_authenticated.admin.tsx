@@ -16,6 +16,16 @@ import {
   type AdminCustomer,
 } from "@/lib/admin.functions";
 import { impersonationStore } from "@/lib/impersonation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Customer Admin — ChAi" }] }),
