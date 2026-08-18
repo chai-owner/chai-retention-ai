@@ -63,7 +63,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const locked = !demo && signedIn === true && profile != null && profile.unlocked !== true;
   // In demo mode the Welcome screen (onboarding/booking) isn't part of the
   // product demo, so hide it and keep everything on sample data.
-  const baseNav = demo ? nav.filter((n) => n.to !== "/app/welcome") : nav;
+  // Once an admin unlocks the account, the Welcome/booking screen is done with.
+  const hideWelcome = demo || (signedIn === true && profile?.unlocked === true);
+  const baseNav = hideWelcome ? nav.filter((n) => n.to !== "/app/welcome") : nav;
   const visibleNav = locked ? baseNav.filter((n) => LOCKED_ALLOWED.has(n.to)) : baseNav;
 
   useEffect(() => {

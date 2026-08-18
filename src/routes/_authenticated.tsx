@@ -53,6 +53,10 @@ export const Route = createFileRoute("/_authenticated")({
         ) {
           throw redirect({ to: "/app/welcome" });
         }
+        // Unlocked accounts no longer need the welcome/booking screen.
+        if (profile.unlocked && location.pathname === "/app/welcome") {
+          throw redirect({ to: "/app/dashboard" });
+        }
       } catch (err) {
         if (isRedirect(err)) throw err;
         // If the profile can't be loaded, don't block the app.
