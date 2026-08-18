@@ -24,3 +24,28 @@ export function decryptConnectionKey(stored: string): string {
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(ct), decipher.final()]).toString("utf8");
 }
+
+// ---- Backwards-compatible secret storage --------------------------------
+// Historically some provider tokens were persisted as plaintext. New writes
+// are always encrypted and tagged with a version prefix so reads can tell the
+// two apart and keep working during the transition.
+const ENC_PREFIX = "enc:v1:";
+
+export function encryptSecret(plaintext: string): string {
+  return ENC_PREFIX + encryptConnectionKey(plaintext);
+}
+
+export function isEncryptedSecret(stored: string | null | undefined): boolean {
+  return typeof stored === "string" && stored.startsWith(ENC_PREFIX);
+}
+
+/** Decrypts a tagged value; returns legacy plaintext values unchanged. */
+export function decryptSecret(stored: string): string {
+  if (!isEncryptedSecret(stored)) return stored;
+  return decryptConnectionKey(stored.slice(ENC_PREFIX.length));
+}
+
+export function decryptSecretOrNull(stored: string | null | undefined): string | null {
+  if (stored == null || stored === "") return null;
+  return decryptSecret(stored);
+}
