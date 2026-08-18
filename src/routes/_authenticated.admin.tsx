@@ -84,12 +84,7 @@ function AdminPage() {
 
   async function handleReset(c: AdminCustomer) {
     const label = c.company || c.fullName || c.email;
-    if (
-      !window.confirm(
-        `Delete ALL data for ${label}?\n\nThis removes every uploaded file, connected integration, saved customer link and their business profile. ${label} will be sent back to the start of onboarding. This cannot be undone.`,
-      )
-    )
-      return;
+    setResetTarget(null);
     setBusyId(c.id);
     try {
       await wipeAccount({ data: { userId: c.id } });
