@@ -39,7 +39,8 @@ export async function persistBatch(args: PersistBatchArgs): Promise<{ batchId: s
   }
 }
 
-export async function hydrateIngestFromServer() {
+export async function hydrateIngestFromServer(options?: { surfaceError?: boolean }): Promise<boolean> {
+  ingestedStore.beginHydration();
   try {
     const [snapshot, batches] = await Promise.all([listAllIngested(), listIngestBatches()]);
     // Reset stores to whatever the DB says — the DB is now the source of truth.
@@ -71,11 +72,14 @@ export async function hydrateIngestFromServer() {
       uploadsStore.add(record);
     }
     ingestedStore.markHydrated();
+    return true;
   } catch (err) {
     // Keep whatever is already in memory — a failed load must never look like
     // "this account has no data".
     console.warn("Failed to hydrate ingested data", err);
     ingestedStore.markHydrated();
+    if (options?.surfaceError) throw err;
+    return false;
   }
 }
 

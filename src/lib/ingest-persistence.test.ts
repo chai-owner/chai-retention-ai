@@ -166,6 +166,18 @@ describe("hydrateIngestFromServer", () => {
     listAllIngested.mockRejectedValue(new Error("offline"));
     await expect(hydrateIngestFromServer()).resolves.toBeUndefined();
   });
+
+  it("returns a failure result for a background refresh", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    listAllIngested.mockRejectedValue(new Error("offline"));
+    await expect(hydrateIngestFromServer()).resolves.toBe(false);
+  });
+
+  it("surfaces an account refresh failure when explicitly requested", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    listAllIngested.mockRejectedValue(new Error("offline"));
+    await expect(hydrateIngestFromServer({ surfaceError: true })).rejects.toThrow("offline");
+  });
 });
 
 describe("removePersistedBatch", () => {
