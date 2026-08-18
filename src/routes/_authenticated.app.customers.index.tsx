@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Search, ArrowUpDown } from "lucide-react";
 import { PageHeader, HealthBadge, ScoreBar } from "@/components/ui/chai";
+import { DataCoverageBanner } from "@/components/data-coverage-banner";
 import {
   categoryFromHealth,
   formatCurrency,
@@ -82,6 +83,10 @@ function Customers() {
         title="Customer Risk Center"
         description="Every customer ranked by churn risk. The riskiest, highest-value accounts rise to the top so you know exactly who to focus on."
       />
+
+      <div className="mb-4">
+        <DataCoverageBanner />
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-1.5">
         {lifecycleTabs.map((t) => (
