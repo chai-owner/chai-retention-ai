@@ -70,11 +70,15 @@ export async function hydrateIngestFromServer() {
       };
       uploadsStore.add(record);
     }
+    ingestedStore.markHydrated();
   } catch (err) {
-    // Silent — a missing session or a network blip shouldn't crash the app.
+    // Keep whatever is already in memory — a failed load must never look like
+    // "this account has no data".
     console.warn("Failed to hydrate ingested data", err);
+    ingestedStore.markHydrated();
   }
 }
+
 
 function sourceLabel(kind: string, provider: string) {
   if (kind === "crm") return `${provider} sync`;
