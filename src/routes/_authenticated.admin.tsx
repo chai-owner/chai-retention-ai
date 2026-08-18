@@ -16,6 +16,16 @@ import {
   type AdminCustomer,
 } from "@/lib/admin.functions";
 import { impersonationStore } from "@/lib/impersonation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Customer Admin — ChAi" }] }),
@@ -35,6 +45,7 @@ function AdminPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [resetTarget, setResetTarget] = useState<AdminCustomer | null>(null);
   const fetchDemoLeads = useServerFn(listDemoLeads);
   const [demoLeads, setDemoLeads] = useState<DemoLead[]>([]);
 
@@ -84,12 +95,7 @@ function AdminPage() {
 
   async function handleReset(c: AdminCustomer) {
     const label = c.company || c.fullName || c.email;
-    if (
-      !window.confirm(
-        `Delete ALL data for ${label}?\n\nThis removes every uploaded file, connected integration, saved customer link and their business profile. ${label} will be sent back to the start of onboarding. This cannot be undone.`,
-      )
-    )
-      return;
+    setResetTarget(null);
     setBusyId(c.id);
     try {
       await wipeAccount({ data: { userId: c.id } });
@@ -269,7 +275,7 @@ function AdminPage() {
                           )}
                         </button>
                         <button
-                          onClick={() => handleReset(c)}
+                          onClick={() => setResetTarget(c)}
                           disabled={busyId === c.id}
                           title="Delete all data and restart onboarding"
                           className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
@@ -357,6 +363,40 @@ function AdminPage() {
           )}
         </Card>
       </div>
+
+      <AlertDialog
+        open={resetTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setResetTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete all data for{" "}
+              {resetTarget
+                ? resetTarget.company || resetTarget.fullName || resetTarget.email
+                : ""}
+              ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes everything this user uploaded — CSV and Data Drop
+              imports, customers, transactions, usage, support tickets and surveys — plus
+              connected integrations, saved customer links and their business profile. They
+              will be sent back to the start of onboarding. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => resetTarget && handleReset(resetTarget)}
+            >
+              Yes, delete all data
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
