@@ -53,4 +53,28 @@ describe("assessCoverage", () => {
     const c = assessCoverage(makeIngested());
     expect(coverageBasis(c)).toMatch(/Based on the data available today/);
   });
+
+  it("does not require support unless an active metric depends on support", () => {
+    const data = {
+      customers: [{ customer_id: "A" }],
+      usage: [{ customer_id: "A", date: daysAgo(1), workout_duration_minutes: "45" }],
+    };
+    const workout = [{
+      name: "Average Workout Duration",
+      why: "Average workout minutes per visit",
+      churn: "Shorter workouts indicate disengagement",
+      category: "Engagement",
+    }];
+    const withoutSupport = assessCoverage(data, workout);
+    expect(withoutSupport.datasets.some((dataset) => dataset.key === "support")).toBe(false);
+    expect(withoutSupport.datasets.find((dataset) => dataset.label === "Average Workout Duration")?.rows).toBe(1);
+
+    const withSupport = assessCoverage(data, [{
+      name: "Open Support Tickets",
+      why: "Tracks unresolved support issues",
+      churn: "Unresolved tickets cause churn",
+      category: "Support",
+    }]);
+    expect(withSupport.datasets.find((dataset) => dataset.key === "support")?.status).toBe("missing");
+  });
 });

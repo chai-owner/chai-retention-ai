@@ -11,6 +11,7 @@ import {
   type TimelineEvent,
   categoryFromHealth,
   METRIC_NAMES,
+  type PlannerMetric,
   type MetricWeights,
 } from "@/lib/mock-data";
 import type { OnboardingProfile, ProfileSegment } from "@/lib/profile-store";

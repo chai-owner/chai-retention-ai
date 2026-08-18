@@ -28,7 +28,7 @@ function Planner() {
   // Average sub-score per metric, broken down by customer segment.
   const segmentAverages = useMemo(() => {
     const segments = Array.from(new Set(customers.map((c) => c.segment)));
-    const byMetric: Record<string, { segment: string; avg: number }[]> = {};
+    const byMetric: Record<string, { segment: string; avg: number; raw: boolean }[]> = {};
     for (const m of plannerMetrics) {
       byMetric[m.name] = segments.map((seg) => {
         const inSeg = customers.filter((c) => c.segment === seg);
