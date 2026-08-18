@@ -50,6 +50,7 @@ export interface MappedFieldPlan {
   field: string;
   column: string;
   constant?: string;
+  derive?: Record<string, unknown>;
 }
 
 export interface DatasetMappingPlan {
@@ -57,12 +58,14 @@ export interface DatasetMappingPlan {
   confidence: number;
   note: string;
   fields: MappedFieldPlan[];
+  groupBy?: string;
 }
 
 export interface MapColumnsResult {
   documentType: string;
   mappings: DatasetMappingPlan[];
 }
+
 
 
 export interface ExtractedDataset {
