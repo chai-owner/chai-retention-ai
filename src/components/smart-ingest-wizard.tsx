@@ -189,6 +189,8 @@ export function SmartIngestWizard({
   const [documentType, setDocumentType] = useState("");
   const [datasets, setDatasets] = useState<EditableDataset[]>([]);
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  /** Data rows found in the source spreadsheet(s); 0 for PDFs/images. */
+  const [sourceRows, setSourceRows] = useState(0);
 
   const sourceLabel =
     fileNames.length === 1 ? fileNames[0] : `${fileNames.length} files`;
