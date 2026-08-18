@@ -308,6 +308,7 @@ export function SmartIngestWizard({
       const usedNames: string[] = [];
       const docTypes = new Set<string>();
       let sizeKb = 0;
+      let srcRows = 0;
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
