@@ -21,3 +21,23 @@ export function useSignedIn(): boolean | null {
   }, []);
   return signedIn;
 }
+
+// Current user's id (null when signed out, undefined while resolving). Used to
+// scope per-user client caches so one account never sees another's AI output.
+export function useAuthUserId(): string | null | undefined {
+  const [userId, setUserId] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (active) setUserId(data.session?.user.id ?? null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
+      setUserId(session?.user.id ?? null),
+    );
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+  return userId;
+}

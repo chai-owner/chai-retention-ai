@@ -21,7 +21,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUploads, overallScore } from "@/lib/uploads-store";
-import { getCachedRiskSummaries, setCachedRiskSummaries } from "@/lib/risk-summary-cache";
+import {
+  getCachedRiskSummaries,
+  setCachedRiskSummaries,
+  clearCachedRiskSummaries,
+} from "@/lib/risk-summary-cache";
+import { useAuthUserId } from "@/lib/use-auth-state";
 import {
   PieChart,
   Pie,
@@ -76,26 +81,34 @@ function Dashboard() {
   // AI-generated one-line explanations for each at-risk account.
   const summarize = useServerFn(summarizeRiskReasons);
   const [riskSummaries, setRiskSummaries] = useState<Record<string, string>>({});
+  const [aiRefreshing, setAiRefreshing] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiNonce, setAiNonce] = useState(0);
+  const userId = useAuthUserId();
 
-  // Cache key combines the at-risk accounts with an "uploads signature" so the
-  // summaries also regenerate immediately whenever new data is uploaded (any
-  // upload feeds the health scoring). Otherwise they're capped at one AI call
-  // per 24h via the localStorage cache.
+  // Cache key combines the signed-in user, the at-risk accounts and an "uploads
+  // signature" so summaries never leak between accounts and regenerate whenever
+  // new data is uploaded. Otherwise they're capped at one AI call per 24h.
   const uploadsSignature = `${uploads.length}:${uploads[0]?.id ?? "none"}:${uploads[0]?.uploadedAt ?? ""}`;
-  const summaryKey = `${topRisk.map((c) => c.id).join(",")}|${uploadsSignature}`;
+  const summaryKey = `${userId ?? "anon"}|${topRisk.map((c) => c.id).join(",")}|${uploadsSignature}`;
 
   useEffect(() => {
     if (topRisk.length === 0) return;
+    if (userId === undefined) return; // wait until the session resolves
     let cancelled = false;
 
     // Reuse cached summaries when they're fresh (<24h) and built for the same
-    // accounts and uploaded data — this keeps AI usage to at most one call per day.
-    const cached = getCachedRiskSummaries(summaryKey);
-    if (cached) {
-      setRiskSummaries(cached);
-      return;
+    // user, accounts and uploaded data — keeps AI usage to at most one call/day.
+    if (aiNonce === 0) {
+      const cached = getCachedRiskSummaries(summaryKey);
+      if (cached) {
+        setRiskSummaries(cached);
+        return;
+      }
     }
 
+    setAiRefreshing(true);
+    setAiError(null);
     summarize({
       data: {
         customers: topRisk.map((c) => ({
@@ -114,14 +127,28 @@ function Dashboard() {
           setCachedRiskSummaries(summaryKey, res);
         }
       })
-      .catch(() => {
-        /* keep base list if AI is unavailable */
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setAiError(
+            err instanceof Error ? err.message : "The AI engine could not be reached.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAiRefreshing(false);
       });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [summaryKey]);
+  }, [summaryKey, aiNonce]);
+
+  const refreshAi = () => {
+    clearCachedRiskSummaries();
+    setRiskSummaries({});
+    setAiNonce((n) => n + 1);
+  };
+
 
   const executive = useMemo(() => {
     const f = PERIOD_FACTORS[period];
@@ -320,12 +347,26 @@ function Dashboard() {
 
       {/* Top risk list */}
       <Card className="mt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Needs attention now</h3>
-          <Link to="/app/customers" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-            View all <ArrowRight className="h-3 w-3" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={refreshAi}
+              disabled={aiRefreshing || topRisk.length === 0}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-50"
+            >
+              <Sparkles className={`h-3 w-3 ${aiRefreshing ? "animate-pulse" : ""}`} />
+              {aiRefreshing ? "Refreshing AI…" : "Refresh AI analysis"}
+            </button>
+            <Link to="/app/customers" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
         </div>
+        {aiError && (
+          <p className="mt-2 text-xs text-danger">AI analysis unavailable: {aiError}</p>
+        )}
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {topRisk.map((c) => (
             <Link
