@@ -315,7 +315,7 @@ export function SmartIngestWizard({
         try {
           const result = await extractOne(file, schemas);
           if (!result) continue;
-          const editable = buildEditable(result.datasets, allSchemas);
+          const editable = result.datasets;
           if (editable.length === 0) {
             toast.error(`No data in ${file.name}`, {
               description: "ChAi couldn't match this file to your datasets.",
@@ -325,6 +325,7 @@ export function SmartIngestWizard({
           mergeEditable(merged, editable);
           usedNames.push(file.name);
           docTypes.add(result.documentType);
+          srcRows += result.sourceRows;
           sizeKb += Math.max(1, Math.round(file.size / 1024));
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Extraction failed.";
