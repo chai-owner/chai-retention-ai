@@ -189,12 +189,13 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
   const custom = customMetricKeys([metric])[0];
   const customRows = custom ? data[custom.key] ?? [] : [];
   const directRows = custom ? customRows.filter((row) => numeric(flattenRow(row)[custom.column]) != null) : [];
+  const usesDirectMetricDataset = directRows.length > 0;
   const selected = directRows.length > 0
     ? { dataset: custom?.key ?? "", field: custom?.column ?? "", score: 100 }
     : selectField(metric, data);
   if (!selected) return { dataset: preferredDatasets(metric)[0] ?? null, field: null, rowCount: 0, latestDate: null, values: new Map() };
 
-  const operation = operationFor(metric);
+  const operation = usesDirectMetricDataset ? "latest" : operationFor(metric);
   const grouped = new Map<string, Array<{ value: string; date: number | null }>>();
   let latestDate: number | null = null;
   for (const raw of data[selected.dataset] ?? []) {
@@ -214,7 +215,8 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
       const dates = entries.map((entry) => timestamp(entry.value)).filter((date): date is number => date != null);
       if (dates.length > 0) {
         const reference = operation === "months_since" ? Math.min(...dates) : Math.max(...dates);
-        value = Math.max(0, (now - reference) / (operation === "months_since" ? DAY * 30.4375 : DAY));
+        const elapsed = Math.max(0, (now - reference) / (operation === "months_since" ? DAY * 30.4375 : DAY));
+        value = operation === "days_since_last" ? Math.round(elapsed) : elapsed;
       }
     } else if (operation === "ratio") {
       const flags = entries.map((entry) => conditionValue(entry.value, metric)).filter((flag): flag is number => flag != null);
