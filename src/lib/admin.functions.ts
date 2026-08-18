@@ -15,6 +15,18 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (!data) throw new Error("Forbidden: admin access required");
 }
 
+// Lightweight role probe for the UI: returns whether the caller is an admin
+// instead of throwing, so pages can show or hide admin-only controls.
+export const checkIsAdmin = createServerFn({ method: "GET" })
+  .middleware([requireConnectedAuth])
+  .handler(async ({ context }): Promise<boolean> => {
+    const { data } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    return Boolean(data);
+  });
+
 export interface AdminCustomer {
   id: string;
   fullName: string;
