@@ -260,8 +260,32 @@ Rules:
 - Skip a dataset entirely if the file has nothing for it.
 - confidence is your 0-100 certainty in the mapping for that dataset.
 
+CALCULATED FIELDS
+Many metrics are not present as a ready-made column but CAN be worked out from the raw columns. In that case set "derive" on the field instead of "column". ChAi runs the calculation itself over all ${data.totalRows} rows — you only choose the operation. Always prefer a direct column when one genuinely exists.
+
+Per-row operations (one output row per file row):
+- {"op":"arith","a":"Revenue","b":"Orders","operator":"/"}  (operator is + - * /; use "value":<number> instead of "b" for a fixed number)
+- {"op":"date_diff","from":"Signup Date","to":"First Order"}   → whole days
+- {"op":"days_since","column":"Last Order Date"}               → days between that date and today
+- {"op":"bool","column":"No Show","trueValues":["Yes","DNA"]}  → 1 or 0
+- {"op":"lookup","column":"Status","map":{"Active":"5","At risk":"3","Lapsed":"1"},"fallback":""}
+
+Per-customer roll-ups (many event rows collapse to one row per customer). To use these, ALSO set "groupBy" on the dataset mapping to the source column holding the customer identifier:
+- {"op":"count"}                                                  → rows per customer
+- {"op":"count_if","column":"Status","anyOf":["No-show","DNA"]}    → matching rows per customer
+- {"op":"ratio_if","column":"Reopened","equals":"Yes"}             → % of rows matching, per customer
+- {"op":"sum"|"avg"|"min"|"max","column":"Amount"}
+- {"op":"last_date","column":"Appointment Date"}                   → most recent date
+- {"op":"days_since_last","column":"Order Date"}                   → days since that most recent date
+
+Roll-up guidance:
+- Use groupBy + roll-ups when the file holds one row per EVENT (appointment, order, ticket) but the metric is one number per customer.
+- In a grouped mapping, identifier and date fields can still be plain columns — ChAi takes the customer's identifier and their latest date automatically.
+- Never invent a derivation you cannot justify from the visible columns. If a metric cannot be produced, omit that dataset.
+
 Return ONLY a JSON object (no markdown, no code fences):
-{"documentType":"...","mappings":[{"key":"transactions","confidence":90,"note":"short note","fields":[{"field":"customer_id","column":"Account ID"},{"field":"amount","column":"Total"}]}]}`;
+{"documentType":"...","mappings":[{"key":"transactions","confidence":90,"note":"short note","fields":[{"field":"customer_id","column":"Account ID"},{"field":"amount","column":"Total"}]},{"key":"metric_missed_appointments","confidence":85,"note":"counted no-shows per patient","groupBy":"Patient ID","fields":[{"field":"customer_id","column":"Patient ID"},{"field":"date","column":"Appointment Date"},{"field":"missed_appointments","derive":{"op":"count_if","column":"Status","anyOf":["No-show","DNA"]}}]}]}`;
+
 
     const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
