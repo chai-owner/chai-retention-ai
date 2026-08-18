@@ -265,3 +265,31 @@ export async function runCrmSync(
     default: throw new Error("Unsupported CRM provider");
   }
 }
+
+// Called right after a successful connect so the daily cron can discover the
+// integration before the user ever runs a manual sync. `last_synced_at` stays
+// null so the first run does a full backfill.
+export async function ensureCrmSyncState(userId: string, provider: CrmProvider): Promise<void> {
+  const db = await admin();
+  const { data } = await db
+    .from("crm_sync_state")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("provider", provider)
+    .maybeSingle();
+  if (data) return;
+  const { error } = await db
+    .from("crm_sync_state")
+    .insert({ user_id: userId, provider, last_synced_at: null });
+  if (error) console.error(`Failed to seed crm_sync_state for ${provider}: ${error.message}`);
+}
+
+export async function clearCrmSyncState(userId: string, provider: CrmProvider): Promise<void> {
+  const db = await admin();
+  const { error } = await db
+    .from("crm_sync_state")
+    .delete()
+    .eq("user_id", userId)
+    .eq("provider", provider);
+  if (error) console.error(`Failed to clear crm_sync_state for ${provider}: ${error.message}`);
+}

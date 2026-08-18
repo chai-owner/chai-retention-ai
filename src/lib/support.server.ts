@@ -69,3 +69,36 @@ export async function runSupportSync(
   const rows = datasets.reduce((a, d) => a + d.rows.length, 0);
   return { datasets, rows };
 }
+
+// Seeds sync state at connect time so the daily cron discovers the integration
+// even if the user never presses "Sync now". null last_synced_at = full pull.
+export async function ensureSupportSyncState(
+  userId: string,
+  provider: SupportProvider,
+): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("support_sync_state")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("provider", provider)
+    .maybeSingle();
+  if (data) return;
+  const { error } = await supabaseAdmin
+    .from("support_sync_state")
+    .insert({ user_id: userId, provider, last_synced_at: null });
+  if (error) console.error(`Failed to seed support_sync_state for ${provider}: ${error.message}`);
+}
+
+export async function clearSupportSyncState(
+  userId: string,
+  provider: SupportProvider,
+): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin
+    .from("support_sync_state")
+    .delete()
+    .eq("user_id", userId)
+    .eq("provider", provider);
+  if (error) console.error(`Failed to clear support_sync_state for ${provider}: ${error.message}`);
+}
