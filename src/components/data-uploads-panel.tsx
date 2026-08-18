@@ -3,7 +3,7 @@
 // the onboarding "Add your data" step so they stay identical.
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Download, FileSpreadsheet, Lock, Sparkles, Upload } from "lucide-react";
+import { Check, Download, FileSpreadsheet, Info, Lock, Sparkles, Upload } from "lucide-react";
 import { Card } from "@/components/ui/chai";
 import { UploadWizard } from "@/components/upload-wizard";
 import { SmartIngestWizard } from "@/components/smart-ingest-wizard";
