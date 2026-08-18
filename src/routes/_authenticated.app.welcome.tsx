@@ -11,7 +11,8 @@ import {
   AlertTriangle,
   Database,
 } from "lucide-react";
-import { useRealAssessment } from "@/lib/use-scored-data";
+import { useRealAssessment, useDataCoverage } from "@/lib/use-scored-data";
+import { coverageBasis } from "@/lib/data-coverage";
 import { useProfile } from "@/lib/profile-store";
 import { formatCurrency } from "@/lib/mock-data";
 import { generateCollectiveInsights } from "@/lib/ai.functions";
@@ -33,6 +34,7 @@ declare global {
 
 function WelcomePage() {
   const { sufficiency, dataset } = useRealAssessment();
+  const coverage = useDataCoverage();
   const profile = useProfile();
   const getInsights = useServerFn(generateCollectiveInsights);
   const recordBooked = useServerFn(markBooked);
@@ -179,6 +181,8 @@ function WelcomePage() {
               </ol>
             )}
           </div>
+
+          <CoverageNote coverage={coverage} />
         </>
       ) : (
         /* Not enough data for an accurate snapshot */
@@ -194,6 +198,10 @@ function WelcomePage() {
                   "We need a bit more of your data before we can build a reliable business snapshot."}{" "}
                 That's completely fine — we'll set everything up together on your onboarding call, and
                 you can keep adding data any time.
+              </p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {coverageBasis(coverage)} This assessment is likely to change as you add recent
+                data.
               </p>
               <Link
                 to="/app/data"
@@ -239,6 +247,35 @@ function WelcomePage() {
             </p>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+function CoverageNote({ coverage }: { coverage: ReturnType<typeof useDataCoverage> }) {
+  return (
+    <div className="rounded-2xl border border-warning/30 bg-warning/5 p-5 sm:p-6">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+        <div>
+          <h3 className="text-sm font-semibold">This is a first read, not a final verdict</h3>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {coverageBasis(coverage)} This assessment is likely to change as you add recent data.
+          </p>
+          {coverage.notes.length > 0 && (
+            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+              {coverage.notes.slice(0, 4).map((n) => (
+                <li key={n}>• {n}</li>
+              ))}
+            </ul>
+          )}
+          <Link
+            to="/app/data"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+          >
+            <Database className="h-3.5 w-3.5" /> Add or refresh your data
+          </Link>
+        </div>
       </div>
     </div>
   );
