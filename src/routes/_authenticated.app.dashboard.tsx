@@ -76,26 +76,34 @@ function Dashboard() {
   // AI-generated one-line explanations for each at-risk account.
   const summarize = useServerFn(summarizeRiskReasons);
   const [riskSummaries, setRiskSummaries] = useState<Record<string, string>>({});
+  const [aiRefreshing, setAiRefreshing] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiNonce, setAiNonce] = useState(0);
+  const userId = useAuthUserId();
 
-  // Cache key combines the at-risk accounts with an "uploads signature" so the
-  // summaries also regenerate immediately whenever new data is uploaded (any
-  // upload feeds the health scoring). Otherwise they're capped at one AI call
-  // per 24h via the localStorage cache.
+  // Cache key combines the signed-in user, the at-risk accounts and an "uploads
+  // signature" so summaries never leak between accounts and regenerate whenever
+  // new data is uploaded. Otherwise they're capped at one AI call per 24h.
   const uploadsSignature = `${uploads.length}:${uploads[0]?.id ?? "none"}:${uploads[0]?.uploadedAt ?? ""}`;
-  const summaryKey = `${topRisk.map((c) => c.id).join(",")}|${uploadsSignature}`;
+  const summaryKey = `${userId ?? "anon"}|${topRisk.map((c) => c.id).join(",")}|${uploadsSignature}`;
 
   useEffect(() => {
     if (topRisk.length === 0) return;
+    if (userId === undefined) return; // wait until the session resolves
     let cancelled = false;
 
     // Reuse cached summaries when they're fresh (<24h) and built for the same
-    // accounts and uploaded data — this keeps AI usage to at most one call per day.
-    const cached = getCachedRiskSummaries(summaryKey);
-    if (cached) {
-      setRiskSummaries(cached);
-      return;
+    // user, accounts and uploaded data — keeps AI usage to at most one call/day.
+    if (aiNonce === 0) {
+      const cached = getCachedRiskSummaries(summaryKey);
+      if (cached) {
+        setRiskSummaries(cached);
+        return;
+      }
     }
 
+    setAiRefreshing(true);
+    setAiError(null);
     summarize({
       data: {
         customers: topRisk.map((c) => ({
@@ -114,14 +122,28 @@ function Dashboard() {
           setCachedRiskSummaries(summaryKey, res);
         }
       })
-      .catch(() => {
-        /* keep base list if AI is unavailable */
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setAiError(
+            err instanceof Error ? err.message : "The AI engine could not be reached.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAiRefreshing(false);
       });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [summaryKey]);
+  }, [summaryKey, aiNonce]);
+
+  const refreshAi = () => {
+    clearCachedRiskSummaries();
+    setRiskSummaries({});
+    setAiNonce((n) => n + 1);
+  };
+
 
   const executive = useMemo(() => {
     const f = PERIOD_FACTORS[period];
