@@ -50,8 +50,9 @@ export interface MappedFieldPlan {
   field: string;
   column: string;
   constant?: string;
-  derive?: Record<string, unknown>;
+  derive?: DeriveSpec;
 }
+
 
 export interface DatasetMappingPlan {
   key: string;
