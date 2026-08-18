@@ -164,7 +164,7 @@ describe("hydrateIngestFromServer", () => {
   it("never throws when the account can't be reached", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     listAllIngested.mockRejectedValue(new Error("offline"));
-    await expect(hydrateIngestFromServer()).resolves.toBeUndefined();
+    await expect(hydrateIngestFromServer()).resolves.toBe(false);
   });
 
   it("returns a failure result for a background refresh", async () => {
