@@ -79,6 +79,14 @@ export const ingestedStore = {
     data = {};
     emit();
   },
+  markHydrated() {
+    if (hydrated) return;
+    hydrated = true;
+    emit();
+  },
+  isHydrated() {
+    return hydrated;
+  },
 };
 
 export function useIngested(): IngestedData {
@@ -88,3 +96,13 @@ export function useIngested(): IngestedData {
     ingestedStore.getSnapshot,
   );
 }
+
+/** True once persisted rows have been loaded (or definitively failed to load). */
+export function useIngestHydrated(): boolean {
+  return useSyncExternalStore(
+    ingestedStore.subscribe,
+    ingestedStore.isHydrated,
+    () => false,
+  );
+}
+
