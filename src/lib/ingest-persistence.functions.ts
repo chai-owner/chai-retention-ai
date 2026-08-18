@@ -176,72 +176,9 @@ export interface IngestedSnapshot {
   surveys: Array<Record<string, string>>;
 }
 
-// Normalized columns are stored alongside the raw `data` blob. Older/imported
-// rows can have the canonical fields ONLY in those columns (the blob keeps the
-// provider's original shape), so the blob alone loses customer_id / amount /
-// dates and everything downstream scores as unattributed. Always merge the
-// columns back in, and never let the blob's own value be overwritten.
-type Col = { from: string; to: string[] };
+const toRow = normalizeIngestRow;
+const COLUMNS = INGEST_COLUMNS;
 
-const COLUMNS: Record<string, Col[]> = {
-  customers: [{ from: "customer_id", to: ["customer_id"] }],
-  transactions: [
-    { from: "transaction_id", to: ["transaction_id"] },
-    { from: "customer_id", to: ["customer_id"] },
-    { from: "amount", to: ["amount"] },
-    { from: "occurred_at", to: ["transaction_date", "date"] },
-  ],
-  support: [
-    { from: "ticket_id", to: ["ticket_id"] },
-    { from: "customer_id", to: ["customer_id"] },
-  ],
-  usage: [
-    { from: "customer_id", to: ["customer_id"] },
-    { from: "occurred_at", to: ["date", "occurred_at"] },
-  ],
-  surveys: [
-    { from: "customer_id", to: ["customer_id"] },
-    { from: "submitted_at", to: ["survey_date", "date", "submitted_at"] },
-  ],
-};
-
-function stringify(v: unknown): string {
-  if (v == null) return "";
-  if (typeof v === "string") return v;
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-  return JSON.stringify(v);
-}
-
-function toRow(raw: Record<string, unknown>, cols: Col[]): Record<string, string> {
-  const blob = (raw["data"] as Record<string, unknown> | null) ?? {};
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(blob)) out[k] = stringify(v);
-  for (const c of cols) {
-    const v = stringify(raw[c.from]);
-    if (!v) continue;
-    for (const target of c.to) if (!out[target]) out[target] = v;
-  }
-  return out;
-}
-
-// PostgREST caps a single response (db-max-rows), so read in pages — otherwise
-// large datasets silently arrive truncated.
-const PAGE = 1000;
-
-async function fetchAll(
-  q: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>,
-  label: string,
-): Promise<Record<string, unknown>[]> {
-  const rows: Record<string, unknown>[] = [];
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await q(from, from + PAGE - 1);
-    if (error) throw new Error(`${label}: ${error.message}`);
-    const page = (data ?? []) as Record<string, unknown>[];
-    rows.push(...page);
-    if (page.length < PAGE) break;
-  }
-  return rows;
-}
 
 export const listAllIngested = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
