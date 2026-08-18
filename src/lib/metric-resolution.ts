@@ -153,6 +153,9 @@ function selectField(metric: PlannerMetric, data: IngestedData): FieldCandidate 
         const isDate = [...fieldWords].some((word) => DATE_WORDS.has(word));
         if ((operation === "days_since_last" || operation === "months_since") && isDate) score += 7;
         if (operation !== "days_since_last" && operation !== "months_since" && isDate) score -= 4;
+        if (operation === "ratio" && /^(is_|has_)?(upsell|upgraded|converted|delinquent|overdue|peak_hour|off_peak|recommended)/.test(field)) {
+          score += 8;
+        }
         const key = `${dataset}:${field}`;
         const previous = candidates.get(key);
         if (!previous || score > previous.score) candidates.set(key, { dataset, field, score });
