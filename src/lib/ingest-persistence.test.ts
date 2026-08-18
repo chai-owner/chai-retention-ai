@@ -25,6 +25,8 @@ import { uploadsStore } from "@/lib/uploads-store";
 beforeEach(() => {
   vi.clearAllMocks();
   saveIngestBatch.mockResolvedValue({ batchId: "batch-99" });
+  listAllIngested.mockResolvedValue({});
+  listIngestBatches.mockResolvedValue([]);
   ingestedStore.clear();
   uploadsStore.clear();
 });
@@ -177,6 +179,19 @@ describe("hydrateIngestFromServer", () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     listAllIngested.mockRejectedValue(new Error("offline"));
     await expect(hydrateIngestFromServer({ surfaceError: true })).rejects.toThrow("offline");
+  });
+
+  it("keeps assessment rows when upload history cannot be loaded", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    listAllIngested.mockResolvedValue({
+      customers: [{ customer_id: "GYM001" }],
+      usage: [{ customer_id: "GYM001", check_in_count: "1" }],
+    });
+    listIngestBatches.mockRejectedValue(new Error("history unavailable"));
+
+    await expect(hydrateIngestFromServer({ surfaceError: true })).resolves.toBe(true);
+    expect(ingestedStore.getSnapshot().customers).toHaveLength(1);
+    expect(ingestedStore.getSnapshot().usage).toHaveLength(1);
   });
 });
 

@@ -108,6 +108,31 @@ describe("buildRealDataset — health scoring", () => {
     expect(byId["A"].revenue).toBe(1200);
     expect(byId["B"].revenue).toBe(250);
   });
+
+  it("scores fitness fields used by gym uploads", () => {
+    const ds = buildRealDataset(
+      {
+        customers: [
+          { customer_id: "A", monthly_fee: "50" },
+          { customer_id: "B", monthly_fee: "75" },
+        ],
+        usage: [
+          { customer_id: "A", check_in_count: "8", date: daysAgo(1) },
+          { customer_id: "B", check_in_count: "1", date: daysAgo(1) },
+        ],
+        surveys: [
+          { customer_id: "A", satisfaction_score: "9", survey_date: daysAgo(2) },
+          { customer_id: "B", satisfaction_score: "3", survey_date: daysAgo(2) },
+        ],
+      },
+      W,
+      profile,
+    );
+    const byId = Object.fromEntries(ds.customers.map((c) => [c.id, c]));
+    expect(byId["A"].health).toBeGreaterThan(byId["B"].health);
+    expect(byId["A"].revenue).toBe(600);
+    expect(byId["B"].revenue).toBe(900);
+  });
 });
 
 describe("buildRealDataset — metric weights", () => {

@@ -32,6 +32,8 @@ export interface DataCoverage {
 
 const DATE_FIELDS = [
   "transaction_date",
+  "survey_date",
+  "created_date",
   "occurred_at",
   "submitted_at",
   "created_at",
