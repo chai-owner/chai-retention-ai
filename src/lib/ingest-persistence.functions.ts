@@ -183,7 +183,10 @@ export interface IngestedSnapshot {
 
 
 
-export const listAllIngested = createServerFn({ method: "GET" })
+// This is mutable, user-scoped workspace data. Keep the read as POST so browser,
+// CDN and service-worker caches cannot replay an older empty assessment after
+// rows have been imported or when the user explicitly refreshes the dashboard.
+export const listAllIngested = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<IngestedSnapshot> => {
     const { supabase, userId } = context;
@@ -234,7 +237,9 @@ export interface IngestBatchRow {
   meta: JsonValue;
 }
 
-export const listIngestBatches = createServerFn({ method: "GET" })
+// Batch history is part of the same mutable assessment snapshot; it must be
+// refreshed alongside the rows rather than restored from an HTTP GET cache.
+export const listIngestBatches = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<IngestBatchRow[]> => {
     const { supabase, userId } = context;
