@@ -11,28 +11,17 @@ const GATEWAY_BASE = "https://connector-gateway.lovable.dev";
 
 export type CrmProvider = "salesforce" | "hubspot" | "zoho_crm";
 
-export const CRM_PROVIDERS: { id: CrmProvider; name: string; keyEnv: string }[] = [
-  { id: "salesforce", name: "Salesforce", keyEnv: "SALESFORCE_API_KEY" },
-  { id: "hubspot", name: "HubSpot", keyEnv: "HUBSPOT_API_KEY" },
-  { id: "zoho_crm", name: "Zoho CRM", keyEnv: "ZOHO_CRM_API_KEY" },
+// Per-user connections only. There are no workspace-level SALESFORCE_API_KEY /
+// HUBSPOT_API_KEY / ZOHO_CRM_API_KEY env vars in this app: Salesforce and
+// HubSpot use per-user App User Connector keys (app_user_connections) and Zoho
+// uses its own per-user OAuth tokens (zoho_crm_connections).
+export const CRM_PROVIDERS: { id: CrmProvider; name: string }[] = [
+  { id: "salesforce", name: "Salesforce" },
+  { id: "hubspot", name: "HubSpot" },
+  { id: "zoho_crm", name: "Zoho CRM" },
 ];
 
-function credsFor(provider: CrmProvider) {
-  const lovableKey = process.env.LOVABLE_API_KEY;
-  const meta = CRM_PROVIDERS.find((p) => p.id === provider)!;
-  const connectionKey = process.env[meta.keyEnv];
-  if (!lovableKey) throw new Error("Missing LOVABLE_API_KEY");
-  if (!connectionKey) {
-    throw new Error(
-      `${meta.name} is not connected yet. Connect it under Data → Connect your CRM first.`,
-    );
-  }
-  return { lovableKey, connectionKey, name: meta.name };
-}
 
-function credsForUser(lovableKey: string, connectionKey: string) {
-  return { lovableKey, connectionKey };
-}
 
 
 function gatewayHeaders(connectionKey: string, lovableKey: string) {
