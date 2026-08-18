@@ -45,6 +45,7 @@ function AdminPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [resetTarget, setResetTarget] = useState<AdminCustomer | null>(null);
   const fetchDemoLeads = useServerFn(listDemoLeads);
   const [demoLeads, setDemoLeads] = useState<DemoLead[]>([]);
 
