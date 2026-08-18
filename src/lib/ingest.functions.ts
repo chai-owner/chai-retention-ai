@@ -3,6 +3,8 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { DeriveSpec } from "./ingest-mapping";
+
 
 // ---------------------------------------------------------------------------
 // Smart Data Ingestion — AI extraction of arbitrary documents into ChAi
@@ -50,19 +52,23 @@ export interface MappedFieldPlan {
   field: string;
   column: string;
   constant?: string;
+  derive?: DeriveSpec;
 }
+
 
 export interface DatasetMappingPlan {
   key: string;
   confidence: number;
   note: string;
   fields: MappedFieldPlan[];
+  groupBy?: string;
 }
 
 export interface MapColumnsResult {
   documentType: string;
   mappings: DatasetMappingPlan[];
 }
+
 
 
 export interface ExtractedDataset {
@@ -254,8 +260,32 @@ Rules:
 - Skip a dataset entirely if the file has nothing for it.
 - confidence is your 0-100 certainty in the mapping for that dataset.
 
+CALCULATED FIELDS
+Many metrics are not present as a ready-made column but CAN be worked out from the raw columns. In that case set "derive" on the field instead of "column". ChAi runs the calculation itself over all ${data.totalRows} rows — you only choose the operation. Always prefer a direct column when one genuinely exists.
+
+Per-row operations (one output row per file row):
+- {"op":"arith","a":"Revenue","b":"Orders","operator":"/"}  (operator is + - * /; use "value":<number> instead of "b" for a fixed number)
+- {"op":"date_diff","from":"Signup Date","to":"First Order"}   → whole days
+- {"op":"days_since","column":"Last Order Date"}               → days between that date and today
+- {"op":"bool","column":"No Show","trueValues":["Yes","DNA"]}  → 1 or 0
+- {"op":"lookup","column":"Status","map":{"Active":"5","At risk":"3","Lapsed":"1"},"fallback":""}
+
+Per-customer roll-ups (many event rows collapse to one row per customer). To use these, ALSO set "groupBy" on the dataset mapping to the source column holding the customer identifier:
+- {"op":"count"}                                                  → rows per customer
+- {"op":"count_if","column":"Status","anyOf":["No-show","DNA"]}    → matching rows per customer
+- {"op":"ratio_if","column":"Reopened","equals":"Yes"}             → % of rows matching, per customer
+- {"op":"sum"|"avg"|"min"|"max","column":"Amount"}
+- {"op":"last_date","column":"Appointment Date"}                   → most recent date
+- {"op":"days_since_last","column":"Order Date"}                   → days since that most recent date
+
+Roll-up guidance:
+- Use groupBy + roll-ups when the file holds one row per EVENT (appointment, order, ticket) but the metric is one number per customer.
+- In a grouped mapping, identifier and date fields can still be plain columns — ChAi takes the customer's identifier and their latest date automatically.
+- Never invent a derivation you cannot justify from the visible columns. If a metric cannot be produced, omit that dataset.
+
 Return ONLY a JSON object (no markdown, no code fences):
-{"documentType":"...","mappings":[{"key":"transactions","confidence":90,"note":"short note","fields":[{"field":"customer_id","column":"Account ID"},{"field":"amount","column":"Total"}]}]}`;
+{"documentType":"...","mappings":[{"key":"transactions","confidence":90,"note":"short note","fields":[{"field":"customer_id","column":"Account ID"},{"field":"amount","column":"Total"}]},{"key":"metric_missed_appointments","confidence":85,"note":"counted no-shows per patient","groupBy":"Patient ID","fields":[{"field":"customer_id","column":"Patient ID"},{"field":"date","column":"Appointment Date"},{"field":"missed_appointments","derive":{"op":"count_if","column":"Status","anyOf":["No-show","DNA"]}}]}]}`;
+
 
     const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
@@ -279,6 +309,41 @@ Return ONLY a JSON object (no markdown, no code fences):
       parsed = JSON.parse(jsonText.slice(start, end + 1));
     }
 
+    const DeriveSchema = z.union([
+      z.object({
+        op: z.literal("arith"),
+        a: z.string(),
+        b: z.string().optional(),
+        operator: z.enum(["+", "-", "*", "/"]),
+        value: z.coerce.number().optional(),
+      }),
+      z.object({ op: z.literal("date_diff"), from: z.string(), to: z.string() }),
+      z.object({ op: z.literal("days_since"), column: z.string() }),
+      z.object({ op: z.literal("bool"), column: z.string(), trueValues: z.array(z.string()).optional() }),
+      z.object({
+        op: z.literal("lookup"),
+        column: z.string(),
+        map: z.record(z.string(), z.string()),
+        fallback: z.string().optional(),
+      }),
+      z.object({ op: z.literal("count") }),
+      z.object({
+        op: z.literal("count_if"),
+        column: z.string(),
+        equals: z.string().optional(),
+        anyOf: z.array(z.string()).optional(),
+      }),
+      z.object({ op: z.enum(["sum", "avg", "min", "max"]), column: z.string() }),
+      z.object({ op: z.literal("last_date"), column: z.string() }),
+      z.object({ op: z.literal("days_since_last"), column: z.string() }),
+      z.object({
+        op: z.literal("ratio_if"),
+        column: z.string(),
+        equals: z.string().optional(),
+        anyOf: z.array(z.string()).optional(),
+      }),
+    ]);
+
     const ResultSchema = z.object({
       documentType: z.string().default("Spreadsheet"),
       mappings: z
@@ -287,12 +352,14 @@ Return ONLY a JSON object (no markdown, no code fences):
             key: z.string(),
             confidence: z.coerce.number().min(0).max(100).default(80),
             note: z.string().default(""),
+            groupBy: z.string().optional(),
             fields: z
               .array(
                 z.object({
                   field: z.string(),
                   column: z.string().default(""),
                   constant: z.string().optional(),
+                  derive: DeriveSchema.optional().catch(undefined),
                 }),
               )
               .default([]),
@@ -300,6 +367,7 @@ Return ONLY a JSON object (no markdown, no code fences):
         )
         .default([]),
     });
+
 
     const result = ResultSchema.parse(parsed);
     const known = new Set(data.schemas.map((s) => s.key));
