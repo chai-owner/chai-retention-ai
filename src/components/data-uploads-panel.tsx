@@ -3,7 +3,7 @@
 // the onboarding "Add your data" step so they stay identical.
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Download, FileSpreadsheet, Lock, Sparkles, Upload } from "lucide-react";
+import { Check, Download, FileSpreadsheet, Info, Lock, Sparkles, Upload } from "lucide-react";
 import { Card } from "@/components/ui/chai";
 import { UploadWizard } from "@/components/upload-wizard";
 import { SmartIngestWizard } from "@/components/smart-ingest-wizard";
@@ -104,6 +104,56 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
             Upload one document or a whole folder's worth at once — invoices, PDFs, spreadsheets,
             receipts or text — and ChAi will extract and map the data for you to review.
           </p>
+
+          <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-3">
+            <div className="flex items-start gap-2">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <div>
+                <p className="text-xs font-semibold text-foreground">
+                  ChAi can calculate metrics from your raw data
+                </p>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                  Drop raw spreadsheets or exports and ChAi will work out the metrics it needs.
+                  For example:
+                </p>
+                <ul className="mt-1.5 space-y-1 text-[11px] text-muted-foreground">
+                  <li className="flex gap-1.5">
+                    <span className="text-primary">•</span>
+                    <span>
+                      <strong className="text-foreground">Days since last activity</strong> — needs a customer ID and a date column (e.g. last login, last purchase, last ticket).
+                    </span>
+                  </li>
+                  <li className="flex gap-1.5">
+                    <span className="text-primary">•</span>
+                    <span>
+                      <strong className="text-foreground">Total revenue / spend per customer</strong> — needs a customer ID and a transaction amount column.
+                    </span>
+                  </li>
+                  <li className="flex gap-1.5">
+                    <span className="text-primary">•</span>
+                    <span>
+                      <strong className="text-foreground">Average order or ticket value</strong> — needs a customer ID and an amount column per row.
+                    </span>
+                  </li>
+                  <li className="flex gap-1.5">
+                    <span className="text-primary">•</span>
+                    <span>
+                      <strong className="text-foreground">Support ticket count / resolution rate</strong> — needs a customer ID, ticket date and optionally a status column.
+                    </span>
+                  </li>
+                  <li className="flex gap-1.5">
+                    <span className="text-primary">•</span>
+                    <span>
+                      <strong className="text-foreground">Feature usage or adoption flags</strong> — needs a customer ID and a column showing usage, clicks or yes/no values.
+                    </span>
+                  </li>
+                </ul>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Just include a customer identifier (ID, email or name) and the relevant raw columns — ChAi will sum, count, average, compare dates and map the result to the right metric.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
         <button
           onClick={() => setWizardOpen(true)}
