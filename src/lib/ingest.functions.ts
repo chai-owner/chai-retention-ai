@@ -141,7 +141,7 @@ Return ONLY a JSON object (no markdown, no code fences) of the form:
     } else if (data.text) {
       content.push({
         type: "text",
-        text: `Document filename: ${data.fileName}\n\nDocument contents:\n${data.text.slice(0, 60000)}`,
+        text: `Document filename: ${data.fileName}\n\nDocument contents:\n${data.text.slice(0, 200000)}`,
       });
     } else {
       throw new Error("No readable content provided for this file.");
