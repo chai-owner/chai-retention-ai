@@ -549,7 +549,7 @@ export function SmartIngestWizard({
                         {d.derivations!.map((line) => (
                           <p key={line} className="text-[11px] text-muted-foreground">
                             Calculated — {line}
-                            {d.grouped ? "" : ""}
+                            
                           </p>
                         ))}
                       </div>
