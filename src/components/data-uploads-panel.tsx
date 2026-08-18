@@ -151,41 +151,23 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
                   ChAi can calculate metrics from your raw data
                 </p>
                 <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                  Drop raw spreadsheets or exports and ChAi will work out the metrics it needs.
-                  For example:
+                  {metricExamples.length
+                    ? "Drop raw spreadsheets or exports and ChAi will work out your metrics for you:"
+                    : "Drop raw spreadsheets or exports and ChAi will work out the metrics it needs. Once your metrics are set up, they'll be listed here."}
                 </p>
-                <ul className="mt-1.5 space-y-1 text-[11px] text-muted-foreground">
-                  <li className="flex gap-1.5">
-                    <span className="text-primary">•</span>
-                    <span>
-                      <strong className="text-foreground">Days since last activity</strong> — needs a customer ID and a date column (e.g. last login, last purchase, last ticket).
-                    </span>
-                  </li>
-                  <li className="flex gap-1.5">
-                    <span className="text-primary">•</span>
-                    <span>
-                      <strong className="text-foreground">Total revenue / spend per customer</strong> — needs a customer ID and a transaction amount column.
-                    </span>
-                  </li>
-                  <li className="flex gap-1.5">
-                    <span className="text-primary">•</span>
-                    <span>
-                      <strong className="text-foreground">Average order or ticket value</strong> — needs a customer ID and an amount column per row.
-                    </span>
-                  </li>
-                  <li className="flex gap-1.5">
-                    <span className="text-primary">•</span>
-                    <span>
-                      <strong className="text-foreground">Support ticket count / resolution rate</strong> — needs a customer ID, ticket date and optionally a status column.
-                    </span>
-                  </li>
-                  <li className="flex gap-1.5">
-                    <span className="text-primary">•</span>
-                    <span>
-                      <strong className="text-foreground">Feature usage or adoption flags</strong> — needs a customer ID and a column showing usage, clicks or yes/no values.
-                    </span>
-                  </li>
-                </ul>
+                {metricExamples.length > 0 && (
+                  <ul className="mt-1.5 space-y-1 text-[11px] text-muted-foreground">
+                    {metricExamples.map((m) => (
+                      <li key={m.name} className="flex gap-1.5">
+                        <span className="text-primary">•</span>
+                        <span>
+                          <strong className="text-foreground">{m.name}</strong> — needs {m.hint}.
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
                   Just include a customer identifier (ID, email or name) and the relevant raw columns — ChAi will sum, count, average, compare dates and map the result to the right metric.
                 </p>
