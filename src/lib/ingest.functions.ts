@@ -38,6 +38,33 @@ const ExtractInput = z.object({
 
 export type ExtractInput = z.infer<typeof ExtractInput>;
 
+const MapColumnsInput = z.object({
+  fileName: z.string(),
+  headers: z.array(z.string()).min(1),
+  sampleRows: z.array(z.array(z.string())).default([]),
+  totalRows: z.number().int().nonnegative().default(0),
+  schemas: z.array(DatasetSchemaInput).min(1),
+});
+
+export interface MappedFieldPlan {
+  field: string;
+  column: string;
+  constant?: string;
+}
+
+export interface DatasetMappingPlan {
+  key: string;
+  confidence: number;
+  note: string;
+  fields: MappedFieldPlan[];
+}
+
+export interface MapColumnsResult {
+  documentType: string;
+  mappings: DatasetMappingPlan[];
+}
+
+
 export interface ExtractedDataset {
   key: string;
   label: string;
