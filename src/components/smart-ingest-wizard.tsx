@@ -147,7 +147,10 @@ interface EditableDataset {
   rows: string[][];
   confidence: number;
   note: string;
+  derivations?: string[];
+  grouped?: boolean;
 }
+
 
 function buildEditable(
   extracted: ExtractedDataset[],
