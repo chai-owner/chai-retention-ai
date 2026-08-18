@@ -215,6 +215,45 @@ describe("buildRealDataset — AI-generated custom metrics", () => {
       expect(c.subScores?.[customMetric.name]).toBeUndefined();
     }
   });
+
+  it("resolves generated metrics from fields in standard source datasets", () => {
+    const metrics = [
+      { ...customMetric, name: "Average Workout Duration", why: "Time spent working out per visit." },
+      { ...customMetric, name: "Weekly Check-in Frequency", why: "Badge check-ins each week." },
+      { ...customMetric, name: "Days Since Last Visit", why: "Days a member has been absent.", valueAt0: 90, valueAt100: 0 },
+      { ...customMetric, name: "Membership Dues Delinquency", category: "Transactions", why: "Whether payments are overdue." },
+      { ...customMetric, name: "Peak Hour Utilization", why: "Share of visits during busy peak hours." },
+      { ...customMetric, name: "Member Tenure Milestones", category: "Retention", why: "Months since the member signup date." },
+      { ...customMetric, name: "Personal Training Upsell Rate", category: "Transactions", why: "Share purchasing additional training services." },
+      { ...customMetric, name: "Off-Peak Attendance Trend", why: "Share of attendance during off-peak times." },
+    ];
+    const profile = makeProfile({ metrics });
+    const ds = buildRealDataset(
+      {
+        customers: [{ customer_id: "GYM1", signup_date: daysAgo(365) }],
+        usage: [
+          { customer_id: "GYM1", visit_date: daysAgo(3), workout_duration_minutes: "20", check_in_count: "1", peak_hour: "true", off_peak: "false" },
+          { customer_id: "GYM1", visit_date: daysAgo(1), workout_duration_minutes: "40", check_in_count: "1", peak_hour: "false", off_peak: "true" },
+        ],
+        transactions: [
+          { customer_id: "GYM1", transaction_date: daysAgo(5), payment_status: "overdue", transaction_type: "Membership Dues", upsell: "false" },
+          { customer_id: "GYM1", transaction_date: daysAgo(2), payment_status: "paid", transaction_type: "Personal Training", upsell: "true" },
+        ],
+      },
+      Object.fromEntries(metrics.map((metric) => [metric.name, 3])),
+      profile,
+    );
+    const values = ds.customers[0].metricValues ?? {};
+    expect(values["Average Workout Duration"]).toBe(30);
+    expect(values["Weekly Check-in Frequency"]).toBe(2);
+    expect(values["Days Since Last Visit"]).toBeGreaterThanOrEqual(1);
+    expect(values["Days Since Last Visit"]).toBeLessThanOrEqual(2);
+    expect(values["Membership Dues Delinquency"]).toBe(50);
+    expect(values["Peak Hour Utilization"]).toBe(50);
+    expect(values["Member Tenure Milestones"]).toBeGreaterThan(11);
+    expect(values["Personal Training Upsell Rate"]).toBe(50);
+    expect(values["Off-Peak Attendance Trend"]).toBe(50);
+  });
 });
 
 describe("revenue at risk vs retention opportunity", () => {

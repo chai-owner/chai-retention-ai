@@ -28,12 +28,19 @@ function Planner() {
   // Average sub-score per metric, broken down by customer segment.
   const segmentAverages = useMemo(() => {
     const segments = Array.from(new Set(customers.map((c) => c.segment)));
-    const byMetric: Record<string, { segment: string; avg: number }[]> = {};
+    const byMetric: Record<string, { segment: string; avg: number; raw: boolean }[]> = {};
     for (const m of plannerMetrics) {
       byMetric[m.name] = segments.map((seg) => {
         const inSeg = customers.filter((c) => c.segment === seg);
-        const sum = inSeg.reduce((s, c) => s + (c.subScores?.[m.name] ?? 0), 0);
-        return { segment: seg, avg: inSeg.length ? Math.round(sum / inSeg.length) : 0 };
+        const values = inSeg
+          .map((c) => c.metricValues?.[m.name])
+          .filter((value): value is number => value != null);
+        const scores = inSeg
+          .map((c) => c.subScores?.[m.name])
+          .filter((value): value is number => value != null);
+        const source = values.length > 0 ? values : scores;
+        const sum = source.reduce((total, value) => total + value, 0);
+        return { segment: seg, avg: source.length ? sum / source.length : 0, raw: values.length > 0 };
       });
     }
     return byMetric;
@@ -119,7 +126,11 @@ function Planner() {
                             {a.segment}
                           </span>
                         </div>
-                        <span className={`my-1 w-full text-center text-lg font-bold tabular-nums ${textClass}`}>{metricActualValue(m, a.avg)}</span>
+                        <span className={`my-1 w-full text-center text-lg font-bold tabular-nums ${textClass}`}>
+                          {a.raw && m.valueAt0 == null && m.valueAt100 == null
+                            ? a.avg.toFixed(m.decimals ?? (Number.isInteger(a.avg) ? 0 : 1))
+                            : metricActualValue(m, a.avg)}
+                        </span>
                       </div>
                     );
                   })}

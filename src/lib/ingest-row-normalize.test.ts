@@ -36,6 +36,15 @@ describe("normalizeIngestRow", () => {
     const row = normalizeIngestRow({ data: { peak: true, count: 3 } }, []);
     expect(row).toEqual({ peak: "true", count: "3" });
   });
+
+  it("preserves nested provider payloads for generic metric resolution", () => {
+    const row = normalizeIngestRow(
+      { data: { activity: { workout_duration_minutes: 64, peak_hour: true } }, customer_id: "GYM1" },
+      INGEST_COLUMNS.usage!,
+    );
+    expect(row.activity).toBe('{"workout_duration_minutes":64,"peak_hour":true}');
+    expect(row.customer_id).toBe("GYM1");
+  });
 });
 
 describe("fetchAllPages", () => {

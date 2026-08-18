@@ -11,11 +11,13 @@ import {
   type TimelineEvent,
   categoryFromHealth,
   METRIC_NAMES,
+  type PlannerMetric,
   type MetricWeights,
 } from "@/lib/mock-data";
 import type { OnboardingProfile, ProfileSegment } from "@/lib/profile-store";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import { customMetricKeys, type CustomMetricKey } from "@/lib/personalize-data";
+import { resolveMetric } from "@/lib/metric-resolution";
 
 
 const DAY = 86400000;
@@ -47,15 +49,20 @@ export interface Sufficiency {
   reason: string;
 }
 
-export function assessSufficiency(data: IngestedData): Sufficiency {
+export function assessSufficiency(data: IngestedData, metrics?: PlannerMetric[] | null): Sufficiency {
   const customerCount = (data.customers ?? []).length;
   const transactionCount = (data.transactions ?? []).length;
   const supportCount = (data.support ?? []).length;
   const usageCount = (data.usage ?? []).length;
   const surveyCount = (data.surveys ?? []).length;
-  const signalDatasets = [transactionCount, supportCount, usageCount, surveyCount].filter(
-    (n) => n > 0,
-  ).length;
+  const standardSignals = [transactionCount, supportCount, usageCount, surveyCount].filter((n) => n > 0).length;
+  const resolvedMetricDatasets = new Set(
+    (metrics ?? [])
+      .map((metric) => resolveMetric(metric, data))
+      .filter((resolved) => resolved.values.size > 0 && resolved.dataset)
+      .map((resolved) => resolved.dataset as string),
+  );
+  const signalDatasets = Math.max(standardSignals, resolvedMetricDatasets.size);
   // "Enough for an accurate snapshot": a real customer list plus at least one
   // behavioural signal to score them against.
   const enough = customerCount >= 3 && signalDatasets >= 1;
@@ -239,35 +246,21 @@ export function buildRealDataset(
     srv.set(id, arr);
   }
 
-  // ---- AI-suggested custom metrics: latest value per customer ----
-  // Each AI metric writes to a dataset key like `metric_<column>` with rows
-  // { customer_id, date, <column> }. We keep the most recent value per
-  // customer so the sub-score reflects the current state, not history.
+  // Generated metrics can come from their dedicated metric upload OR resolve
+  // from semantically matching fields in customers, usage, transactions,
+  // surveys, or support. This lets raw operational data power the assessment
+  // without requiring users to re-upload the same values per metric.
   const customMetrics = customMetricKeys(profile?.metrics).filter(
     (cm) => !(METRIC_NAMES as readonly string[]).includes(cm.metric.name),
   );
-  const customLatest = new Map<string, Map<string, number>>(); // metricName -> cid -> value
+  const customLatest = new Map<string, Map<string, number>>();
   const customMax = new Map<string, number>();
   const customMin = new Map<string, number>();
   for (const cm of customMetrics) {
-    const rows = data[cm.key] ?? [];
-    const latestTs = new Map<string, number>();
-    const latestVal = new Map<string, number>();
-    for (const r of rows) {
-      const id = r.customer_id;
-      if (!id) continue;
-      const v = num(r[cm.column]);
-      if (v == null) continue;
-      const t = parseDate(r.date) ?? 0;
-      const prev = latestTs.get(id);
-      if (prev == null || t >= prev) {
-        latestTs.set(id, t);
-        latestVal.set(id, v);
-      }
-    }
-    if (latestVal.size > 0) {
-      customLatest.set(cm.metric.name, latestVal);
-      const vals = [...latestVal.values()];
+    const resolved = resolveMetric(cm.metric, data, now);
+    if (resolved.values.size > 0) {
+      customLatest.set(cm.metric.name, resolved.values);
+      const vals = [...resolved.values.values()];
       customMax.set(cm.metric.name, Math.max(...vals));
       customMin.set(cm.metric.name, Math.min(...vals));
     }
@@ -333,6 +326,7 @@ export function buildRealDataset(
           : 0;
 
     const subScores: Record<string, number> = {};
+    const metricValues: Record<string, number> = {};
     if (loginAvgByCust.has(cid)) subScores["Login frequency"] = clamp((loginAvgByCust.get(cid)! / maxLogin) * 100);
     if (featAvgByCust.has(cid)) subScores["Feature adoption"] = clamp((featAvgByCust.get(cid)! / maxFeat) * 100);
     const days = txg?.lastDate ? (now - txg.lastDate) / DAY : null;
@@ -350,7 +344,10 @@ export function buildRealDataset(
     // has an uploaded value for.
     for (const cm of customMetrics) {
       const v = customLatest.get(cm.metric.name)?.get(cid);
-      if (v != null) subScores[cm.metric.name] = customSubScore(cm, v);
+      if (v != null) {
+        metricValues[cm.metric.name] = v;
+        subScores[cm.metric.name] = customSubScore(cm, v);
+      }
     }
 
     let numr = 0;
@@ -415,6 +412,7 @@ export function buildRealDataset(
       sentiment,
       lastActivity,
       subScores,
+      metricValues,
       factors,
       recommendations,
       timeline,
