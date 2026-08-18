@@ -88,7 +88,7 @@ export function useRealAssessment(): { sufficiency: Sufficiency; dataset: Scored
   const ingested = useMemo(() => mergeRoster(applyAliases(resolveIdentities(raw), aliases), aliases), [raw, aliases]);
   const profile = useProfile();
   return useMemo(() => {
-    const sufficiency = assessSufficiency(ingested);
+    const sufficiency = assessSufficiency(ingested, profile?.metrics);
     const dataset =
       sufficiency.customerCount > 0 ? buildRealDataset(ingested, weights, profile) : null;
     return { sufficiency, dataset };

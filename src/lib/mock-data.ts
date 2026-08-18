@@ -80,6 +80,8 @@ export interface Customer {
   sentiment: number;
   lastActivity: string;
   subScores?: Record<string, number>;
+  /** Resolved real-world values for generated metrics before 0–100 normalization. */
+  metricValues?: Record<string, number>;
   factors: Factor[];
   recommendations: Recommendation[];
   timeline: TimelineEvent[];

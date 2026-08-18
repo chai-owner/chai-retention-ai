@@ -2,7 +2,7 @@
 // are seeing is actually backed by recent data — and what is missing or stale.
 import type { IngestedData, IngestRow } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
-import { customMetricKeys } from "@/lib/personalize-data";
+import { metricDatasetDependencies, resolveMetric } from "@/lib/metric-resolution";
 
 export const STALE_DAYS = 30;
 const DAY = 86400000;
@@ -62,7 +62,6 @@ function latestDate(rows: IngestRow[]): number | null {
 const BASE_SIGNALS: { key: string; label: string }[] = [
   { key: "transactions", label: "Transactions" },
   { key: "usage", label: "Usage / activity" },
-  { key: "support", label: "Support tickets" },
   { key: "surveys", label: "Surveys (CSAT / NPS)" },
 ];
 
@@ -76,22 +75,31 @@ export function assessCoverage(
   metrics?: PlannerMetric[] | null,
   now: number = Date.now(),
 ): DataCoverage {
-  const signals = [
-    ...BASE_SIGNALS,
-    ...customMetricKeys(metrics ?? undefined).map((cm) => ({
-      key: cm.key,
-      label: cm.metric.name,
-    })),
-  ];
+  const activeMetrics = metrics ?? [];
+  const requiredDatasets = new Set(activeMetrics.flatMap((metric) => metricDatasetDependencies(metric, data)));
+  const baseSignals = BASE_SIGNALS.filter(({ key }) => (data[key] ?? []).length > 0 || requiredDatasets.has(key));
+  if ((data.support ?? []).length > 0 || requiredDatasets.has("support")) {
+    baseSignals.push({ key: "support", label: "Support tickets" });
+  }
+  const metricSignals = activeMetrics.map((metric) => {
+    const resolved = resolveMetric(metric, data, now);
+    return {
+      key: `metric:${metric.name}`,
+      label: metric.name,
+      rows: resolved.rowCount,
+      lastDate: resolved.latestDate,
+    };
+  });
 
-  const datasets: DatasetCoverage[] = signals.map(({ key, label }) => {
-    const rows = data[key] ?? [];
-    const lastDate = latestDate(rows);
+  const datasets: DatasetCoverage[] = [
+    ...baseSignals.map(({ key, label }) => ({ key, label, rows: (data[key] ?? []).length, lastDate: latestDate(data[key] ?? []) })),
+    ...metricSignals,
+  ].map(({ key, label, rows, lastDate }) => {
     const daysSince = lastDate == null ? null : Math.max(0, Math.round((now - lastDate) / DAY));
     let status: CoverageStatus = "ok";
-    if (rows.length === 0) status = "missing";
+    if (rows === 0) status = "missing";
     else if (daysSince != null && daysSince > STALE_DAYS) status = "stale";
-    return { key, label, rows: rows.length, lastDate, daysSince, status };
+    return { key, label, rows, lastDate, daysSince, status };
   });
 
   const missing = datasets.filter((d) => d.status === "missing");
