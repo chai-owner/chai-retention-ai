@@ -181,8 +181,6 @@ export interface IngestedSnapshot {
   surveys: Array<Record<string, string>>;
 }
 
-const toRow = normalizeIngestRow;
-const COLUMNS = INGEST_COLUMNS;
 
 
 export const listAllIngested = createServerFn({ method: "GET" })
@@ -210,11 +208,11 @@ export const listAllIngested = createServerFn({ method: "GET" })
     ]);
 
     return {
-      customers: c.map((r) => toRow(r, COLUMNS.customers!)),
-      transactions: t.map((r) => toRow(r, COLUMNS.transactions!)),
-      support: s.map((r) => toRow(r, COLUMNS.support!)),
-      usage: u.map((r) => toRow(r, COLUMNS.usage!)),
-      surveys: sv.map((r) => toRow(r, COLUMNS.surveys!)),
+      customers: c.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.customers!)),
+      transactions: t.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.transactions!)),
+      support: s.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.support!)),
+      usage: u.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.usage!)),
+      surveys: sv.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.surveys!)),
     };
   });
 
