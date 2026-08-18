@@ -149,6 +149,48 @@ function Settings() {
     }, 600);
   }
 
+  // Admin-only: drop a metric immediately (profile store + server) so every
+  // metric-driven surface — including the CSV upload dropdown — updates at once.
+  function handleRemoveMetric(name: string) {
+    const nextMetrics = metrics
+      .filter((m) => m.name !== name)
+      .map((m) => ({ ...m, weight: metricWeights[m.name] ?? m.weight ?? 3 }));
+    const nextWeights = { ...metricWeights };
+    delete nextWeights[name];
+
+    setRemovedMetrics((r) => [...r, name]);
+    setMetricWeights(nextWeights);
+
+    const current = profileStore.getSnapshot();
+    if (!current) return;
+    profileStore.save({ ...current, metrics: nextMetrics, metricWeights: nextWeights });
+    persistProfile({
+      data: {
+        company: company || current.company,
+        industry: industry || current.industry,
+        model: model || current.model,
+        size,
+        customers,
+        avgValue,
+        whatBuy,
+        cadence,
+        lifespan,
+        concerns,
+        mustTrack: current.mustTrack ?? "",
+        segments,
+        successActions,
+        disengagement,
+        churnDefinition,
+        tracked,
+        channels,
+        metricWeights: nextWeights,
+        metrics: nextMetrics,
+      },
+    }).catch(() => {
+      // Non-blocking: localStorage already reflects the removal.
+    });
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
       <div>
