@@ -69,6 +69,15 @@ export const saveIngestBatch = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const dataset = data.dataset_key;
 
+    // Always stamp the platform tag so identity resolution never has to guess.
+    // Rows that already carry one (CRM/support syncs) keep theirs.
+    const stamp = batchSource(data.source_kind, data.source_provider);
+    data.rows = data.rows.map((r) =>
+      r["__source"]?.trim() ? r : { ...r, __source: stamp },
+    );
+
+
+
     // 1. Create the batch row.
     const { data: batchRow, error: batchErr } = await supabase
       .from("ingest_batches")
