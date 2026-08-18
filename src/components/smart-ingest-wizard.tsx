@@ -401,6 +401,7 @@ export function SmartIngestWizard({
   }, [datasets]);
 
   const totalRows = datasets.reduce((a, d) => a + d.rows.length, 0);
+  const maxDatasetRows = datasets.reduce((a, d) => Math.max(a, d.rows.length), 0);
 
   function confirmAndSave() {
     if (errorCount > 0 || totalRows === 0) return;
