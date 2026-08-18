@@ -26,7 +26,8 @@ import { cn } from "@/lib/utils";
 import { type DatasetSchema } from "@/lib/data-schemas";
 import { useAllSchemas } from "@/lib/all-datasets";
 import type { PlannerMetric } from "@/lib/mock-data";
-import { extractRecords, type ExtractedDataset } from "@/lib/ingest.functions";
+import { extractRecords, mapColumns, type ExtractedDataset } from "@/lib/ingest.functions";
+import { applyMapping, type MappedSchema } from "@/lib/ingest-mapping";
 import {
   uploadsStore,
   type FieldCheck,
@@ -117,6 +118,9 @@ const SUPPORTED =
 
 type Step = "select" | "review";
 
+/** Rows shown in the review table; every row is still imported. */
+const PREVIEW_ROWS = 50;
+
 // Merge editable datasets from multiple files by dataset key, concatenating
 // their rows so a folder of documents collapses into one review screen.
 function mergeEditable(target: EditableDataset[], incoming: EditableDataset[]) {
@@ -179,6 +183,7 @@ export function SmartIngestWizard({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const runExtract = useServerFn(extractRecords);
+  const runMapColumns = useServerFn(mapColumns);
   const allSchemas = useAllSchemas(metrics);
   const [step, setStep] = useState<Step>("select");
   const [busy, setBusy] = useState(false);
@@ -187,6 +192,8 @@ export function SmartIngestWizard({
   const [documentType, setDocumentType] = useState("");
   const [datasets, setDatasets] = useState<EditableDataset[]>([]);
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  /** Data rows found in the source spreadsheet(s); 0 for PDFs/images. */
+  const [sourceRows, setSourceRows] = useState(0);
 
   const sourceLabel =
     fileNames.length === 1 ? fileNames[0] : `${fileNames.length} files`;
@@ -199,49 +206,86 @@ export function SmartIngestWizard({
     setDocumentType("");
     setDatasets([]);
     setProgress(null);
+    setSourceRows(0);
   }
   function close() {
     onOpenChange(false);
     setTimeout(reset, 200);
   }
 
-  // Extract one file. Returns its extracted datasets + document type, or null
-  // (with a toast) when the file is unsupported or yields nothing.
+  // Structured files (CSV / Excel) are parsed locally and mapped column-by-column
+  // by the AI, then applied to EVERY row here — so the import can never be
+  // truncated to the first customer. PDFs/images still go through AI extraction.
+  async function processStructured(
+    file: File,
+    grid: string[][],
+    schemas: ReturnType<typeof buildSchemas>,
+  ): Promise<{ datasets: EditableDataset[]; documentType: string; sourceRows: number } | null> {
+    const headers = grid[0] ?? [];
+    const dataRows = grid.slice(1);
+    if (headers.length === 0 || dataRows.length === 0) {
+      toast.error(`No rows in ${file.name}`, { description: "The file needs a header row and at least one data row." });
+      return null;
+    }
+
+    const result = await runMapColumns({
+      data: {
+        fileName: file.name,
+        headers,
+        sampleRows: dataRows.slice(0, 20),
+        totalRows: dataRows.length,
+        schemas,
+      },
+    });
+
+    const mappedSchemas: MappedSchema[] = allSchemas.map((s) => ({
+      key: s.key,
+      label: s.label,
+      fields: s.fields.map((f) => ({ name: f.name, type: inferType(f.name, f.example) })),
+    }));
+
+    const mapped = applyMapping(headers, dataRows, mappedSchemas, result.mappings);
+    const editable: EditableDataset[] = mapped.flatMap((m) => {
+      const schema = allSchemas.find((s) => s.key === m.key);
+      if (!schema) return [];
+      return [{ ...m, schema }];
+    });
+    return { datasets: editable, documentType: result.documentType, sourceRows: dataRows.length };
+  }
+
+  // Extract one file. Returns review-ready datasets, or null (with a toast)
+  // when the file is unsupported or yields nothing.
   async function extractOne(
     file: File,
     schemas: ReturnType<typeof buildSchemas>,
-  ): Promise<{ datasets: ExtractedDataset[]; documentType: string } | null> {
+  ): Promise<{ datasets: EditableDataset[]; documentType: string; sourceRows: number } | null> {
     const name = file.name.toLowerCase();
-    let payload: { base64?: string; text?: string };
 
     if (/\.(csv|txt)$/.test(name)) {
-      payload = { text: await file.text() };
-    } else if (/\.(xlsx|xls)$/.test(name)) {
+      return processStructured(file, parseCsv(await file.text()), schemas);
+    }
+    if (/\.(xlsx|xls)$/.test(name)) {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      payload = { text: XLSX.utils.sheet_to_csv(sheet) };
-    } else if (/\.(pdf|png|jpe?g|webp)$/.test(name)) {
-      payload = { base64: await fileToBase64(file) };
-    } else {
+      return processStructured(file, parseCsv(XLSX.utils.sheet_to_csv(sheet)), schemas);
+    }
+    if (!/\.(pdf|png|jpe?g|webp)$/.test(name)) {
       toast.error(`Skipped ${file.name}`, {
         description: "Unsupported type. Use PDF, image, CSV, TXT or Excel.",
       });
       return null;
     }
 
-    const mimeType =
-      file.type ||
-      (name.endsWith(".pdf")
-        ? "application/pdf"
-        : name.endsWith(".csv")
-          ? "text/csv"
-          : "text/plain");
-
+    const mimeType = file.type || (name.endsWith(".pdf") ? "application/pdf" : "image/png");
     const result = await runExtract({
-      data: { fileName: file.name, mimeType, schemas, ...payload },
+      data: { fileName: file.name, mimeType, schemas, base64: await fileToBase64(file) },
     });
-    return result;
+    return {
+      datasets: buildEditable(result.datasets, allSchemas),
+      documentType: result.documentType,
+      sourceRows: 0,
+    };
   }
 
   function buildSchemas() {
@@ -270,6 +314,7 @@ export function SmartIngestWizard({
       const usedNames: string[] = [];
       const docTypes = new Set<string>();
       let sizeKb = 0;
+      let srcRows = 0;
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -277,7 +322,7 @@ export function SmartIngestWizard({
         try {
           const result = await extractOne(file, schemas);
           if (!result) continue;
-          const editable = buildEditable(result.datasets, allSchemas);
+          const editable = result.datasets;
           if (editable.length === 0) {
             toast.error(`No data in ${file.name}`, {
               description: "ChAi couldn't match this file to your datasets.",
@@ -287,6 +332,7 @@ export function SmartIngestWizard({
           mergeEditable(merged, editable);
           usedNames.push(file.name);
           docTypes.add(result.documentType);
+          srcRows += result.sourceRows;
           sizeKb += Math.max(1, Math.round(file.size / 1024));
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Extraction failed.";
@@ -314,6 +360,7 @@ export function SmartIngestWizard({
       setFileSizeKb(sizeKb);
       setDocumentType(docTypes.size === 1 ? [...docTypes][0] : `${docTypes.size} document types`);
       setDatasets(merged);
+      setSourceRows(srcRows);
       setStep("review");
     } finally {
       setBusy(false);
@@ -354,6 +401,7 @@ export function SmartIngestWizard({
   }, [datasets]);
 
   const totalRows = datasets.reduce((a, d) => a + d.rows.length, 0);
+  const maxDatasetRows = datasets.reduce((a, d) => Math.max(a, d.rows.length), 0);
 
   function confirmAndSave() {
     if (errorCount > 0 || totalRows === 0) return;
@@ -468,6 +516,11 @@ export function SmartIngestWizard({
               <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">{sourceLabel}</span>
               <span className="text-muted-foreground">· detected as {documentType}</span>
+              {sourceRows > 0 && (
+                <span className="text-muted-foreground">
+                  · {maxDatasetRows.toLocaleString()} of {sourceRows.toLocaleString()} rows in file mapped
+                </span>
+              )}
             </div>
 
             {datasets.map((d, di) => (
@@ -476,7 +529,8 @@ export function SmartIngestWizard({
                   <div>
                     <span className="text-sm font-semibold">{d.label}</span>
                     <span className="ml-2 text-xs text-muted-foreground">
-                      {d.rows.length} row{d.rows.length !== 1 ? "s" : ""}
+                      {d.rows.length.toLocaleString()} row{d.rows.length !== 1 ? "s" : ""}
+                      {d.rows.length > PREVIEW_ROWS ? ` · showing first ${PREVIEW_ROWS}` : ""}
                     </span>
                   </div>
                   <span
@@ -506,7 +560,7 @@ export function SmartIngestWizard({
                       </tr>
                     </thead>
                     <tbody>
-                      {d.rows.map((r, ri) => (
+                      {d.rows.slice(0, PREVIEW_ROWS).map((r, ri) => (
                         <tr key={ri} className="border-t border-border">
                           {d.schema.fields.map((f, ci) => {
                             const type = inferType(f.name, f.example);
@@ -539,6 +593,11 @@ export function SmartIngestWizard({
                       ))}
                     </tbody>
                   </table>
+                  {d.rows.length > PREVIEW_ROWS && (
+                    <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+                      + {(d.rows.length - PREVIEW_ROWS).toLocaleString()} more rows — all of them will be imported.
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
