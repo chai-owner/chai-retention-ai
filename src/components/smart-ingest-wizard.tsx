@@ -130,6 +130,8 @@ function mergeEditable(target: EditableDataset[], incoming: EditableDataset[]) {
     if (existing) {
       existing.rows = [...existing.rows, ...d.rows];
       existing.confidence = Math.round((existing.confidence + d.confidence) / 2);
+      existing.derivations = [...new Set([...(existing.derivations ?? []), ...(d.derivations ?? [])])];
+      existing.grouped = existing.grouped || d.grouped;
     } else {
       const copy = { ...d, rows: [...d.rows] };
       byKey.set(d.key, copy);
