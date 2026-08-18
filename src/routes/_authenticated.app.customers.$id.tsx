@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -205,7 +205,7 @@ function CustomerDetail() {
             <h3 className="font-semibold">Why this customer is at risk</h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            ChAi analyzed usage, purchases, support and conversations. Here's what's driving the risk.
+            {analyzedCopy}
           </p>
           <div className="mt-4 space-y-4">
             {c.factors.map((f) => (
