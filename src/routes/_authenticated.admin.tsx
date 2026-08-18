@@ -275,7 +275,7 @@ function AdminPage() {
                           )}
                         </button>
                         <button
-                          onClick={() => handleReset(c)}
+                          onClick={() => setResetTarget(c)}
                           disabled={busyId === c.id}
                           title="Delete all data and restart onboarding"
                           className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
