@@ -118,6 +118,9 @@ const SUPPORTED =
 
 type Step = "select" | "review";
 
+/** Rows shown in the review table; every row is still imported. */
+const PREVIEW_ROWS = 50;
+
 // Merge editable datasets from multiple files by dataset key, concatenating
 // their rows so a folder of documents collapses into one review screen.
 function mergeEditable(target: EditableDataset[], incoming: EditableDataset[]) {
