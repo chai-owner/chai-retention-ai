@@ -49,6 +49,8 @@ import {
 import { useScoredData } from "@/lib/use-scored-data";
 import { useSignedIn } from "@/lib/use-auth-state";
 import { DataCoverageBanner } from "@/components/data-coverage-banner";
+import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
@@ -144,9 +146,20 @@ function Dashboard() {
   }, [summaryKey, aiNonce]);
 
   const refreshAi = () => {
-    clearCachedRiskSummaries();
-    setRiskSummaries({});
-    setAiNonce((n) => n + 1);
+    setAiRefreshing(true);
+    setAiError(null);
+    void hydrateIngestFromServer({ surfaceError: true })
+      .then(() => {
+        clearCachedRiskSummaries();
+        setRiskSummaries({});
+        setAiNonce((n) => n + 1);
+      })
+      .catch((err: unknown) => {
+        setAiError(
+          err instanceof Error ? err.message : "Your account data could not be refreshed.",
+        );
+        setAiRefreshing(false);
+      });
   };
 
 
@@ -350,15 +363,17 @@ function Dashboard() {
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Needs attention now</h3>
           <div className="flex items-center gap-3">
-            <button
+            <Button
               type="button"
               onClick={refreshAi}
               disabled={aiRefreshing || topRisk.length === 0}
-              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-50"
+              variant="link"
+              size="sm"
+              className="h-auto px-0 text-xs"
             >
               <Sparkles className={`h-3 w-3 ${aiRefreshing ? "animate-pulse" : ""}`} />
-              {aiRefreshing ? "Refreshing AI…" : "Refresh AI analysis"}
-            </button>
+              {aiRefreshing ? "Refreshing assessment…" : "Refresh assessment"}
+            </Button>
             <Link to="/app/customers" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
               View all <ArrowRight className="h-3 w-3" />
             </Link>

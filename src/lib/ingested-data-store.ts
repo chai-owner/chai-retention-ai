@@ -79,6 +79,10 @@ export const ingestedStore = {
     data = {};
     emit();
   },
+  beginHydration() {
+    hydrated = false;
+    emit();
+  },
   markHydrated() {
     if (hydrated) return;
     hydrated = true;
