@@ -285,6 +285,41 @@ Return ONLY a JSON object (no markdown, no code fences):
       parsed = JSON.parse(jsonText.slice(start, end + 1));
     }
 
+    const DeriveSchema = z.union([
+      z.object({
+        op: z.literal("arith"),
+        a: z.string(),
+        b: z.string().optional(),
+        operator: z.enum(["+", "-", "*", "/"]),
+        value: z.coerce.number().optional(),
+      }),
+      z.object({ op: z.literal("date_diff"), from: z.string(), to: z.string() }),
+      z.object({ op: z.literal("days_since"), column: z.string() }),
+      z.object({ op: z.literal("bool"), column: z.string(), trueValues: z.array(z.string()).optional() }),
+      z.object({
+        op: z.literal("lookup"),
+        column: z.string(),
+        map: z.record(z.string(), z.string()),
+        fallback: z.string().optional(),
+      }),
+      z.object({ op: z.literal("count") }),
+      z.object({
+        op: z.literal("count_if"),
+        column: z.string(),
+        equals: z.string().optional(),
+        anyOf: z.array(z.string()).optional(),
+      }),
+      z.object({ op: z.enum(["sum", "avg", "min", "max"]), column: z.string() }),
+      z.object({ op: z.literal("last_date"), column: z.string() }),
+      z.object({ op: z.literal("days_since_last"), column: z.string() }),
+      z.object({
+        op: z.literal("ratio_if"),
+        column: z.string(),
+        equals: z.string().optional(),
+        anyOf: z.array(z.string()).optional(),
+      }),
+    ]);
+
     const ResultSchema = z.object({
       documentType: z.string().default("Spreadsheet"),
       mappings: z
@@ -293,12 +328,14 @@ Return ONLY a JSON object (no markdown, no code fences):
             key: z.string(),
             confidence: z.coerce.number().min(0).max(100).default(80),
             note: z.string().default(""),
+            groupBy: z.string().optional(),
             fields: z
               .array(
                 z.object({
                   field: z.string(),
                   column: z.string().default(""),
                   constant: z.string().optional(),
+                  derive: DeriveSchema.optional().catch(undefined),
                 }),
               )
               .default([]),
@@ -306,6 +343,7 @@ Return ONLY a JSON object (no markdown, no code fences):
         )
         .default([]),
     });
+
 
     const result = ResultSchema.parse(parsed);
     const known = new Set(data.schemas.map((s) => s.key));
