@@ -4,7 +4,9 @@ import {
   normalizeIngestRow,
   fetchAllPages,
   INGEST_PAGE,
+  batchSource,
 } from "@/lib/ingest-row-normalize";
+import { sourceLabel } from "@/lib/customer-matching";
 
 describe("normalizeIngestRow", () => {
   it("recovers canonical fields that live only in the DB columns", () => {
@@ -62,5 +64,35 @@ describe("fetchAllPages", () => {
     await expect(
       fetchAllPages(async () => ({ data: null, error: { message: "boom" } }), "usage"),
     ).rejects.toThrow(/usage: boom/);
+  });
+});
+
+describe("source inference", () => {
+  it("maps batch kinds/providers to a platform tag", () => {
+    expect(batchSource("upload", "csv")).toBe("csv");
+    expect(batchSource("test", "manual")).toBe("csv");
+    expect(batchSource("drop", "chai")).toBe("drop");
+    expect(batchSource("crm", "hubspot")).toBe("hubspot");
+    expect(batchSource("support", "zendesk")).toBe("zendesk");
+    expect(batchSource("accounting", "xero")).toBe("xero");
+  });
+
+  it("falls back to the batch source when the row has no __source", () => {
+    const row = normalizeIngestRow(
+      { data: { customer_name: "Member 16" }, customer_id: "GYM016" },
+      INGEST_COLUMNS.customers!,
+      "csv",
+    );
+    expect(row.__source).toBe("csv");
+    expect(sourceLabel(row.__source!)).toBe("CSV upload");
+  });
+
+  it("keeps an existing __source over the batch fallback", () => {
+    const row = normalizeIngestRow(
+      { data: { __source: "xero" }, customer_id: "X1" },
+      INGEST_COLUMNS.customers!,
+      "csv",
+    );
+    expect(row.__source).toBe("xero");
   });
 });

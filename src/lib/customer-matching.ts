@@ -80,6 +80,11 @@ export function sourceLabel(source: string): string {
   return SOURCE_LABELS[source] ?? source.charAt(0).toUpperCase() + source.slice(1);
 }
 
+/** Heading for the identity panel: only "connected" once there is more than one. */
+export function identityCardTitle(count: number): string {
+  return count > 1 ? "Connected identities" : "Customer identity";
+}
+
 /** Identity key: a raw id only means something together with its platform. */
 export function aliasKey(source: string, sourceId: string): string {
   return `${source || UNKNOWN_SOURCE}::${sourceId}`;

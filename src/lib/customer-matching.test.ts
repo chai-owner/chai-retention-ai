@@ -11,6 +11,8 @@ import {
   signalDatasetKeys,
   resolveIdentities,
   identifierLabel,
+  identityCardTitle,
+  sourceLabel,
   type CustomerAlias,
 } from "@/lib/customer-matching";
 import type { IngestedData } from "@/lib/ingested-data-store";
@@ -233,5 +235,18 @@ describe("resolveIdentities", () => {
     expect(identifierLabel("email:a@b.com")).toBe("email a@b.com");
     expect(identifierLabel('name:Acme')).toBe('name "Acme"');
     expect(identifierLabel("CUS-1")).toBe("ID CUS-1");
+  });
+});
+
+describe("identity panel labelling", () => {
+  it("uses a singular label until a second platform identity exists", () => {
+    expect(identityCardTitle(1)).toBe("Customer identity");
+    expect(identityCardTitle(2)).toBe("Connected identities");
+  });
+
+  it("renders unknown-source rows with a human label once inferred", () => {
+    expect(sourceLabel("csv")).toBe("CSV upload");
+    expect(sourceLabel("upload")).toBe("CSV upload");
+    expect(sourceLabel("")).toBe("Unknown source");
   });
 });
