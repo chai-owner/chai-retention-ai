@@ -556,7 +556,7 @@ export function SmartIngestWizard({
                       </tr>
                     </thead>
                     <tbody>
-                      {d.rows.map((r, ri) => (
+                      {d.rows.slice(0, PREVIEW_ROWS).map((r, ri) => (
                         <tr key={ri} className="border-t border-border">
                           {d.schema.fields.map((f, ci) => {
                             const type = inferType(f.name, f.example);
