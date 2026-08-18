@@ -38,21 +38,20 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/customers/$id")({
   head: () => ({ meta: [{ title: "Customer Detail — ChAi" }] }),
-  loader: ({ params }) => {
-    const customer = getCustomer(params.id);
-    if (!customer) throw notFound();
-    return { id: params.id };
-  },
   component: CustomerDetail,
-  notFoundComponent: () => (
+  notFoundComponent: () => <CustomerMissing />,
+});
+
+function CustomerMissing() {
+  return (
     <div className="py-16 text-center">
       <p className="text-muted-foreground">We couldn't find that customer.</p>
       <Link to="/app/customers" className="mt-3 inline-block text-sm font-medium text-primary hover:underline">
         Back to Risk Center
       </Link>
     </div>
-  ),
-});
+  );
+}
 
 const timelineIcons: Record<TimelineEvent["type"], typeof ShoppingCart> = {
   signup: UserPlus,
