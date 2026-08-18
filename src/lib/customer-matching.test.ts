@@ -235,3 +235,16 @@ describe("resolveIdentities", () => {
     expect(identifierLabel("CUS-1")).toBe("ID CUS-1");
   });
 });
+
+describe("identity panel labelling", () => {
+  it("uses a singular label until a second platform identity exists", () => {
+    expect(identityCardTitle(1)).toBe("Customer identity");
+    expect(identityCardTitle(2)).toBe("Connected identities");
+  });
+
+  it("renders unknown-source rows with a human label once inferred", () => {
+    expect(sourceLabel("csv")).toBe("CSV upload");
+    expect(sourceLabel("upload")).toBe("CSV upload");
+    expect(sourceLabel("")).toBe("Unknown source");
+  });
+});

@@ -33,7 +33,7 @@ import { useIngestHydrated } from "@/lib/ingested-data-store";
 import { churnStore, useChurnOverrides } from "@/lib/churn-store";
 import { useIngested } from "@/lib/ingested-data-store";
 import { useCustomerAliases } from "@/lib/customer-aliases";
-import { sourceLabel } from "@/lib/customer-matching";
+import { sourceLabel, identityCardTitle } from "@/lib/customer-matching";
 import { customerIdentities } from "@/lib/customer-merge";
 import { cn } from "@/lib/utils";
 
@@ -310,7 +310,7 @@ function ConnectedIdentities({ customerId }: { customerId: string }) {
   const multiple = identities.length > 1;
   return (
     <Card className="mt-6">
-      <h3 className="font-semibold">{multiple ? "Connected identities" : "Customer identity"}</h3>
+      <h3 className="font-semibold">{identityCardTitle(identities.length)}</h3>
       <p className="mt-1 text-xs text-muted-foreground">
         {multiple
           ? "This customer's records across your connected platforms. Data from all of them feeds one health score."
