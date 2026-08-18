@@ -512,6 +512,11 @@ export function SmartIngestWizard({
               <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">{sourceLabel}</span>
               <span className="text-muted-foreground">· detected as {documentType}</span>
+              {sourceRows > 0 && (
+                <span className="text-muted-foreground">
+                  · {maxDatasetRows.toLocaleString()} of {sourceRows.toLocaleString()} rows in file mapped
+                </span>
+              )}
             </div>
 
             {datasets.map((d, di) => (
@@ -520,7 +525,8 @@ export function SmartIngestWizard({
                   <div>
                     <span className="text-sm font-semibold">{d.label}</span>
                     <span className="ml-2 text-xs text-muted-foreground">
-                      {d.rows.length} row{d.rows.length !== 1 ? "s" : ""}
+                      {d.rows.length.toLocaleString()} row{d.rows.length !== 1 ? "s" : ""}
+                      {d.rows.length > PREVIEW_ROWS ? ` · showing first ${PREVIEW_ROWS}` : ""}
                     </span>
                   </div>
                   <span
