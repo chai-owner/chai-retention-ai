@@ -11,6 +11,8 @@ import {
   signalDatasetKeys,
   resolveIdentities,
   identifierLabel,
+  identityCardTitle,
+  sourceLabel,
   type CustomerAlias,
 } from "@/lib/customer-matching";
 import type { IngestedData } from "@/lib/ingested-data-store";
