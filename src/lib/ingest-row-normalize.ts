@@ -38,9 +38,36 @@ export function stringifyCell(v: unknown): string {
   return JSON.stringify(v);
 }
 
+// Platform tag for rows that came from a given ingest batch. Rows written by
+// the app always carry `__source`, but rows loaded/seeded straight into the
+// tables may not — in that case the batch's own kind/provider tells us where
+// they came from, so identity never has to say "Unknown source".
+const PLATFORM_PROVIDERS = new Set([
+  "zendesk",
+  "intercom",
+  "freshdesk",
+  "hubspot",
+  "salesforce",
+  "zoho",
+  "quickbooks",
+  "freshbooks",
+  "xero",
+]);
+
+export function batchSource(kind: string, provider: string): string {
+  const k = (kind || "").trim().toLowerCase();
+  const p = (provider || "").trim().toLowerCase();
+  if (k === "drop") return "drop";
+  if (PLATFORM_PROVIDERS.has(p)) return p;
+  if (k === "crm" || k === "accounting" || k === "support") return p || "unknown";
+  // Uploads, manual/test loads and anything file-shaped are CSV imports.
+  return "csv";
+}
+
 export function normalizeIngestRow(
   raw: Record<string, unknown>,
   cols: Col[],
+  fallbackSource?: string,
 ): Record<string, string> {
   const blob = (raw["data"] as Record<string, unknown> | null) ?? {};
   const out: Record<string, string> = {};
@@ -50,8 +77,10 @@ export function normalizeIngestRow(
     if (!v) continue;
     for (const target of c.to) if (!out[target]) out[target] = v;
   }
+  if (!out["__source"]?.trim() && fallbackSource) out["__source"] = fallbackSource;
   return out;
 }
+
 
 // PostgREST caps a single response (db-max-rows), so read in pages — otherwise
 // large datasets silently arrive truncated and the account looks half-empty.
