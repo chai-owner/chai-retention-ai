@@ -21,7 +21,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUploads, overallScore } from "@/lib/uploads-store";
-import { getCachedRiskSummaries, setCachedRiskSummaries } from "@/lib/risk-summary-cache";
+import {
+  getCachedRiskSummaries,
+  setCachedRiskSummaries,
+  clearCachedRiskSummaries,
+} from "@/lib/risk-summary-cache";
+import { useAuthUserId } from "@/lib/use-auth-state";
 import {
   PieChart,
   Pie,
