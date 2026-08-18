@@ -97,7 +97,6 @@ function CustomerDetail() {
   const override = overrides[c.id] as { status: "churned" | "won-back" } | undefined;
   const status: "active" | "churned" | "won-back" = override?.status ?? c.status ?? "active";
   const suggestChurn = status === "active" && looksChurned(c);
-  const [dismissed, setDismissed] = useState(false);
 
   return (
     <div>
