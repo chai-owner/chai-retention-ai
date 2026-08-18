@@ -533,10 +533,27 @@ export function SmartIngestWizard({
                 <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
                   <div>
                     <span className="text-sm font-semibold">{d.label}</span>
+                    {(d.derivations?.length ?? 0) > 0 && (
+                      <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        Calculated
+                      </span>
+                    )}
                     <span className="ml-2 text-xs text-muted-foreground">
-                      {d.rows.length.toLocaleString()} row{d.rows.length !== 1 ? "s" : ""}
+                      {d.grouped && sourceRows > 0
+                        ? `${sourceRows.toLocaleString()} rows → ${d.rows.length.toLocaleString()} customer${d.rows.length !== 1 ? "s" : ""}`
+                        : `${d.rows.length.toLocaleString()} row${d.rows.length !== 1 ? "s" : ""}`}
                       {d.rows.length > PREVIEW_ROWS ? ` · showing first ${PREVIEW_ROWS}` : ""}
                     </span>
+                    {(d.derivations?.length ?? 0) > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {d.derivations!.map((line) => (
+                          <p key={line} className="text-[11px] text-muted-foreground">
+                            Calculated — {line}
+                            {d.grouped ? "" : ""}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <span
                     className={cn(
@@ -551,6 +568,7 @@ export function SmartIngestWizard({
                     {d.confidence}% confidence
                   </span>
                 </div>
+
                 <div className="max-h-72 overflow-auto">
                   <table className="w-full text-xs">
                     <thead className="sticky top-0 bg-secondary">
