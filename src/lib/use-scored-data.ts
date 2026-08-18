@@ -94,3 +94,21 @@ export function useRealAssessment(): { sufficiency: Sufficiency; dataset: Scored
     return { sufficiency, dataset };
   }, [weights, ingested, profile]);
 }
+
+// Data coverage & freshness for the signed-in user's real data. The public
+// demo always reports full coverage so the sample experience stays clean.
+export function useDataCoverage(): DataCoverage {
+  const raw = useIngested();
+  const aliases = useCustomerAliases();
+  const ingested = useMemo(
+    () => mergeRoster(applyAliases(resolveIdentities(raw), aliases), aliases),
+    [raw, aliases],
+  );
+  const profile = useProfile();
+  const signedIn = useSignedIn();
+  return useMemo(() => {
+    const c = assessCoverage(ingested, profile?.metrics);
+    if (!signedIn) return { ...c, flagged: false, confidence: "good" as const, notes: [] };
+    return c;
+  }, [ingested, profile?.metrics, signedIn]);
+}
