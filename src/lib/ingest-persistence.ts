@@ -42,7 +42,16 @@ export async function persistBatch(args: PersistBatchArgs): Promise<{ batchId: s
 export async function hydrateIngestFromServer(options?: { surfaceError?: boolean }): Promise<boolean> {
   ingestedStore.beginHydration();
   try {
-    const [snapshot, batches] = await Promise.all([listAllIngested(), listIngestBatches()]);
+    // The assessment rows are the critical read. Upload history is useful UI
+    // metadata, but a history failure must never discard a successful row
+    // snapshot and make a populated account look empty.
+    const snapshot = await listAllIngested();
+    let batches: Awaited<ReturnType<typeof listIngestBatches>> = [];
+    try {
+      batches = await listIngestBatches();
+    } catch (err) {
+      console.warn("Failed to hydrate ingest batch history", err);
+    }
     // Reset stores to whatever the DB says — the DB is now the source of truth.
     ingestedStore.clear();
     for (const key of ["customers", "transactions", "support", "usage", "surveys"] as const) {

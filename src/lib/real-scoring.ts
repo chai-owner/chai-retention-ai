@@ -219,7 +219,9 @@ export function buildRealDataset(
     const id = r.customer_id;
     if (!id) continue;
     const g = usg.get(id) ?? { logins: [], features: [] };
-    const l = num(r.logins);
+    // Industry uploads commonly call a usage event a visit/check-in rather
+    // than a login. Both are engagement-frequency signals.
+    const l = num(r.logins) ?? num(r.check_in_count) ?? num(r.visit_count);
     if (l != null) g.logins.push(l);
     const f = num(r.features_used);
     if (f != null) g.features.push(f);
@@ -229,7 +231,9 @@ export function buildRealDataset(
   for (const r of data.surveys ?? []) {
     const id = r.customer_id;
     if (!id) continue;
-    const s = num(r.score);
+    // Survey templates vary by industry; satisfaction is the canonical CSAT
+    // equivalent while motivation is a useful fallback for member check-ins.
+    const s = num(r.score) ?? num(r.satisfaction_score) ?? num(r.motivation_score);
     const arr = srv.get(id) ?? [];
     if (s != null) arr.push(s);
     srv.set(id, arr);
@@ -319,7 +323,7 @@ export function buildRealDataset(
   // ---- score each customer ----
   const customers: Customer[] = customerRows.map((r, i) => {
     const cid = r.customer_id || "";
-    const monthly = num(r.monthly_revenue);
+    const monthly = num(r.monthly_revenue) ?? num(r.monthly_fee);
     const txg = tx.get(cid);
     const revenue =
       monthly != null

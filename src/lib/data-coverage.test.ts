@@ -34,6 +34,16 @@ describe("assessCoverage", () => {
     expect(c.datasets.find((d) => d.key === "transactions")?.status).toBe("ok");
   });
 
+  it("recognizes canonical survey and support date fields", () => {
+    const c = assessCoverage({
+      customers: [{ customer_id: "A" }],
+      surveys: [{ customer_id: "A", survey_date: daysAgo(2), score: "8" }],
+      support: [{ customer_id: "A", created_date: daysAgo(3), ticket_id: "T1" }],
+    });
+    expect(c.datasets.find((d) => d.key === "surveys")?.status).toBe("ok");
+    expect(c.datasets.find((d) => d.key === "support")?.status).toBe("ok");
+  });
+
   it("is partial (not low) when most signals are present", () => {
     const c = assessCoverage(makeIngested());
     expect(["partial", "good"]).toContain(c.confidence);
