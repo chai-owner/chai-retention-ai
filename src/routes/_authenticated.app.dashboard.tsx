@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Database,
   Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import {
   Select,
@@ -51,6 +52,7 @@ import { useSignedIn } from "@/lib/use-auth-state";
 import { DataCoverageBanner } from "@/components/data-coverage-banner";
 import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
 import { Button } from "@/components/ui/button";
+import { ingestedStore } from "@/lib/ingested-data-store";
 
 export const Route = createFileRoute("/_authenticated/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
@@ -85,6 +87,7 @@ function Dashboard() {
   const [riskSummaries, setRiskSummaries] = useState<Record<string, string>>({});
   const [aiRefreshing, setAiRefreshing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [refreshReceipt, setRefreshReceipt] = useState<string | null>(null);
   const [aiNonce, setAiNonce] = useState(0);
   const userId = useAuthUserId();
 
@@ -148,10 +151,20 @@ function Dashboard() {
   const refreshAi = () => {
     setAiRefreshing(true);
     setAiError(null);
+    setRefreshReceipt(null);
     void hydrateIngestFromServer({ surfaceError: true })
       .then(() => {
+        const refreshed = ingestedStore.getSnapshot();
+        const counts = [
+          `${refreshed.customers?.length ?? 0} customers`,
+          `${refreshed.transactions?.length ?? 0} transactions`,
+          `${refreshed.usage?.length ?? 0} activity records`,
+          `${refreshed.surveys?.length ?? 0} surveys`,
+          `${refreshed.support?.length ?? 0} support tickets`,
+        ];
         clearCachedRiskSummaries();
         setRiskSummaries({});
+        setRefreshReceipt(`Account data refreshed: ${counts.join(", ")}. AI analysis is regenerating.`);
         setAiNonce((n) => n + 1);
       })
       .catch((err: unknown) => {
@@ -381,6 +394,12 @@ function Dashboard() {
         </div>
         {aiError && (
           <p className="mt-2 text-xs text-danger">AI analysis unavailable: {aiError}</p>
+        )}
+        {refreshReceipt && !aiError && (
+          <p className="mt-2 flex items-start gap-1.5 text-xs text-success" role="status">
+            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>{refreshReceipt}</span>
+          </p>
         )}
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {topRisk.map((c) => (
