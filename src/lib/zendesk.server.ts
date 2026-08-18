@@ -2,6 +2,12 @@
 // own Zendesk account; we store their access/refresh tokens and sync support
 // tickets into the ingested_* tables. Never import from client code.
 import type { ExtractedDataset } from "./ingest.functions";
+import {
+  encryptSecret,
+  decryptSecret,
+  decryptSecretOrNull,
+} from "./connection-key-crypto.server";
+
 
 export const ZENDESK_SCOPE = "read";
 
