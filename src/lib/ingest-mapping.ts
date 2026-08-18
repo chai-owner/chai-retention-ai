@@ -5,6 +5,44 @@
 // row count exactly equal to the file's row count — the model never has to
 // re-type the data, so it can never truncate or summarise it.
 
+/**
+ * A calculation ChAi can perform locally over the parsed file. The operation
+ * list is closed — no free-form formulas are ever evaluated.
+ *
+ * Row ops produce one value per file row; group ops roll many rows up into one
+ * value per customer (used when the dataset mapping carries `groupBy`).
+ */
+export type DeriveSpec =
+  // --- row-level ------------------------------------------------------------
+  | { op: "arith"; a: string; b?: string; operator: "+" | "-" | "*" | "/"; value?: number }
+  | { op: "date_diff"; from: string; to: string }
+  | { op: "days_since"; column: string }
+  | { op: "bool"; column: string; trueValues?: string[] }
+  | { op: "lookup"; column: string; map: Record<string, string>; fallback?: string }
+  // --- group-level ----------------------------------------------------------
+  | { op: "count" }
+  | { op: "count_if"; column: string; equals?: string; anyOf?: string[] }
+  | { op: "sum" | "avg" | "min" | "max"; column: string }
+  | { op: "last_date"; column: string }
+  | { op: "days_since_last"; column: string }
+  | { op: "ratio_if"; column: string; equals?: string; anyOf?: string[] };
+
+export const GROUP_OPS = new Set([
+  "count",
+  "count_if",
+  "sum",
+  "avg",
+  "min",
+  "max",
+  "last_date",
+  "days_since_last",
+  "ratio_if",
+]);
+
+export function isGroupOp(spec: DeriveSpec | undefined): boolean {
+  return !!spec && GROUP_OPS.has(spec.op);
+}
+
 export interface MappingField {
   /** Dataset field name. */
   field: string;
@@ -12,6 +50,8 @@ export interface MappingField {
   column: string;
   /** Optional fixed value applied to every row (e.g. a document date). */
   constant?: string;
+  /** Optional calculation used instead of a direct column. */
+  derive?: DeriveSpec;
 }
 
 export interface DatasetMapping {
@@ -19,6 +59,8 @@ export interface DatasetMapping {
   confidence: number;
   note: string;
   fields: MappingField[];
+  /** When set, rows are rolled up per value of this source column. */
+  groupBy?: string;
 }
 
 export interface MappedSchemaField {
@@ -39,7 +81,12 @@ export interface MappedDataset {
   rows: string[][];
   confidence: number;
   note: string;
+  /** Plain-English provenance lines for fields that were calculated. */
+  derivations: string[];
+  /** True when rows were rolled up per customer. */
+  grouped: boolean;
 }
+
 
 const normKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
