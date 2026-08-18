@@ -52,3 +52,25 @@ export function normalizeIngestRow(
   }
   return out;
 }
+
+// PostgREST caps a single response (db-max-rows), so read in pages — otherwise
+// large datasets silently arrive truncated and the account looks half-empty.
+export const INGEST_PAGE = 1000;
+
+export async function fetchAllPages(
+  q: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>,
+  label: string,
+): Promise<Record<string, unknown>[]> {
+  const rows: Record<string, unknown>[] = [];
+  for (let from = 0; ; from += INGEST_PAGE) {
+    const { data, error } = await q(from, from + INGEST_PAGE - 1);
+    if (error) throw new Error(`${label}: ${error.message}`);
+    const page = (data ?? []) as Record<string, unknown>[];
+    rows.push(...page);
+    if (page.length < INGEST_PAGE) break;
+  }
+  return rows;
+}

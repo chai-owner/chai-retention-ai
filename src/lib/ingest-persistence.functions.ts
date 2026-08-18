@@ -4,6 +4,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  INGEST_COLUMNS,
+  normalizeIngestRow,
+  fetchAllPages,
+} from "@/lib/ingest-row-normalize";
 
 // ---- Shapes ---------------------------------------------------------------
 
@@ -185,7 +190,7 @@ export const listAllIngested = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<IngestedSnapshot> => {
     const { supabase, userId } = context;
     const read = (table: string, select: string) =>
-      fetchAll(
+      fetchAllPages(
         (from, to) =>
           supabase
             .from(table as "ingested_customers")
