@@ -312,6 +312,8 @@ export async function getZendeskStatusRow(userId: string) {
 
 export async function deleteZendeskConnection(userId: string) {
   const db = await admin();
+  const { clearSupportSyncState } = await import("./support.server");
+  await clearSupportSyncState(userId, "zendesk");
   const { error } = await db.from("zendesk_connections").delete().eq("user_id", userId);
   if (error) throw new Error(error.message);
 }

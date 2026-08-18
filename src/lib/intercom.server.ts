@@ -2,6 +2,7 @@
 // own Intercom workspace; we store a long-lived access token and sync
 // conversations into the ingested_support table. Never import from client.
 import type { ExtractedDataset } from "./ingest.functions";
+import { encryptSecret, decryptSecret } from "./connection-key-crypto.server";
 
 const INTERCOM_API_VERSION = "2.11";
 const INTERCOM_API_BASE = "https://api.intercom.io";
@@ -115,7 +116,7 @@ export async function saveIntercomConnection(
   const { error } = await db.from("intercom_connections").upsert(
     {
       user_id: userId,
-      access_token: tokens.accessToken,
+      access_token: encryptSecret(tokens.accessToken),
       scope: tokens.scope ?? null,
       workspace_id: meta.workspaceId,
       workspace_name: meta.workspaceName,
@@ -125,6 +126,8 @@ export async function saveIntercomConnection(
     { onConflict: "user_id" },
   );
   if (error) throw new Error(`Failed to save Intercom connection: ${error.message}`);
+  const { ensureSupportSyncState } = await import("./support.server");
+  await ensureSupportSyncState(userId, "intercom");
   return { workspaceName: meta.workspaceName };
 }
 
@@ -146,7 +149,10 @@ async function loadIntercomConnection(userId: string): Promise<Row> {
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Intercom isn't connected for your account.");
-  return data as Row;
+  const row = data as Row;
+  // Legacy rows may still hold a plaintext token.
+  row.access_token = decryptSecret(row.access_token);
+  return row;
 }
 
 function toStr(v: unknown): string {
@@ -274,6 +280,8 @@ export async function getIntercomStatusRow(userId: string) {
 
 export async function deleteIntercomConnection(userId: string) {
   const db = await admin();
+  const { clearSupportSyncState } = await import("./support.server");
+  await clearSupportSyncState(userId, "intercom");
   const { error } = await db.from("intercom_connections").delete().eq("user_id", userId);
   if (error) throw new Error(error.message);
 }

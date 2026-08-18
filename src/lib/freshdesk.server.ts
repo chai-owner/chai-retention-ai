@@ -63,6 +63,8 @@ export async function saveFreshdeskConnection(
     { onConflict: "user_id" },
   );
   if (error) throw new Error(`Failed to save Freshdesk connection: ${error.message}`);
+  const { ensureSupportSyncState } = await import("./support.server");
+  await ensureSupportSyncState(userId, "freshdesk");
   return { accountName: meta.name };
 }
 
@@ -259,6 +261,8 @@ export async function getFreshdeskStatusRow(userId: string) {
 
 export async function deleteFreshdeskConnection(userId: string) {
   const db = await admin();
+  const { clearSupportSyncState } = await import("./support.server");
+  await clearSupportSyncState(userId, "freshdesk");
   const { error } = await db.from("freshdesk_connections").delete().eq("user_id", userId);
   if (error) throw new Error(error.message);
 }
