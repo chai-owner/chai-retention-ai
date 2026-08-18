@@ -347,12 +347,26 @@ function Dashboard() {
 
       {/* Top risk list */}
       <Card className="mt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Needs attention now</h3>
-          <Link to="/app/customers" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-            View all <ArrowRight className="h-3 w-3" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={refreshAi}
+              disabled={aiRefreshing || topRisk.length === 0}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-50"
+            >
+              <Sparkles className={`h-3 w-3 ${aiRefreshing ? "animate-pulse" : ""}`} />
+              {aiRefreshing ? "Refreshing AI…" : "Refresh AI analysis"}
+            </button>
+            <Link to="/app/customers" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
         </div>
+        {aiError && (
+          <p className="mt-2 text-xs text-danger">AI analysis unavailable: {aiError}</p>
+        )}
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {topRisk.map((c) => (
             <Link
