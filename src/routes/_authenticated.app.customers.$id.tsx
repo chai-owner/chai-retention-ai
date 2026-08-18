@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -27,7 +27,9 @@ import {
   type TimelineEvent,
   type Customer,
 } from "@/lib/mock-data";
-import { useScoredData } from "@/lib/use-scored-data";
+import { useScoredData, useActiveMetrics } from "@/lib/use-scored-data";
+import { useSignedIn } from "@/lib/use-auth-state";
+import { useIngestHydrated } from "@/lib/ingested-data-store";
 import { churnStore, useChurnOverrides } from "@/lib/churn-store";
 import { useIngested } from "@/lib/ingested-data-store";
 import { useCustomerAliases } from "@/lib/customer-aliases";
@@ -38,21 +40,20 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/customers/$id")({
   head: () => ({ meta: [{ title: "Customer Detail — ChAi" }] }),
-  loader: ({ params }) => {
-    const customer = getCustomer(params.id);
-    if (!customer) throw notFound();
-    return { id: params.id };
-  },
   component: CustomerDetail,
-  notFoundComponent: () => (
+  notFoundComponent: () => <CustomerMissing />,
+});
+
+function CustomerMissing() {
+  return (
     <div className="py-16 text-center">
       <p className="text-muted-foreground">We couldn't find that customer.</p>
       <Link to="/app/customers" className="mt-3 inline-block text-sm font-medium text-primary hover:underline">
         Back to Risk Center
       </Link>
     </div>
-  ),
-});
+  );
+}
 
 const timelineIcons: Record<TimelineEvent["type"], typeof ShoppingCart> = {
   signup: UserPlus,
@@ -71,12 +72,26 @@ const priorityChip: Record<string, string> = {
 };
 
 function CustomerDetail() {
-  const { id } = Route.useLoaderData() as { id: string };
+  const { id } = Route.useParams();
   const { customers } = useScoredData();
+  const signedIn = useSignedIn();
+  const hydrated = useIngestHydrated();
   const overrides = useChurnOverrides();
-  // Active customers come from the scored dataset; churned/won-back accounts
-  // live outside it, so fall back to the full lookup.
-  const c = (customers.find((x) => x.id === id) ?? getCustomer(id) ?? customers[0]) as Customer;
+  const metrics = useActiveMetrics();
+  const [dismissed, setDismissed] = useState(false);
+  // Resolve strictly from the live dataset. Signed-out (demo) visitors can also
+  // reach seeded churned/won-back accounts, which live outside the scored set.
+  const found =
+    customers.find((x) => x.id === id) ?? (signedIn === false ? getCustomer(id) : undefined);
+
+  if (!found) {
+    // Real data loads client-side; don't declare "not found" until it's in.
+    if (signedIn !== false && !hydrated) {
+      return <p className="py-16 text-center text-sm text-muted-foreground">Loading customer…</p>;
+    }
+    return <CustomerMissing />;
+  }
+  const c = found as Customer;
   const cat = categoryFromHealth(c.health);
   const sentimentLabel = c.sentiment >= 60 ? "Positive" : c.sentiment >= 40 ? "Neutral" : "Negative";
 
@@ -84,7 +99,18 @@ function CustomerDetail() {
   const override = overrides[c.id] as { status: "churned" | "won-back" } | undefined;
   const status: "active" | "churned" | "won-back" = override?.status ?? c.status ?? "active";
   const suggestChurn = status === "active" && looksChurned(c);
-  const [dismissed, setDismissed] = useState(false);
+
+  // Industry-neutral: name the signals actually driving this customer's score —
+  // the risk factors when we have them, otherwise the active metric set.
+  const signals = (
+    c.factors.length > 0 ? c.factors.map((f) => f.label) : metrics.map((m) => m.name)
+  )
+    .filter(Boolean)
+    .slice(0, 4);
+  const analyzedCopy =
+    signals.length > 0
+      ? `ChAi analyzed ${signals.slice(0, -1).join(", ")}${signals.length > 1 ? " and " : ""}${signals[signals.length - 1]}. Here's what's driving the risk.`
+      : "ChAi analyzed the data you've connected. Here's what's driving the risk.";
 
   return (
     <div>
@@ -191,7 +217,7 @@ function CustomerDetail() {
             <h3 className="font-semibold">Why this customer is at risk</h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            ChAi analyzed usage, purchases, support and conversations. Here's what's driving the risk.
+            {analyzedCopy}
           </p>
           <div className="mt-4 space-y-4">
             {c.factors.map((f) => (
