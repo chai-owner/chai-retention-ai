@@ -379,7 +379,7 @@ function Dashboard() {
             <Button
               type="button"
               onClick={refreshAi}
-              disabled={aiRefreshing || topRisk.length === 0}
+              disabled={aiRefreshing}
               variant="link"
               size="sm"
               className="h-auto px-0 text-xs"
