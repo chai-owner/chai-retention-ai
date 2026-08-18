@@ -136,8 +136,8 @@ export async function saveZendeskConnection(
     {
       user_id: userId,
       subdomain,
-      access_token: tokens.accessToken,
-      refresh_token: tokens.refreshToken ?? null,
+      access_token: encryptSecret(tokens.accessToken),
+      refresh_token: tokens.refreshToken ? encryptSecret(tokens.refreshToken) : null,
       expires_at: tokens.expiresAt ?? null,
       scope: ZENDESK_SCOPE,
       org_name: subdomain,
@@ -146,6 +146,8 @@ export async function saveZendeskConnection(
     { onConflict: "user_id" },
   );
   if (error) throw new Error(`Failed to save Zendesk connection: ${error.message}`);
+  const { ensureSupportSyncState } = await import("./support.server");
+  await ensureSupportSyncState(userId, "zendesk");
 }
 
 interface Row {
@@ -169,14 +171,17 @@ async function loadFreshZendeskConnection(userId: string): Promise<Row> {
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Zendesk isn't connected for your account.");
   const row = data as Row;
+  // Values written before token-at-rest encryption are still plaintext.
+  row.access_token = decryptSecret(row.access_token);
+  row.refresh_token = decryptSecretOrNull(row.refresh_token);
   const expired = row.expires_at && new Date(row.expires_at).getTime() < Date.now();
   if (expired && row.refresh_token) {
     const refreshed = await refreshZendeskToken(row.subdomain, row.refresh_token);
     await db
       .from("zendesk_connections")
       .update({
-        access_token: refreshed.accessToken,
-        refresh_token: refreshed.refreshToken ?? null,
+        access_token: encryptSecret(refreshed.accessToken),
+        refresh_token: refreshed.refreshToken ? encryptSecret(refreshed.refreshToken) : null,
         expires_at: refreshed.expiresAt ?? null,
       })
       .eq("id", row.id);
@@ -186,6 +191,7 @@ async function loadFreshZendeskConnection(userId: string): Promise<Row> {
   }
   return row;
 }
+
 
 function toStr(v: unknown): string {
   return v == null ? "" : String(v);
