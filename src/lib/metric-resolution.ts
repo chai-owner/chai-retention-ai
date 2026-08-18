@@ -103,7 +103,7 @@ function operationFor(metric: PlannerMetric): Operation {
   const text = metricText(metric).toLowerCase();
   if (/days?\s+since|consecutive days.*absent/.test(text)) return "days_since_last";
   if (/tenure|lifespan|months? or years?|how many months|milestone/.test(text)) return "months_since";
-  if (/rate|ratio|percent|utili[sz]ation|delinquen|peak|recommend/.test(text)) return "ratio";
+  if (/\b(rate|ratio|percent(?:age)?|utili[sz]ation|delinquen\w*|peak|recommend\w*)\b/.test(text)) return "ratio";
   if (/weekly|frequency|how many times|count/.test(text)) return "sum";
   if (/average|mean|duration/.test(text)) return "average";
   return "latest";
@@ -230,7 +230,11 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
       if (numbers.length > 0) {
         if (operation === "sum") value = numbers.reduce((sum, number) => sum + number, 0);
         else if (operation === "average") value = numbers.reduce((sum, number) => sum + number, 0) / numbers.length;
-        else value = numbers[numbers.length - 1] ?? null;
+        else {
+          const dated = usable.filter((entry) => entry.date != null);
+          const latest = dated.sort((a, b) => (b.date ?? 0) - (a.date ?? 0))[0];
+          value = numeric(latest?.value ?? usable[usable.length - 1]?.value);
+        }
       }
     }
     if (value != null && Number.isFinite(value)) values.set(id, value);

@@ -77,7 +77,9 @@ export function assessCoverage(
 ): DataCoverage {
   const activeMetrics = metrics ?? [];
   const requiredDatasets = new Set(activeMetrics.flatMap((metric) => metricDatasetDependencies(metric, data)));
-  const baseSignals = BASE_SIGNALS.filter(({ key }) => (data[key] ?? []).length > 0 || requiredDatasets.has(key));
+  const baseSignals = activeMetrics.length === 0
+    ? [...BASE_SIGNALS]
+    : BASE_SIGNALS.filter(({ key }) => (data[key] ?? []).length > 0 || requiredDatasets.has(key));
   if ((data.support ?? []).length > 0 || requiredDatasets.has("support")) {
     baseSignals.push({ key: "support", label: "Support tickets" });
   }
