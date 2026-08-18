@@ -7,6 +7,7 @@ import { profileStore, useProfile, type ProfileSegment } from "@/lib/profile-sto
 import { saveProfile } from "@/lib/profile.functions";
 import { IMPORTANCE_LABELS } from "@/lib/mock-data";
 import { useActiveMetrics } from "@/lib/use-scored-data";
+import { useIsAdmin } from "@/lib/use-is-admin";
 import { businessModels, companySizes, interactionChannels, getQuestions, getChurnDefinition } from "@/lib/onboarding-options";
 
 export const Route = createFileRoute("/_authenticated/app/settings")({
