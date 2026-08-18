@@ -27,6 +27,7 @@ export type Database = {
           realm_id: string | null
           refresh_token: string | null
           tenant_id: string | null
+          tenants: Json
           updated_at: string
           user_id: string
         }
@@ -42,6 +43,7 @@ export type Database = {
           realm_id?: string | null
           refresh_token?: string | null
           tenant_id?: string | null
+          tenants?: Json
           updated_at?: string
           user_id: string
         }
@@ -57,6 +59,7 @@ export type Database = {
           realm_id?: string | null
           refresh_token?: string | null
           tenant_id?: string | null
+          tenants?: Json
           updated_at?: string
           user_id?: string
         }
