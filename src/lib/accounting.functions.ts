@@ -33,13 +33,15 @@ export const getAccountingStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("accounting_connections")
-      .select("provider, company_name, connected_at")
+      .select("provider, company_name, connected_at, tenant_id, tenants")
       .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
     return (data ?? []) as {
       provider: AccountingProvider;
       company_name: string | null;
       connected_at: string;
+      tenant_id: string | null;
+      tenants: { tenantId: string; tenantName: string }[] | null;
     }[];
   });
 
@@ -97,3 +99,38 @@ export const disconnectAccounting = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Xero can grant access to several organisations at once. Until the user picks
+// one we sync all of them; this lets them pin a single organisation.
+export const selectXeroTenant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { tenantId: string | null }) =>
+    z.object({ tenantId: z.string().min(1).max(100).nullable() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error: readErr } = await supabaseAdmin
+      .from("accounting_connections")
+      .select("tenants")
+      .eq("user_id", context.userId)
+      .eq("provider", "xero")
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!row) throw new Error("Xero is not connected.");
+    const tenants = (row.tenants ?? []) as { tenantId: string; tenantName: string }[];
+    const match = data.tenantId
+      ? tenants.find((t) => t.tenantId === data.tenantId)
+      : null;
+    if (data.tenantId && !match) {
+      throw new Error("That Xero organisation isn't available on this connection.");
+    }
+    const { error } = await supabaseAdmin
+      .from("accounting_connections")
+      .update({
+        tenant_id: data.tenantId,
+        company_name: match ? match.tenantName : `${tenants.length} organisations`,
+      })
+      .eq("user_id", context.userId)
+      .eq("provider", "xero");
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
