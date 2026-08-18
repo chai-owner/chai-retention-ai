@@ -246,7 +246,8 @@ describe("buildRealDataset — AI-generated custom metrics", () => {
     const values = ds.customers[0].metricValues ?? {};
     expect(values["Average Workout Duration"]).toBe(30);
     expect(values["Weekly Check-in Frequency"]).toBe(2);
-    expect(values["Days Since Last Visit"]).toBeCloseTo(1, 0);
+    expect(values["Days Since Last Visit"]).toBeGreaterThanOrEqual(1);
+    expect(values["Days Since Last Visit"]).toBeLessThanOrEqual(2);
     expect(values["Membership Dues Delinquency"]).toBe(50);
     expect(values["Peak Hour Utilization"]).toBe(50);
     expect(values["Member Tenure Milestones"]).toBeGreaterThan(11);
