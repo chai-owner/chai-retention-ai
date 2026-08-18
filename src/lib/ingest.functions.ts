@@ -116,8 +116,10 @@ Rules:
 - If a custom metric appears only as a per-customer total with no explicit measurement date, use the document's date (invoice/report/statement date) for the date field.
 - Format dates as YYYY-MM-DD. Strip currency symbols and thousands separators from numeric fields.
 - For each dataset you populate, return its exact field names as headers and one array of string values per row, in the same order as headers.
+- Return EVERY row the document contains — one output row per source record. Never summarise, never stop after the first customer, never write "..." or a note saying rows were omitted. If the document lists 120 customers, return 120 rows.
 - If a value is unknown for a row, use an empty string "".
 - confidence is your 0-100 certainty for that dataset's extraction.
+
 
 Return ONLY a JSON object (no markdown, no code fences) of the form:
 {"documentType":"...","datasets":[{"key":"transactions","headers":["..."],"rows":[["..."]],"confidence":90,"note":"short note"}]}`;
