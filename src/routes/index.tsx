@@ -162,6 +162,12 @@ function Landing() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+            <button
+              onClick={openGate}
+              className="hidden rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
+            >
+              View Demo
+            </button>
             <Link
               to="/auth"
               search={login}
@@ -169,12 +175,6 @@ function Landing() {
             >
               Log in
             </Link>
-            <button
-              onClick={openGate}
-              className="hidden rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
-            >
-              View Demo
-            </button>
             <Link
               to="/auth"
               search={signup}
