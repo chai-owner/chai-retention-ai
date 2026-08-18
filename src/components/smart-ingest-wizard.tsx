@@ -357,6 +357,7 @@ export function SmartIngestWizard({
       setFileSizeKb(sizeKb);
       setDocumentType(docTypes.size === 1 ? [...docTypes][0] : `${docTypes.size} document types`);
       setDatasets(merged);
+      setSourceRows(srcRows);
       setStep("review");
     } finally {
       setBusy(false);
