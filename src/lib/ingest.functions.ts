@@ -3,6 +3,8 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { DeriveSpec } from "./ingest-mapping";
+
 
 // ---------------------------------------------------------------------------
 // Smart Data Ingestion — AI extraction of arbitrary documents into ChAi
