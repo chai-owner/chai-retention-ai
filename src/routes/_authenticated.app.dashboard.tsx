@@ -43,6 +43,7 @@ import {
 } from "@/lib/mock-data";
 import { useScoredData } from "@/lib/use-scored-data";
 import { useSignedIn } from "@/lib/use-auth-state";
+import { DataCoverageBanner } from "@/components/data-coverage-banner";
 
 export const Route = createFileRoute("/_authenticated/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
