@@ -25,9 +25,47 @@ import { useAddons, addonsStore, SMART_INGEST_PRICING } from "@/lib/addons-store
 import { cn } from "@/lib/utils";
 
 
+// Works out, in plain English, what raw columns ChAi needs to calculate a
+// given metric for this specific user. Keyword-driven so it adapts to whatever
+// metrics were generated for their business profile.
+function rawDataHint(metric: PlannerMetric): string | null {
+  const n = `${metric.name} ${metric.why ?? ""}`.toLowerCase();
+  const id = "a customer identifier (ID, email or name)";
+  if (/(recency|days since|last (login|order|visit|purchase|activity|contact|seen))|dorman|inactiv/.test(n))
+    return `${id} and a date column (last login, order, visit or ticket date)`;
+  if (/(revenue|spend|sales|gmv|arr|mrr|billing|invoice|payment|value)/.test(n))
+    return `${id} and an amount column per transaction or invoice`;
+  if (/(average|avg|per order|basket|order value|ticket size)/.test(n))
+    return `${id} and an amount column per row — ChAi averages it per customer`;
+  if (/(frequency|visits|orders|sessions|logins|count|volume|repeat)/.test(n))
+    return `${id} and one row per event (order, visit, session or login)`;
+  if (/(ticket|support|complaint|issue|escalation)/.test(n))
+    return `${id}, a ticket date and optionally a status column`;
+  if (/(usage|adoption|feature|engagement|activity|utilis|utiliz)/.test(n))
+    return `${id} and a usage column (clicks, seats used, events or yes/no flags)`;
+  if (/(nps|csat|satisfaction|score|rating|survey|sentiment)/.test(n))
+    return `${id} and the raw score or response column`;
+  if (/(overdue|late|days? outstanding|dso|arrears|payment delay)/.test(n))
+    return `${id}, an invoice due date and a payment date`;
+  if (/(rate|%|percent|ratio|churn|renewal|retention|conversion)/.test(n))
+    return `${id} and the underlying yes/no or status column — ChAi works out the rate`;
+  if (/(contract|tenure|age|lifetime|months|years)/.test(n))
+    return `${id} and a start date column`;
+  return `${id} and the raw columns behind it — ChAi will sum, count, average or compare dates as needed`;
+}
+
 export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {}) {
   const { smartIngest } = useAddons();
+  const profile = useProfile();
   const [wizardOpen, setWizardOpen] = useState(false);
+  const metricExamples = useMemo(() => {
+    const list = metrics ?? (profile?.metrics as PlannerMetric[] | undefined) ?? [];
+    return list
+      .filter((m) => m?.name)
+      .slice(0, 5)
+      .map((m) => ({ name: m.name, hint: rawDataHint(m) }));
+  }, [metrics, profile]);
+
 
   if (!smartIngest) {
     const benefits = [
@@ -113,41 +151,23 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
                   ChAi can calculate metrics from your raw data
                 </p>
                 <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                  Drop raw spreadsheets or exports and ChAi will work out the metrics it needs.
-                  For example:
+                  {metricExamples.length
+                    ? "Drop raw spreadsheets or exports and ChAi will work out your metrics for you:"
+                    : "Drop raw spreadsheets or exports and ChAi will work out the metrics it needs. Once your metrics are set up, they'll be listed here."}
                 </p>
-                <ul className="mt-1.5 space-y-1 text-[11px] text-muted-foreground">
-                  <li className="flex gap-1.5">
-                    <span className="text-primary">•</span>
-                    <span>
-                      <strong className="text-foreground">Days since last activity</strong> — needs a customer ID and a date column (e.g. last login, last purchase, last ticket).
-                    </span>
-                  </li>
-                  <li className="flex gap-1.5">
-                    <span className="text-primary">•</span>
-                    <span>
-                      <strong className="text-foreground">Total revenue / spend per customer</strong> — needs a customer ID and a transaction amount column.
-                    </span>
-                  </li>
-                  <li className="flex gap-1.5">
-                    <span className="text-primary">•</span>
-                    <span>
-                      <strong className="text-foreground">Average order or ticket value</strong> — needs a customer ID and an amount column per row.
-                    </span>
-                  </li>
-                  <li className="flex gap-1.5">
-                    <span className="text-primary">•</span>
-                    <span>
-                      <strong className="text-foreground">Support ticket count / resolution rate</strong> — needs a customer ID, ticket date and optionally a status column.
-                    </span>
-                  </li>
-                  <li className="flex gap-1.5">
-                    <span className="text-primary">•</span>
-                    <span>
-                      <strong className="text-foreground">Feature usage or adoption flags</strong> — needs a customer ID and a column showing usage, clicks or yes/no values.
-                    </span>
-                  </li>
-                </ul>
+                {metricExamples.length > 0 && (
+                  <ul className="mt-1.5 space-y-1 text-[11px] text-muted-foreground">
+                    {metricExamples.map((m) => (
+                      <li key={m.name} className="flex gap-1.5">
+                        <span className="text-primary">•</span>
+                        <span>
+                          <strong className="text-foreground">{m.name}</strong> — needs {m.hint}.
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
                   Just include a customer identifier (ID, email or name) and the relevant raw columns — ChAi will sum, count, average, compare dates and map the result to the right metric.
                 </p>
