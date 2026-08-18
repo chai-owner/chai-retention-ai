@@ -151,21 +151,188 @@ function normalizeCell(type: MappedSchemaField["type"], raw: string): string {
   return v;
 }
 
+// --- derivation helpers ----------------------------------------------------
+
+const num = (raw: string): number | null => {
+  const n = Number(normalizeNumber(raw ?? ""));
+  return Number.isFinite(n) ? n : null;
+};
+
+const toDate = (raw: string): number | null => {
+  const iso = normalizeDate(raw ?? "");
+  const t = Date.parse(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T00:00:00Z` : iso);
+  return Number.isNaN(t) ? null : t;
+};
+
+const DAY = 86400000;
+
+const TRUTHY = new Set(["1", "true", "yes", "y", "t", "no-show", "noshow", "dna", "missed", "did not attend"]);
+
+const truthy = (raw: string, extra?: string[]): boolean => {
+  const v = (raw ?? "").trim().toLowerCase();
+  if (!v) return false;
+  if (extra && extra.length > 0) return extra.some((e) => e.trim().toLowerCase() === v);
+  const n = Number(v);
+  if (Number.isFinite(n)) return n > 0;
+  return TRUTHY.has(v);
+};
+
+const matches = (raw: string, equals?: string, anyOf?: string[]): boolean => {
+  const v = (raw ?? "").trim().toLowerCase();
+  if (anyOf && anyOf.length > 0) return anyOf.some((a) => a.trim().toLowerCase() === v);
+  if (equals != null) return v === equals.trim().toLowerCase();
+  return truthy(raw);
+};
+
+const fmt = (n: number): string => (Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100));
+
+/** Evaluate a row-level derivation against a single file row. "" when unknown. */
+export function evalRowOp(
+  spec: DeriveSpec,
+  row: string[],
+  col: (name: string) => number,
+  now = Date.now(),
+): string {
+  const get = (name?: string) => (name ? (row[col(name)] ?? "") : "");
+  switch (spec.op) {
+    case "arith": {
+      const a = num(get(spec.a));
+      const b = spec.b ? num(get(spec.b)) : (spec.value ?? null);
+      if (a == null || b == null) return "";
+      if (spec.operator === "+") return fmt(a + b);
+      if (spec.operator === "-") return fmt(a - b);
+      if (spec.operator === "*") return fmt(a * b);
+      return b === 0 ? "" : fmt(a / b);
+    }
+    case "date_diff": {
+      const from = toDate(get(spec.from));
+      const to = toDate(get(spec.to));
+      if (from == null || to == null) return "";
+      return fmt(Math.round((to - from) / DAY));
+    }
+    case "days_since": {
+      const d = toDate(get(spec.column));
+      if (d == null) return "";
+      return fmt(Math.max(0, Math.round((now - d) / DAY)));
+    }
+    case "bool":
+      return get(spec.column).trim() === "" ? "" : truthy(get(spec.column), spec.trueValues) ? "1" : "0";
+    case "lookup": {
+      const v = get(spec.column).trim();
+      if (!v) return "";
+      const hit = Object.entries(spec.map).find(([k]) => k.trim().toLowerCase() === v.toLowerCase());
+      return hit ? hit[1] : (spec.fallback ?? "");
+    }
+    default:
+      return "";
+  }
+}
+
+/** Evaluate a group-level derivation across all rows for one customer. */
+export function evalGroupOp(
+  spec: DeriveSpec,
+  group: string[][],
+  col: (name: string) => number,
+  now = Date.now(),
+): string {
+  const vals = (name: string) => group.map((r) => r[col(name)] ?? "");
+  switch (spec.op) {
+    case "count":
+      return String(group.length);
+    case "count_if":
+      return String(vals(spec.column).filter((v) => matches(v, spec.equals, spec.anyOf)).length);
+    case "ratio_if": {
+      if (group.length === 0) return "";
+      const hits = vals(spec.column).filter((v) => matches(v, spec.equals, spec.anyOf)).length;
+      return fmt((hits / group.length) * 100);
+    }
+    case "sum":
+    case "avg":
+    case "min":
+    case "max": {
+      const ns = vals(spec.column).map(num).filter((n): n is number => n != null);
+      if (ns.length === 0) return "";
+      if (spec.op === "sum") return fmt(ns.reduce((a, b) => a + b, 0));
+      if (spec.op === "avg") return fmt(ns.reduce((a, b) => a + b, 0) / ns.length);
+      if (spec.op === "min") return fmt(Math.min(...ns));
+      return fmt(Math.max(...ns));
+    }
+    case "last_date": {
+      const ds = vals(spec.column).map(toDate).filter((d): d is number => d != null);
+      if (ds.length === 0) return "";
+      return new Date(Math.max(...ds)).toISOString().slice(0, 10);
+    }
+    case "days_since_last": {
+      const ds = vals(spec.column).map(toDate).filter((d): d is number => d != null);
+      if (ds.length === 0) return "";
+      return fmt(Math.max(0, Math.round((now - Math.max(...ds)) / DAY)));
+    }
+    default:
+      return "";
+  }
+}
+
+/** Plain-English description of a derivation, for the review screen. */
+export function describeDerive(spec: DeriveSpec, field: string): string {
+  const cond = (c: { column: string; equals?: string; anyOf?: string[] }) =>
+    c.anyOf && c.anyOf.length > 0
+      ? `${c.column} is one of ${c.anyOf.join(", ")}`
+      : c.equals != null
+        ? `${c.column} = ${c.equals}`
+        : `${c.column} is yes/true`;
+  switch (spec.op) {
+    case "arith":
+      return `${field}: ${spec.a} ${spec.operator} ${spec.b ?? spec.value}`;
+    case "date_diff":
+      return `${field}: days between ${spec.from} and ${spec.to}`;
+    case "days_since":
+      return `${field}: days since ${spec.column}`;
+    case "bool":
+      return `${field}: ${spec.column} converted to 1/0`;
+    case "lookup":
+      return `${field}: ${spec.column} mapped to a score`;
+    case "count":
+      return `${field}: number of rows per customer`;
+    case "count_if":
+      return `${field}: count of rows where ${cond(spec)}, per customer`;
+    case "ratio_if":
+      return `${field}: % of rows where ${cond(spec)}, per customer`;
+    case "sum":
+      return `${field}: total of ${spec.column} per customer`;
+    case "avg":
+      return `${field}: average ${spec.column} per customer`;
+    case "min":
+      return `${field}: lowest ${spec.column} per customer`;
+    case "max":
+      return `${field}: highest ${spec.column} per customer`;
+    case "last_date":
+      return `${field}: most recent ${spec.column} per customer`;
+    case "days_since_last":
+      return `${field}: days since the last ${spec.column} per customer`;
+    default:
+      return field;
+  }
+}
+
 /**
  * Apply AI-produced column mappings to EVERY data row of the parsed file.
- * Rows where nothing mapped resolves to a value are dropped.
+ * Fields may be taken straight from a column, fixed to a constant, or
+ * calculated (per row, or rolled up per customer when `groupBy` is set).
+ * Rows where nothing resolves to a value are dropped.
  */
 export function applyMapping(
   headers: string[],
   rows: string[][],
   schemas: MappedSchema[],
   mappings: DatasetMapping[],
+  now = Date.now(),
 ): MappedDataset[] {
   const headerIndex = new Map<string, number>();
   headers.forEach((h, i) => {
     const k = normKey(h);
     if (k && !headerIndex.has(k)) headerIndex.set(k, i);
   });
+  const col = (name: string) => headerIndex.get(normKey(name ?? "")) ?? -1;
 
   const out: MappedDataset[] = [];
   for (const mapping of mappings) {
@@ -174,19 +341,66 @@ export function applyMapping(
 
     const plan = schema.fields.map((f) => {
       const mf = mapping.fields.find((x) => normKey(x.field) === normKey(f.name));
-      const idx = mf?.column ? (headerIndex.get(normKey(mf.column)) ?? -1) : -1;
-      return { type: f.type, idx, constant: mf?.constant?.trim() ?? "" };
+      const idx = mf?.column ? col(mf.column) : -1;
+      return {
+        name: f.name,
+        type: f.type,
+        idx,
+        constant: mf?.constant?.trim() ?? "",
+        derive: mf?.derive,
+      };
     });
 
-    if (plan.every((p) => p.idx < 0 && !p.constant)) continue;
+    if (plan.every((p) => p.idx < 0 && !p.constant && !p.derive)) continue;
+
+    const derivations = plan
+      .filter((p) => p.derive)
+      .map((p) => describeDerive(p.derive!, p.name));
+
+    const groupIdx = mapping.groupBy ? col(mapping.groupBy) : -1;
+    const grouped = groupIdx >= 0 && plan.some((p) => isGroupOp(p.derive));
 
     const built: string[][] = [];
-    for (const row of rows) {
-      const values = plan.map((p) => {
-        const raw = p.idx >= 0 ? (row[p.idx] ?? "") : p.constant;
-        return normalizeCell(p.type, raw);
-      });
-      if (values.some((v) => v !== "")) built.push(values);
+
+    if (grouped) {
+      const groups = new Map<string, string[][]>();
+      for (const row of rows) {
+        const gk = (row[groupIdx] ?? "").trim();
+        if (!gk) continue;
+        const bucket = groups.get(gk.toLowerCase());
+        if (bucket) bucket.push(row);
+        else groups.set(gk.toLowerCase(), [row]);
+      }
+      for (const group of groups.values()) {
+        const last = group[group.length - 1]!;
+        const values = plan.map((p) => {
+          let raw: string;
+          if (p.derive && isGroupOp(p.derive)) raw = evalGroupOp(p.derive, group, col, now);
+          else if (p.derive) raw = evalRowOp(p.derive, last, col, now);
+          else if (p.idx >= 0) {
+            // Prefer the first non-empty value in the group for pass-through fields.
+            raw = group.map((r) => (r[p.idx] ?? "").trim()).find((v) => v !== "") ?? "";
+            if (p.type === "date") {
+              const ds = group.map((r) => r[p.idx] ?? "").map(toDate).filter((d): d is number => d != null);
+              if (ds.length > 0) raw = new Date(Math.max(...ds)).toISOString().slice(0, 10);
+            }
+          } else raw = p.constant;
+          return normalizeCell(p.type, raw);
+        });
+        if (values.some((v) => v !== "")) built.push(values);
+      }
+    } else {
+      for (const row of rows) {
+        const values = plan.map((p) => {
+          const raw = p.derive
+            ? evalRowOp(p.derive, row, col, now)
+            : p.idx >= 0
+              ? (row[p.idx] ?? "")
+              : p.constant;
+          return normalizeCell(p.type, raw);
+        });
+        if (values.some((v) => v !== "")) built.push(values);
+      }
     }
     if (built.length === 0) continue;
 
@@ -197,7 +411,10 @@ export function applyMapping(
       rows: built,
       confidence: Math.round(mapping.confidence),
       note: mapping.note,
+      derivations,
+      grouped,
     });
   }
+
   return out;
 }
