@@ -4,6 +4,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  INGEST_COLUMNS,
+  normalizeIngestRow,
+  fetchAllPages,
+} from "@/lib/ingest-row-normalize";
 
 // ---- Shapes ---------------------------------------------------------------
 
@@ -176,27 +181,41 @@ export interface IngestedSnapshot {
   surveys: Array<Record<string, string>>;
 }
 
+
+
 export const listAllIngested = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<IngestedSnapshot> => {
     const { supabase, userId } = context;
+    const read = (table: string, select: string) =>
+      fetchAllPages(
+        (from, to) =>
+          supabase
+            .from(table as "ingested_customers")
+            .select(select)
+            .eq("user_id", userId)
+            .order("id", { ascending: true })
+            .range(from, to) as never,
+        table,
+      );
+
     const [c, t, s, u, sv] = await Promise.all([
-      supabase.from("ingested_customers").select("data").eq("user_id", userId).limit(50000),
-      supabase.from("ingested_transactions").select("data").eq("user_id", userId).limit(200000),
-      supabase.from("ingested_support").select("data").eq("user_id", userId).limit(200000),
-      supabase.from("ingested_usage").select("data").eq("user_id", userId).limit(200000),
-      supabase.from("ingested_surveys").select("data").eq("user_id", userId).limit(200000),
+      read("ingested_customers", "data, customer_id"),
+      read("ingested_transactions", "data, transaction_id, customer_id, amount, occurred_at"),
+      read("ingested_support", "data, ticket_id, customer_id"),
+      read("ingested_usage", "data, customer_id, occurred_at"),
+      read("ingested_surveys", "data, customer_id, submitted_at"),
     ]);
-    const asRows = (r: { data: unknown } | null): Record<string, string> =>
-      (r?.data as Record<string, string> | null) ?? {};
+
     return {
-      customers: (c.data ?? []).map(asRows),
-      transactions: (t.data ?? []).map(asRows),
-      support: (s.data ?? []).map(asRows),
-      usage: (u.data ?? []).map(asRows),
-      surveys: (sv.data ?? []).map(asRows),
+      customers: c.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.customers!)),
+      transactions: t.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.transactions!)),
+      support: s.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.support!)),
+      usage: u.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.usage!)),
+      surveys: sv.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.surveys!)),
     };
   });
+
 
 // ---- listIngestBatches ----------------------------------------------------
 

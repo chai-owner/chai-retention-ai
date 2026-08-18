@@ -3,10 +3,18 @@
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, Database } from "lucide-react";
 import { useDataCoverage } from "@/lib/use-scored-data";
+import { useIngestHydrated } from "@/lib/ingested-data-store";
+import { useSignedIn } from "@/lib/use-auth-state";
 
 export function DataCoverageBanner() {
   const coverage = useDataCoverage();
+  const hydrated = useIngestHydrated();
+  const signedIn = useSignedIn();
+  // Before the account's saved rows have loaded the store is empty by
+  // definition — warning then would falsely claim the user has no data.
+  if (signedIn && !hydrated) return null;
   if (!coverage.flagged) return null;
+
 
   const low = coverage.confidence === "low";
 
