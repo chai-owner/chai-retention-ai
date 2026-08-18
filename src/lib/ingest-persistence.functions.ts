@@ -202,21 +202,35 @@ export const listAllIngested = createServerFn({ method: "POST" })
         table,
       );
 
-    const [c, t, s, u, sv] = await Promise.all([
-      read("ingested_customers", "data, customer_id"),
-      read("ingested_transactions", "data, transaction_id, customer_id, amount, occurred_at"),
-      read("ingested_support", "data, ticket_id, customer_id"),
-      read("ingested_usage", "data, customer_id, occurred_at"),
-      read("ingested_surveys", "data, customer_id, submitted_at"),
+    const [c, t, s, u, sv, batches] = await Promise.all([
+      read("ingested_customers", "data, customer_id, batch_id"),
+      read("ingested_transactions", "data, transaction_id, customer_id, amount, occurred_at, batch_id"),
+      read("ingested_support", "data, ticket_id, customer_id, batch_id"),
+      read("ingested_usage", "data, customer_id, occurred_at, batch_id"),
+      read("ingested_surveys", "data, customer_id, submitted_at, batch_id"),
+      supabase
+        .from("ingest_batches")
+        .select("id, source_kind, source_provider")
+        .eq("user_id", userId)
+        .then((r) => (r.data ?? []) as Array<{ id: string; source_kind: string; source_provider: string }>),
     ]);
 
+    // Rows written before source stamping (or seeded straight into the tables)
+    // have no `__source`; recover it from the batch they belong to.
+    const sourceByBatch = new Map(
+      batches.map((b) => [b.id, batchSource(b.source_kind, b.source_provider)]),
+    );
+    const fallback = (r: Record<string, unknown>) =>
+      sourceByBatch.get(String(r["batch_id"] ?? "")) ?? undefined;
+
     return {
-      customers: c.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.customers!)),
-      transactions: t.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.transactions!)),
-      support: s.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.support!)),
-      usage: u.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.usage!)),
-      surveys: sv.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.surveys!)),
+      customers: c.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.customers!, fallback(r))),
+      transactions: t.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.transactions!, fallback(r))),
+      support: s.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.support!, fallback(r))),
+      usage: u.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.usage!, fallback(r))),
+      surveys: sv.map((r) => normalizeIngestRow(r, INGEST_COLUMNS.surveys!, fallback(r))),
     };
+
   });
 
 
