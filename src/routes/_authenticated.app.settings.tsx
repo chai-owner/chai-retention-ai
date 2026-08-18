@@ -135,7 +135,7 @@ function Settings() {
       tracked,
       channels,
       metricWeights,
-      metrics: activeMetrics.map((m) => ({ ...m, weight: metricWeights[m.name] ?? m.weight ?? 3 })),
+      metrics: metrics.map((m) => ({ ...m, weight: metricWeights[m.name] ?? m.weight ?? 3 })),
     };
     const current = profileStore.getSnapshot();
     profileStore.save({ ...(current ?? {}), ...payload });
