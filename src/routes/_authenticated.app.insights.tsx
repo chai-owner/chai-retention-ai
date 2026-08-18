@@ -5,6 +5,7 @@ import { PageHeader, Card } from "@/components/ui/chai";
 import { benchmarks, formatCurrency, type Customer } from "@/lib/mock-data";
 import { useScoredData } from "@/lib/use-scored-data";
 import { useSignedIn } from "@/lib/use-auth-state";
+import { DataCoverageBanner } from "@/components/data-coverage-banner";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/insights")({
@@ -60,6 +61,9 @@ function Insights() {
         title="Insights & Benchmarks"
         description="ChAi turns your data into prioritized actions and shows how you compare to similar businesses."
       />
+      <div className="mb-4">
+        <DataCoverageBanner />
+      </div>
 
       {/* Recommendations */}
       <Card>
