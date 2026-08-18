@@ -205,43 +205,79 @@ export function SmartIngestWizard({
     setTimeout(reset, 200);
   }
 
-  // Extract one file. Returns its extracted datasets + document type, or null
-  // (with a toast) when the file is unsupported or yields nothing.
+  // Structured files (CSV / Excel) are parsed locally and mapped column-by-column
+  // by the AI, then applied to EVERY row here — so the import can never be
+  // truncated to the first customer. PDFs/images still go through AI extraction.
+  async function processStructured(
+    file: File,
+    grid: string[][],
+    schemas: ReturnType<typeof buildSchemas>,
+  ): Promise<{ datasets: EditableDataset[]; documentType: string; sourceRows: number } | null> {
+    const headers = grid[0] ?? [];
+    const dataRows = grid.slice(1);
+    if (headers.length === 0 || dataRows.length === 0) {
+      toast.error(`No rows in ${file.name}`, { description: "The file needs a header row and at least one data row." });
+      return null;
+    }
+
+    const result = await runMapColumns({
+      data: {
+        fileName: file.name,
+        headers,
+        sampleRows: dataRows.slice(0, 20),
+        totalRows: dataRows.length,
+        schemas,
+      },
+    });
+
+    const mappedSchemas: MappedSchema[] = allSchemas.map((s) => ({
+      key: s.key,
+      label: s.label,
+      fields: s.fields.map((f) => ({ name: f.name, type: inferType(f.name, f.example) })),
+    }));
+
+    const mapped = applyMapping(headers, dataRows, mappedSchemas, result.mappings);
+    const editable: EditableDataset[] = mapped.flatMap((m) => {
+      const schema = allSchemas.find((s) => s.key === m.key);
+      if (!schema) return [];
+      return [{ ...m, schema }];
+    });
+    return { datasets: editable, documentType: result.documentType, sourceRows: dataRows.length };
+  }
+
+  // Extract one file. Returns review-ready datasets, or null (with a toast)
+  // when the file is unsupported or yields nothing.
   async function extractOne(
     file: File,
     schemas: ReturnType<typeof buildSchemas>,
-  ): Promise<{ datasets: ExtractedDataset[]; documentType: string } | null> {
+  ): Promise<{ datasets: EditableDataset[]; documentType: string; sourceRows: number } | null> {
     const name = file.name.toLowerCase();
-    let payload: { base64?: string; text?: string };
 
     if (/\.(csv|txt)$/.test(name)) {
-      payload = { text: await file.text() };
-    } else if (/\.(xlsx|xls)$/.test(name)) {
+      return processStructured(file, parseCsv(await file.text()), schemas);
+    }
+    if (/\.(xlsx|xls)$/.test(name)) {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      payload = { text: XLSX.utils.sheet_to_csv(sheet) };
-    } else if (/\.(pdf|png|jpe?g|webp)$/.test(name)) {
-      payload = { base64: await fileToBase64(file) };
-    } else {
+      return processStructured(file, parseCsv(XLSX.utils.sheet_to_csv(sheet)), schemas);
+    }
+    if (!/\.(pdf|png|jpe?g|webp)$/.test(name)) {
       toast.error(`Skipped ${file.name}`, {
         description: "Unsupported type. Use PDF, image, CSV, TXT or Excel.",
       });
       return null;
     }
 
-    const mimeType =
-      file.type ||
-      (name.endsWith(".pdf")
-        ? "application/pdf"
-        : name.endsWith(".csv")
-          ? "text/csv"
-          : "text/plain");
-
+    const mimeType = file.type || (name.endsWith(".pdf") ? "application/pdf" : "image/png");
     const result = await runExtract({
-      data: { fileName: file.name, mimeType, schemas, ...payload },
+      data: { fileName: file.name, mimeType, schemas, base64: await fileToBase64(file) },
     });
-    return result;
+    return {
+      datasets: buildEditable(result.datasets, allSchemas),
+      documentType: result.documentType,
+      sourceRows: 0,
+    };
   }
 
   function buildSchemas() {
