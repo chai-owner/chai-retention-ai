@@ -29,11 +29,15 @@ const ID_FIELD: Record<string, string> = {
 };
 
 let data: IngestedData = {};
+// True once the user's persisted rows have been loaded from the server. Until
+// then the store is legitimately empty and must not be reported as "no data".
+let hydrated = false;
 
 const listeners = new Set<() => void>();
 function emit() {
   listeners.forEach((l) => l());
 }
+
 
 // Turn schema-field-ordered string rows into keyed objects.
 export function rowsToObjects(fieldNames: string[], rows: string[][]): IngestRow[] {
