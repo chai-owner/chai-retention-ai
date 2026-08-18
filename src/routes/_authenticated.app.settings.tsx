@@ -20,6 +20,13 @@ const MAX_SEGMENTS = 4;
 function Settings() {
   const profile = useProfile();
   const activeMetrics = useActiveMetrics();
+  // Only admins (including an admin impersonating this user) may drop metrics.
+  const isAdmin = useIsAdmin();
+  const [removedMetrics, setRemovedMetrics] = useState<string[]>([]);
+  const metrics = useMemo(
+    () => activeMetrics.filter((m) => !removedMetrics.includes(m.name)),
+    [activeMetrics, removedMetrics],
+  );
   const persistProfile = useServerFn(saveProfile);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
