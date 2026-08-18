@@ -203,6 +203,7 @@ export function SmartIngestWizard({
     setDocumentType("");
     setDatasets([]);
     setProgress(null);
+    setSourceRows(0);
   }
   function close() {
     onOpenChange(false);
