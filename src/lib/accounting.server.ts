@@ -275,6 +275,7 @@ async function readJson(res: Response, ctx: string): Promise<any> {
 export interface XeroTenant {
   tenantId: string;
   tenantName: string;
+  [key: string]: string;
 }
 
 export interface AccountInfo {
@@ -422,7 +423,7 @@ export async function saveConnection(
       realm_id: info.realmId ?? null,
       tenant_id: info.tenantId ?? null,
       account_id: info.accountId ?? null,
-      tenants: info.tenants ?? [],
+      tenants: (info.tenants ?? []) as unknown as never,
       company_name: info.companyName ?? null,
       connected_at: new Date().toISOString(),
     },
