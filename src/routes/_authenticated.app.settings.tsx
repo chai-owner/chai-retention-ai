@@ -7,6 +7,7 @@ import { profileStore, useProfile, type ProfileSegment } from "@/lib/profile-sto
 import { saveProfile } from "@/lib/profile.functions";
 import { IMPORTANCE_LABELS } from "@/lib/mock-data";
 import { useActiveMetrics } from "@/lib/use-scored-data";
+import { useIsAdmin } from "@/lib/use-is-admin";
 import { businessModels, companySizes, interactionChannels, getQuestions, getChurnDefinition } from "@/lib/onboarding-options";
 
 export const Route = createFileRoute("/_authenticated/app/settings")({
@@ -19,6 +20,13 @@ const MAX_SEGMENTS = 4;
 function Settings() {
   const profile = useProfile();
   const activeMetrics = useActiveMetrics();
+  // Only admins (including an admin impersonating this user) may drop metrics.
+  const isAdmin = useIsAdmin();
+  const [removedMetrics, setRemovedMetrics] = useState<string[]>([]);
+  const metrics = useMemo(
+    () => activeMetrics.filter((m) => !removedMetrics.includes(m.name)),
+    [activeMetrics, removedMetrics],
+  );
   const persistProfile = useServerFn(saveProfile);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -127,7 +135,7 @@ function Settings() {
       tracked,
       channels,
       metricWeights,
-      metrics: activeMetrics.map((m) => ({ ...m, weight: metricWeights[m.name] ?? m.weight ?? 3 })),
+      metrics: metrics.map((m) => ({ ...m, weight: metricWeights[m.name] ?? m.weight ?? 3 })),
     };
     const current = profileStore.getSnapshot();
     profileStore.save({ ...(current ?? {}), ...payload });
@@ -265,9 +273,9 @@ function Settings() {
 
 
       {/* What matters — weights */}
-      <Card title="How much each metric matters" subtitle="Slide each metric from Unimportant to Critical to retune your customer health score.">
+      <Card title="How much each metric matters" subtitle={isAdmin ? "Slide each metric from Unimportant to Critical, or remove a metric that isn't needed for accurate intelligence." : "Slide each metric from Unimportant to Critical to retune your customer health score."}>
         <div className="space-y-4">
-          {activeMetrics.map((m) => {
+          {metrics.map((m) => {
             const level = metricWeights[m.name] ?? m.weight ?? 3;
             const recommended = m.weight ?? 3;
             const isRecommended = level === recommended;
@@ -279,9 +287,22 @@ function Settings() {
                     <p className="mt-0.5 text-xs text-muted-foreground">{m.why}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
-                      {IMPORTANCE_LABELS[level - 1]}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                        {IMPORTANCE_LABELS[level - 1]}
+                      </span>
+                      {isAdmin && metrics.length > 1 && (
+                        <button
+                          type="button"
+                          aria-label={`Remove ${m.name}`}
+                          title="Remove this metric (admin only)"
+                          onClick={() => setRemovedMetrics((r) => [...r, m.name])}
+                          className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                     {isRecommended ? (
                       <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                         <Sparkles className="h-2.5 w-2.5" /> Recommended
