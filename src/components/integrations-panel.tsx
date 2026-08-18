@@ -52,6 +52,7 @@ import {
   getAccountingConfig,
   startAccountingOAuth,
   disconnectAccounting,
+  selectXeroTenant,
   type AccountingProvider,
 } from "@/lib/accounting.functions";
 import { useUploads } from "@/lib/uploads-store";
@@ -80,6 +81,8 @@ type AccountingStatus = {
   provider: AccountingProvider;
   company_name: string | null;
   connected_at: string;
+  tenant_id: string | null;
+  tenants: { tenantId: string; tenantName: string }[] | null;
 };
 
 export function IntegrationsPanel() {
@@ -934,6 +937,8 @@ function AccountingCard({
   const provider = ACCOUNTING_PROVIDER_BY_NAME[name];
   const startOAuth = useServerFn(startAccountingOAuth);
   const disconnect = useServerFn(disconnectAccounting);
+  const pickTenant = useServerFn(selectXeroTenant);
+  const xeroTenants = provider === "xero" ? (connected?.tenants ?? []) : [];
 
   const lastSynced = useMemo(() => {
     const prefix = `${name} —`;
@@ -1018,6 +1023,36 @@ function AccountingCard({
               Disconnect
             </button>
           </div>
+          {xeroTenants.length > 1 && (
+            <div className="mt-2">
+              <label className="text-[11px] text-muted-foreground" htmlFor="xero-org">
+                Organisation to sync
+              </label>
+              <select
+                id="xero-org"
+                value={connected.tenant_id ?? ""}
+                onChange={async (e) => {
+                  const value = e.target.value || null;
+                  try {
+                    await pickTenant({ data: { tenantId: value } });
+                    onChanged();
+                  } catch (err) {
+                    toast.error("Couldn’t change organisation", {
+                      description: err instanceof Error ? err.message : "Please try again.",
+                    });
+                  }
+                }}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
+              >
+                <option value="">All organisations ({xeroTenants.length})</option>
+                {xeroTenants.map((t) => (
+                  <option key={t.tenantId} value={t.tenantId}>
+                    {t.tenantName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           {lastSynced && (
             <p className="mt-1 text-center text-[11px] italic text-success">
               Last synced {lastSynced}

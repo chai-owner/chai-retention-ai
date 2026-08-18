@@ -2,6 +2,11 @@
 // own Zoho account; we store their refresh token and refresh access tokens
 // as needed. Never import from client code.
 import type { ExtractedDataset } from "./ingest.functions";
+import {
+  encryptSecret,
+  decryptSecret,
+  decryptSecretOrNull,
+} from "./connection-key-crypto.server";
 
 export const ZOHO_SCOPES = [
   "ZohoCRM.modules.ALL",
@@ -142,8 +147,8 @@ export async function saveZohoConnection(
     {
       user_id: userId,
       dc,
-      access_token: tokens.accessToken,
-      refresh_token: tokens.refreshToken ?? null,
+      access_token: encryptSecret(tokens.accessToken),
+      refresh_token: tokens.refreshToken ? encryptSecret(tokens.refreshToken) : null,
       expires_at: tokens.expiresAt ?? null,
       api_domain: tokens.apiDomain,
       org_name: orgName,
@@ -152,6 +157,8 @@ export async function saveZohoConnection(
     { onConflict: "user_id" },
   );
   if (error) throw new Error(`Failed to save Zoho connection: ${error.message}`);
+  const { ensureCrmSyncState } = await import("./crm.server");
+  await ensureCrmSyncState(userId, "zoho_crm");
 }
 
 interface Row {
@@ -176,11 +183,13 @@ async function loadFreshZohoConnection(userId: string): Promise<Row> {
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Zoho CRM isn't connected for your account.");
   const row = data as Row;
+  row.access_token = decryptSecret(row.access_token);
+  row.refresh_token = decryptSecretOrNull(row.refresh_token);
   const expired = row.expires_at && new Date(row.expires_at).getTime() < Date.now();
   if (expired && row.refresh_token) {
     const refreshed = await refreshZohoToken(row.dc, row.refresh_token);
     await db.from("zoho_crm_connections").update({
-      access_token: refreshed.accessToken,
+      access_token: encryptSecret(refreshed.accessToken),
       expires_at: refreshed.expiresAt ?? null,
       api_domain: refreshed.apiDomain,
     }).eq("id", row.id);
@@ -280,6 +289,8 @@ export async function getZohoStatusRow(userId: string) {
 
 export async function deleteZohoConnection(userId: string) {
   const db = await admin();
+  const { clearCrmSyncState } = await import("./crm.server");
+  await clearCrmSyncState(userId, "zoho_crm");
   const { error } = await db.from("zoho_crm_connections").delete().eq("user_id", userId);
   if (error) throw new Error(error.message);
 }

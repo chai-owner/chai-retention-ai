@@ -8,6 +8,9 @@ process.env.SUPABASE_URL ??= "https://test.supabase.co";
 process.env.SUPABASE_PUBLISHABLE_KEY ??= "test-publishable-key";
 process.env.SUPABASE_SERVICE_ROLE_KEY ??= "test-service-role-key";
 process.env.CRON_SECRET ??= "test-cron-secret";
+// 32 zero bytes, base64 — deterministic key for token-at-rest encryption tests.
+process.env.APP_USER_CONNECTION_KEY_SECRET ??= Buffer.alloc(32, 7).toString("base64");
+
 
 // --- Supabase client mocks ------------------------------------------------
 // A tiny chainable stub: every query builder method returns `this`, and the

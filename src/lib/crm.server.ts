@@ -11,28 +11,17 @@ const GATEWAY_BASE = "https://connector-gateway.lovable.dev";
 
 export type CrmProvider = "salesforce" | "hubspot" | "zoho_crm";
 
-export const CRM_PROVIDERS: { id: CrmProvider; name: string; keyEnv: string }[] = [
-  { id: "salesforce", name: "Salesforce", keyEnv: "SALESFORCE_API_KEY" },
-  { id: "hubspot", name: "HubSpot", keyEnv: "HUBSPOT_API_KEY" },
-  { id: "zoho_crm", name: "Zoho CRM", keyEnv: "ZOHO_CRM_API_KEY" },
+// Per-user connections only. There are no workspace-level SALESFORCE_API_KEY /
+// HUBSPOT_API_KEY / ZOHO_CRM_API_KEY env vars in this app: Salesforce and
+// HubSpot use per-user App User Connector keys (app_user_connections) and Zoho
+// uses its own per-user OAuth tokens (zoho_crm_connections).
+export const CRM_PROVIDERS: { id: CrmProvider; name: string }[] = [
+  { id: "salesforce", name: "Salesforce" },
+  { id: "hubspot", name: "HubSpot" },
+  { id: "zoho_crm", name: "Zoho CRM" },
 ];
 
-function credsFor(provider: CrmProvider) {
-  const lovableKey = process.env.LOVABLE_API_KEY;
-  const meta = CRM_PROVIDERS.find((p) => p.id === provider)!;
-  const connectionKey = process.env[meta.keyEnv];
-  if (!lovableKey) throw new Error("Missing LOVABLE_API_KEY");
-  if (!connectionKey) {
-    throw new Error(
-      `${meta.name} is not connected yet. Connect it under Data → Connect your CRM first.`,
-    );
-  }
-  return { lovableKey, connectionKey, name: meta.name };
-}
 
-function credsForUser(lovableKey: string, connectionKey: string) {
-  return { lovableKey, connectionKey };
-}
 
 
 function gatewayHeaders(connectionKey: string, lovableKey: string) {
@@ -275,4 +264,32 @@ export async function runCrmSync(
     case "zoho_crm": return syncZoho(userId, limit, since);
     default: throw new Error("Unsupported CRM provider");
   }
+}
+
+// Called right after a successful connect so the daily cron can discover the
+// integration before the user ever runs a manual sync. `last_synced_at` stays
+// null so the first run does a full backfill.
+export async function ensureCrmSyncState(userId: string, provider: CrmProvider): Promise<void> {
+  const db = await admin();
+  const { data } = await db
+    .from("crm_sync_state")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("provider", provider)
+    .maybeSingle();
+  if (data) return;
+  const { error } = await db
+    .from("crm_sync_state")
+    .insert({ user_id: userId, provider, last_synced_at: null });
+  if (error) console.error(`Failed to seed crm_sync_state for ${provider}: ${error.message}`);
+}
+
+export async function clearCrmSyncState(userId: string, provider: CrmProvider): Promise<void> {
+  const db = await admin();
+  const { error } = await db
+    .from("crm_sync_state")
+    .delete()
+    .eq("user_id", userId)
+    .eq("provider", provider);
+  if (error) console.error(`Failed to clear crm_sync_state for ${provider}: ${error.message}`);
 }

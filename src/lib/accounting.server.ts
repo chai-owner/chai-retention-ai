@@ -6,6 +6,11 @@
 // writes OAuth tokens via the service-role Supabase client. It must only ever
 // be imported from server code (server functions / server routes).
 import type { ExtractedDataset } from "./ingest.functions";
+import {
+  encryptSecret,
+  decryptSecret,
+  decryptSecretOrNull,
+} from "./connection-key-crypto.server";
 
 export type AccountingProvider = "quickbooks" | "xero" | "freshbooks";
 
@@ -267,31 +272,48 @@ async function readJson(res: Response, ctx: string): Promise<any> {
 
 // After token exchange, resolve the org/company identifiers each provider
 // needs for API calls. `realmId` for QBO comes straight from the callback URL.
+export interface XeroTenant {
+  tenantId: string;
+  tenantName: string;
+  [key: string]: string;
+}
+
+export interface AccountInfo {
+  realmId?: string;
+  tenantId?: string;
+  tenants?: XeroTenant[];
+  accountId?: string;
+  companyName?: string;
+}
+
 export async function resolveAccountInfo(
   provider: AccountingProvider,
   tokens: TokenSet,
   realmIdFromCallback?: string,
-): Promise<{ realmId?: string; tenantId?: string; accountId?: string; companyName?: string }> {
+): Promise<AccountInfo> {
   if (provider === "quickbooks") {
+    if (!realmIdFromCallback) {
+      throw new Error(
+        "QuickBooks did not return a company (realm) id. Please retry the connection from the Data page.",
+      );
+    }
     let companyName: string | undefined;
-    if (realmIdFromCallback) {
-      try {
-        const res = await fetch(
-          `${qboApiBase()}/v3/company/${realmIdFromCallback}/companyinfo/${realmIdFromCallback}?minorversion=65`,
-          {
-            headers: {
-              Authorization: `Bearer ${tokens.accessToken}`,
-              Accept: "application/json",
-            },
+    try {
+      const res = await fetch(
+        `${qboApiBase()}/v3/company/${realmIdFromCallback}/companyinfo/${realmIdFromCallback}?minorversion=65`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokens.accessToken}`,
+            Accept: "application/json",
           },
-        );
-        if (res.ok) {
-          const j = await res.json();
-          companyName = j?.CompanyInfo?.CompanyName;
-        }
-      } catch {
-        /* best-effort company name */
+        },
+      );
+      if (res.ok) {
+        const j = await res.json();
+        companyName = j?.CompanyInfo?.CompanyName;
       }
+    } catch {
+      /* best-effort company name */
     }
     return { realmId: realmIdFromCallback, companyName };
   }
@@ -303,10 +325,30 @@ export async function resolveAccountInfo(
       },
     });
     const conns = await readJson(res, "Xero connections");
-    const first = Array.isArray(conns) ? conns[0] : undefined;
-    return { tenantId: first?.tenantId, companyName: first?.tenantName };
+    const tenants: XeroTenant[] = (Array.isArray(conns) ? conns : [])
+      .filter((c: any) => c?.tenantId)
+      .map((c: any) => ({
+        tenantId: String(c.tenantId),
+        tenantName: String(c.tenantName ?? c.tenantId),
+      }));
+    if (!tenants.length) {
+      throw new Error(
+        "Xero authorised the app but returned no organisations. Grant access to at least one organisation and try again.",
+      );
+    }
+    // With one organisation we pin it immediately. With several we leave the
+    // selection empty: every organisation is synced until the user picks one.
+    return {
+      tenants,
+      tenantId: tenants.length === 1 ? tenants[0].tenantId : undefined,
+      companyName:
+        tenants.length === 1
+          ? tenants[0].tenantName
+          : `${tenants.length} organisations`,
+    };
   }
-  // freshbooks
+  // freshbooks — the account/business id is required for every later API call,
+  // so a connection we can't resolve one for is not usable and must not save.
   const res = await fetch("https://api.freshbooks.com/auth/api/v1/users/me", {
     headers: {
       Authorization: `Bearer ${tokens.accessToken}`,
@@ -314,13 +356,33 @@ export async function resolveAccountInfo(
     },
   });
   const j = await readJson(res, "FreshBooks identity");
-  const memberships =
-    j?.response?.business_memberships ?? j?.response?.roles ?? [];
-  const first = Array.isArray(memberships) ? memberships[0] : undefined;
-  const accountId =
-    first?.business?.account_id ?? first?.accountid ?? first?.business?.id;
-  const companyName = first?.business?.name;
-  return { accountId: accountId ? String(accountId) : undefined, companyName };
+  const memberships: any[] = [
+    ...(Array.isArray(j?.response?.business_memberships)
+      ? j.response.business_memberships
+      : []),
+    ...(Array.isArray(j?.response?.roles) ? j.response.roles : []),
+  ];
+  let accountId: string | undefined;
+  let companyName: string | undefined;
+  for (const m of memberships) {
+    const id =
+      m?.business?.account_id ?? m?.accountid ?? m?.account_id ?? m?.business?.id;
+    if (id) {
+      accountId = String(id);
+      companyName = m?.business?.name ?? undefined;
+      break;
+    }
+  }
+  if (!accountId) {
+    console.error(
+      "FreshBooks identity returned no usable account id",
+      JSON.stringify(Object.keys(j?.response ?? {})),
+    );
+    throw new Error(
+      "FreshBooks didn't return an account for this login. Make sure the user is a member of at least one FreshBooks business, then connect again.",
+    );
+  }
+  return { accountId, companyName };
 }
 
 // ---- Connection persistence ---------------------------------------------
@@ -335,6 +397,8 @@ export interface ConnectionRow {
   account_id: string | null;
   company_name: string | null;
   connected_at: string;
+  tenants?: XeroTenant[] | null;
+  last_synced_at?: string | null;
 }
 
 async function admin() {
@@ -346,19 +410,20 @@ export async function saveConnection(
   userId: string,
   provider: AccountingProvider,
   tokens: TokenSet,
-  info: { realmId?: string; tenantId?: string; accountId?: string; companyName?: string },
+  info: AccountInfo,
 ): Promise<void> {
   const db = await admin();
   const { error } = await db.from("accounting_connections").upsert(
     {
       user_id: userId,
       provider,
-      access_token: tokens.accessToken,
-      refresh_token: tokens.refreshToken ?? null,
+      access_token: encryptSecret(tokens.accessToken),
+      refresh_token: tokens.refreshToken ? encryptSecret(tokens.refreshToken) : null,
       expires_at: tokens.expiresAt ?? null,
       realm_id: info.realmId ?? null,
       tenant_id: info.tenantId ?? null,
       account_id: info.accountId ?? null,
+      tenants: (info.tenants ?? []) as unknown as never,
       company_name: info.companyName ?? null,
       connected_at: new Date().toISOString(),
     },
@@ -383,6 +448,9 @@ async function loadFreshConnection(
   if (!data) throw new Error(`${providerName(provider)} is not connected.`);
 
   const row = data as ConnectionRow & { id: string };
+  // Rows written before token-at-rest encryption are still plaintext.
+  row.access_token = decryptSecret(row.access_token);
+  row.refresh_token = decryptSecretOrNull(row.refresh_token);
   const expired =
     row.expires_at != null && new Date(row.expires_at).getTime() < Date.now();
   if (expired && row.refresh_token) {
@@ -390,8 +458,12 @@ async function loadFreshConnection(
     await db
       .from("accounting_connections")
       .update({
-        access_token: refreshed.accessToken,
-        refresh_token: refreshed.refreshToken ?? row.refresh_token,
+        access_token: encryptSecret(refreshed.accessToken),
+        refresh_token: refreshed.refreshToken
+          ? encryptSecret(refreshed.refreshToken)
+          : row.refresh_token
+            ? encryptSecret(row.refresh_token)
+            : null,
         expires_at: refreshed.expiresAt ?? null,
       })
       .eq("id", row.id);
@@ -486,83 +558,152 @@ export async function fetchAndNormalize(
       ]);
     }
   } else if (provider === "xero") {
-    const xauth: Record<string, string> = {
-      ...auth,
-      "Xero-tenant-id": conn.tenant_id ?? "",
-    };
-    if (since) xauth["If-Modified-Since"] = new Date(since).toUTCString();
-    const cRes = await fetch("https://api.xero.com/api.xro/2.0/Contacts", {
-      headers: xauth,
-    });
-    const cJson = await readJson(cRes, "Xero contacts");
-    for (const c of cJson?.Contacts ?? []) {
-      customerRows.push([
-        String(c.ContactID ?? ""),
-        c.Name ?? "",
-        c.EmailAddress ?? "",
-        "",
-        "",
-        "",
-        c.Addresses?.[0]?.Country ?? "",
-      ]);
+    // A single Xero login can grant access to several organisations. When the
+    // user has pinned one we sync only that, otherwise we sync all of them.
+    const allTenants: XeroTenant[] = Array.isArray(conn.tenants) ? conn.tenants : [];
+    const activeTenants: XeroTenant[] = conn.tenant_id
+      ? [
+          allTenants.find((t) => t.tenantId === conn.tenant_id) ?? {
+            tenantId: conn.tenant_id,
+            tenantName: conn.company_name ?? conn.tenant_id,
+          },
+        ]
+      : allTenants.length
+        ? allTenants
+        : [];
+    if (!activeTenants.length) {
+      throw new Error(
+        "No Xero organisation is linked to this connection. Reconnect Xero from the Data page.",
+      );
     }
-    const iRes = await fetch(
-      "https://api.xero.com/api.xro/2.0/Invoices?where=Type==%22ACCREC%22",
-      { headers: xauth },
-    );
-    const iJson = await readJson(iRes, "Xero invoices");
-    for (const inv of iJson?.Invoices ?? []) {
 
-      txnRows.push([
-        String(inv.Contact?.ContactID ?? ""),
-        String(inv.InvoiceNumber || inv.InvoiceID || ""),
-        String(inv.Total ?? ""),
-        isoDate(inv.DateString || inv.Date),
-        inv.LineItems?.[0]?.Description ?? "Invoice",
-        inv.CurrencyCode ?? "",
-      ]);
+    const PAGE_SIZE = 100; // Xero's fixed page size for Contacts/Invoices.
+    for (const tenant of activeTenants) {
+      const xauth: Record<string, string> = {
+        ...auth,
+        "Xero-tenant-id": tenant.tenantId,
+      };
+      if (since) xauth["If-Modified-Since"] = new Date(since).toUTCString();
+
+      for (let page = 1; page <= 50; page++) {
+        const cRes = await fetch(
+          `https://api.xero.com/api.xro/2.0/Contacts?page=${page}`,
+          { headers: xauth },
+        );
+        const cJson = await readJson(cRes, `Xero contacts (${tenant.tenantName})`);
+        const contacts = cJson?.Contacts ?? [];
+        for (const c of contacts) {
+          customerRows.push([
+            String(c.ContactID ?? ""),
+            c.Name ?? "",
+            c.EmailAddress ?? "",
+            "",
+            "",
+            "",
+            c.Addresses?.[0]?.Country ?? "",
+          ]);
+        }
+        if (contacts.length < PAGE_SIZE) break;
+      }
+
+      for (let page = 1; page <= 50; page++) {
+        const iRes = await fetch(
+          `https://api.xero.com/api.xro/2.0/Invoices?where=${encodeURIComponent('Type=="ACCREC"')}&page=${page}`,
+          { headers: xauth },
+        );
+        const iJson = await readJson(iRes, `Xero invoices (${tenant.tenantName})`);
+        const invoices = iJson?.Invoices ?? [];
+        for (const inv of invoices) {
+          txnRows.push([
+            String(inv.Contact?.ContactID ?? ""),
+            String(inv.InvoiceNumber || inv.InvoiceID || ""),
+            String(inv.Total ?? ""),
+            isoDate(inv.DateString || inv.Date),
+            inv.LineItems?.[0]?.Description ?? "Invoice",
+            inv.CurrencyCode ?? "",
+          ]);
+        }
+        if (invoices.length < PAGE_SIZE) break;
+      }
     }
   } else {
-    // freshbooks
+    // FreshBooks. `search[updated_min]` is not reliably honoured across
+    // accounting endpoints, so we page through results sorted by most recently
+    // updated and stop as soon as we cross the `since` watermark.
     const acct = conn.account_id;
-    const sinceQs = since
-      ? `&search[updated_min]=${encodeURIComponent(since)}`
-      : "";
-    const cRes = await fetch(
-      `https://api.freshbooks.com/accounting/account/${acct}/users/clients?per_page=200${sinceQs}`,
-      { headers: auth },
-    );
-    const cJson = await readJson(cRes, "FreshBooks clients");
-    for (const c of cJson?.response?.result?.clients ?? []) {
-      const name =
-        c.organization ||
-        `${c.fname ?? ""} ${c.lname ?? ""}`.trim() ||
-        c.email ||
-        "";
-      customerRows.push([
-        String(c.id ?? ""),
-        name,
-        c.email ?? "",
-        isoDate(c.signup_date),
-        "",
-        "",
-        c.p_country ?? "",
-      ]);
+    if (!acct) {
+      throw new Error(
+        "This FreshBooks connection has no account id. Reconnect FreshBooks from the Data page.",
+      );
     }
-    const iRes = await fetch(
-      `https://api.freshbooks.com/accounting/account/${acct}/invoices/invoices?per_page=500${sinceQs}`,
-      { headers: auth },
-    );
-    const iJson = await readJson(iRes, "FreshBooks invoices");
-    for (const inv of iJson?.response?.result?.invoices ?? []) {
-      txnRows.push([
-        String(inv.customerid ?? ""),
-        String(inv.invoice_number || inv.id || ""),
-        String(inv.amount?.amount ?? ""),
-        isoDate(inv.create_date),
-        inv.lines?.[0]?.name ?? "Invoice",
-        inv.amount?.code ?? inv.currency_code ?? "",
-      ]);
+    const sinceMs = since ? new Date(since).getTime() : null;
+    const PER_PAGE = 100;
+    const MAX_PAGES = 25;
+
+    const updatedMs = (v: unknown): number | null => {
+      if (!v) return null;
+      const t = new Date(String(v).replace(" ", "T") + (String(v).includes("Z") ? "" : "Z")).getTime();
+      return isNaN(t) ? null : t;
+    };
+
+    let stop = false;
+    for (let page = 1; page <= MAX_PAGES && !stop; page++) {
+      const cRes = await fetch(
+        `https://api.freshbooks.com/accounting/account/${acct}/users/clients?per_page=${PER_PAGE}&page=${page}&sort=updated_desc`,
+        { headers: auth },
+      );
+      const cJson = await readJson(cRes, "FreshBooks clients");
+      const result = cJson?.response?.result ?? {};
+      const clients = result.clients ?? [];
+      for (const c of clients) {
+        const ts = updatedMs(c.updated);
+        if (sinceMs != null && ts != null && ts < sinceMs) {
+          stop = true;
+          break;
+        }
+        const name =
+          c.organization ||
+          `${c.fname ?? ""} ${c.lname ?? ""}`.trim() ||
+          c.email ||
+          "";
+        customerRows.push([
+          String(c.id ?? ""),
+          name,
+          c.email ?? "",
+          isoDate(c.signup_date),
+          "",
+          "",
+          c.p_country ?? "",
+        ]);
+      }
+      if (clients.length < PER_PAGE || page >= (result.pages ?? page)) break;
+    }
+
+    stop = false;
+    for (let page = 1; page <= MAX_PAGES && !stop; page++) {
+      const iRes = await fetch(
+        `https://api.freshbooks.com/accounting/account/${acct}/invoices/invoices?per_page=${PER_PAGE}&page=${page}&sort=updated_desc`,
+        { headers: auth },
+      );
+      const iJson = await readJson(iRes, "FreshBooks invoices");
+      const result = iJson?.response?.result ?? {};
+      const invoices = result.invoices ?? [];
+      for (const inv of invoices) {
+        const ts = updatedMs(inv.updated);
+        if (sinceMs != null && ts != null && ts < sinceMs) {
+          stop = true;
+          break;
+        }
+        txnRows.push([
+          String(inv.customerid ?? ""),
+          String(inv.invoice_number || inv.id || ""),
+          String(inv.amount?.amount ?? ""),
+          isoDate(inv.create_date),
+          inv.lines?.[0]?.name ?? "Invoice",
+          inv.amount?.code ?? inv.currency_code ?? "",
+        ]);
+      }
+      if (invoices.length < PER_PAGE || page >= (result.pages ?? page)) break;
     }
   }
 

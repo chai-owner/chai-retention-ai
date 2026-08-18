@@ -42,8 +42,11 @@ export const saveSalesforceConnection = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { saveConnectionKeyForUser } = await import("./app-user-connections.server");
     const { callAsAppUser } = await import("@/integrations/lovable/appUserConnector");
+    const { ensureCrmSyncState } = await import("./crm.server");
 
-    // Fetch org identity so we can display it in the UI.
+    // Identity check is REQUIRED: if we can't reach Salesforce as this user we
+    // must not persist the key, otherwise the UI would claim "Connected" for a
+    // connection that can never sync.
     let orgName: string | null = null;
     try {
       const res = await callAsAppUser({
@@ -52,21 +55,32 @@ export const saveSalesforceConnection = createServerFn({ method: "POST" })
         connectorId: CONNECTOR_ID,
         path: "/query?q=" + encodeURIComponent("SELECT Name FROM Organization LIMIT 1"),
       });
-      if (res.ok) {
-        const body = (await res.json()) as {
-          records?: { Name?: string }[];
-        };
-        orgName = body.records?.[0]?.Name ?? null;
+      if (!res.ok) {
+        const body = await res.text();
+        console.error(`Salesforce connect validation failed [${res.status}]: ${body.slice(0, 300)}`);
+        throw new Error(
+          `Salesforce rejected the connection [${res.status}]. Check that the connected app has API access (scope "api") and try connecting again.`,
+        );
       }
-    } catch {
-      /* non-fatal — we still save the key */
+      const body = (await res.json()) as { records?: { Name?: string }[] };
+      orgName = body.records?.[0]?.Name ?? null;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error("Salesforce connect validation error:", message);
+      throw new Error(
+        message.startsWith("Salesforce rejected")
+          ? message
+          : `Couldn't verify your Salesforce connection: ${message}. Nothing was saved — please try again.`,
+      );
     }
 
     await saveConnectionKeyForUser(context.userId, CONNECTOR_ID, data.connectionAPIKey, {
       org_name: orgName,
     });
+    await ensureCrmSyncState(context.userId, "salesforce");
     return { ok: true, orgName };
   });
+
 
 export const getSalesforceStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -98,10 +112,17 @@ export const disconnectSalesforce = createServerFn({ method: "POST" })
           connectionAPIKey: key,
           connectorId: CONNECTOR_ID,
         });
-      } catch {
-        /* still delete local row so the UI resets */
+      } catch (err) {
+        // Still delete the local row so the UI resets.
+        console.error(
+          "Salesforce gateway disconnect failed:",
+          err instanceof Error ? err.message : err,
+        );
       }
     }
     await deleteConnectionForUser(context.userId, CONNECTOR_ID);
+    const { clearCrmSyncState } = await import("./crm.server");
+    await clearCrmSyncState(context.userId, "salesforce");
+
     return { ok: true };
   });

@@ -49,8 +49,9 @@ export const saveHubspotConnection = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { saveConnectionKeyForUser } = await import("./app-user-connections.server");
     const { callAsAppUser } = await import("@/integrations/lovable/appUserConnector");
+    const { ensureCrmSyncState } = await import("./crm.server");
 
-    // Fetch account/portal identity so we can display it in the UI.
+    // Required validation: never persist a key we can't authenticate with.
     let portalName: string | null = null;
     try {
       const res = await callAsAppUser({
@@ -59,23 +60,36 @@ export const saveHubspotConnection = createServerFn({ method: "POST" })
         connectorId: CONNECTOR_ID,
         path: "/account-info/v3/details",
       });
-      if (res.ok) {
-        const body = (await res.json()) as {
-          portalId?: number;
-          companyName?: string;
-          uiDomain?: string;
-        };
-        portalName = body.companyName ?? (body.portalId ? `Portal ${body.portalId}` : null);
+      if (!res.ok) {
+        const body = await res.text();
+        console.error(`HubSpot connect validation failed [${res.status}]: ${body.slice(0, 300)}`);
+        throw new Error(
+          `HubSpot rejected the connection [${res.status}]. Make sure the app was installed with CRM read scopes, then connect again.`,
+        );
       }
-    } catch {
-      /* non-fatal — we still save the key */
+      const body = (await res.json()) as {
+        portalId?: number;
+        companyName?: string;
+        uiDomain?: string;
+      };
+      portalName = body.companyName ?? (body.portalId ? `Portal ${body.portalId}` : null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error("HubSpot connect validation error:", message);
+      throw new Error(
+        message.startsWith("HubSpot rejected")
+          ? message
+          : `Couldn't verify your HubSpot connection: ${message}. Nothing was saved — please try again.`,
+      );
     }
 
     await saveConnectionKeyForUser(context.userId, CONNECTOR_ID, data.connectionAPIKey, {
       portal_name: portalName,
     });
+    await ensureCrmSyncState(context.userId, "hubspot");
     return { ok: true, portalName };
   });
+
 
 export const getHubspotStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -107,10 +121,17 @@ export const disconnectHubspot = createServerFn({ method: "POST" })
           connectionAPIKey: key,
           connectorId: CONNECTOR_ID,
         });
-      } catch {
-        /* still delete local row so the UI resets */
+      } catch (err) {
+        // Still delete the local row so the UI resets.
+        console.error(
+          "HubSpot gateway disconnect failed:",
+          err instanceof Error ? err.message : err,
+        );
       }
     }
     await deleteConnectionForUser(context.userId, CONNECTOR_ID);
+    const { clearCrmSyncState } = await import("./crm.server");
+    await clearCrmSyncState(context.userId, "hubspot");
+
     return { ok: true };
   });
