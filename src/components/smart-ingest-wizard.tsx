@@ -589,6 +589,11 @@ export function SmartIngestWizard({
                       ))}
                     </tbody>
                   </table>
+                  {d.rows.length > PREVIEW_ROWS && (
+                    <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+                      + {(d.rows.length - PREVIEW_ROWS).toLocaleString()} more rows — all of them will be imported.
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
