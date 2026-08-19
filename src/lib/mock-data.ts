@@ -63,6 +63,8 @@ export interface Recommendation {
   difficulty: "Easy" | "Moderate" | "Involved";
   impact: string;
   revenueSaved: number;
+  /** Concrete, sequenced actions the owner can execute for this customer. */
+  steps?: string[];
   reasoning: string;
 }
 

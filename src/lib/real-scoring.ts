@@ -18,6 +18,7 @@ import type { OnboardingProfile, ProfileSegment } from "@/lib/profile-store";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import { customMetricKeys, type CustomMetricKey } from "@/lib/personalize-data";
 import { resolveMetric } from "@/lib/metric-resolution";
+import { playbookFor } from "@/lib/metric-playbooks";
 
 
 const DAY = 86400000;
@@ -92,6 +93,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Moderate",
     impact: "Strong",
     reasoning: "Buying activity has stalled well past this account's normal cadence — a guided campaign brings them back before the gap becomes a cancellation.",
+    steps: [
+      "Call or message this customer within 48 hours with a specific reason to return — a booked appointment, reserved slot or held offer.",
+      "Send a time-boxed win-back incentive tied to a deadline rather than an open-ended discount.",
+      "If there is no response in 7 days, escalate to a personal call from the owner or account lead.",
+    ],
   },
   "High support volume": {
     title: "Resolve open support issues",
@@ -99,6 +105,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Easy",
     impact: "Strong",
     reasoning: "A spike in tickets is a leading churn signal. Closing them removes the most immediate source of frustration.",
+    steps: [
+      "Assign one named owner to this account and consolidate every open issue into a single thread.",
+      "Give the customer a written summary of what is being fixed and by when.",
+      "Review the ticket themes for a root cause and fix it so the volume does not return.",
+    ],
   },
   "Unresolved support tickets": {
     title: "Clear the open ticket backlog",
@@ -106,6 +117,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Easy",
     impact: "Strong",
     reasoning: "Open and reopened tickets are the top churn driver here — resolving them rebuilds confidence fast.",
+    steps: [
+      "Resolve or formally answer every open ticket on this account today, oldest first.",
+      "Send one recap message confirming each item is closed and what changed.",
+      "Follow up 7 days later to confirm nothing reopened.",
+    ],
   },
   "Declining satisfaction": {
     title: "Schedule an executive check-in",
@@ -113,6 +129,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Moderate",
     impact: "Strong",
     reasoning: "Low satisfaction scores mean trust is eroding — direct senior contact is the fastest way to reset the relationship.",
+    steps: [
+      "Have an owner or manager call within 72 hours and ask what single change would make the biggest difference.",
+      "Fix or answer the specific issue they name, then tell them what you did.",
+      "Re-survey in 30 days to confirm the score recovered.",
+    ],
   },
   "Usage declining": {
     title: "Provide additional onboarding & training",
@@ -120,6 +141,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Moderate",
     impact: "Strong",
     reasoning: "Login activity is well below your healthiest accounts — hands-on training re-establishes the habit that drives retention.",
+    steps: [
+      "Book a 20-minute guided session focused on the one outcome they signed up for.",
+      "Set up or complete one thing for them live so they leave with a result.",
+      "Check usage weekly for a month and intervene again if it stays flat.",
+    ],
   },
   "Low feature adoption": {
     title: "Run a feature adoption workshop",
@@ -127,6 +153,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Moderate",
     impact: "Moderate",
     reasoning: "This account uses far fewer features than similar customers — showing them more value deepens their commitment.",
+    steps: [
+      "Show the two capabilities most used by your healthiest accounts, applied to this customer's own data or goals.",
+      "Configure one of them with them during the session instead of sending documentation.",
+      "Follow up in two weeks to confirm they are still using it.",
+    ],
   },
   "Low spend": {
     title: "Offer a tailored upgrade path",
@@ -134,6 +165,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Easy",
     impact: "Moderate",
     reasoning: "Spend is in the lower band of your base — a targeted upgrade offer can lift both value and stickiness.",
+    steps: [
+      "Review what they actually use and propose the single plan or add-on that matches it.",
+      "Offer a short, time-boxed trial of that upgrade so there is no commitment risk.",
+      "If budget is the blocker, offer an annual or off-peak rate rather than discounting.",
+    ],
   },
 };
 
@@ -256,6 +292,7 @@ export function buildRealDataset(
   const customLatest = new Map<string, Map<string, number>>();
   const customMax = new Map<string, number>();
   const customMin = new Map<string, number>();
+  const peerTarget = new Map<string, number>();
   for (const cm of customMetrics) {
     const resolved = resolveMetric(cm.metric, data, now);
     if (resolved.values.size > 0) {
@@ -263,6 +300,16 @@ export function buildRealDataset(
       const vals = [...resolved.values.values()];
       customMax.set(cm.metric.name, Math.max(...vals));
       customMin.set(cm.metric.name, Math.min(...vals));
+      // Peer target = what a healthy customer looks like on this metric
+      // (75th percentile, or 25th when lower is better) so recommendations can
+      // name a concrete goal instead of "improve this".
+      const sorted = [...vals].sort((a, b) => a - b);
+      const lowerBetter =
+        cm.metric.valueAt0 != null &&
+        cm.metric.valueAt100 != null &&
+        cm.metric.valueAt0 > cm.metric.valueAt100;
+      const idx = Math.floor((sorted.length - 1) * (lowerBetter ? 0.25 : 0.75));
+      peerTarget.set(cm.metric.name, sorted[idx]);
     }
   }
 
@@ -379,19 +426,29 @@ export function buildRealDataset(
     const recommendations = factors
       .map((f) => {
         // Known churn drivers have hand-written playbooks; anything else
-        // (e.g. an AI-suggested custom metric) gets a generic but specific
-        // action derived from the factor itself so the customer always sees
-        // something actionable.
-        const base: Omit<Recommendation, "revenueSaved"> = REC_FOR[f.label] ?? {
-          title: `Improve ${f.label.toLowerCase()}`,
-          priority: f.weight >= 60 ? "High" : f.weight >= 35 ? "Medium" : "Low",
-          difficulty: "Moderate",
-          impact: f.weight >= 60 ? "Strong" : "Moderate",
-          reasoning: `${f.detail} Acting on this metric directly addresses one of the biggest drags on this account's health score.`,
-        };
+        // (e.g. an AI-suggested metric) gets a semantic playbook built from the
+        // metric's meaning, the customer's real value and a peer target — so
+        // the action is always something the owner can actually do.
+        const cm = customMetrics.find((c) => c.metric.name === f.label);
+        const base: Omit<Recommendation, "revenueSaved"> =
+          REC_FOR[f.label] ??
+          playbookFor({
+            metric: f.label,
+            detail: f.detail,
+            weight: f.weight,
+            customerName: r.name || "this customer",
+            value: metricValues[f.label] ?? null,
+            target: peerTarget.get(f.label) ?? null,
+            unit: cm?.metric.unit,
+            lowerIsBetter:
+              cm?.metric.valueAt0 != null &&
+              cm?.metric.valueAt100 != null &&
+              cm.metric.valueAt0 > cm.metric.valueAt100,
+          });
         return { ...base, revenueSaved: Math.round((revenue * churnProbability) / 100 * 0.5) };
       })
       .slice(0, 3);
+
 
 
     const timeline: TimelineEvent[] = [];

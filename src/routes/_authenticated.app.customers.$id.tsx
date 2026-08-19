@@ -255,6 +255,18 @@ function CustomerDetail() {
                   </span>
                 </div>
                 <p className="mt-1.5 text-xs text-muted-foreground">{r.reasoning}</p>
+                {r.steps && r.steps.length > 0 && (
+                  <ol className="mt-2 space-y-1.5 text-xs text-foreground">
+                    {r.steps.map((s, i) => (
+                      <li key={s} className="flex gap-2">
+                        <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
+                          {i + 1}
+                        </span>
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
                 <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
                   <span>Difficulty: <span className="font-medium text-foreground">{r.difficulty}</span></span>
                   <span>Impact: <span className="font-medium text-foreground">{r.impact}</span></span>
