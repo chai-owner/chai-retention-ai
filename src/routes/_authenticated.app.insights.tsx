@@ -125,7 +125,13 @@ function Insights() {
               </div>
             );
           })}
+          {recAgg.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No retention actions yet — either every account is healthy, or there isn't enough data loaded to score risk factors.
+            </p>
+          )}
         </div>
+
       </Card>
 
       {!isReal && (
