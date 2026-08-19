@@ -4,6 +4,7 @@
 // upload metadata for the Data Quality view. Starts empty: nothing here is demo
 // data, it is purely what the user brings in.
 import { useSyncExternalStore } from "react";
+import { registerScopedStore } from "@/lib/local-user-scope";
 
 export type IngestRow = Record<string, string>;
 export type IngestedData = Record<string, IngestRow[]>;
@@ -92,6 +93,14 @@ export const ingestedStore = {
     return hydrated;
   },
 };
+
+// Switching accounts must empty the rows immediately and re-enter the
+// "loading" state, so the new user never sees the previous account's rows.
+registerScopedStore(() => {
+  data = {};
+  hydrated = false;
+  emit();
+});
 
 export function useIngested(): IngestedData {
   return useSyncExternalStore(
