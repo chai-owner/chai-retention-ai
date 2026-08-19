@@ -153,7 +153,7 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     impact: "Moderate",
     reasoning: "This account uses far fewer features than similar customers — showing them more value deepens their commitment.",
     steps: [
-      "Show the two capabilities most used by your healthiest accounts, applied to this customer"s own data or goals.",
+      "Show the two capabilities most used by your healthiest accounts, applied to this customer's own data or goals.",
       "Configure one of them with them during the session instead of sending documentation.",
       "Follow up in two weeks to confirm they are still using it.",
     ],
