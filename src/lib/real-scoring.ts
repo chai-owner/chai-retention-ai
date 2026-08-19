@@ -378,12 +378,21 @@ export function buildRealDataset(
     const factors = buildFactors(subScores, { days, supg, customMetrics });
     const recommendations = factors
       .map((f) => {
-        const base = REC_FOR[f.label];
-        if (!base) return null;
+        // Known churn drivers have hand-written playbooks; anything else
+        // (e.g. an AI-suggested custom metric) gets a generic but specific
+        // action derived from the factor itself so the customer always sees
+        // something actionable.
+        const base: Omit<Recommendation, "revenueSaved"> = REC_FOR[f.label] ?? {
+          title: `Improve ${f.label.toLowerCase()}`,
+          priority: f.weight >= 60 ? "High" : f.weight >= 35 ? "Medium" : "Low",
+          difficulty: "Moderate",
+          impact: f.weight >= 60 ? "Strong" : "Moderate",
+          reasoning: `${f.detail} Acting on this metric directly addresses one of the biggest drags on this account's health score.`,
+        };
         return { ...base, revenueSaved: Math.round((revenue * churnProbability) / 100 * 0.5) };
       })
-      .filter((x): x is Recommendation => x !== null)
       .slice(0, 3);
+
 
     const timeline: TimelineEvent[] = [];
     if (r.signup_date && parseDate(r.signup_date))

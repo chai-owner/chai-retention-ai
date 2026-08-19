@@ -262,7 +262,14 @@ function CustomerDetail() {
                 </div>
               </div>
             ))}
+
+            {c.recommendations.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No actions needed right now — every tracked metric is in a healthy range for this customer.
+              </p>
+            )}
           </div>
+
         </Card>
       </div>
 
