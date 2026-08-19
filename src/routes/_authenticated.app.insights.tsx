@@ -15,24 +15,28 @@ export const Route = createFileRoute("/_authenticated/app/insights")({
 
 type RecCustomer = { id: string; name: string; segment: string; health: number; saved: number };
 
-// Aggregate the top recommendations across all at-risk customers.
+// Aggregate the top recommendations across customers. At-risk accounts drive
+// the list, but if none fall below the risk threshold we still surface actions
+// from any customer that has open risk factors so the panel is never blank.
 function aggregateRecs(customers: Customer[]) {
+  const withRecs = customers.filter((c) => c.recommendations.length > 0);
+  const pool = withRecs.filter((c) => c.health < 60);
+  const source = pool.length > 0 ? pool : withRecs;
   const map = new Map<string, { title: string; count: number; saved: number; priority: string; customers: RecCustomer[] }>();
-  customers
-    .filter((c) => c.health < 60)
-    .forEach((c) =>
-      c.recommendations.forEach((r) => {
-        const cur = map.get(r.title) ?? { title: r.title, count: 0, saved: 0, priority: r.priority, customers: [] };
-        cur.count += 1;
-        cur.saved += r.revenueSaved;
-        cur.customers.push({ id: c.id, name: c.name, segment: c.segment, health: c.health, saved: r.revenueSaved });
-        map.set(r.title, cur);
-      }),
-    );
+  source.forEach((c) =>
+    c.recommendations.forEach((r) => {
+      const cur = map.get(r.title) ?? { title: r.title, count: 0, saved: 0, priority: r.priority, customers: [] };
+      cur.count += 1;
+      cur.saved += r.revenueSaved;
+      cur.customers.push({ id: c.id, name: c.name, segment: c.segment, health: c.health, saved: r.revenueSaved });
+      map.set(r.title, cur);
+    }),
+  );
   return [...map.values()]
     .map((r) => ({ ...r, customers: r.customers.sort((a, b) => b.saved - a.saved) }))
     .sort((a, b) => b.saved - a.saved);
 }
+
 
 const sentimentSignals = [
   { phrase: "Too expensive", type: "Pricing complaint", count: 7 },
