@@ -4,6 +4,7 @@
 // the uploads-store pattern. SSR-safe: returns null on the server.
 import { useSyncExternalStore } from "react";
 import type { PlannerMetric } from "@/lib/mock-data";
+import { ensureLocalCacheOwner, registerScopedStore } from "@/lib/local-user-scope";
 
 export interface ProfileSegment {
   name: string;
@@ -46,6 +47,9 @@ const STORAGE_KEY = "chai.onboarding.profile";
 
 function read(): OnboardingProfile | null {
   if (typeof window === "undefined") return null;
+  // Drop a cache belonging to a different account BEFORE the first read, so no
+  // render ever shows another user's profile.
+  ensureLocalCacheOwner();
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     return raw ? (JSON.parse(raw) as OnboardingProfile) : null;
@@ -95,6 +99,8 @@ export const profileStore = {
     emit();
   },
 };
+
+registerScopedStore(() => profileStore.clear());
 
 export function useProfile(): OnboardingProfile | null {
   return useSyncExternalStore(

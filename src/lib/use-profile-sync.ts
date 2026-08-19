@@ -7,6 +7,7 @@ import { getProfile } from "@/lib/profile.functions";
 import { profileStore } from "@/lib/profile-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureLocalCacheOwner } from "@/lib/local-user-scope";
 
 export function useProfileSync() {
   const fetchProfile = useServerFn(getProfile);
@@ -17,6 +18,9 @@ export function useProfileSync() {
       .getSession()
       .then(({ data }) => {
         if (cancelled || !data.session) return;
+        // Never let a cached profile from another account survive into this
+        // session — clear it before the remote profile arrives.
+        ensureLocalCacheOwner(data.session.user?.id ?? null);
         return fetchProfile();
       })
       .then((remote) => {
