@@ -260,7 +260,9 @@ function CustomerDetail() {
                   <span>Impact: <span className="font-medium text-foreground">{r.impact}</span></span>
                   <span>Est. saved: <span className="font-medium text-success">{formatCurrency(r.revenueSaved)}</span></span>
                 </div>
+              </div>
             ))}
+
             {c.recommendations.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 No actions needed right now — every tracked metric is in a healthy range for this customer.
