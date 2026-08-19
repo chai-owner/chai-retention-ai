@@ -12,7 +12,33 @@ export const Route = createFileRoute("/_authenticated/app/planner")({
   component: Planner,
 });
 
+// Human-readable label for what a metric's number actually represents. Uses
+// the metric's own unit when it has one, otherwise infers a sensible noun from
+// the metric name so AI-generated metrics still explain themselves.
+function unitLabel(m: { name: string; unit?: string; prefix?: string }): string {
+  const u = (m.unit ?? "").trim().replace(/^\/\s*/, "per ");
+  if (u) {
+    if (u === "%") return "percent";
+    if (u.startsWith("/")) return u;
+    return u;
+  }
+  if (m.prefix === "$") return "dollars";
+  const n = m.name.toLowerCase();
+  if (/(minute|duration)/.test(n)) return "minutes";
+  if (/hour/.test(n)) return "hours";
+  if (/\bdays?\b|tenure|recency/.test(n)) return "days";
+  if (/week/.test(n)) return "times per week";
+  if (/month/.test(n)) return "times per month";
+  if (/visit|check-?in|attendance|session/.test(n)) return "visits";
+  if (/(rate|%|percent|utilization|delinquen|adoption|churn)/.test(n)) return "percent";
+  if (/(revenue|spend|value|dues|price|fee)/.test(n)) return "dollars";
+  if (/(count|volume|number|tickets)/.test(n)) return "count";
+  if (/(score|nps|csat|satisfaction)/.test(n)) return "score";
+  return "value";
+}
+
 function Planner() {
+
   const weights = useMetricWeights();
   const signedIn = useSignedIn();
   const profile = useProfile();
