@@ -414,19 +414,29 @@ export function buildRealDataset(
     const recommendations = factors
       .map((f) => {
         // Known churn drivers have hand-written playbooks; anything else
-        // (e.g. an AI-suggested custom metric) gets a generic but specific
-        // action derived from the factor itself so the customer always sees
-        // something actionable.
-        const base: Omit<Recommendation, "revenueSaved"> = REC_FOR[f.label] ?? {
-          title: `Improve ${f.label.toLowerCase()}`,
-          priority: f.weight >= 60 ? "High" : f.weight >= 35 ? "Medium" : "Low",
-          difficulty: "Moderate",
-          impact: f.weight >= 60 ? "Strong" : "Moderate",
-          reasoning: `${f.detail} Acting on this metric directly addresses one of the biggest drags on this account's health score.`,
-        };
+        // (e.g. an AI-suggested metric) gets a semantic playbook built from the
+        // metric's meaning, the customer's real value and a peer target — so
+        // the action is always something the owner can actually do.
+        const cm = customMetrics.find((c) => c.metric.name === f.label);
+        const base: Omit<Recommendation, "revenueSaved"> =
+          REC_FOR[f.label] ??
+          playbookFor({
+            metric: f.label,
+            detail: f.detail,
+            weight: f.weight,
+            customerName: r.name || "this customer",
+            value: metricValues[f.label] ?? null,
+            target: peerTarget.get(f.label) ?? null,
+            unit: cm?.metric.unit,
+            lowerIsBetter:
+              cm?.metric.valueAt0 != null &&
+              cm?.metric.valueAt100 != null &&
+              cm.metric.valueAt0 > cm.metric.valueAt100,
+          });
         return { ...base, revenueSaved: Math.round((revenue * churnProbability) / 100 * 0.5) };
       })
       .slice(0, 3);
+
 
 
     const timeline: TimelineEvent[] = [];
