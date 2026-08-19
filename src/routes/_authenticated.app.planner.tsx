@@ -128,7 +128,10 @@ function Planner() {
 
               </div>
               <div className="lg:w-80 lg:shrink-0">
-                <p className="mb-3 text-center text-xs font-bold text-foreground">Segment Average</p>
+                <p className="mb-1 text-center text-xs font-bold text-foreground">Segment Average</p>
+                <p className="mb-3 text-center text-[11px] text-muted-foreground">
+                  Measured in {unitLabel(m)}
+                </p>
                 <div className="flex items-stretch gap-2">
                   {averages.map((a) => {
                     const b = m.benchmarkScore ?? 60;
@@ -142,6 +145,7 @@ function Planner() {
                           : "bg-danger/10 border-danger/20";
                     const textClass =
                       a.avg >= b ? "text-success" : a.avg >= b - 20 ? "text-caution" : "text-danger";
+                    const plain = a.raw && m.valueAt0 == null && m.valueAt100 == null;
                     return (
                       <div
                         key={a.segment}
@@ -152,15 +156,19 @@ function Planner() {
                             {a.segment}
                           </span>
                         </div>
-                        <span className={`my-1 w-full text-center text-lg font-bold tabular-nums ${textClass}`}>
-                          {a.raw && m.valueAt0 == null && m.valueAt100 == null
+                        <span className={`mt-1 w-full text-center text-lg font-bold tabular-nums ${textClass}`}>
+                          {plain
                             ? a.avg.toFixed(m.decimals ?? (Number.isInteger(a.avg) ? 0 : 1))
                             : metricActualValue(m, a.avg)}
+                        </span>
+                        <span className="mb-1 w-full text-center text-[10px] leading-tight text-muted-foreground">
+                          {unitLabel(m)}
                         </span>
                       </div>
                     );
                   })}
                 </div>
+
                 {m.benchmark && (
                   <p className="mt-2 text-center text-[11px] text-muted-foreground">
                     <span className="font-medium text-foreground">Healthy benchmark:</span> {m.benchmark}
