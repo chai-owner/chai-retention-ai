@@ -29,6 +29,7 @@ import { useDemoMode } from "@/lib/use-demo-mode";
 import { impersonationStore, useImpersonation } from "@/lib/impersonation";
 import { endImpersonation } from "@/lib/admin.functions";
 import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
+import { ensureLocalCacheOwner } from "@/lib/local-user-scope";
 import { hydrateCustomerAliases } from "@/lib/customer-aliases";
 
 const nav = [
@@ -71,6 +72,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const isIn = !!data.session;
+      // Drop any cache left behind by a different account (sign-in as another
+      // user, or admin impersonation) before rendering anything account-specific.
+      ensureLocalCacheOwner(data.session?.user?.id ?? null);
       setSignedIn(isIn);
       if (isIn && !demo) {
         void hydrateIngestFromServer();
@@ -79,7 +83,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setSignedIn(!!session);
-      if (event === "SIGNED_IN" && !demo) {
+      const switched = ensureLocalCacheOwner(session?.user?.id ?? null);
+      if ((event === "SIGNED_IN" || switched) && !demo) {
         void hydrateIngestFromServer();
         void hydrateCustomerAliases();
       }
