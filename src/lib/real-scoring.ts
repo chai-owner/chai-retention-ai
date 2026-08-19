@@ -92,6 +92,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Moderate",
     impact: "Strong",
     reasoning: "Buying activity has stalled well past this account's normal cadence — a guided campaign brings them back before the gap becomes a cancellation.",
+    steps: [
+      "Call or message this customer within 48 hours with a specific reason to return — a booked appointment, reserved slot or held offer.",
+      "Send a time-boxed win-back incentive tied to a deadline rather than an open-ended discount.",
+      "If there is no response in 7 days, escalate to a personal call from the owner or account lead.",
+    ],
   },
   "High support volume": {
     title: "Resolve open support issues",
@@ -99,6 +104,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Easy",
     impact: "Strong",
     reasoning: "A spike in tickets is a leading churn signal. Closing them removes the most immediate source of frustration.",
+    steps: [
+      "Assign one named owner to this account and consolidate every open issue into a single thread.",
+      "Give the customer a written summary of what is being fixed and by when.",
+      "Review the ticket themes for a root cause and fix it so the volume does not return.",
+    ],
   },
   "Unresolved support tickets": {
     title: "Clear the open ticket backlog",
@@ -106,6 +116,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Easy",
     impact: "Strong",
     reasoning: "Open and reopened tickets are the top churn driver here — resolving them rebuilds confidence fast.",
+    steps: [
+      "Resolve or formally answer every open ticket on this account today, oldest first.",
+      "Send one recap message confirming each item is closed and what changed.",
+      "Follow up 7 days later to confirm nothing reopened.",
+    ],
   },
   "Declining satisfaction": {
     title: "Schedule an executive check-in",
@@ -113,6 +128,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Moderate",
     impact: "Strong",
     reasoning: "Low satisfaction scores mean trust is eroding — direct senior contact is the fastest way to reset the relationship.",
+    steps: [
+      "Have an owner or manager call within 72 hours and ask what single change would make the biggest difference.",
+      "Fix or answer the specific issue they name, then tell them what you did.",
+      "Re-survey in 30 days to confirm the score recovered.",
+    ],
   },
   "Usage declining": {
     title: "Provide additional onboarding & training",
@@ -120,6 +140,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Moderate",
     impact: "Strong",
     reasoning: "Login activity is well below your healthiest accounts — hands-on training re-establishes the habit that drives retention.",
+    steps: [
+      "Book a 20-minute guided session focused on the one outcome they signed up for.",
+      "Set up or complete one thing for them live so they leave with a result.",
+      "Check usage weekly for a month and intervene again if it stays flat.",
+    ],
   },
   "Low feature adoption": {
     title: "Run a feature adoption workshop",
@@ -127,6 +152,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Moderate",
     impact: "Moderate",
     reasoning: "This account uses far fewer features than similar customers — showing them more value deepens their commitment.",
+    steps: [
+      "Show the two capabilities most used by your healthiest accounts, applied to this customer"s own data or goals.",
+      "Configure one of them with them during the session instead of sending documentation.",
+      "Follow up in two weeks to confirm they are still using it.",
+    ],
   },
   "Low spend": {
     title: "Offer a tailored upgrade path",
@@ -134,6 +164,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
     difficulty: "Easy",
     impact: "Moderate",
     reasoning: "Spend is in the lower band of your base — a targeted upgrade offer can lift both value and stickiness.",
+    steps: [
+      "Review what they actually use and propose the single plan or add-on that matches it.",
+      "Offer a short, time-boxed trial of that upgrade so there is no commitment risk.",
+      "If budget is the blocker, offer an annual or off-peak rate rather than discounting.",
+    ],
   },
 };
 
