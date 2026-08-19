@@ -12,7 +12,33 @@ export const Route = createFileRoute("/_authenticated/app/planner")({
   component: Planner,
 });
 
+// Human-readable label for what a metric's number actually represents. Uses
+// the metric's own unit when it has one, otherwise infers a sensible noun from
+// the metric name so AI-generated metrics still explain themselves.
+function unitLabel(m: { name: string; unit?: string; prefix?: string }): string {
+  const u = (m.unit ?? "").trim().replace(/^\/\s*/, "per ");
+  if (u) {
+    if (u === "%") return "percent";
+    if (u.startsWith("/")) return u;
+    return u;
+  }
+  if (m.prefix === "$") return "dollars";
+  const n = m.name.toLowerCase();
+  if (/(minute|duration)/.test(n)) return "minutes";
+  if (/hour/.test(n)) return "hours";
+  if (/\bdays?\b|tenure|recency/.test(n)) return "days";
+  if (/week/.test(n)) return "times per week";
+  if (/month/.test(n)) return "times per month";
+  if (/visit|check-?in|attendance|session/.test(n)) return "visits";
+  if (/(rate|%|percent|utilization|delinquen|adoption|churn)/.test(n)) return "percent";
+  if (/(revenue|spend|value|dues|price|fee)/.test(n)) return "dollars";
+  if (/(count|volume|number|tickets)/.test(n)) return "count";
+  if (/(score|nps|csat|satisfaction)/.test(n)) return "score";
+  return "value";
+}
+
 function Planner() {
+
   const weights = useMetricWeights();
   const signedIn = useSignedIn();
   const profile = useProfile();
@@ -102,7 +128,10 @@ function Planner() {
 
               </div>
               <div className="lg:w-80 lg:shrink-0">
-                <p className="mb-3 text-center text-xs font-bold text-foreground">Segment Average</p>
+                <p className="mb-1 text-center text-xs font-bold text-foreground">Segment Average</p>
+                <p className="mb-3 text-center text-[11px] text-muted-foreground">
+                  Measured in {unitLabel(m)}
+                </p>
                 <div className="flex items-stretch gap-2">
                   {averages.map((a) => {
                     const b = m.benchmarkScore ?? 60;
@@ -116,6 +145,7 @@ function Planner() {
                           : "bg-danger/10 border-danger/20";
                     const textClass =
                       a.avg >= b ? "text-success" : a.avg >= b - 20 ? "text-caution" : "text-danger";
+                    const plain = a.raw && m.valueAt0 == null && m.valueAt100 == null;
                     return (
                       <div
                         key={a.segment}
@@ -126,15 +156,19 @@ function Planner() {
                             {a.segment}
                           </span>
                         </div>
-                        <span className={`my-1 w-full text-center text-lg font-bold tabular-nums ${textClass}`}>
-                          {a.raw && m.valueAt0 == null && m.valueAt100 == null
+                        <span className={`mt-1 w-full text-center text-lg font-bold tabular-nums ${textClass}`}>
+                          {plain
                             ? a.avg.toFixed(m.decimals ?? (Number.isInteger(a.avg) ? 0 : 1))
                             : metricActualValue(m, a.avg)}
+                        </span>
+                        <span className="mb-1 w-full text-center text-[10px] leading-tight text-muted-foreground">
+                          {unitLabel(m)}
                         </span>
                       </div>
                     );
                   })}
                 </div>
+
                 {m.benchmark && (
                   <p className="mt-2 text-center text-[11px] text-muted-foreground">
                     <span className="font-medium text-foreground">Healthy benchmark:</span> {m.benchmark}
