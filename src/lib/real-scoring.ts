@@ -18,6 +18,7 @@ import type { OnboardingProfile, ProfileSegment } from "@/lib/profile-store";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import { customMetricKeys, type CustomMetricKey } from "@/lib/personalize-data";
 import { resolveMetric } from "@/lib/metric-resolution";
+import { playbookFor } from "@/lib/metric-playbooks";
 
 
 const DAY = 86400000;
@@ -291,6 +292,7 @@ export function buildRealDataset(
   const customLatest = new Map<string, Map<string, number>>();
   const customMax = new Map<string, number>();
   const customMin = new Map<string, number>();
+  const peerTarget = new Map<string, number>();
   for (const cm of customMetrics) {
     const resolved = resolveMetric(cm.metric, data, now);
     if (resolved.values.size > 0) {
@@ -298,6 +300,16 @@ export function buildRealDataset(
       const vals = [...resolved.values.values()];
       customMax.set(cm.metric.name, Math.max(...vals));
       customMin.set(cm.metric.name, Math.min(...vals));
+      // Peer target = what a healthy customer looks like on this metric
+      // (75th percentile, or 25th when lower is better) so recommendations can
+      // name a concrete goal instead of "improve this".
+      const sorted = [...vals].sort((a, b) => a - b);
+      const lowerBetter =
+        cm.metric.valueAt0 != null &&
+        cm.metric.valueAt100 != null &&
+        cm.metric.valueAt0 > cm.metric.valueAt100;
+      const idx = Math.floor((sorted.length - 1) * (lowerBetter ? 0.25 : 0.75));
+      peerTarget.set(cm.metric.name, sorted[idx]);
     }
   }
 
