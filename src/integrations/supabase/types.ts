@@ -931,13 +931,21 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
+          last_error_at: string | null
+          last_error_message: string | null
           last_synced_at: string | null
           org_name: string | null
+          refresh_lock_at: string | null
           refresh_token: string | null
+          refresh_token_expires_at: string | null
           scope: string | null
+          status: string
           subdomain: string
+          token_type: string | null
           updated_at: string
           user_id: string
+          zendesk_account_email: string | null
+          zendesk_account_id: string | null
         }
         Insert: {
           access_token: string
@@ -945,13 +953,21 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          last_error_at?: string | null
+          last_error_message?: string | null
           last_synced_at?: string | null
           org_name?: string | null
+          refresh_lock_at?: string | null
           refresh_token?: string | null
+          refresh_token_expires_at?: string | null
           scope?: string | null
+          status?: string
           subdomain: string
+          token_type?: string | null
           updated_at?: string
           user_id: string
+          zendesk_account_email?: string | null
+          zendesk_account_id?: string | null
         }
         Update: {
           access_token?: string
@@ -959,19 +975,28 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          last_error_at?: string | null
+          last_error_message?: string | null
           last_synced_at?: string | null
           org_name?: string | null
+          refresh_lock_at?: string | null
           refresh_token?: string | null
+          refresh_token_expires_at?: string | null
           scope?: string | null
+          status?: string
           subdomain?: string
+          token_type?: string | null
           updated_at?: string
           user_id?: string
+          zendesk_account_email?: string | null
+          zendesk_account_id?: string | null
         }
         Relationships: []
       }
       zendesk_oauth_states: {
         Row: {
           created_at: string
+          expires_at: string
           redirect_uri: string
           state: string
           subdomain: string
@@ -979,6 +1004,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          expires_at?: string
           redirect_uri: string
           state: string
           subdomain: string
@@ -986,6 +1012,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          expires_at?: string
           redirect_uri?: string
           state?: string
           subdomain?: string

@@ -53,6 +53,8 @@ function makeBuilder(table: string) {
     "range",
     "filter",
     "not",
+    "or",
+    "match",
   ];
   for (const m of chain) builder[m] = vi.fn(() => builder);
   builder.single = vi.fn(async () => resolve());
