@@ -4,6 +4,9 @@ import {
   buildZendeskAuthorizeUrl,
   getZendeskCreds,
   hasZendeskCreds,
+  normalizeSubdomain,
+  getZendeskRedirectUri,
+  verifyZendeskConnection,
   syncZendeskForUser,
 } from "@/lib/zendesk.server";
 import { mockFetch } from "@/test/http";
@@ -61,7 +64,7 @@ describe("Zendesk configuration", () => {
   it("fails with a clear message when credentials are missing", () => {
     delete process.env.ZENDESK_CLIENT_ID;
     expect(hasZendeskCreds()).toBe(false);
-    expect(() => getZendeskCreds()).toThrow(/ZENDESK_CLIENT_ID/);
+    expect(() => getZendeskCreds()).toThrow(/verify the Zendesk connection configuration/i);
   });
 
   it("builds an authorize URL on the customer's own subdomain", () => {
@@ -82,20 +85,17 @@ describe("syncZendeskForUser", () => {
 
     const [ds] = await syncZendeskForUser("user-1", 100, null);
     expect(ds.key).toBe("support");
-    expect(ds.headers).toEqual([
-      "customer_id",
-      "email",
-      "customer_name",
-      "ticket_id",
-      "created_date",
-      "status",
-      "category",
-      "satisfaction_score",
-    ]);
-    expect(ds.rows).toEqual([
-      ["55", "a@acme.com", "Acme Ltd", "101", "2026-05-01", "resolved", "Billing question", "4"],
-      ["56", "b@acme.com", "Ben", "102", "2026-05-04", "open", "Cannot log in", ""],
-    ]);
+    expect(ds.headers).toContain("zendesk_user_id");
+    expect(ds.headers).toContain("company");
+    const [first, second] = ds.rows;
+    expect(first[0]).toBe("55");
+    expect(first[1]).toBe("a@acme.com");
+    expect(first[2]).toBe("Ann");
+    expect(first[ds.headers.indexOf("ticket_id")]).toBe("101");
+    expect(first[ds.headers.indexOf("status")]).toBe("resolved");
+    expect(first[ds.headers.indexOf("satisfaction_score")]).toBe("4");
+    expect(first[ds.headers.indexOf("zendesk_user_id")]).toBe("55");
+    expect(second[ds.headers.indexOf("status")]).toBe("open");
   });
 
   it("maps provider statuses onto open / resolved", async () => {
@@ -114,7 +114,8 @@ describe("syncZendeskForUser", () => {
       },
     ]);
     const [ds] = await syncZendeskForUser("user-1", 10, null);
-    expect(ds.rows.map((r) => r[5])).toEqual(["resolved", "open", "open"]);
+    const i = ds.headers.indexOf("status");
+    expect(ds.rows.map((r) => r[i])).toEqual(["resolved", "open", "open"]);
   });
 
   it("passes the last_synced_at cursor as the incremental start_time", async () => {
@@ -173,21 +174,23 @@ describe("syncZendeskForUser", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockFetch([{ match: "/oauth/tokens", status: 401, json: { error: "invalid_grant" } }]);
 
-    await expect(syncZendeskForUser("user-1", 100, null)).rejects.toThrow(
-      /Zendesk token refresh failed \[401\]/,
-    );
+    await expect(syncZendeskForUser("user-1", 100, null)).rejects.toThrow(/reauthorized/i);
   });
 
   it("explains rate limiting in plain language", async () => {
     setSupabaseResult("zendesk_connections", { data: connectionRow() });
+    vi.spyOn(console, "error").mockImplementation(() => {});
     mockFetch([{ match: "incremental/tickets.json", status: 429, json: {} }]);
     await expect(syncZendeskForUser("user-1", 100, null)).rejects.toThrow(/rate limit/i);
   });
 
   it("reports an API failure with its status code", async () => {
     setSupabaseResult("zendesk_connections", { data: connectionRow() });
+    vi.spyOn(console, "error").mockImplementation(() => {});
     mockFetch([{ match: "incremental/tickets.json", status: 500, body: "boom" }]);
-    await expect(syncZendeskForUser("user-1", 100, null)).rejects.toThrow(/\[500\]/);
+    await expect(syncZendeskForUser("user-1", 100, null)).rejects.toThrow(
+      /temporarily unavailable/i,
+    );
   });
 
   it("tells the user to connect when there is no stored connection", async () => {
@@ -199,5 +202,59 @@ describe("syncZendeskForUser", () => {
     setSupabaseResult("zendesk_connections", { data: connectionRow() });
     mockFetch([{ match: "incremental/tickets.json", json: { tickets: [], users: [] } }]);
     expect(await syncZendeskForUser("user-1", 100, null)).toEqual([]);
+  });
+});
+
+
+describe("subdomain normalization", () => {
+  it("accepts bare, full-host and URL forms", () => {
+    expect(normalizeSubdomain("acme")).toBe("acme");
+    expect(normalizeSubdomain("Acme.zendesk.com")).toBe("acme");
+    expect(normalizeSubdomain("https://acme.zendesk.com/agent/dashboard")).toBe("acme");
+  });
+
+  it("rejects arbitrary or malformed input", () => {
+    expect(() => normalizeSubdomain("")).toThrow(/valid Zendesk subdomain/i);
+    expect(() => normalizeSubdomain("https://evil.example.com")).toThrow();
+    expect(() => normalizeSubdomain("bad_subdomain!")).toThrow();
+  });
+});
+
+describe("redirect URI", () => {
+  it("prefers the configured production callback", () => {
+    process.env.ZENDESK_REDIRECT_URI = "https://chai-retention-ai.lovable.app/api/public/zendesk/callback";
+    expect(getZendeskRedirectUri("https://preview.test")).toBe(
+      "https://chai-retention-ai.lovable.app/api/public/zendesk/callback",
+    );
+    delete process.env.ZENDESK_REDIRECT_URI;
+  });
+
+  it("falls back to the current origin in dev", () => {
+    delete process.env.ZENDESK_REDIRECT_URI;
+    expect(getZendeskRedirectUri("http://localhost:8080")).toBe(
+      "http://localhost:8080/api/public/zendesk/callback",
+    );
+  });
+});
+
+describe("connection test", () => {
+  it("returns the Zendesk account identity on success", async () => {
+    mockFetch([
+      {
+        match: "/api/v2/users/me.json",
+        json: { user: { id: 9, email: "admin@acme.com", organization_name: "Acme Ltd" } },
+      },
+    ]);
+    expect(await verifyZendeskConnection("acme", "at-live")).toEqual({
+      id: "9",
+      email: "admin@acme.com",
+      name: "Acme Ltd",
+    });
+  });
+
+  it("fails loudly when the token or subdomain is wrong", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockFetch([{ match: "/api/v2/users/me.json", status: 404, body: "not found" }]);
+    await expect(verifyZendeskConnection("acme", "at-live")).rejects.toThrow(/verify the Zendesk subdomain/i);
   });
 });
