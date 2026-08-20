@@ -370,7 +370,8 @@ async function refreshWithLock(userId: string, row: Row): Promise<Row> {
     .or(`refresh_lock_at.is.null,refresh_lock_at.lt.${staleLock}`)
     .select("id");
 
-  if (!locked || locked.length === 0) {
+  const gotLock = Array.isArray(locked) ? locked.length > 0 : Boolean(locked);
+  if (!gotLock) {
     // Another request is rotating — wait briefly, then re-read.
     await new Promise((r) => setTimeout(r, 1500));
     const { data } = await db
