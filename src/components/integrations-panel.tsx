@@ -685,7 +685,16 @@ function GenericSupportCard({ name, category, desc }: { name: string; category: 
 
 type ZendeskStatus =
   | { connected: false }
-  | { connected: true; orgName: string | null; subdomain: string; connectedAt: string; lastSyncedAt: string | null };
+  | {
+      connected: true;
+      orgName: string | null;
+      subdomain: string;
+      connectedAt: string;
+      lastSyncedAt: string | null;
+      status: "connected" | "needs_reauth" | "error";
+      lastError: string | null;
+      accountEmail: string | null;
+    };
 
 function ZendeskCard({ name, category, desc }: { name: string; category: string; desc: string }) {
   const [status, setStatus] = useState<ZendeskStatus | null>(null);
@@ -693,6 +702,7 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
   const [subdomain, setSubdomain] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
 
   const fetchStatus = useServerFn(getZendeskStatus);
   const fetchConfig = useServerFn(getZendeskConfig);
@@ -717,7 +727,9 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
     const connected = params.get("zendesk_connected");
     const err = params.get("zendesk_error");
     if (connected) {
-      toast.success("Zendesk connected", { description: "You can now sync support tickets into ChAi." });
+      toast.success(`Connected to ${connected}.zendesk.com`, {
+        description: "You can now sync support tickets into ChAi.",
+      });
     }
     if (err) toast.error("Zendesk connection failed", { description: err });
     if (connected || err) {
@@ -725,15 +737,34 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  async function beginOAuth(sub: string) {
+    const r = (await startConnect({
+      data: { origin: window.location.origin, subdomain: sub },
+    })) as { url: string };
+    window.location.href = r.url;
+  }
+
   async function handleConnect() {
     if (!subdomain.trim()) return;
     setConnecting(true);
     try {
-      const r = (await startConnect({ data: { origin: window.location.origin, subdomain: subdomain.trim() } })) as { url: string };
-      window.location.href = r.url;
+      await beginOAuth(subdomain.trim());
     } catch (e) {
       setConnecting(false);
       toast.error("Couldn’t start Zendesk connect", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
+  }
+
+  async function handleReconnect() {
+    if (!status?.connected) return;
+    setReconnecting(true);
+    try {
+      await beginOAuth(status.subdomain);
+    } catch (e) {
+      setReconnecting(false);
+      toast.error("Couldn’t reconnect Zendesk", {
         description: e instanceof Error ? e.message : "Please try again.",
       });
     }
@@ -751,6 +782,7 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
       toast.error("Couldn’t sync Zendesk", {
         description: e instanceof Error ? e.message : "Please try again.",
       });
+      await refresh();
     } finally {
       setSyncing(false);
     }
@@ -759,7 +791,9 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
   async function handleDisconnect() {
     try {
       await disconnect();
-      toast.success("Zendesk disconnected");
+      toast.success("Zendesk disconnected", {
+        description: "Your imported history stays in ChAi.",
+      });
       setSubdomain("");
       await refresh();
     } catch (e) {
@@ -770,6 +804,15 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
   }
 
   const connected = status?.connected === true;
+  const connState = status?.connected ? status.status : "connected";
+  const needsReauth = connState === "needs_reauth";
+  const statusLabel = syncing
+    ? "Syncing"
+    : needsReauth
+      ? "Needs reauthorization"
+      : connState === "error"
+        ? "Error"
+        : "Connected";
 
   return (
     <div className="rounded-xl border border-border p-4">
@@ -782,8 +825,15 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
           <p className="text-[11px] text-muted-foreground">{category}</p>
         </div>
         {connected && (
-          <span className="ml-auto flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
-            <Check className="h-3 w-3" /> Connected
+          <span
+            className={`ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+              needsReauth || connState === "error"
+                ? "bg-danger/10 text-danger"
+                : "bg-success/10 text-success"
+            }`}
+          >
+            {!needsReauth && connState !== "error" && <Check className="h-3 w-3" />}
+            {statusLabel}
           </span>
         )}
       </div>
@@ -795,18 +845,35 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
         </div>
       ) : connected ? (
         <>
+          {status.connected && (
+            <p className="mt-3 text-center text-xs font-medium">
+              Connected to {status.subdomain}.zendesk.com
+            </p>
+          )}
+          {needsReauth && (
+            <p className="mt-1 text-center text-[11px] text-danger">
+              Your Zendesk connection needs to be reauthorized.
+            </p>
+          )}
+          {!needsReauth && connState === "error" && status.connected && status.lastError && (
+            <p className="mt-1 text-center text-[11px] text-danger">{status.lastError}</p>
+          )}
           <button
             onClick={handleSync}
-            disabled={syncing}
+            disabled={syncing || needsReauth}
             className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
           >
             {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
             {syncing ? "Syncing…" : "Sync now"}
           </button>
-          <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px]">
-            {status.connected && status.subdomain && (
-              <span className="text-muted-foreground">{status.subdomain}.zendesk.com</span>
-            )}
+          <div className="mt-1.5 flex items-center justify-center gap-3 text-[11px]">
+            <button
+              onClick={handleReconnect}
+              disabled={reconnecting}
+              className="text-muted-foreground underline-offset-2 hover:text-primary hover:underline disabled:opacity-60"
+            >
+              {reconnecting ? "Redirecting…" : "Reconnect"}
+            </button>
             <button
               onClick={handleDisconnect}
               className="text-muted-foreground underline-offset-2 hover:text-danger hover:underline"
@@ -814,21 +881,24 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
               Disconnect
             </button>
           </div>
-          {status.connected && status.lastSyncedAt && (
-            <p className="mt-1 text-center text-[11px] italic text-success">
-              Last synced {status.lastSyncedAt.slice(0, 16).replace("T", " ")}
-            </p>
-          )}
+          <p className="mt-1 text-center text-[11px] italic text-muted-foreground">
+            {status.connected && status.lastSyncedAt
+              ? `Last synced ${status.lastSyncedAt.slice(0, 16).replace("T", " ")}`
+              : "Not synced yet"}
+          </p>
         </>
       ) : (
         <>
+          <p className="mt-3 text-xs text-muted-foreground">Zendesk is not connected.</p>
           <div className="mt-3">
-            <label className="block text-[11px] font-medium text-muted-foreground">Zendesk subdomain</label>
+            <label className="block text-[11px] font-medium text-muted-foreground">
+              What’s your Zendesk subdomain?
+            </label>
             <div className="mt-1 flex items-stretch gap-2">
               <input
                 type="text"
                 value={subdomain}
-                onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9.\-]/g, ""))}
                 placeholder="yourcompany"
                 className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
               />
@@ -844,7 +914,7 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
             title={config && !config.configured ? "Zendesk isn't configured on this project." : undefined}
           >
             {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
-            {connecting ? "Redirecting…" : "Connect with OAuth"}
+            {connecting ? "Redirecting…" : "Connect Zendesk"}
           </button>
         </>
       )}
