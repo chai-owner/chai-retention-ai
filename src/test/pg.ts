@@ -46,7 +46,10 @@ export function startPostgres(): PgHandle | null {
   }
 
   const query = (sql: string): unknown[] => {
-    const wrapped = `select coalesce(json_agg(t), '[]'::json)::text from (${sql}) t`;
+    const wrapped = /^\s*select/i.test(sql)
+      ? `select coalesce(json_agg(t), '[]'::json)::text from (${sql}) t`
+      : `with t as (${sql}) select coalesce(json_agg(t), '[]'::json)::text from t`;
+
     const out = execFileSync(
       "psql",
       ["-U", "postgres", "-h", HOST, "-p", String(PORT), "-v", "ON_ERROR_STOP=1", "-tAc", wrapped],
