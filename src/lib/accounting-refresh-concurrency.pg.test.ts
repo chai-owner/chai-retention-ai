@@ -14,6 +14,8 @@ const USER = "11111111-1111-1111-1111-111111111111";
 const PROVIDER = "quickbooks" as const;
 const CONN_ID = "22222222-2222-2222-2222-222222222222";
 
+// Booted at module scope: `it`/`describe` selection happens during collection,
+// before beforeAll would have run.
 let pg: PgHandle | null = null;
 let originalFrom: typeof supabaseMock.from;
 
@@ -40,18 +42,18 @@ create table if not exists accounting_connections (
   updated_at timestamptz not null default now()
 );`;
 
+process.env.QUICKBOOKS_CLIENT_ID ??= "test-client";
+process.env.QUICKBOOKS_CLIENT_SECRET ??= "test-secret";
+pg = startPostgres();
+if (pg) pg.query(DDL);
+
 beforeAll(() => {
-  process.env.QUICKBOOKS_CLIENT_ID ??= "test-client";
-  process.env.QUICKBOOKS_CLIENT_SECRET ??= "test-secret";
-  pg = startPostgres();
-  if (pg) pg.query(DDL);
+  if (!pg) console.warn("Postgres unavailable — concurrency test skipped.");
 });
 
 afterAll(() => {
   pg?.stop();
 });
-
-const describeIfPg = () => (pg ? describe : describe.skip);
 
 function seedExpiredConnection() {
   const expired = new Date(Date.now() - 60_000).toISOString();
