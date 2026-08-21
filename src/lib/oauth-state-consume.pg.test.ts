@@ -5,7 +5,7 @@ import { describe, it, expect, afterAll } from "vitest";
 import { startPostgres, lit, type PgHandle } from "@/test/pg";
 import { hashOAuthState, generateOAuthState } from "@/lib/oauth-state.server";
 
-let pg: PgHandle | null = startPostgres();
+let pg: PgHandle | null = startPostgres(55433);
 
 const DDL = `
 create table if not exists intercom_oauth_states (
