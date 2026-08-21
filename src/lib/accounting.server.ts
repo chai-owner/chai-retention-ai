@@ -108,13 +108,33 @@ interface TokenSet {
   accessToken: string;
   refreshToken?: string;
   expiresAt?: string; // ISO
+  refreshTokenExpiresAt?: string; // ISO, when the provider tells us
 }
+
+// Refresh this long before the access token actually expires so in-flight
+// requests never race the expiry boundary.
+const REFRESH_SKEW_MS = 120_000;
+// A refresh lock older than this is considered abandoned (crashed process).
+const LOCK_TTL_MS = 30_000;
 
 function expiryFrom(expiresInSec?: number): string | undefined {
   if (!expiresInSec) return undefined;
-  // Refresh a minute early to be safe.
-  return new Date(Date.now() + (expiresInSec - 60) * 1000).toISOString();
+  return new Date(Date.now() + expiresInSec * 1000).toISOString();
 }
+
+// Providers use different names for the refresh-token lifetime; only trust
+// values they actually return (never invent a fixed window).
+function refreshExpiryFrom(j: any): string | undefined {
+  const secs =
+    j?.x_refresh_token_expires_in ??
+    j?.refresh_expires_in ??
+    j?.refresh_token_expires_in;
+  const n = Number(secs);
+  return Number.isFinite(n) && n > 0
+    ? new Date(Date.now() + n * 1000).toISOString()
+    : undefined;
+}
+
 
 function basicAuth({ clientId, clientSecret }: Creds): string {
   return "Basic " + Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
@@ -148,6 +168,7 @@ export async function exchangeCode(
       accessToken: j.access_token,
       refreshToken: j.refresh_token,
       expiresAt: expiryFrom(j.expires_in),
+      refreshTokenExpiresAt: refreshExpiryFrom(j),
     };
   }
   if (provider === "xero") {
@@ -168,6 +189,7 @@ export async function exchangeCode(
       accessToken: j.access_token,
       refreshToken: j.refresh_token,
       expiresAt: expiryFrom(j.expires_in),
+      refreshTokenExpiresAt: refreshExpiryFrom(j),
     };
   }
   // freshbooks
@@ -187,6 +209,7 @@ export async function exchangeCode(
     accessToken: j.access_token,
     refreshToken: j.refresh_token,
     expiresAt: expiryFrom(j.expires_in),
+    refreshTokenExpiresAt: refreshExpiryFrom(j),
   };
 }
 
@@ -216,6 +239,7 @@ async function refreshTokens(
       accessToken: j.access_token,
       refreshToken: j.refresh_token ?? refreshToken,
       expiresAt: expiryFrom(j.expires_in),
+      refreshTokenExpiresAt: refreshExpiryFrom(j),
     };
   }
   if (provider === "xero") {
@@ -235,6 +259,7 @@ async function refreshTokens(
       accessToken: j.access_token,
       refreshToken: j.refresh_token ?? refreshToken,
       expiresAt: expiryFrom(j.expires_in),
+      refreshTokenExpiresAt: refreshExpiryFrom(j),
     };
   }
   const res = await fetch("https://api.freshbooks.com/auth/oauth/token", {
@@ -252,14 +277,23 @@ async function refreshTokens(
     accessToken: j.access_token,
     refreshToken: j.refresh_token ?? refreshToken,
     expiresAt: expiryFrom(j.expires_in),
+    refreshTokenExpiresAt: refreshExpiryFrom(j),
   };
+}
+
+// Strips anything token-shaped so a provider error body can never leak
+// credentials into logs or user-facing errors.
+function redactSecrets(text: string): string {
+  return text
+    .replace(/("(?:access|refresh|id)_token"\s*:\s*")[^"]+/gi, '$1[redacted]')
+    .replace(/(client_secret=|code=)[^&\s"]+/gi, '$1[redacted]');
 }
 
 async function readJson(res: Response, ctx: string): Promise<any> {
   const text = await res.text();
   if (!res.ok) {
-    console.error(`${ctx} failed [${res.status}]: ${text}`);
-    throw new Error(`${ctx} failed [${res.status}]: ${text.slice(0, 300)}`);
+    console.error(`${ctx} failed [${res.status}]: ${redactSecrets(text).slice(0, 500)}`);
+    throw new Error(`${ctx} failed [${res.status}]: ${redactSecrets(text).slice(0, 300)}`);
   }
   try {
     return JSON.parse(text);
@@ -387,11 +421,17 @@ export async function resolveAccountInfo(
 
 // ---- Connection persistence ---------------------------------------------
 
+export type AccountingStatusValue = "connected" | "needs_reauth" | "error";
+
 export interface ConnectionRow {
+  id: string;
   provider: AccountingProvider;
   access_token: string;
   refresh_token: string | null;
   expires_at: string | null;
+  refresh_token_expires_at?: string | null;
+  status?: string | null;
+  refresh_lock_at?: string | null;
   realm_id: string | null;
   tenant_id: string | null;
   account_id: string | null;
@@ -404,6 +444,69 @@ export interface ConnectionRow {
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
+}
+
+/** Safe diagnostic log — never contains tokens, secrets or auth codes. */
+export function logAccounting(
+  provider: AccountingProvider,
+  operation: string,
+  detail: Record<string, unknown>,
+) {
+  console.error(
+    JSON.stringify({
+      scope: "accounting",
+      provider,
+      operation,
+      at: new Date().toISOString(),
+      ...detail,
+    }),
+  );
+}
+
+/** Raised when the user must reconnect; never carries provider internals. */
+export class AccountingReauthRequired extends Error {
+  provider: AccountingProvider;
+  constructor(provider: AccountingProvider) {
+    super(
+      `Your ${providerName(provider)} connection needs to be reconnected. Open the Data page and reconnect.`,
+    );
+    this.provider = provider;
+  }
+}
+
+export async function markAccountingNeedsReauth(
+  userId: string,
+  provider: AccountingProvider,
+  message: string,
+): Promise<void> {
+  const db = await admin();
+  await db
+    .from("accounting_connections")
+    .update({
+      status: "needs_reauth",
+      last_error_at: new Date().toISOString(),
+      last_error_message: message.slice(0, 300),
+      refresh_lock_at: null,
+    })
+    .eq("user_id", userId)
+    .eq("provider", provider);
+}
+
+export async function markAccountingError(
+  userId: string,
+  provider: AccountingProvider,
+  message: string,
+): Promise<void> {
+  const db = await admin();
+  await db
+    .from("accounting_connections")
+    .update({
+      status: "error",
+      last_error_at: new Date().toISOString(),
+      last_error_message: message.slice(0, 300),
+    })
+    .eq("user_id", userId)
+    .eq("provider", provider);
 }
 
 export async function saveConnection(
@@ -420,6 +523,11 @@ export async function saveConnection(
       access_token: encryptSecret(tokens.accessToken),
       refresh_token: tokens.refreshToken ? encryptSecret(tokens.refreshToken) : null,
       expires_at: tokens.expiresAt ?? null,
+      refresh_token_expires_at: tokens.refreshTokenExpiresAt ?? null,
+      status: "connected",
+      last_error_at: null,
+      last_error_message: null,
+      refresh_lock_at: null,
       realm_id: info.realmId ?? null,
       tenant_id: info.tenantId ?? null,
       account_id: info.accountId ?? null,
@@ -432,8 +540,14 @@ export async function saveConnection(
   if (error) throw new Error(`Failed to save connection: ${error.message}`);
 }
 
-// Loads a connection and refreshes its access token if expired.
-async function loadFreshConnection(
+function decryptRow(row: ConnectionRow): ConnectionRow {
+  // Rows written before token-at-rest encryption are still plaintext.
+  row.access_token = decryptSecret(row.access_token);
+  row.refresh_token = decryptSecretOrNull(row.refresh_token);
+  return row;
+}
+
+async function readConnection(
   userId: string,
   provider: AccountingProvider,
 ): Promise<ConnectionRow> {
@@ -446,33 +560,179 @@ async function loadFreshConnection(
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error(`${providerName(provider)} is not connected.`);
+  return decryptRow(data as unknown as ConnectionRow);
+}
 
-  const row = data as ConnectionRow & { id: string };
-  // Rows written before token-at-rest encryption are still plaintext.
-  row.access_token = decryptSecret(row.access_token);
-  row.refresh_token = decryptSecretOrNull(row.refresh_token);
-  const expired =
-    row.expires_at != null && new Date(row.expires_at).getTime() < Date.now();
-  if (expired && row.refresh_token) {
-    const refreshed = await refreshTokens(provider, row.refresh_token);
+/**
+ * Database-backed refresh lock. Only one process may rotate a connection's
+ * refresh token at a time; losers wait, re-read the row and reuse whatever the
+ * winner stored. Locks older than LOCK_TTL_MS are treated as abandoned so a
+ * crashed process can never wedge a connection permanently.
+ */
+export async function refreshWithLock(
+  userId: string,
+  provider: AccountingProvider,
+  row: ConnectionRow,
+): Promise<ConnectionRow> {
+  const db = await admin();
+  const now = Date.now();
+  const staleLock = new Date(now - LOCK_TTL_MS).toISOString();
+  const { data: locked } = await db
+    .from("accounting_connections")
+    .update({ refresh_lock_at: new Date(now).toISOString() })
+    .eq("id", row.id)
+    .or(`refresh_lock_at.is.null,refresh_lock_at.lt.${staleLock}`)
+    .select("id");
+
+  const gotLock = Array.isArray(locked) ? locked.length > 0 : Boolean(locked);
+  if (!gotLock) {
+    // Someone else is rotating right now: wait, then re-read and use their
+    // token instead of burning the (already consumed) refresh token again.
+    await new Promise((r) => setTimeout(r, 1500));
+    const fresh = await readConnection(userId, provider);
+    if (fresh.status === "needs_reauth") throw new AccountingReauthRequired(provider);
+    const freshExpiry = fresh.expires_at ? new Date(fresh.expires_at).getTime() : null;
+    if (freshExpiry === null || freshExpiry - REFRESH_SKEW_MS > Date.now()) return fresh;
+    // The other refresh didn't land (failed, or its lock expired). Fall through
+    // and try once ourselves using the newest stored refresh token.
+    row = fresh;
+  }
+
+  if (!row.refresh_token) {
+    await markAccountingNeedsReauth(userId, provider, "No refresh token stored.");
+    throw new AccountingReauthRequired(provider);
+  }
+
+  try {
+    const t = await refreshTokens(provider, row.refresh_token);
     await db
       .from("accounting_connections")
       .update({
-        access_token: encryptSecret(refreshed.accessToken),
-        refresh_token: refreshed.refreshToken
-          ? encryptSecret(refreshed.refreshToken)
-          : row.refresh_token
-            ? encryptSecret(row.refresh_token)
-            : null,
-        expires_at: refreshed.expiresAt ?? null,
+        access_token: encryptSecret(t.accessToken),
+        // Providers rotate refresh tokens — the new one becomes canonical.
+        refresh_token: t.refreshToken
+          ? encryptSecret(t.refreshToken)
+          : encryptSecret(row.refresh_token),
+        expires_at: t.expiresAt ?? null,
+        refresh_token_expires_at:
+          t.refreshTokenExpiresAt ?? row.refresh_token_expires_at ?? null,
+        status: "connected",
+        last_error_at: null,
+        last_error_message: null,
+        refresh_lock_at: null,
       })
       .eq("id", row.id);
-    row.access_token = refreshed.accessToken;
-    row.refresh_token = refreshed.refreshToken ?? row.refresh_token;
-    row.expires_at = refreshed.expiresAt ?? null;
+    row.access_token = t.accessToken;
+    row.refresh_token = t.refreshToken ?? row.refresh_token;
+    row.expires_at = t.expiresAt ?? null;
+    row.refresh_token_expires_at =
+      t.refreshTokenExpiresAt ?? row.refresh_token_expires_at ?? null;
+    row.status = "connected";
+    return row;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Token refresh failed.";
+    logAccounting(provider, "refresh", {
+      connectionId: row.id,
+      userId,
+      outcome: "failed",
+      message: msg.slice(0, 200),
+    });
+    await markAccountingNeedsReauth(userId, provider, msg);
+    throw new AccountingReauthRequired(provider);
   }
-  return row;
 }
+
+/**
+ * Loads a connection, proactively refreshing the access token shortly before
+ * expiry. Connections whose refresh token has expired stop retrying and are
+ * flagged for reconnection instead.
+ */
+async function loadFreshConnection(
+  userId: string,
+  provider: AccountingProvider,
+): Promise<ConnectionRow> {
+  const row = await readConnection(userId, provider);
+  if (row.status === "needs_reauth") throw new AccountingReauthRequired(provider);
+
+  const expiresMs = row.expires_at ? new Date(row.expires_at).getTime() : null;
+  const needsRefresh = expiresMs !== null && expiresMs - REFRESH_SKEW_MS < Date.now();
+  if (!needsRefresh) return row;
+
+  if (!row.refresh_token) {
+    await markAccountingNeedsReauth(
+      userId,
+      provider,
+      "Access token expired and no refresh token is stored.",
+    );
+    throw new AccountingReauthRequired(provider);
+  }
+  const refreshExpired =
+    row.refresh_token_expires_at != null &&
+    new Date(row.refresh_token_expires_at).getTime() < Date.now();
+  if (refreshExpired) {
+    await markAccountingNeedsReauth(userId, provider, "Refresh token expired.");
+    throw new AccountingReauthRequired(provider);
+  }
+
+  return refreshWithLock(userId, provider, row);
+}
+
+/**
+ * Single place accounting HTTP calls happen: one controlled refresh + one
+ * retry on 401, never a loop.
+ */
+export function makeAccountingClient(
+  userId: string,
+  provider: AccountingProvider,
+  conn: ConnectionRow,
+) {
+  const state = { conn };
+  const call = (url: string, extraHeaders: Record<string, string>) =>
+    fetch(url, {
+      headers: {
+        ...extraHeaders,
+        Authorization: `Bearer ${state.conn.access_token}`,
+        Accept: "application/json",
+      },
+    });
+
+  return {
+    get current() {
+      return state.conn;
+    },
+    async fetchJson(url: string, ctx: string, extraHeaders: Record<string, string> = {}) {
+      let res = await call(url, extraHeaders);
+      if (res.status === 401) {
+        logAccounting(provider, "api", {
+          connectionId: state.conn.id,
+          userId,
+          status: 401,
+          ctx,
+          action: "refresh_and_retry_once",
+        });
+        state.conn = await refreshWithLock(userId, provider, state.conn);
+        res = await call(url, extraHeaders); // exactly one retry
+        if (res.status === 401) {
+          await markAccountingNeedsReauth(
+            userId,
+            provider,
+            `${providerName(provider)} rejected the refreshed access token.`,
+          );
+          throw new AccountingReauthRequired(provider);
+        }
+      }
+      if (res.status === 429) {
+        const retryAfter = Number(res.headers.get("retry-after") ?? "0");
+        if (retryAfter > 0 && retryAfter <= 30) {
+          await new Promise((r) => setTimeout(r, retryAfter * 1000));
+          res = await call(url, extraHeaders);
+        }
+      }
+      return readJson(res, ctx);
+    },
+  };
+}
+
 
 // ---- Data fetch + normalization -----------------------------------------
 
@@ -506,7 +766,7 @@ export async function fetchAndNormalize(
   sinceOverride?: string | null,
 ): Promise<ExtractedDataset[]> {
   const conn = await loadFreshConnection(userId, provider);
-  const auth = { Authorization: `Bearer ${conn.access_token}`, Accept: "application/json" };
+  const api = makeAccountingClient(userId, provider, conn);
   // Prefer explicit override (used by the daily cron); otherwise fall back to
   // the connection's own last_synced_at so manual "Sync now" is also delta.
   const since =
@@ -526,11 +786,10 @@ export async function fetchAndNormalize(
     const invoiceWhere = since
       ? ` where Metadata.LastUpdatedTime > '${since}'`
       : "";
-    const cRes = await fetch(
+    const cJson = await api.fetchJson(
       `${base}/query?query=${encodeURIComponent(`select * from Customer${customerWhere} maxresults 500`)}&minorversion=65`,
-      { headers: auth },
+      "QuickBooks customers",
     );
-    const cJson = await readJson(cRes, "QuickBooks customers");
     for (const c of cJson?.QueryResponse?.Customer ?? []) {
       customerRows.push([
         String(c.Id ?? ""),
@@ -542,11 +801,10 @@ export async function fetchAndNormalize(
         c.BillAddr?.CountrySubDivisionCode || c.BillAddr?.Country || "",
       ]);
     }
-    const iRes = await fetch(
+    const iJson = await api.fetchJson(
       `${base}/query?query=${encodeURIComponent(`select * from Invoice${invoiceWhere} maxresults 1000`)}&minorversion=65`,
-      { headers: auth },
+      "QuickBooks invoices",
     );
-    const iJson = await readJson(iRes, "QuickBooks invoices");
     for (const inv of iJson?.QueryResponse?.Invoice ?? []) {
       txnRows.push([
         String(inv.CustomerRef?.value ?? ""),
@@ -580,17 +838,16 @@ export async function fetchAndNormalize(
     const PAGE_SIZE = 100; // Xero's fixed page size for Contacts/Invoices.
     for (const tenant of activeTenants) {
       const xauth: Record<string, string> = {
-        ...auth,
         "Xero-tenant-id": tenant.tenantId,
       };
       if (since) xauth["If-Modified-Since"] = new Date(since).toUTCString();
 
       for (let page = 1; page <= 50; page++) {
-        const cRes = await fetch(
+        const cJson = await api.fetchJson(
           `https://api.xero.com/api.xro/2.0/Contacts?page=${page}`,
-          { headers: xauth },
+          `Xero contacts (${tenant.tenantName})`,
+          xauth,
         );
-        const cJson = await readJson(cRes, `Xero contacts (${tenant.tenantName})`);
         const contacts = cJson?.Contacts ?? [];
         for (const c of contacts) {
           customerRows.push([
@@ -607,11 +864,11 @@ export async function fetchAndNormalize(
       }
 
       for (let page = 1; page <= 50; page++) {
-        const iRes = await fetch(
+        const iJson = await api.fetchJson(
           `https://api.xero.com/api.xro/2.0/Invoices?where=${encodeURIComponent('Type=="ACCREC"')}&page=${page}`,
-          { headers: xauth },
+          `Xero invoices (${tenant.tenantName})`,
+          xauth,
         );
-        const iJson = await readJson(iRes, `Xero invoices (${tenant.tenantName})`);
         const invoices = iJson?.Invoices ?? [];
         for (const inv of invoices) {
           txnRows.push([
@@ -648,11 +905,10 @@ export async function fetchAndNormalize(
 
     let stop = false;
     for (let page = 1; page <= MAX_PAGES && !stop; page++) {
-      const cRes = await fetch(
+      const cJson = await api.fetchJson(
         `https://api.freshbooks.com/accounting/account/${acct}/users/clients?per_page=${PER_PAGE}&page=${page}&sort=updated_desc`,
-        { headers: auth },
+        "FreshBooks clients",
       );
-      const cJson = await readJson(cRes, "FreshBooks clients");
       const result = cJson?.response?.result ?? {};
       const clients = result.clients ?? [];
       for (const c of clients) {
@@ -681,11 +937,10 @@ export async function fetchAndNormalize(
 
     stop = false;
     for (let page = 1; page <= MAX_PAGES && !stop; page++) {
-      const iRes = await fetch(
+      const iJson = await api.fetchJson(
         `https://api.freshbooks.com/accounting/account/${acct}/invoices/invoices?per_page=${PER_PAGE}&page=${page}&sort=updated_desc`,
-        { headers: auth },
+        "FreshBooks invoices",
       );
-      const iJson = await readJson(iRes, "FreshBooks invoices");
       const result = iJson?.response?.result ?? {};
       const invoices = result.invoices ?? [];
       for (const inv of invoices) {

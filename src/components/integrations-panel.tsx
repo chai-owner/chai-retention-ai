@@ -83,6 +83,8 @@ type AccountingStatus = {
   connected_at: string;
   tenant_id: string | null;
   tenants: { tenantId: string; tenantName: string }[] | null;
+  status?: string | null;
+  last_error_at?: string | null;
 };
 
 export function IntegrationsPanel() {
@@ -1009,6 +1011,7 @@ function AccountingCard({
   const disconnect = useServerFn(disconnectAccounting);
   const pickTenant = useServerFn(selectXeroTenant);
   const xeroTenants = provider === "xero" ? (connected?.tenants ?? []) : [];
+  const needsReauth = connected?.status === "needs_reauth";
 
   const lastSynced = useMemo(() => {
     const prefix = `${name} —`;
@@ -1058,11 +1061,16 @@ function AccountingCard({
           <p className="text-sm font-semibold">{name}</p>
           <p className="text-[11px] text-muted-foreground">{category}</p>
         </div>
-        {connected && (
-          <span className="ml-auto flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
-            <Check className="h-3 w-3" /> Connected
-          </span>
-        )}
+        {connected &&
+          (needsReauth ? (
+            <span className="ml-auto flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
+              Reconnect needed
+            </span>
+          ) : (
+            <span className="ml-auto flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+              <Check className="h-3 w-3" /> Connected
+            </span>
+          ))}
       </div>
       <p className="mt-3 text-xs text-muted-foreground">{desc}</p>
 
@@ -1076,9 +1084,25 @@ function AccountingCard({
         </div>
       ) : connected ? (
         <>
+          {needsReauth && (
+            <div className="mt-3 space-y-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-[11px] text-warning">
+              <p>
+                {name} stopped accepting our access. Reconnect to resume syncing — your imported
+                data stays put.
+              </p>
+              <button
+                onClick={handleConnect}
+                disabled={connecting}
+                className="w-full rounded-lg bg-warning px-2 py-1.5 text-[11px] font-medium text-warning-foreground disabled:opacity-60"
+              >
+                {connecting ? "Redirecting…" : `Reconnect ${name}`}
+              </button>
+            </div>
+          )}
           <button
             onClick={() => setWizardOpen(true)}
-            className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
+            disabled={needsReauth}
+            className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-50"
           >
             Sync now
           </button>

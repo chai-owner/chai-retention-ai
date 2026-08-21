@@ -22,10 +22,15 @@ export type Database = {
           connected_at: string
           expires_at: string | null
           id: string
+          last_error_at: string | null
+          last_error_message: string | null
           last_synced_at: string | null
           provider: string
           realm_id: string | null
+          refresh_lock_at: string | null
           refresh_token: string | null
+          refresh_token_expires_at: string | null
+          status: string
           tenant_id: string | null
           tenants: Json
           updated_at: string
@@ -38,10 +43,15 @@ export type Database = {
           connected_at?: string
           expires_at?: string | null
           id?: string
+          last_error_at?: string | null
+          last_error_message?: string | null
           last_synced_at?: string | null
           provider: string
           realm_id?: string | null
+          refresh_lock_at?: string | null
           refresh_token?: string | null
+          refresh_token_expires_at?: string | null
+          status?: string
           tenant_id?: string | null
           tenants?: Json
           updated_at?: string
@@ -54,10 +64,15 @@ export type Database = {
           connected_at?: string
           expires_at?: string | null
           id?: string
+          last_error_at?: string | null
+          last_error_message?: string | null
           last_synced_at?: string | null
           provider?: string
           realm_id?: string | null
+          refresh_lock_at?: string | null
           refresh_token?: string | null
+          refresh_token_expires_at?: string | null
+          status?: string
           tenant_id?: string | null
           tenants?: Json
           updated_at?: string
