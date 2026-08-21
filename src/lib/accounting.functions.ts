@@ -33,7 +33,9 @@ export const getAccountingStatus = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("accounting_connections")
-      .select("provider, company_name, connected_at, tenant_id, tenants")
+      .select(
+        "provider, company_name, connected_at, tenant_id, tenants, status, last_error_at",
+      )
       .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
     return (data ?? []) as {
@@ -42,6 +44,8 @@ export const getAccountingStatus = createServerFn({ method: "GET" })
       connected_at: string;
       tenant_id: string | null;
       tenants: { tenantId: string; tenantName: string }[] | null;
+      status: string | null;
+      last_error_at: string | null;
     }[];
   });
 

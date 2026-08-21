@@ -213,3 +213,92 @@ describe("FreshBooks sync", () => {
     );
   });
 });
+
+describe("token lifecycle", () => {
+  const BASE = {
+    id: "f1",
+    user_id: "user-1",
+    provider: "freshbooks",
+    access_token: encryptSecret("old-access"),
+    refresh_token: encryptSecret("old-refresh"),
+    account_id: "acct-1",
+    realm_id: null,
+    tenant_id: null,
+    company_name: "Acme",
+    connected_at: "2026-01-01T00:00:00Z",
+    last_synced_at: null,
+    tenants: [],
+  };
+  const past = new Date(Date.now() - 60_000).toISOString();
+
+  it("refreshes proactively before the access token expires and retries with the new token", async () => {
+    setSupabaseResult("accounting_connections", {
+      data: { ...BASE, expires_at: past, refresh_token_expires_at: null, status: "connected" },
+    });
+    const http = mockFetch([
+      {
+        match: "/auth/oauth/token",
+        json: { access_token: "new-access", refresh_token: "new-refresh", expires_in: 3600 },
+      },
+      { match: "/users/clients", json: { response: { result: { pages: 1, clients: [] } } } },
+      { match: "/invoices/invoices", json: { response: { result: { pages: 1, invoices: [] } } } },
+    ]);
+
+    await fetchAndNormalize("user-1", "freshbooks", null);
+
+    expect(http.find("/auth/oauth/token")).toBeTruthy();
+    const apiCall = http.find("/users/clients")!;
+    expect(apiCall.headers.authorization).toBe("Bearer new-access");
+  });
+
+  it("stops retrying and asks the user to reconnect once the refresh token has expired", async () => {
+    setSupabaseResult("accounting_connections", {
+      data: {
+        ...BASE,
+        expires_at: past,
+        refresh_token_expires_at: past,
+        status: "connected",
+      },
+    });
+    const http = mockFetch([{ match: "/auth/oauth/token", status: 400, json: { error: "x" } }]);
+
+    await expect(fetchAndNormalize("user-1", "freshbooks", null)).rejects.toThrow(/reconnect/i);
+    // Never burned the dead refresh token on the provider.
+    expect(http.requests).toHaveLength(0);
+  });
+
+  it("refuses to sync a connection already flagged for reauthorisation", async () => {
+    setSupabaseResult("accounting_connections", {
+      data: { ...BASE, expires_at: null, status: "needs_reauth" },
+    });
+    mockFetch([]);
+    await expect(fetchAndNormalize("user-1", "freshbooks", null)).rejects.toThrow(/reconnect/i);
+  });
+
+  it("flags the connection for reauthorisation when the provider rejects the refresh", async () => {
+    setSupabaseResult("accounting_connections", {
+      data: { ...BASE, expires_at: past, refresh_token_expires_at: null, status: "connected" },
+    });
+    mockFetch([{ match: "/auth/oauth/token", status: 401, json: { error: "invalid_grant" } }]);
+    await expect(fetchAndNormalize("user-1", "freshbooks", null)).rejects.toThrow(/reconnect/i);
+  });
+
+  it("never leaks token values into provider error messages", async () => {
+    setSupabaseResult("accounting_connections", {
+      data: { ...BASE, expires_at: null, status: "connected" },
+    });
+    mockFetch([
+      {
+        match: "/users/clients",
+        status: 500,
+        json: { error: "boom", access_token: "leaked-token-value" },
+      },
+    ]);
+    await expect(fetchAndNormalize("user-1", "freshbooks", null)).rejects.toThrow(
+      /FreshBooks clients failed/,
+    );
+    await expect(fetchAndNormalize("user-1", "freshbooks", null)).rejects.not.toThrow(
+      /leaked-token-value/,
+    );
+  });
+});
