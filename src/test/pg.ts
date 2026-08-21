@@ -38,7 +38,7 @@ export function startPostgres(): PgHandle | null {
     if (process.getuid?.() === 0) execFileSync("chown", ["-R", "1000:1000", root]);
     const [bin, args] = asUser(
       `initdb -U postgres -A trust -D ${data} >${root}/initdb.log 2>&1 && ` +
-        `pg_ctl -D ${data} -o "-p ${PORT} -c listen_addresses=${HOST}" -l ${root}/pg.log start`,
+        `pg_ctl -D ${data} -o "-p ${PORT} -k ${root} -c listen_addresses=${HOST}" -l ${root}/pg.log start`,
     ) as [string, string[]];
     execFileSync(bin, args, { env, stdio: "ignore" });
   } catch {
