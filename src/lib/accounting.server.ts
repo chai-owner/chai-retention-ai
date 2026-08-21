@@ -563,40 +563,118 @@ async function readConnection(
   return decryptRow(data as unknown as ConnectionRow);
 }
 
+/** Bounded polling knobs for losers of the refresh lock. */
+export const LOCK_POLL_INTERVAL_MS = 250;
+export const LOCK_POLL_MAX_INTERVAL_MS = 1_000;
+
+export interface RefreshLockOptions {
+  sleep?: (ms: number) => Promise<void>;
+  pollIntervalMs?: number;
+  /** Hard ceiling on how long a loser waits. Defaults to the stale-lock TTL. */
+  maxWaitMs?: number;
+}
+
+const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+function accessTokenUsable(row: ConnectionRow): boolean {
+  const expiry = row.expires_at ? new Date(row.expires_at).getTime() : null;
+  return expiry === null || expiry - REFRESH_SKEW_MS > Date.now();
+}
+
+function lockIsStale(row: ConnectionRow, ttlMs: number): boolean {
+  if (!row.refresh_lock_at) return true;
+  return new Date(row.refresh_lock_at).getTime() < Date.now() - ttlMs;
+}
+
+/**
+ * Try to claim the refresh lock. The conditional UPDATE is atomic in Postgres,
+ * so exactly one concurrent writer can ever win a given round.
+ */
+async function claimRefreshLock(connectionId: string): Promise<boolean> {
+  const db = await admin();
+  const staleLock = new Date(Date.now() - LOCK_TTL_MS).toISOString();
+  const { data: locked } = await db
+    .from("accounting_connections")
+    .update({ refresh_lock_at: new Date().toISOString() })
+    .eq("id", connectionId)
+    .or(`refresh_lock_at.is.null,refresh_lock_at.lt.${staleLock}`)
+    .select("id");
+  return Array.isArray(locked) ? locked.length > 0 : Boolean(locked);
+}
+
+type WaitOutcome =
+  | { kind: "fresh"; row: ConnectionRow }
+  | { kind: "reauth" }
+  | { kind: "retry"; row: ConnectionRow };
+
+/**
+ * Loser path: never refresh straight away — the winner already consumed the
+ * rotating refresh token. Instead re-read the row on a bounded, backing-off
+ * schedule until the winner clears the lock (use its token), the lock goes
+ * stale (safe to recover), or the wait budget runs out.
+ */
+async function awaitRefreshWinner(
+  userId: string,
+  provider: AccountingProvider,
+  opts: RefreshLockOptions,
+): Promise<WaitOutcome> {
+  const sleep = opts.sleep ?? defaultSleep;
+  const budget = opts.maxWaitMs ?? LOCK_TTL_MS;
+  const baseInterval = opts.pollIntervalMs ?? LOCK_POLL_INTERVAL_MS;
+  const deadline = Date.now() + budget;
+  let interval = baseInterval;
+  let latest: ConnectionRow | null = null;
+
+  while (Date.now() < deadline) {
+    await sleep(Math.min(interval, Math.max(0, deadline - Date.now())));
+    interval = Math.min(interval * 2, LOCK_POLL_MAX_INTERVAL_MS);
+    latest = await readConnection(userId, provider);
+    if (latest.status === "needs_reauth") return { kind: "reauth" };
+    if (!latest.refresh_lock_at) {
+      // Winner finished. Use its token when it is usable; otherwise recover.
+      if (accessTokenUsable(latest)) return { kind: "fresh", row: latest };
+      return { kind: "retry", row: latest };
+    }
+    if (lockIsStale(latest, LOCK_TTL_MS)) return { kind: "retry", row: latest };
+  }
+
+  const finalRow = latest ?? (await readConnection(userId, provider));
+  if (finalRow.status === "needs_reauth") return { kind: "reauth" };
+  if (accessTokenUsable(finalRow)) return { kind: "fresh", row: finalRow };
+  return { kind: "retry", row: finalRow };
+}
+
 /**
  * Database-backed refresh lock. Only one process may rotate a connection's
- * refresh token at a time; losers wait, re-read the row and reuse whatever the
- * winner stored. Locks older than LOCK_TTL_MS are treated as abandoned so a
- * crashed process can never wedge a connection permanently.
+ * refresh token at a time; losers poll the row and reuse whatever the winner
+ * stored. Locks older than LOCK_TTL_MS are treated as abandoned so a crashed
+ * process can never wedge a connection permanently. At most two claim attempts
+ * are ever made, so there is neither an infinite wait nor a refresh loop.
  */
 export async function refreshWithLock(
   userId: string,
   provider: AccountingProvider,
   row: ConnectionRow,
+  opts: RefreshLockOptions = {},
 ): Promise<ConnectionRow> {
   const db = await admin();
-  const now = Date.now();
-  const staleLock = new Date(now - LOCK_TTL_MS).toISOString();
-  const { data: locked } = await db
-    .from("accounting_connections")
-    .update({ refresh_lock_at: new Date(now).toISOString() })
-    .eq("id", row.id)
-    .or(`refresh_lock_at.is.null,refresh_lock_at.lt.${staleLock}`)
-    .select("id");
 
-  const gotLock = Array.isArray(locked) ? locked.length > 0 : Boolean(locked);
-  if (!gotLock) {
-    // Someone else is rotating right now: wait, then re-read and use their
-    // token instead of burning the (already consumed) refresh token again.
-    await new Promise((r) => setTimeout(r, 1500));
-    const fresh = await readConnection(userId, provider);
-    if (fresh.status === "needs_reauth") throw new AccountingReauthRequired(provider);
-    const freshExpiry = fresh.expires_at ? new Date(fresh.expires_at).getTime() : null;
-    if (freshExpiry === null || freshExpiry - REFRESH_SKEW_MS > Date.now()) return fresh;
-    // The other refresh didn't land (failed, or its lock expired). Fall through
-    // and try once ourselves using the newest stored refresh token.
-    row = fresh;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (await claimRefreshLock(row.id)) break;
+
+    const outcome = await awaitRefreshWinner(userId, provider, opts);
+    if (outcome.kind === "reauth") throw new AccountingReauthRequired(provider);
+    if (outcome.kind === "fresh") return outcome.row;
+    // Lock went stale or the winner's refresh didn't land: retry the claim once
+    // with the newest stored refresh token.
+    row = outcome.row;
+    if (attempt === 1) {
+      // Someone else grabbed the recovered lock; hand back the newest row
+      // rather than burning the rotating refresh token a second time.
+      return row;
+    }
   }
+
 
   if (!row.refresh_token) {
     await markAccountingNeedsReauth(userId, provider, "No refresh token stored.");
