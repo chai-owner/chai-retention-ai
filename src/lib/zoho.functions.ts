@@ -30,14 +30,22 @@ export const startZohoConnect = createServerFn({ method: "POST" })
     const { defaultDc } = getZohoCreds();
     const dc = data.dc || defaultDc;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const redirectUri = `${data.origin}/api/public/zoho/callback`;
-    const state = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
-    const { error } = await supabaseAdmin.from("zoho_crm_oauth_states").insert({
-      state, user_id: context.userId, dc, redirect_uri: redirectUri,
+    const { createOAuthState, resolveRedirectUri } = await import("./oauth-state.server");
+    const redirectUri = resolveRedirectUri(
+      "ZOHO_REDIRECT_URI",
+      "/api/public/zoho/callback",
+      data.origin,
+    );
+    const state = await createOAuthState(supabaseAdmin as never, {
+      table: "zoho_crm_oauth_states",
+      userId: context.userId,
+      provider: "zoho_crm",
+      redirectUri,
+      extra: { dc },
     });
-    if (error) throw new Error(error.message);
     return { url: buildZohoAuthorizeUrl(dc, redirectUri, state) };
   });
+
 
 export const disconnectZoho = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

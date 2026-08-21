@@ -29,13 +29,15 @@ export function hasIntercomCreds(): boolean {
   }
 }
 
-export function buildIntercomAuthorizeUrl(state: string): string {
+export function buildIntercomAuthorizeUrl(state: string, redirectUri?: string): string {
   const { clientId } = getIntercomCreds();
   const p = new URLSearchParams({
     client_id: clientId,
     state,
     response_type: "code",
   });
+  // Intercom matches the redirect URI exactly against the app configuration.
+  if (redirectUri) p.set("redirect_uri", redirectUri);
   return `${INTERCOM_AUTHORIZE_URL}?${p}`;
 }
 
@@ -57,7 +59,10 @@ async function readJson(res: Response, ctx: string): Promise<any> {
   }
 }
 
-export async function exchangeIntercomCode(code: string): Promise<TokenSet> {
+export async function exchangeIntercomCode(
+  code: string,
+  redirectUri?: string,
+): Promise<TokenSet> {
   const { clientId, clientSecret } = getIntercomCreds();
   const res = await fetch(INTERCOM_TOKEN_URL, {
     method: "POST",
@@ -69,6 +74,7 @@ export async function exchangeIntercomCode(code: string): Promise<TokenSet> {
       code,
       client_id: clientId,
       client_secret: clientSecret,
+      ...(redirectUri ? { redirect_uri: redirectUri } : {}),
     }),
   });
   const j = await readJson(res, "Intercom token exchange");

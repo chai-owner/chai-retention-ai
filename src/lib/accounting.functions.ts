@@ -60,20 +60,23 @@ export const startAccountingOAuth = createServerFn({ method: "POST" })
     const { buildAuthorizeUrl, getCreds } = await import("./accounting.server");
     getCreds(data.provider); // throws a clear error if not configured
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { createOAuthState, resolveRedirectUri } = await import("./oauth-state.server");
 
-    const redirectUri = `${data.origin}/api/public/accounting/callback`;
-    const state = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
-
-    const { error } = await supabaseAdmin.from("accounting_oauth_states").insert({
-      state,
-      user_id: context.userId,
+    const redirectUri = resolveRedirectUri(
+      "ACCOUNTING_REDIRECT_URI",
+      "/api/public/accounting/callback",
+      data.origin,
+    );
+    const state = await createOAuthState(supabaseAdmin as never, {
+      table: "accounting_oauth_states",
+      userId: context.userId,
       provider: data.provider,
-      redirect_uri: redirectUri,
+      redirectUri,
     });
-    if (error) throw new Error(error.message);
 
     return { url: buildAuthorizeUrl(data.provider, redirectUri, state) };
   });
+
 
 // Pulls live customers + invoices for a connected provider.
 export const syncAccounting = createServerFn({ method: "POST" })

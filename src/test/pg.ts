@@ -7,11 +7,13 @@ import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const PORT = 55432;
+const DEFAULT_PORT = 55432;
 const HOST = "127.0.0.1";
 
 export interface PgHandle {
   query: (sql: string) => unknown[];
+  /** Runs statements verbatim (DDL, function definitions) with no wrapping. */
+  exec: (sql: string) => void;
   stop: () => void;
 }
 
@@ -20,10 +22,10 @@ function have(bin: string): boolean {
 }
 
 /** Returns null when this environment cannot run a local Postgres. */
-export function startPostgres(): PgHandle | null {
+export function startPostgres(port: number = DEFAULT_PORT): PgHandle | null {
   if (!have("initdb") || !have("pg_ctl") || !have("psql")) return null;
 
-  const root = join(tmpdir(), `chai-pgtest-${process.pid}`);
+  const root = join(tmpdir(), `chai-pgtest-${process.pid}-${port}`);
   const data = join(root, "data");
   const env = { ...process.env, PGSSLMODE: "disable", PGDATA: data, HOME: root };
 
@@ -38,7 +40,7 @@ export function startPostgres(): PgHandle | null {
     if (process.getuid?.() === 0) execFileSync("chown", ["-R", "1000:1000", root]);
     const [bin, args] = asUser(
       `initdb -U postgres -A trust -D ${data} >${root}/initdb.log 2>&1 && ` +
-        `pg_ctl -D ${data} -o "-p ${PORT} -k ${root} -c listen_addresses=${HOST}" -l ${root}/pg.log start`,
+        `pg_ctl -D ${data} -o "-p ${port} -k ${root} -c listen_addresses=${HOST}" -l ${root}/pg.log start`,
     ) as [string, string[]];
     execFileSync(bin, args, { env, stdio: "ignore" });
   } catch {
@@ -52,7 +54,7 @@ export function startPostgres(): PgHandle | null {
 
     const out = execFileSync(
       "psql",
-      ["-U", "postgres", "-h", HOST, "-p", String(PORT), "-v", "ON_ERROR_STOP=1", "-tAc", wrapped],
+      ["-U", "postgres", "-h", HOST, "-p", String(port), "-v", "ON_ERROR_STOP=1", "-tAc", wrapped],
       { env, encoding: "utf8" },
     ).trim();
     return JSON.parse(out || "[]") as unknown[];
@@ -61,7 +63,7 @@ export function startPostgres(): PgHandle | null {
   const exec = (sql: string) => {
     execFileSync(
       "psql",
-      ["-U", "postgres", "-h", HOST, "-p", String(PORT), "-v", "ON_ERROR_STOP=1", "-c", sql],
+      ["-U", "postgres", "-h", HOST, "-p", String(port), "-v", "ON_ERROR_STOP=1", "-c", sql],
       { env, encoding: "utf8" },
     );
   };
@@ -80,6 +82,7 @@ export function startPostgres(): PgHandle | null {
 
   return {
     query: (sql: string) => (/^\s*select/i.test(sql) || /returning/i.test(sql) ? query(sql) : (exec(sql), [])),
+    exec,
     stop: () => {
       try {
         const [bin, args] = asUser(`pg_ctl -D ${data} -m immediate stop`) as [string, string[]];
