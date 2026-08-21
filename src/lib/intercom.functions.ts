@@ -31,17 +31,22 @@ export const startIntercomConnect = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { getIntercomCreds, buildIntercomAuthorizeUrl } = await import("./intercom.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { createOAuthState, resolveRedirectUri } = await import("./oauth-state.server");
     getIntercomCreds();
-    const redirectUri = `${data.origin}/api/public/intercom/callback`;
-    const state = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
-    const { error } = await supabaseAdmin.from("intercom_oauth_states").insert({
-      state,
-      user_id: context.userId,
-      redirect_uri: redirectUri,
+    const redirectUri = resolveRedirectUri(
+      "INTERCOM_REDIRECT_URI",
+      "/api/public/intercom/callback",
+      data.origin,
+    );
+    const state = await createOAuthState(supabaseAdmin as never, {
+      table: "intercom_oauth_states",
+      userId: context.userId,
+      provider: "intercom",
+      redirectUri,
     });
-    if (error) throw new Error(error.message);
-    return { url: buildIntercomAuthorizeUrl(state) };
+    return { url: buildIntercomAuthorizeUrl(state, redirectUri) };
   });
+
 
 export const disconnectIntercom = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

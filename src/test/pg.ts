@@ -12,6 +12,8 @@ const HOST = "127.0.0.1";
 
 export interface PgHandle {
   query: (sql: string) => unknown[];
+  /** Runs statements verbatim (DDL, function definitions) with no wrapping. */
+  exec: (sql: string) => void;
   stop: () => void;
 }
 
@@ -80,6 +82,7 @@ export function startPostgres(): PgHandle | null {
 
   return {
     query: (sql: string) => (/^\s*select/i.test(sql) || /returning/i.test(sql) ? query(sql) : (exec(sql), [])),
+    exec,
     stop: () => {
       try {
         const [bin, args] = asUser(`pg_ctl -D ${data} -m immediate stop`) as [string, string[]];

@@ -83,6 +83,7 @@ export type Database = {
       accounting_oauth_states: {
         Row: {
           created_at: string
+          expires_at: string
           provider: string
           redirect_uri: string
           state: string
@@ -90,6 +91,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          expires_at?: string
           provider: string
           redirect_uri: string
           state: string
@@ -97,6 +99,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          expires_at?: string
           provider?: string
           redirect_uri?: string
           state?: string
@@ -681,18 +684,24 @@ export type Database = {
       intercom_oauth_states: {
         Row: {
           created_at: string
+          expires_at: string
+          provider: string
           redirect_uri: string
           state: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          expires_at?: string
+          provider?: string
           redirect_uri: string
           state: string
           user_id: string
         }
         Update: {
           created_at?: string
+          expires_at?: string
+          provider?: string
           redirect_uri?: string
           state?: string
           user_id?: string
@@ -1078,6 +1087,8 @@ export type Database = {
         Row: {
           created_at: string
           dc: string
+          expires_at: string
+          provider: string
           redirect_uri: string
           state: string
           user_id: string
@@ -1085,6 +1096,8 @@ export type Database = {
         Insert: {
           created_at?: string
           dc: string
+          expires_at?: string
+          provider?: string
           redirect_uri: string
           state: string
           user_id: string
@@ -1092,6 +1105,8 @@ export type Database = {
         Update: {
           created_at?: string
           dc?: string
+          expires_at?: string
+          provider?: string
           redirect_uri?: string
           state?: string
           user_id?: string
@@ -1103,6 +1118,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_oauth_state: {
+        Args: { p_provider?: string; p_state_hash: string; p_table: string }
+        Returns: Json
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
