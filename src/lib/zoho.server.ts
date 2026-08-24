@@ -161,13 +161,16 @@ async function readJson(res: Response, ctx: string): Promise<any> {
   try { return JSON.parse(text); } catch { throw new Error(`${ctx}: invalid JSON`); }
 }
 
-export async function exchangeZohoCode(
-  dc: string,
-  code: string,
-  redirectUri: string,
-): Promise<TokenSet> {
+export async function exchangeZohoCode(args: {
+  /** Validated accounts server for the customer's data center. */
+  accountsServer: string;
+  dc: string;
+  code: string;
+  redirectUri: string;
+}): Promise<TokenSet> {
+  const { accountsServer, dc, code, redirectUri } = args;
   const { clientId, clientSecret } = getZohoCreds();
-  const res = await fetch(`${accountsHost(dc)}/oauth/v2/token`, {
+  const res = await fetch(`${accountsServer}/oauth/v2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
