@@ -642,11 +642,13 @@ export type Database = {
       intercom_connections: {
         Row: {
           access_token: string
+          api_host: string
           app_id: string | null
           connected_at: string
           created_at: string
           id: string
           last_synced_at: string | null
+          region: string
           scope: string | null
           updated_at: string
           user_id: string
@@ -655,11 +657,13 @@ export type Database = {
         }
         Insert: {
           access_token: string
+          api_host?: string
           app_id?: string | null
           connected_at?: string
           created_at?: string
           id?: string
           last_synced_at?: string | null
+          region?: string
           scope?: string | null
           updated_at?: string
           user_id: string
@@ -668,11 +672,13 @@ export type Database = {
         }
         Update: {
           access_token?: string
+          api_host?: string
           app_id?: string | null
           connected_at?: string
           created_at?: string
           id?: string
           last_synced_at?: string | null
+          region?: string
           scope?: string | null
           updated_at?: string
           user_id?: string
