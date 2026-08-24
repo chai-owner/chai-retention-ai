@@ -18,7 +18,9 @@ export const getIntercomStatus = createServerFn({ method: "GET" })
       connected: true as const,
       workspaceName: row.workspace_name,
       workspaceId: row.workspace_id,
+      region: row.region,
       connectedAt: row.connected_at,
+
       lastSyncedAt: row.last_synced_at,
     };
   });
