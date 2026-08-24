@@ -125,3 +125,116 @@ describe("syncIntercomForUser", () => {
     await expect(syncIntercomForUser("user-1", 100, null)).rejects.toThrow(/isn't connected/i);
   });
 });
+
+describe("Intercom regions", () => {
+  it("allowlists only Intercom's three regional API hosts", () => {
+    expect(isAllowedIntercomHost("api.intercom.io")).toBe(true);
+    expect(isAllowedIntercomHost("api.eu.intercom.io")).toBe(true);
+    expect(isAllowedIntercomHost("api.au.intercom.io")).toBe(true);
+    expect(isAllowedIntercomHost("api.intercom.io.evil.com")).toBe(false);
+    expect(isAllowedIntercomHost("attacker.example")).toBe(false);
+    expect(isAllowedIntercomHost(null)).toBe(false);
+  });
+
+  it("maps regions to hosts and falls back to US for legacy rows", () => {
+    expect(resolveIntercomHost("eu")).toEqual({ region: "eu", apiHost: "api.eu.intercom.io" });
+    expect(resolveIntercomHost("AU")).toEqual({ region: "au", apiHost: "api.au.intercom.io" });
+    expect(resolveIntercomHost(null)).toEqual({ region: "us", apiHost: "api.intercom.io" });
+    // An untrusted host is ignored; the validated region wins.
+    expect(resolveIntercomHost("eu", "api.evil.example")).toEqual({
+      region: "eu",
+      apiHost: "api.eu.intercom.io",
+    });
+  });
+
+  it("detects a US workspace from the primary host", async () => {
+    mockFetch([{ match: "https://api.intercom.io/me", json: { app: { id_code: "us1", name: "US Co" } } }]);
+    const id = await detectIntercomRegion("tok");
+    expect(id.region).toBe("us");
+    expect(id.apiHost).toBe("api.intercom.io");
+    expect(id.workspaceName).toBe("US Co");
+  });
+
+  it("detects an EU workspace when only the EU host accepts the token", async () => {
+    const http = mockFetch([
+      { match: "https://api.intercom.io/me", status: 401, json: {} },
+      { match: "https://api.eu.intercom.io/me", json: { app: { id_code: "eu1", name: "EU Co" } } },
+    ]);
+    const id = await detectIntercomRegion("tok");
+    expect(id.region).toBe("eu");
+    expect(id.apiHost).toBe("api.eu.intercom.io");
+    expect(http.urls()).toContain("https://api.eu.intercom.io/me");
+  });
+
+  it("detects an Australian workspace", async () => {
+    mockFetch([
+      { match: "https://api.intercom.io/me", status: 401, json: {} },
+      { match: "https://api.eu.intercom.io/me", status: 401, json: {} },
+      { match: "https://api.au.intercom.io/me", json: { app: { id_code: "au1", name: "AU Co" } } },
+    ]);
+    const id = await detectIntercomRegion("tok");
+    expect(id.region).toBe("au");
+    expect(id.apiHost).toBe("api.au.intercom.io");
+  });
+
+  it("honours Intercom's own region hint when it is allowlisted", async () => {
+    mockFetch([
+      { match: "https://api.intercom.io/me", json: { app: { id_code: "x", name: "X", region: "AU" } } },
+    ]);
+    expect((await detectIntercomRegion("tok")).apiHost).toBe("api.au.intercom.io");
+  });
+
+  it("ignores an untrusted region hint and keeps the responding host", async () => {
+    mockFetch([
+      {
+        match: "https://api.intercom.io/me",
+        json: { app: { id_code: "x", name: "X", region: "evil.example" } },
+      },
+    ]);
+    expect((await detectIntercomRegion("tok")).apiHost).toBe("api.intercom.io");
+  });
+
+  it("explains when no region accepts the token", async () => {
+    mockFetch([{ match: "/me", status: 401, json: {} }]);
+    await expect(detectIntercomRegion("tok")).rejects.toThrow(/couldn't confirm which Intercom region/i);
+  });
+
+  it("syncs an EU connection against the EU host", async () => {
+    setSupabaseResult("intercom_connections", {
+      data: { ...CONN, region: "eu", api_host: "api.eu.intercom.io" },
+    });
+    const http = mockFetch([
+      { match: "https://api.eu.intercom.io/conversations/search", json: CONVOS },
+    ]);
+    const [ds] = await syncIntercomForUser("user-1", 100, null);
+    expect(ds.rows).toHaveLength(2);
+    expect(http.urls()[0]).toBe("https://api.eu.intercom.io/conversations/search");
+  });
+
+  it("syncs an Australian connection against the AU host", async () => {
+    setSupabaseResult("intercom_connections", {
+      data: { ...CONN, region: "au", api_host: "api.au.intercom.io" },
+    });
+    const http = mockFetch([
+      { match: "https://api.au.intercom.io/conversations/search", json: CONVOS },
+    ]);
+    await syncIntercomForUser("user-1", 100, null);
+    expect(http.urls()[0]).toBe("https://api.au.intercom.io/conversations/search");
+  });
+
+  it("keeps legacy connections (no region stored) on the US host", async () => {
+    setSupabaseResult("intercom_connections", { data: { ...CONN, region: null, api_host: null } });
+    const http = mockFetch([{ match: "https://api.intercom.io/conversations/search", json: CONVOS }]);
+    await syncIntercomForUser("user-1", 100, null);
+    expect(http.urls()[0]).toBe("https://api.intercom.io/conversations/search");
+  });
+
+  it("never calls a spoofed host stored on the connection row", async () => {
+    setSupabaseResult("intercom_connections", {
+      data: { ...CONN, region: "us", api_host: "api.intercom.io.attacker.example" },
+    });
+    const http = mockFetch([{ match: "https://api.intercom.io/conversations/search", json: CONVOS }]);
+    await syncIntercomForUser("user-1", 100, null);
+    expect(http.urls()[0]).toBe("https://api.intercom.io/conversations/search");
+  });
+});
