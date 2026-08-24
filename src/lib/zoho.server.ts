@@ -264,6 +264,7 @@ interface Row {
   id: string;
   user_id: string;
   dc: string;
+  accounts_server: string | null;
   access_token: string;
   refresh_token: string | null;
   expires_at: string | null;
