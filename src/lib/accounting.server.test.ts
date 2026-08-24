@@ -311,7 +311,7 @@ describe("Xero authorize URL scopes", () => {
   it("requests exactly the confirmed accepted scope set", () => {
     process.env["XERO_CLIENT_ID"] = "xero-client";
     process.env["XERO_CLIENT_SECRET"] = "xero-secret";
-    const url = buildAuthorizeUrl("xero", "state-123", "https://app.test/cb");
+    const url = buildAuthorizeUrl("xero", "https://app.test/cb", "state-123");
     const scope = new URL(url).searchParams.get("scope");
     expect(scope).toBe(
       "openid profile email accounting.contacts.read accounting.invoices.read offline_access",
