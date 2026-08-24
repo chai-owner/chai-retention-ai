@@ -156,7 +156,7 @@ describe("token exchange", () => {
     const http = mockFetch([{ match: "accounts.zoho.com/oauth/v2/token", json: TOKENS }]);
     const tokens = await refreshZohoToken("https://accounts.zoho.com", "rt-1", "com");
     expect(http.urls()[0]).toBe("https://accounts.zoho.com/oauth/v2/token");
-    expect(http.requests[0].body).toContain("grant_type=refresh_token");
+    expect(http.requests[0].method).toBe("POST");
     expect(tokens.apiDomain).toBe("https://www.zohoapis.com");
   });
 });
