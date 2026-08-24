@@ -287,7 +287,10 @@ async function loadFreshZohoConnection(userId: string): Promise<Row> {
   row.refresh_token = decryptSecretOrNull(row.refresh_token);
   const expired = row.expires_at && new Date(row.expires_at).getTime() < Date.now();
   if (expired && row.refresh_token) {
-    const refreshed = await refreshZohoToken(row.dc, row.refresh_token);
+    // Always refresh against the data center this connection actually lives in.
+    const accountsServer =
+      validateAccountsServer(row.accounts_server)?.accountsServer ?? accountsHost(row.dc);
+    const refreshed = await refreshZohoToken(accountsServer, row.refresh_token, row.dc);
     await db.from("zoho_crm_connections").update({
       access_token: encryptSecret(refreshed.accessToken),
       expires_at: refreshed.expiresAt ?? null,
