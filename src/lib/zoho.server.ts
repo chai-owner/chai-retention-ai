@@ -238,12 +238,14 @@ export async function saveZohoConnection(
   dc: string,
   tokens: TokenSet,
   orgName: string | null,
+  accountsServer?: string,
 ): Promise<void> {
   const db = await admin();
   const { error } = await db.from("zoho_crm_connections").upsert(
     {
       user_id: userId,
       dc,
+      accounts_server: accountsServer ?? accountsHost(dc),
       access_token: encryptSecret(tokens.accessToken),
       refresh_token: tokens.refreshToken ? encryptSecret(tokens.refreshToken) : null,
       expires_at: tokens.expiresAt ?? null,
