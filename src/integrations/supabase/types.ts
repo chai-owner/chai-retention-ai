@@ -1047,6 +1047,7 @@ export type Database = {
       zoho_crm_connections: {
         Row: {
           access_token: string
+          accounts_server: string | null
           api_domain: string
           connected_at: string
           dc: string
@@ -1059,6 +1060,7 @@ export type Database = {
         }
         Insert: {
           access_token: string
+          accounts_server?: string | null
           api_domain: string
           connected_at?: string
           dc: string
@@ -1071,6 +1073,7 @@ export type Database = {
         }
         Update: {
           access_token?: string
+          accounts_server?: string | null
           api_domain?: string
           connected_at?: string
           dc?: string
