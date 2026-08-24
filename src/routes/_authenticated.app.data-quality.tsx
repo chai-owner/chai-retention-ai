@@ -23,7 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { removePersistedBatch } from "@/lib/ingest-persistence";
+import { removePersistedBatch, hydrateIngestFromServer } from "@/lib/ingest-persistence";
 import { useSignedIn } from "@/lib/use-auth-state";
 
 
@@ -74,12 +74,18 @@ function DataQualityPage() {
 
 
 
-  function deleteUpload(u: UploadRecord) {
+  async function deleteUpload(u: UploadRecord) {
     uploadsStore.remove(u.id);
     // Also remove from the DB so refresh doesn't bring it back.
-    void removePersistedBatch(u.id);
+    const ok = await removePersistedBatch(u.id);
+    if (ok) {
+      // Re-read the account's rows so the dashboard, insights and customer
+      // screens immediately stop showing the deleted file's records.
+      await hydrateIngestFromServer();
+    }
     toast.success("Upload deleted", { description: `${u.fileName} and its data were removed from ChAi.` });
   }
+
 
   return (
     <div>
