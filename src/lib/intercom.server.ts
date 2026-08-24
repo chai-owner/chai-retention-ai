@@ -133,29 +133,72 @@ function authHeaders(token: string): HeadersInit {
   };
 }
 
-async function fetchIntercomMe(token: string): Promise<{
+interface IntercomIdentity {
   workspaceId: string | null;
   workspaceName: string | null;
   appId: string | null;
-}> {
-  const res = await fetch(`${INTERCOM_API_BASE}/me`, { headers: authHeaders(token) });
-  if (!res.ok) return { workspaceId: null, workspaceName: null, appId: null };
-  const j = (await res.json()) as {
-    app?: { id_code?: string; name?: string; id?: string };
-  };
+  region: IntercomRegion;
+  apiHost: string;
+}
+
+function parseMe(j: {
+  app?: { id_code?: string; name?: string; id?: string; region?: string };
+}): { workspaceId: string | null; workspaceName: string | null; appId: string | null; region: string | null } {
   const app = j.app ?? {};
   return {
     workspaceId: app.id_code ?? null,
     workspaceName: app.name ?? null,
     appId: app.id ? String(app.id) : app.id_code ?? null,
+    region: app.region ? String(app.region).toLowerCase() : null,
   };
+}
+
+/**
+ * Determines the workspace's data region authoritatively: an access token is
+ * only accepted by the region that actually hosts the workspace, so we probe
+ * the allowlisted regional hosts and keep the one that answers. When Intercom
+ * reports `app.region` we validate it against the same allowlist.
+ */
+export async function detectIntercomRegion(token: string): Promise<IntercomIdentity> {
+  let lastStatus = 0;
+  for (const region of INTERCOM_REGION_ORDER) {
+    const apiHost = INTERCOM_REGIONS[region];
+    let res: Response;
+    try {
+      res = await fetch(`https://${apiHost}/me`, { headers: authHeaders(token) });
+    } catch {
+      continue;
+    }
+    if (res.status === 401 || res.status === 403 || res.status === 404) {
+      lastStatus = res.status;
+      continue;
+    }
+    if (!res.ok) {
+      lastStatus = res.status;
+      continue;
+    }
+    const me = parseMe((await res.json()) as never);
+    // Prefer Intercom's own region hint, but only when it is allowlisted.
+    const reported = me.region && me.region in INTERCOM_REGIONS ? (me.region as IntercomRegion) : null;
+    const resolved = resolveIntercomHost(reported ?? region);
+    return {
+      workspaceId: me.workspaceId,
+      workspaceName: me.workspaceName,
+      appId: me.appId,
+      region: resolved.region,
+      apiHost: resolved.apiHost,
+    };
+  }
+  throw new Error(
+    `We couldn't confirm which Intercom region hosts your workspace${lastStatus ? ` (last response ${lastStatus})` : ""}. Please try connecting again.`,
+  );
 }
 
 export async function saveIntercomConnection(
   userId: string,
   tokens: TokenSet,
-): Promise<{ workspaceName: string | null }> {
-  const meta = await fetchIntercomMe(tokens.accessToken);
+): Promise<{ workspaceName: string | null; region: IntercomRegion }> {
+  const meta = await detectIntercomRegion(tokens.accessToken);
   const db = await admin();
   const { error } = await db.from("intercom_connections").upsert(
     {
@@ -165,6 +208,8 @@ export async function saveIntercomConnection(
       workspace_id: meta.workspaceId,
       workspace_name: meta.workspaceName,
       app_id: meta.appId,
+      region: meta.region,
+      api_host: meta.apiHost,
       connected_at: new Date().toISOString(),
     },
     { onConflict: "user_id" },
@@ -172,7 +217,7 @@ export async function saveIntercomConnection(
   if (error) throw new Error(`Failed to save Intercom connection: ${error.message}`);
   const { ensureSupportSyncState } = await import("./support.server");
   await ensureSupportSyncState(userId, "intercom");
-  return { workspaceName: meta.workspaceName };
+  return { workspaceName: meta.workspaceName, region: meta.region };
 }
 
 interface Row {
@@ -181,10 +226,12 @@ interface Row {
   access_token: string;
   workspace_name: string | null;
   workspace_id: string | null;
+  region: string | null;
+  api_host: string | null;
   last_synced_at: string | null;
 }
 
-async function loadIntercomConnection(userId: string): Promise<Row> {
+async function loadIntercomConnection(userId: string): Promise<Row & { apiHost: string }> {
   const db = await admin();
   const { data, error } = await db
     .from("intercom_connections")
@@ -196,8 +243,11 @@ async function loadIntercomConnection(userId: string): Promise<Row> {
   const row = data as Row;
   // Legacy rows may still hold a plaintext token.
   row.access_token = decryptSecret(row.access_token);
-  return row;
+  // Legacy rows (pre multi-region) have no region: they are US workspaces.
+  const { apiHost } = resolveIntercomHost(row.region, row.api_host);
+  return { ...row, apiHost };
 }
+
 
 function toStr(v: unknown): string {
   return v == null ? "" : String(v);
