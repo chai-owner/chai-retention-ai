@@ -361,16 +361,22 @@ export async function getIntercomStatusRow(userId: string) {
   const db = await admin();
   const { data } = await db
     .from("intercom_connections")
-    .select("workspace_name, workspace_id, connected_at, last_synced_at")
+    .select("workspace_name, workspace_id, region, api_host, connected_at, last_synced_at")
     .eq("user_id", userId)
     .maybeSingle();
-  return data as {
+  if (!data) return null;
+  const row = data as {
     workspace_name: string | null;
     workspace_id: string | null;
+    region: string | null;
+    api_host: string | null;
     connected_at: string;
     last_synced_at: string | null;
-  } | null;
+  };
+  const resolved = resolveIntercomHost(row.region, row.api_host);
+  return { ...row, region: resolved.region, api_host: resolved.apiHost };
 }
+
 
 export async function deleteIntercomConnection(userId: string) {
   const db = await admin();
