@@ -409,6 +409,8 @@ export async function revokeZohoRefreshToken(
 ) {
   const host = validateAccountsServer(accountsServer)?.accountsServer ?? accountsHost(dc);
   try {
-    await fetch(`${accountsHost(dc)}/oauth/v2/token/revoke?token=${encodeURIComponent(refreshToken)}`, { method: "POST" });
-  } catch { /* ignore */ }
+    await fetch(`${host}/oauth/v2/token/revoke?token=${encodeURIComponent(refreshToken)}`, { method: "POST" });
+  } catch (e) {
+    console.error("Zoho token revoke failed:", e instanceof Error ? e.message : e);
+  }
 }
