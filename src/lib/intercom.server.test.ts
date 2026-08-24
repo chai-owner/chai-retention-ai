@@ -1,11 +1,14 @@
 // Tier 3 — Intercom: authorize URL, conversation normalization, incremental
-// window, and error surfacing.
+// window, region resolution, and error surfacing.
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   buildIntercomAuthorizeUrl,
   getIntercomCreds,
   hasIntercomCreds,
   syncIntercomForUser,
+  detectIntercomRegion,
+  resolveIntercomHost,
+  isAllowedIntercomHost,
 } from "@/lib/intercom.server";
 import { mockFetch } from "@/test/http";
 import { setSupabaseResult } from "@/test/setup";
@@ -16,8 +19,11 @@ const CONN = {
   access_token: "at-intercom",
   workspace_name: "Acme",
   workspace_id: "ws1",
+  region: "us",
+  api_host: "api.intercom.io",
   last_synced_at: null,
 };
+
 
 const CONVOS = {
   conversations: [
