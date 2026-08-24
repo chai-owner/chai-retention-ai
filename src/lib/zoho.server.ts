@@ -186,14 +186,18 @@ export async function exchangeZohoCode(args: {
   return {
     accessToken: j.access_token,
     refreshToken: j.refresh_token,
-    apiDomain: j.api_domain,
+    apiDomain: j.api_domain || apiDomainForDc(dc),
     expiresAt: expiryFrom(j.expires_in),
   };
 }
 
-async function refreshZohoToken(dc: string, refreshToken: string): Promise<TokenSet> {
+export async function refreshZohoToken(
+  accountsServer: string,
+  refreshToken: string,
+  dc: string,
+): Promise<TokenSet> {
   const { clientId, clientSecret } = getZohoCreds();
-  const res = await fetch(`${accountsHost(dc)}/oauth/v2/token`, {
+  const res = await fetch(`${accountsServer}/oauth/v2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
