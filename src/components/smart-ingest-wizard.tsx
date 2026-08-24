@@ -551,7 +551,27 @@ export function SmartIngestWizard({
               )}
             </div>
 
-            {datasets.map((d, di) => (
+            {datasets.map((d, di) => {
+              const q = (search[d.key] ?? "").trim().toLowerCase();
+              const onlyErrors = errorsOnly[d.key] ?? false;
+              // Keep the true row index so edits/removals always hit the right row.
+              const indexed = d.rows.map((r, ri) => ({ r, ri }));
+              const rowHasError = (r: string[]) =>
+                d.schema.fields.some((f, ci) => cellError(f, r[ci] ?? "") !== null);
+              const errorRowCount = indexed.filter((x) => rowHasError(x.r)).length;
+              const filtered = indexed.filter(
+                (x) =>
+                  (!onlyErrors || rowHasError(x.r)) &&
+                  (!q || x.r.some((c) => (c ?? "").toLowerCase().includes(q))),
+              );
+              const totalPages = Math.max(1, Math.ceil(filtered.length / PREVIEW_ROWS));
+              const current = Math.min(page[d.key] ?? 0, totalPages - 1);
+              const start = current * PREVIEW_ROWS;
+              const visible = filtered.slice(start, start + PREVIEW_ROWS);
+              const setPageFor = (p: number) =>
+                setPage((prev) => ({ ...prev, [d.key]: Math.max(0, Math.min(p, totalPages - 1)) }));
+
+              return (
               <div key={d.key} className="rounded-lg border border-border">
                 <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
                   <div>
@@ -565,14 +585,18 @@ export function SmartIngestWizard({
                       {d.grouped && sourceRows > 0
                         ? `${sourceRows.toLocaleString()} rows → ${d.rows.length.toLocaleString()} customer${d.rows.length !== 1 ? "s" : ""}`
                         : `${d.rows.length.toLocaleString()} row${d.rows.length !== 1 ? "s" : ""}`}
-                      {d.rows.length > PREVIEW_ROWS ? ` · showing first ${PREVIEW_ROWS}` : ""}
+                      {filtered.length !== d.rows.length
+                        ? ` · ${filtered.length.toLocaleString()} matching`
+                        : ""}
+                      {totalPages > 1
+                        ? ` · showing ${(start + 1).toLocaleString()}–${(start + visible.length).toLocaleString()}`
+                        : ""}
                     </span>
                     {(d.derivations?.length ?? 0) > 0 && (
                       <div className="mt-1 space-y-0.5">
                         {d.derivations!.map((line) => (
                           <p key={line} className="text-[11px] text-muted-foreground">
                             Calculated — {line}
-                            
                           </p>
                         ))}
                       </div>
@@ -592,10 +616,44 @@ export function SmartIngestWizard({
                   </span>
                 </div>
 
+                {/* Find and filter rows — every row is editable, not just the first page. */}
+                <div className="flex flex-wrap items-center gap-2 border-b border-border bg-accent/20 px-3 py-2">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={search[d.key] ?? ""}
+                      onChange={(e) => {
+                        setSearch((prev) => ({ ...prev, [d.key]: e.target.value }));
+                        setPage((prev) => ({ ...prev, [d.key]: 0 }));
+                      }}
+                      placeholder="Search rows…"
+                      className="w-44 rounded-lg border border-border bg-background py-1 pl-7 pr-2 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
+                  <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={onlyErrors}
+                      onChange={(e) => {
+                        setErrorsOnly((prev) => ({ ...prev, [d.key]: e.target.checked }));
+                        setPage((prev) => ({ ...prev, [d.key]: 0 }));
+                      }}
+                      className="h-3.5 w-3.5 rounded border-border"
+                    />
+                    Only rows needing fixes
+                    {errorRowCount > 0 && (
+                      <span className="rounded-full bg-danger/10 px-1.5 text-[11px] font-medium text-danger">
+                        {errorRowCount}
+                      </span>
+                    )}
+                  </label>
+                </div>
+
                 <div className="max-h-72 overflow-auto">
                   <table className="w-full text-xs">
                     <thead className="sticky top-0 bg-secondary">
                       <tr className="text-left">
+                        <th className="px-2 py-1.5 font-medium text-muted-foreground">#</th>
                         {d.schema.fields.map((f) => (
                           <th key={f.name} className="px-2 py-1.5 font-mono font-medium">
                             {f.name}
@@ -606,12 +664,11 @@ export function SmartIngestWizard({
                       </tr>
                     </thead>
                     <tbody>
-                      {d.rows.slice(0, PREVIEW_ROWS).map((r, ri) => (
+                      {visible.map(({ r, ri }) => (
                         <tr key={ri} className="border-t border-border">
+                          <td className="px-2 py-0.5 text-[11px] text-muted-foreground">{ri + 1}</td>
                           {d.schema.fields.map((f, ci) => {
-                            const type = inferType(f.name, f.example);
-                            const raw = (r[ci] ?? "").trim();
-                            const err = raw === "" && f.mandatory ? "required" : raw !== "" ? validateValue(type, raw) : null;
+                            const err = cellError(f, r[ci] ?? "");
                             return (
                               <td key={f.name} className="px-1 py-0.5">
                                 <input
@@ -637,16 +694,56 @@ export function SmartIngestWizard({
                           </td>
                         </tr>
                       ))}
+                      {visible.length === 0 && (
+                        <tr className="border-t border-border">
+                          <td
+                            colSpan={d.schema.fields.length + 2}
+                            className="px-3 py-4 text-center text-xs text-muted-foreground"
+                          >
+                            No rows match your search or filter.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
-                  {d.rows.length > PREVIEW_ROWS && (
-                    <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
-                      + {(d.rows.length - PREVIEW_ROWS).toLocaleString()} more rows — all of them will be imported.
-                    </div>
-                  )}
                 </div>
+
+                {totalPages > 1 && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-3 py-2 text-xs">
+                    <span className="text-muted-foreground">
+                      Page {current + 1} of {totalPages.toLocaleString()} — every row is editable and
+                      imported.
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setPageFor(current - 1)}
+                        disabled={current === 0}
+                        className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 font-medium transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" /> Prev
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={totalPages}
+                        value={current + 1}
+                        onChange={(e) => setPageFor(Number(e.target.value) - 1)}
+                        className="w-14 rounded-lg border border-border bg-background px-1.5 py-1 text-center outline-none focus:border-primary"
+                      />
+                      <button
+                        onClick={() => setPageFor(current + 1)}
+                        disabled={current >= totalPages - 1}
+                        className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 font-medium transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
+
 
             {errorCount === 0 ? (
               <div className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2.5 text-sm text-success">
