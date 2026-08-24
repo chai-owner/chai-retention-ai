@@ -212,7 +212,7 @@ export async function refreshZohoToken(
   return {
     accessToken: j.access_token,
     refreshToken,
-    apiDomain: j.api_domain,
+    apiDomain: j.api_domain || apiDomainForDc(dc),
     expiresAt: expiryFrom(j.expires_in),
   };
 }
