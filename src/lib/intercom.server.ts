@@ -307,7 +307,7 @@ export async function syncIntercomForUser(
     sort: { field: "updated_at", order: "descending" },
   };
 
-  const res = await fetch(`${INTERCOM_API_BASE}/conversations/search`, {
+  const res = await fetch(`https://${conn.apiHost}/conversations/search`, {
     method: "POST",
     headers: {
       ...authHeaders(conn.access_token),
