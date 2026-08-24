@@ -398,8 +398,16 @@ export async function deleteZohoConnection(userId: string) {
   if (error) throw new Error(error.message);
 }
 
-// Attempt to revoke the refresh token at Zoho (best-effort).
-export async function revokeZohoRefreshToken(dc: string, refreshToken: string) {
+/**
+ * Revokes the refresh token at Zoho (best-effort). Revocation must target the
+ * connection's own data center, so a validated stored accounts server wins.
+ */
+export async function revokeZohoRefreshToken(
+  dc: string,
+  refreshToken: string,
+  accountsServer?: string | null,
+) {
+  const host = validateAccountsServer(accountsServer)?.accountsServer ?? accountsHost(dc);
   try {
     await fetch(`${accountsHost(dc)}/oauth/v2/token/revoke?token=${encodeURIComponent(refreshToken)}`, { method: "POST" });
   } catch { /* ignore */ }
