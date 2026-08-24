@@ -210,6 +210,10 @@ export function SmartIngestWizard({
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   /** Data rows found in the source spreadsheet(s); 0 for PDFs/images. */
   const [sourceRows, setSourceRows] = useState(0);
+  /** Review-table paging + "only rows needing fixes" filter, per dataset key. */
+  const [page, setPage] = useState<Record<string, number>>({});
+  const [errorsOnly, setErrorsOnly] = useState<Record<string, boolean>>({});
+  const [search, setSearch] = useState<Record<string, string>>({});
 
   const sourceLabel =
     fileNames.length === 1 ? fileNames[0] : `${fileNames.length} files`;
@@ -223,7 +227,11 @@ export function SmartIngestWizard({
     setDatasets([]);
     setProgress(null);
     setSourceRows(0);
+    setPage({});
+    setErrorsOnly({});
+    setSearch({});
   }
+
   function close() {
     onOpenChange(false);
     setTimeout(reset, 200);
