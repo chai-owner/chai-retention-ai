@@ -51,19 +51,21 @@ export const disconnectZoho = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { revokeZohoRefreshToken } = await import("./zoho.server");
+    const { revokeZohoRefreshToken, deleteZohoConnection } = await import("./zoho.server");
+    const { decryptSecretOrNull } = await import("./connection-key-crypto.server");
     const { data } = await supabaseAdmin
       .from("zoho_crm_connections")
-      .select("dc, refresh_token")
+      .select("dc, accounts_server, refresh_token")
       .eq("user_id", context.userId)
       .maybeSingle();
-    if (data?.refresh_token) {
-      await revokeZohoRefreshToken(data.dc as string, data.refresh_token as string);
+    const refreshToken = decryptSecretOrNull((data?.refresh_token as string | null) ?? null);
+    if (refreshToken) {
+      await revokeZohoRefreshToken(
+        data!.dc as string,
+        refreshToken,
+        (data as { accounts_server?: string | null }).accounts_server ?? null,
+      );
     }
-    const { error } = await supabaseAdmin
-      .from("zoho_crm_connections")
-      .delete()
-      .eq("user_id", context.userId);
-    if (error) throw new Error(error.message);
+    await deleteZohoConnection(context.userId);
     return { ok: true };
   });

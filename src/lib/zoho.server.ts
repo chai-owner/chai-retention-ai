@@ -31,9 +31,99 @@ export function hasZohoCreds(): boolean {
   try { getZohoCreds(); return true; } catch { return false; }
 }
 
+// ---------------------------------------------------------------------------
+// Multi data center support
+// ---------------------------------------------------------------------------
+// Zoho hosts each customer in one region. After consent, Zoho returns
+// `location` and `accounts-server` on the callback; those decide where the
+// authorization code must be redeemed. Both are attacker-controllable query
+// parameters, so they are only accepted when they map onto this allowlist.
+export const ZOHO_ACCOUNTS_SERVERS: Record<string, string> = {
+  com: "https://accounts.zoho.com",
+  eu: "https://accounts.zoho.eu",
+  in: "https://accounts.zoho.in",
+  "com.au": "https://accounts.zoho.com.au",
+  jp: "https://accounts.zoho.jp",
+  ca: "https://accounts.zohocloud.ca",
+  uk: "https://accounts.zoho.uk",
+  "com.cn": "https://accounts.zoho.com.cn",
+  sa: "https://accounts.zoho.sa",
+};
+
+/** Zoho's `location` values ("us", "eu", ...) mapped to our dc keys. */
+const LOCATION_TO_DC: Record<string, string> = {
+  us: "com",
+  com: "com",
+  eu: "eu",
+  in: "in",
+  au: "com.au",
+  "com.au": "com.au",
+  jp: "jp",
+  ca: "ca",
+  uk: "uk",
+  cn: "com.cn",
+  "com.cn": "com.cn",
+  sa: "sa",
+};
+
 // Zoho accounts server per data center (com, eu, in, com.au, jp, ca).
 export function accountsHost(dc: string): string {
-  return `https://accounts.zoho.${dc}`;
+  return ZOHO_ACCOUNTS_SERVERS[dc] ?? `https://accounts.zoho.${dc}`;
+}
+
+/** Returns the canonical accounts server for a Zoho `location`, or null. */
+export function dcFromLocation(location: string | null | undefined): string | null {
+  if (!location) return null;
+  const dc = LOCATION_TO_DC[location.trim().toLowerCase()];
+  return dc ?? null;
+}
+
+/**
+ * Validates an `accounts-server` value against the allowlist. Returns the
+ * canonical `{ dc, accountsServer }` pair, or null for anything unsupported
+ * (http, look-alike hosts, path/credential tricks, arbitrary domains).
+ */
+export function validateAccountsServer(
+  value: string | null | undefined,
+): { dc: string; accountsServer: string } | null {
+  if (!value) return null;
+  let url: URL;
+  try {
+    url = new URL(value.trim());
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:") return null;
+  if (url.username || url.password) return null;
+  const host = url.hostname.toLowerCase();
+  for (const [dc, server] of Object.entries(ZOHO_ACCOUNTS_SERVERS)) {
+    if (new URL(server).hostname === host) return { dc, accountsServer: server };
+  }
+  return null;
+}
+
+/**
+ * Resolves where to redeem the code, preferring Zoho's validated
+ * `accounts-server`, then its `location`, then the data center stored with the
+ * OAuth state (which is how existing EU connections keep working).
+ */
+export function resolveCallbackDataCenter(args: {
+  accountsServer?: string | null;
+  location?: string | null;
+  storedDc: string;
+}): { dc: string; accountsServer: string } {
+  const validated = validateAccountsServer(args.accountsServer);
+  if (validated) return validated;
+  const fromLocation = dcFromLocation(args.location);
+  if (fromLocation) {
+    return { dc: fromLocation, accountsServer: accountsHost(fromLocation) };
+  }
+  return { dc: args.storedDc, accountsServer: accountsHost(args.storedDc) };
+}
+
+/** CRM API base for a data center, used when Zoho omits `api_domain`. */
+export function apiDomainForDc(dc: string): string {
+  return dc === "ca" ? "https://www.zohoapis.ca" : `https://www.zohoapis.${dc}`;
 }
 
 export function buildZohoAuthorizeUrl(dc: string, redirectUri: string, state: string): string {
@@ -71,13 +161,16 @@ async function readJson(res: Response, ctx: string): Promise<any> {
   try { return JSON.parse(text); } catch { throw new Error(`${ctx}: invalid JSON`); }
 }
 
-export async function exchangeZohoCode(
-  dc: string,
-  code: string,
-  redirectUri: string,
-): Promise<TokenSet> {
+export async function exchangeZohoCode(args: {
+  /** Validated accounts server for the customer's data center. */
+  accountsServer: string;
+  dc: string;
+  code: string;
+  redirectUri: string;
+}): Promise<TokenSet> {
+  const { accountsServer, dc, code, redirectUri } = args;
   const { clientId, clientSecret } = getZohoCreds();
-  const res = await fetch(`${accountsHost(dc)}/oauth/v2/token`, {
+  const res = await fetch(`${accountsServer}/oauth/v2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -93,14 +186,18 @@ export async function exchangeZohoCode(
   return {
     accessToken: j.access_token,
     refreshToken: j.refresh_token,
-    apiDomain: j.api_domain,
+    apiDomain: j.api_domain || apiDomainForDc(dc),
     expiresAt: expiryFrom(j.expires_in),
   };
 }
 
-async function refreshZohoToken(dc: string, refreshToken: string): Promise<TokenSet> {
+export async function refreshZohoToken(
+  accountsServer: string,
+  refreshToken: string,
+  dc: string,
+): Promise<TokenSet> {
   const { clientId, clientSecret } = getZohoCreds();
-  const res = await fetch(`${accountsHost(dc)}/oauth/v2/token`, {
+  const res = await fetch(`${accountsServer}/oauth/v2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -115,7 +212,7 @@ async function refreshZohoToken(dc: string, refreshToken: string): Promise<Token
   return {
     accessToken: j.access_token,
     refreshToken,
-    apiDomain: j.api_domain,
+    apiDomain: j.api_domain || apiDomainForDc(dc),
     expiresAt: expiryFrom(j.expires_in),
   };
 }
@@ -141,12 +238,14 @@ export async function saveZohoConnection(
   dc: string,
   tokens: TokenSet,
   orgName: string | null,
+  accountsServer?: string,
 ): Promise<void> {
   const db = await admin();
   const { error } = await db.from("zoho_crm_connections").upsert(
     {
       user_id: userId,
       dc,
+      accounts_server: accountsServer ?? accountsHost(dc),
       access_token: encryptSecret(tokens.accessToken),
       refresh_token: tokens.refreshToken ? encryptSecret(tokens.refreshToken) : null,
       expires_at: tokens.expiresAt ?? null,
@@ -165,6 +264,7 @@ interface Row {
   id: string;
   user_id: string;
   dc: string;
+  accounts_server: string | null;
   access_token: string;
   refresh_token: string | null;
   expires_at: string | null;
@@ -187,7 +287,10 @@ async function loadFreshZohoConnection(userId: string): Promise<Row> {
   row.refresh_token = decryptSecretOrNull(row.refresh_token);
   const expired = row.expires_at && new Date(row.expires_at).getTime() < Date.now();
   if (expired && row.refresh_token) {
-    const refreshed = await refreshZohoToken(row.dc, row.refresh_token);
+    // Always refresh against the data center this connection actually lives in.
+    const accountsServer =
+      validateAccountsServer(row.accounts_server)?.accountsServer ?? accountsHost(row.dc);
+    const refreshed = await refreshZohoToken(accountsServer, row.refresh_token, row.dc);
     await db.from("zoho_crm_connections").update({
       access_token: encryptSecret(refreshed.accessToken),
       expires_at: refreshed.expiresAt ?? null,
@@ -295,9 +398,19 @@ export async function deleteZohoConnection(userId: string) {
   if (error) throw new Error(error.message);
 }
 
-// Attempt to revoke the refresh token at Zoho (best-effort).
-export async function revokeZohoRefreshToken(dc: string, refreshToken: string) {
+/**
+ * Revokes the refresh token at Zoho (best-effort). Revocation must target the
+ * connection's own data center, so a validated stored accounts server wins.
+ */
+export async function revokeZohoRefreshToken(
+  dc: string,
+  refreshToken: string,
+  accountsServer?: string | null,
+) {
+  const host = validateAccountsServer(accountsServer)?.accountsServer ?? accountsHost(dc);
   try {
-    await fetch(`${accountsHost(dc)}/oauth/v2/token/revoke?token=${encodeURIComponent(refreshToken)}`, { method: "POST" });
-  } catch { /* ignore */ }
+    await fetch(`${host}/oauth/v2/token/revoke?token=${encodeURIComponent(refreshToken)}`, { method: "POST" });
+  } catch (e) {
+    console.error("Zoho token revoke failed:", e instanceof Error ? e.message : e);
+  }
 }

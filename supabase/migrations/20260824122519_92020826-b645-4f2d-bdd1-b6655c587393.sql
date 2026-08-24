@@ -1,0 +1,2 @@
+ALTER TABLE public.zoho_crm_connections ADD COLUMN IF NOT EXISTS accounts_server text;
+UPDATE public.zoho_crm_connections SET accounts_server = 'https://accounts.zoho.' || dc WHERE accounts_server IS NULL;

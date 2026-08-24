@@ -52,9 +52,33 @@ export const Route = createFileRoute("/api/public/zoho/callback")({
           }
 
           const row = outcome.row as { user_id: string; dc: string; redirect_uri: string };
-          const tokens = await exchangeZohoCode(row.dc, code, row.redirect_uri);
+
+          // Zoho tells us which data center the *user's* account lives in.
+          // Both values are untrusted query params, so they are validated
+          // against a strict allowlist before use; otherwise we fall back to
+          // the data center bound to the OAuth state (existing EU behaviour).
+          const { resolveCallbackDataCenter } = await import("@/lib/zoho.server");
+          const rawAccountsServer = url.searchParams.get("accounts-server");
+          const location = url.searchParams.get("location");
+          const { dc, accountsServer } = resolveCallbackDataCenter({
+            accountsServer: rawAccountsServer,
+            location,
+            storedDc: row.dc,
+          });
+          if (rawAccountsServer && accountsServer !== rawAccountsServer.replace(/\/+$/, "")) {
+            console.error(
+              `Zoho returned an unsupported accounts-server; using ${accountsServer} for dc=${dc}`,
+            );
+          }
+
+          const tokens = await exchangeZohoCode({
+            accountsServer,
+            dc,
+            code,
+            redirectUri: row.redirect_uri,
+          });
           const orgName = await resolveOrgName(tokens.apiDomain, tokens.accessToken);
-          await saveZohoConnection(row.user_id, row.dc, tokens, orgName);
+          await saveZohoConnection(row.user_id, dc, tokens, orgName, accountsServer);
 
           return appRedirect(origin, { zoho_connected: "1" });
         } catch (e) {
