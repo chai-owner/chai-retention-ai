@@ -5,9 +5,47 @@ import type { ExtractedDataset } from "./ingest.functions";
 import { encryptSecret, decryptSecret } from "./connection-key-crypto.server";
 
 const INTERCOM_API_VERSION = "2.11";
-const INTERCOM_API_BASE = "https://api.intercom.io";
+// Intercom hosts every workspace in exactly one data region. The API host is
+// region-specific; OAuth (authorize + token exchange) is global and always
+// served from the primary app/api domains.
+export const INTERCOM_REGIONS = {
+  us: "api.intercom.io",
+  eu: "api.eu.intercom.io",
+  au: "api.au.intercom.io",
+} as const;
+
+export type IntercomRegion = keyof typeof INTERCOM_REGIONS;
+
+export const INTERCOM_REGION_ORDER: IntercomRegion[] = ["us", "eu", "au"];
+
+const INTERCOM_API_BASE = `https://${INTERCOM_REGIONS.us}`;
 const INTERCOM_AUTHORIZE_URL = "https://app.intercom.com/oauth";
 const INTERCOM_TOKEN_URL = `${INTERCOM_API_BASE}/auth/eagle/token`;
+
+/** Never trust a browser/provider-supplied host: only allowlisted hosts pass. */
+export function isAllowedIntercomHost(host: string | null | undefined): boolean {
+  return Object.values(INTERCOM_REGIONS).includes((host ?? "") as never);
+}
+
+export function regionForHost(host: string): IntercomRegion | null {
+  const hit = INTERCOM_REGION_ORDER.find((r) => INTERCOM_REGIONS[r] === host);
+  return hit ?? null;
+}
+
+/** Validates a region/host pair, falling back to US for legacy rows. */
+export function resolveIntercomHost(
+  region: string | null | undefined,
+  apiHost?: string | null,
+): { region: IntercomRegion; apiHost: string } {
+  if (apiHost && isAllowedIntercomHost(apiHost)) {
+    const r = regionForHost(apiHost)!;
+    return { region: r, apiHost };
+  }
+  const key = String(region ?? "").toLowerCase() as IntercomRegion;
+  if (key in INTERCOM_REGIONS) return { region: key, apiHost: INTERCOM_REGIONS[key] };
+  return { region: "us", apiHost: INTERCOM_REGIONS.us };
+}
+
 
 export function getIntercomCreds(): { clientId: string; clientSecret: string } {
   const clientId = process.env.INTERCOM_CLIENT_ID;
