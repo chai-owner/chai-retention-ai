@@ -86,7 +86,7 @@ export function buildAuthorizeUrl(
       client_id: clientId,
       response_type: "code",
       scope:
-        "openid profile email accounting.contacts.read accounting.transactions.read offline_access",
+        "openid profile email accounting.contacts.read accounting.invoices.read offline_access",
       redirect_uri: redirectUri,
       state,
     });
