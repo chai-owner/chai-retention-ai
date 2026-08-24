@@ -31,9 +31,99 @@ export function hasZohoCreds(): boolean {
   try { getZohoCreds(); return true; } catch { return false; }
 }
 
+// ---------------------------------------------------------------------------
+// Multi data center support
+// ---------------------------------------------------------------------------
+// Zoho hosts each customer in one region. After consent, Zoho returns
+// `location` and `accounts-server` on the callback; those decide where the
+// authorization code must be redeemed. Both are attacker-controllable query
+// parameters, so they are only accepted when they map onto this allowlist.
+export const ZOHO_ACCOUNTS_SERVERS: Record<string, string> = {
+  com: "https://accounts.zoho.com",
+  eu: "https://accounts.zoho.eu",
+  in: "https://accounts.zoho.in",
+  "com.au": "https://accounts.zoho.com.au",
+  jp: "https://accounts.zoho.jp",
+  ca: "https://accounts.zohocloud.ca",
+  uk: "https://accounts.zoho.uk",
+  "com.cn": "https://accounts.zoho.com.cn",
+  sa: "https://accounts.zoho.sa",
+};
+
+/** Zoho's `location` values ("us", "eu", ...) mapped to our dc keys. */
+const LOCATION_TO_DC: Record<string, string> = {
+  us: "com",
+  com: "com",
+  eu: "eu",
+  in: "in",
+  au: "com.au",
+  "com.au": "com.au",
+  jp: "jp",
+  ca: "ca",
+  uk: "uk",
+  cn: "com.cn",
+  "com.cn": "com.cn",
+  sa: "sa",
+};
+
 // Zoho accounts server per data center (com, eu, in, com.au, jp, ca).
 export function accountsHost(dc: string): string {
-  return `https://accounts.zoho.${dc}`;
+  return ZOHO_ACCOUNTS_SERVERS[dc] ?? `https://accounts.zoho.${dc}`;
+}
+
+/** Returns the canonical accounts server for a Zoho `location`, or null. */
+export function dcFromLocation(location: string | null | undefined): string | null {
+  if (!location) return null;
+  const dc = LOCATION_TO_DC[location.trim().toLowerCase()];
+  return dc ?? null;
+}
+
+/**
+ * Validates an `accounts-server` value against the allowlist. Returns the
+ * canonical `{ dc, accountsServer }` pair, or null for anything unsupported
+ * (http, look-alike hosts, path/credential tricks, arbitrary domains).
+ */
+export function validateAccountsServer(
+  value: string | null | undefined,
+): { dc: string; accountsServer: string } | null {
+  if (!value) return null;
+  let url: URL;
+  try {
+    url = new URL(value.trim());
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:") return null;
+  if (url.username || url.password) return null;
+  const host = url.hostname.toLowerCase();
+  for (const [dc, server] of Object.entries(ZOHO_ACCOUNTS_SERVERS)) {
+    if (new URL(server).hostname === host) return { dc, accountsServer: server };
+  }
+  return null;
+}
+
+/**
+ * Resolves where to redeem the code, preferring Zoho's validated
+ * `accounts-server`, then its `location`, then the data center stored with the
+ * OAuth state (which is how existing EU connections keep working).
+ */
+export function resolveCallbackDataCenter(args: {
+  accountsServer?: string | null;
+  location?: string | null;
+  storedDc: string;
+}): { dc: string; accountsServer: string } {
+  const validated = validateAccountsServer(args.accountsServer);
+  if (validated) return validated;
+  const fromLocation = dcFromLocation(args.location);
+  if (fromLocation) {
+    return { dc: fromLocation, accountsServer: accountsHost(fromLocation) };
+  }
+  return { dc: args.storedDc, accountsServer: accountsHost(args.storedDc) };
+}
+
+/** CRM API base for a data center, used when Zoho omits `api_domain`. */
+export function apiDomainForDc(dc: string): string {
+  return dc === "ca" ? "https://www.zohoapis.ca" : `https://www.zohoapis.${dc}`;
 }
 
 export function buildZohoAuthorizeUrl(dc: string, redirectUri: string, state: string): string {
