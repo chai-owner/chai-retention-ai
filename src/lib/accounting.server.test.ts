@@ -1,7 +1,11 @@
 // Accounting hardening: Xero multi-tenant + pagination, FreshBooks account
 // resolution and incremental paging, and token-at-rest encryption.
 import { describe, it, expect } from "vitest";
-import { fetchAndNormalize, resolveAccountInfo } from "@/lib/accounting.server";
+import {
+  fetchAndNormalize,
+  resolveAccountInfo,
+  buildAuthorizeUrl,
+} from "@/lib/accounting.server";
 import {
   encryptSecret,
   decryptSecret,
@@ -300,5 +304,18 @@ describe("token lifecycle", () => {
     await expect(fetchAndNormalize("user-1", "freshbooks", null)).rejects.not.toThrow(
       /leaked-token-value/,
     );
+  });
+});
+
+describe("Xero authorize URL scopes", () => {
+  it("requests exactly the confirmed accepted scope set", () => {
+    process.env["XERO_CLIENT_ID"] = "xero-client";
+    process.env["XERO_CLIENT_SECRET"] = "xero-secret";
+    const url = buildAuthorizeUrl("xero", "https://app.test/cb", "state-123");
+    const scope = new URL(url).searchParams.get("scope");
+    expect(scope).toBe(
+      "openid profile email accounting.contacts.read accounting.invoices.read offline_access",
+    );
+    expect(scope).not.toContain("accounting.transactions.read");
   });
 });
