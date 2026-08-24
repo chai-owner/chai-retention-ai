@@ -118,8 +118,19 @@ const SUPPORTED =
 
 type Step = "select" | "review";
 
-/** Rows shown in the review table; every row is still imported. */
+/** Rows shown per page in the review table; every row is editable and imported. */
 const PREVIEW_ROWS = 50;
+
+/** Validation message for a single review cell, or null when it's fine. */
+function cellError(
+  field: { name: string; example: string; mandatory?: boolean },
+  raw: string,
+): string | null {
+  const value = (raw ?? "").trim();
+  if (value === "") return field.mandatory ? "required" : null;
+  return validateValue(inferType(field.name, field.example), value);
+}
+
 
 // Merge editable datasets from multiple files by dataset key, concatenating
 // their rows so a folder of documents collapses into one review screen.
