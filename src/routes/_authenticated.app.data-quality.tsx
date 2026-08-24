@@ -23,7 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { removePersistedBatch } from "@/lib/ingest-persistence";
+import { removePersistedBatch, hydrateIngestFromServer } from "@/lib/ingest-persistence";
 import { useSignedIn } from "@/lib/use-auth-state";
 
 
