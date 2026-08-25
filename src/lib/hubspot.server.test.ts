@@ -40,7 +40,7 @@ describe("HubSpot scopes", () => {
 
 describe("hubspotExternalUninstall", () => {
   it("DELETEs the external-install endpoint through the gateway", async () => {
-    const http = mockFetch([{ match: HUBSPOT_EXTERNAL_UNINSTALL_PATH, status: 204, body: "" }]);
+    const http = mockFetch([{ match: HUBSPOT_EXTERNAL_UNINSTALL_PATH, status: 200, json: { deleted: true } }]);
     const outcome = await hubspotExternalUninstall(KEY);
 
     expect(outcome).toEqual({ uninstalled: true, alreadyUninstalled: false });
@@ -62,7 +62,7 @@ describe("hubspotExternalUninstall", () => {
   });
 
   it("treats 410 as already uninstalled", async () => {
-    mockFetch([{ match: "external-install", status: 410, body: "" }]);
+    mockFetch([{ match: "external-install", status: 410, json: { message: "gone" } }]);
     const outcome = await hubspotExternalUninstall(KEY);
     expect(outcome.alreadyUninstalled).toBe(true);
   });
@@ -89,7 +89,7 @@ describe("disconnectHubspotForUser", () => {
   it("uninstalls on HubSpot, then clears local state", async () => {
     connectedRow();
     const http = mockFetch([
-      { match: "external-install", status: 204, body: "" },
+      { match: "external-install", status: 200, json: { deleted: true } },
       { match: "/api/v1/app-users/connection", status: 200, json: {} },
     ]);
 
@@ -119,7 +119,7 @@ describe("disconnectHubspotForUser", () => {
     connectedRow();
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockFetch([
-      { match: "external-install", status: 204, body: "" },
+      { match: "external-install", status: 200, json: { deleted: true } },
       { match: "/api/v1/app-users/connection", status: 500, json: { message: "gateway down" } },
     ]);
 
@@ -129,7 +129,7 @@ describe("disconnectHubspotForUser", () => {
 
   it("is idempotent when no connection exists (repeated disconnect)", async () => {
     setSupabaseResult("app_user_connections", { data: null });
-    const http = mockFetch([{ match: "external-install", status: 204, body: "" }]);
+    const http = mockFetch([{ match: "external-install", status: 200, json: { deleted: true } }]);
 
     const first = await disconnectHubspotForUser("user-1");
     const second = await disconnectHubspotForUser("user-1");
