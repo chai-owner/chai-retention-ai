@@ -123,6 +123,17 @@ function CustomerDetail() {
         <ArrowLeft className="h-4 w-4" /> Back to {status === "active" ? "Risk Center" : "Churned & Win-back"}
       </Link>
 
+      <ChurnReasonDialog
+        open={askChurn}
+        onOpenChange={setAskChurn}
+        customerName={c.name}
+        suggestedReason={c.factors[0]?.label}
+        onConfirm={(reason, note) => {
+          churnStore.markChurned(c.id, reason, note);
+          toast.success(`${c.name} marked as churned`, { description: reason });
+        }}
+      />
+
       {/* Lifecycle banner */}
       {status === "churned" ? (
         <div className="mb-5 flex flex-col gap-3 rounded-xl border border-danger/20 bg-danger/5 p-4 sm:flex-row sm:items-center sm:justify-between">
