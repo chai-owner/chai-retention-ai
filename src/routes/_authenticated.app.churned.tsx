@@ -231,12 +231,18 @@ function Churned() {
                     <span>{c.winBackAction}</span>
                   </div>
                   <p className="mt-2 text-[11px] text-muted-foreground">
-                    Left because: <span className="font-medium text-foreground">{c.factors[0]?.label}</span> ·
-                    Est. recoverable{" "}
+                    Left because:{" "}
+                    <span className="font-medium text-foreground">
+                      {overrides[c.id]?.reason ?? c.factors[0]?.label ?? "Not recorded"}
+                    </span>{" "}
+                    · Est. recoverable{" "}
                     <span className="font-medium text-success">
                       {formatCurrency(Math.round(c.revenue * ((c.winBackScore ?? 0) / 100)))}
                     </span>
                   </p>
+                  {overrides[c.id]?.note && (
+                    <p className="mt-1 text-[11px] italic text-muted-foreground">“{overrides[c.id]!.note}”</p>
+                  )}
                 </div>
               ))}
               {candidates.length === 0 && (
