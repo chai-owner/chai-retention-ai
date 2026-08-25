@@ -20,6 +20,7 @@ import {
   type Customer,
 } from "@/lib/mock-data";
 import { useChurnOverrides } from "@/lib/churn-store";
+import { useScoredData } from "@/lib/use-scored-data";
 import { useSignedIn } from "@/lib/use-auth-state";
 import { cn } from "@/lib/utils";
 
