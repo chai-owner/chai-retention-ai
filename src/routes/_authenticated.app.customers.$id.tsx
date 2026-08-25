@@ -80,6 +80,7 @@ function CustomerDetail() {
   const overrides = useChurnOverrides();
   const metrics = useActiveMetrics();
   const [dismissed, setDismissed] = useState(false);
+  const [askChurn, setAskChurn] = useState(false);
   // Resolve strictly from the live dataset. Signed-out (demo) visitors can also
   // reach seeded churned/won-back accounts, which live outside the scored set.
   const found =
