@@ -2,6 +2,7 @@
 // syncs, accounting syncs) into the database, and read it back on load so
 // that history survives refresh and moves with the user across devices.
 import { createServerFn } from "@tanstack/react-start";
+import { customerKeyForRow } from "./row-validation";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
@@ -100,12 +101,16 @@ export const saveIngestBatch = createServerFn({ method: "POST" })
     // 2. Fan out rows into the per-dataset table.
     try {
       if (dataset === "customers") {
+        // Identity rule: a customer row is valid with ANY of customer_id,
+        // name or email. Rows without an explicit id get a deterministic key
+        // derived from email/name (never invented data).
         const payload = data.rows
-          .filter((r) => r["customer_id"])
-          .map((r) => ({
+          .map((r) => ({ r, key: customerKeyForRow(r) }))
+          .filter((x): x is { r: typeof x.r; key: string } => x.key !== null)
+          .map(({ r, key }) => ({
             user_id: userId,
             batch_id: batchId,
-            customer_id: r["customer_id"],
+            customer_id: key,
             data: r,
           }));
         await chunkedUpsert(payload, (chunk) =>
