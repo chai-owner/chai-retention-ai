@@ -61,13 +61,20 @@ describe("persistDatasetsAdmin", () => {
 
     const [payload, opts] = builderFor("ingested_customers")!.upsert.mock.calls[0];
     expect(opts).toEqual({ onConflict: "user_id,customer_id" });
-    // Rows without a customer id are skipped rather than written as blanks.
+    // Identity rule: rows keep their customer_id when present, and rows
+    // identified only by name/email get a deterministic derived key.
     expect(payload).toEqual([
       {
         user_id: "user-1",
         batch_id: "batch-1",
         customer_id: "CUST-1",
         data: { customer_id: "CUST-1", name: "Acme", __source: "hubspot" },
+      },
+      {
+        user_id: "user-1",
+        batch_id: "batch-1",
+        customer_id: "name:missing id",
+        data: { customer_id: "", name: "Missing id", __source: "hubspot" },
       },
     ]);
   });
