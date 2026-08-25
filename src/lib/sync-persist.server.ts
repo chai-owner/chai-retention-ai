@@ -5,6 +5,7 @@
 import type { ExtractedDataset } from "./ingest.functions";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { SOURCE_FIELD, UNKNOWN_SOURCE } from "./ingested-data-store";
+import { customerKeyForRow } from "./row-validation";
 
 function toNumberOrNull(v: unknown): number | null {
   if (v == null || v === "") return null;
@@ -74,11 +75,12 @@ export async function persistDatasetsAdmin(
     try {
       if (ds.key === "customers") {
         const payload = rowObjs
-          .filter((r) => r["customer_id"])
-          .map((r) => ({
+          .map((r) => ({ r, key: customerKeyForRow(r) }))
+          .filter((x): x is { r: Record<string, string>; key: string } => x.key !== null)
+          .map(({ r, key }) => ({
             user_id: userId,
             batch_id: batchId,
-            customer_id: r["customer_id"],
+            customer_id: key,
             data: r,
           }));
         await inChunks(payload, async (c) => {
