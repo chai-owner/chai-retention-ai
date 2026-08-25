@@ -99,7 +99,7 @@ function CustomerDetail() {
 
   // Effective lifecycle status = seeded status, overridden by any manual action.
   const override: ChurnOverride | undefined = overrides[c.id];
-  const status: "active" | "churned" | "won-back" = override?.status ?? c.status ?? "active";
+  const status = (override?.status ?? c.status ?? "active") as CustomerStatus;
   const suggestChurn = status === "active" && looksChurned(c);
 
   // Industry-neutral: name the signals actually driving this customer's score —
