@@ -8,8 +8,24 @@ import type { CustomerStatus } from "@/lib/mock-data";
 export interface ChurnOverride {
   status: Extract<CustomerStatus, "churned" | "won-back">;
   reason?: string;
+  /** Optional free-text detail captured alongside the reason. */
+  note?: string;
   date: string;
 }
+
+/** Industry-neutral churn reasons offered when marking a customer as churned. */
+export const CHURN_REASONS = [
+  "Price / value",
+  "Stopped using the product",
+  "Poor support experience",
+  "Missing features",
+  "Switched to a competitor",
+  "Budget cut / business closed",
+  "Onboarding never landed",
+  "Other",
+] as const;
+
+export type ChurnReason = (typeof CHURN_REASONS)[number];
 
 type OverrideMap = Record<string, ChurnOverride>;
 
