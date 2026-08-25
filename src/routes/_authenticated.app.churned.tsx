@@ -54,6 +54,28 @@ function difficultyFor(score: number): "Easy" | "Moderate" | "Hard" {
   return "Hard";
 }
 
+// Win-back play tailored to the reason the user recorded when marking churn.
+const reasonPlaybook: Record<string, string> = {
+  "Price / value": "Lead with proof of value, then offer a right-sized plan or a time-boxed discount to re-open the conversation.",
+  "Stopped using the product": "Re-onboard them: a short guided session on the one workflow that delivered value, plus a reminder of what's new.",
+  "Poor support experience": "Have a senior owner apologise directly, share what changed in support, and offer a dedicated contact on return.",
+  "Missing features": "Show them the roadmap items that closed their gap and invite them to test it before committing.",
+  "Switched to a competitor": "Position the differences they'll be missing and offer a low-risk parallel trial alongside their new tool.",
+  "Budget cut / business closed": "Keep it warm — a light, no-pressure check-in when their next budget cycle opens.",
+  "Onboarding never landed": "Restart with a hands-on setup, done for them, and a clear 30-day success milestone.",
+  Other: "Call them to hear the real story, then follow up with a written win-back offer addressing it.",
+};
+
+function winBackActionFor(c: Customer, reason?: string): string {
+  if (reason && reasonPlaybook[reason]) return reasonPlaybook[reason];
+  return (
+    c.recommendations[0]?.title ??
+    `Reach out with a tailored win-back offer addressing ${
+      (reason ?? c.factors[0]?.label ?? "their main concern").toLowerCase()
+    }.`
+  );
+}
+
 // Turn a real (signed-in) customer that the user manually marked churned /
 // won-back into the same shape the win-back view renders.
 function toLifecycleCustomer(c: Customer, o: { reason?: string; date: string }): Customer {
@@ -64,11 +86,7 @@ function toLifecycleCustomer(c: Customer, o: { reason?: string; date: string }):
     churnedDate: o.date,
     winBackScore,
     winBackDifficulty: difficultyFor(winBackScore),
-    winBackAction:
-      c.recommendations[0]?.title ??
-      `Reach out with a tailored win-back offer addressing ${
-        (o.reason ?? c.factors[0]?.label ?? "their main concern").toLowerCase()
-      }.`,
+    winBackAction: winBackActionFor(c, o.reason),
   };
 }
 
@@ -213,12 +231,18 @@ function Churned() {
                     <span>{c.winBackAction}</span>
                   </div>
                   <p className="mt-2 text-[11px] text-muted-foreground">
-                    Left because: <span className="font-medium text-foreground">{c.factors[0]?.label}</span> ·
-                    Est. recoverable{" "}
+                    Left because:{" "}
+                    <span className="font-medium text-foreground">
+                      {overrides[c.id]?.reason ?? c.factors[0]?.label ?? "Not recorded"}
+                    </span>{" "}
+                    · Est. recoverable{" "}
                     <span className="font-medium text-success">
                       {formatCurrency(Math.round(c.revenue * ((c.winBackScore ?? 0) / 100)))}
                     </span>
                   </p>
+                  {overrides[c.id]?.note && (
+                    <p className="mt-1 text-[11px] italic text-muted-foreground">“{overrides[c.id]!.note}”</p>
+                  )}
                 </div>
               ))}
               {candidates.length === 0 && (

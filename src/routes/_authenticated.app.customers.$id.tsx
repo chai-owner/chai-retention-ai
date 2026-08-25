@@ -26,11 +26,13 @@ import {
   looksChurned,
   type TimelineEvent,
   type Customer,
+  type CustomerStatus,
 } from "@/lib/mock-data";
 import { useScoredData, useActiveMetrics } from "@/lib/use-scored-data";
 import { useSignedIn } from "@/lib/use-auth-state";
 import { useIngestHydrated } from "@/lib/ingested-data-store";
-import { churnStore, useChurnOverrides } from "@/lib/churn-store";
+import { churnStore, useChurnOverrides, type ChurnOverride } from "@/lib/churn-store";
+import { ChurnReasonDialog } from "@/components/churn-reason-dialog";
 import { useIngested } from "@/lib/ingested-data-store";
 import { useCustomerAliases } from "@/lib/customer-aliases";
 import { sourceLabel, identityCardTitle } from "@/lib/customer-matching";
@@ -79,6 +81,7 @@ function CustomerDetail() {
   const overrides = useChurnOverrides();
   const metrics = useActiveMetrics();
   const [dismissed, setDismissed] = useState(false);
+  const [askChurn, setAskChurn] = useState(false);
   // Resolve strictly from the live dataset. Signed-out (demo) visitors can also
   // reach seeded churned/won-back accounts, which live outside the scored set.
   const found =
@@ -96,8 +99,8 @@ function CustomerDetail() {
   const sentimentLabel = c.sentiment >= 60 ? "Positive" : c.sentiment >= 40 ? "Neutral" : "Negative";
 
   // Effective lifecycle status = seeded status, overridden by any manual action.
-  const override = overrides[c.id] as { status: "churned" | "won-back" } | undefined;
-  const status: "active" | "churned" | "won-back" = override?.status ?? c.status ?? "active";
+  const override: ChurnOverride | undefined = overrides[c.id];
+  const status = (override?.status ?? c.status ?? "active") as CustomerStatus;
   const suggestChurn = status === "active" && looksChurned(c);
 
   // Industry-neutral: name the signals actually driving this customer's score —
@@ -121,6 +124,17 @@ function CustomerDetail() {
         <ArrowLeft className="h-4 w-4" /> Back to {status === "active" ? "Risk Center" : "Churned & Win-back"}
       </Link>
 
+      <ChurnReasonDialog
+        open={askChurn}
+        onOpenChange={setAskChurn}
+        customerName={c.name}
+        suggestedReason={c.factors[0]?.label}
+        onConfirm={(reason, note) => {
+          churnStore.markChurned(c.id, reason, note);
+          toast.success(`${c.name} marked as churned`, { description: reason });
+        }}
+      />
+
       {/* Lifecycle banner */}
       {status === "churned" ? (
         <div className="mb-5 flex flex-col gap-3 rounded-xl border border-danger/20 bg-danger/5 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -131,6 +145,12 @@ function CustomerDetail() {
               <p className="text-xs text-muted-foreground">
                 They're excluded from active retention metrics. Focus here on winning them back.
               </p>
+              {override?.reason && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Reason: <span className="font-medium text-foreground">{override.reason}</span>
+                  {override.note ? <span className="block italic">“{override.note}”</span> : null}
+                </p>
+              )}
             </div>
           </div>
           <button
@@ -167,10 +187,7 @@ function CustomerDetail() {
               Still active
             </button>
             <button
-              onClick={() => {
-                churnStore.markChurned(c.id, c.factors[0]?.label);
-                toast.success(`${c.name} marked as churned`);
-              }}
+              onClick={() => setAskChurn(true)}
               className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-danger px-3 py-2 text-sm font-medium text-danger-foreground hover:bg-danger/90"
             >
               <UserMinus className="h-4 w-4" /> Mark as churned
@@ -180,10 +197,7 @@ function CustomerDetail() {
       ) : status === "active" ? (
         <div className="mb-5 flex justify-end">
           <button
-            onClick={() => {
-              churnStore.markChurned(c.id, c.factors[0]?.label);
-              toast.success(`${c.name} marked as churned`);
-            }}
+            onClick={() => setAskChurn(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <UserMinus className="h-3.5 w-3.5" /> Mark as churned
