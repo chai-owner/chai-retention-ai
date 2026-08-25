@@ -15,6 +15,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import {
+  cellIssue,
+  countRowIssues,
+  inferFieldType,
+  isIdentityFieldName,
+} from "@/lib/row-validation";
 import { type DatasetSchema } from "@/lib/data-schemas";
 import { useAllSchemas } from "@/lib/all-datasets";
 import {
@@ -176,16 +182,7 @@ export function AccountingSyncWizard({
 
   const errorCount = useMemo(() => {
     let count = 0;
-    for (const d of datasets) {
-      for (const r of d.rows) {
-        d.schema.fields.forEach((f, ci) => {
-          const type = inferType(f.name, f.example);
-          const raw = (r[ci] ?? "").trim();
-          if (raw === "" && f.mandatory) count++;
-          else if (raw !== "" && validateValue(type, raw)) count++;
-        });
-      }
-    }
+    for (const d of datasets) count += countRowIssues(d.schema.fields, d.rows);
     return count;
   }, [datasets]);
 
@@ -309,7 +306,17 @@ export function AccountingSyncWizard({
                         {d.schema.fields.map((f) => (
                           <th key={f.name} className="px-2 py-1.5 font-mono font-medium">
                             {f.name}
-                            {f.mandatory && <span className="text-danger"> *</span>}
+                            {f.mandatory ? (
+                              <span className="text-danger"> *</span>
+                            ) : isIdentityFieldName(f.name) ? (
+                              <span
+                                className="text-warning"
+                                title="Identifier — provide at least one of customer_id, name or email"
+                              >
+                                {" "}
+                                †
+                              </span>
+                            ) : null}
                           </th>
                         ))}
                         <th className="px-2 py-1.5" />
@@ -319,14 +326,9 @@ export function AccountingSyncWizard({
                       {d.rows.map((r, ri) => (
                         <tr key={ri} className="border-t border-border">
                           {d.schema.fields.map((f, ci) => {
-                            const type = inferType(f.name, f.example);
-                            const raw = (r[ci] ?? "").trim();
-                            const err =
-                              raw === "" && f.mandatory
-                                ? "required"
-                                : raw !== ""
-                                  ? validateValue(type, raw)
-                                  : null;
+                            // Derived from the row's current values, so
+                            // edits/deletes recompute the state immediately.
+                            const err = cellIssue(d.schema.fields, r, ci);
                             return (
                               <td key={f.name} className="px-1 py-0.5">
                                 <input
