@@ -196,10 +196,7 @@ function CustomerDetail() {
       ) : status === "active" ? (
         <div className="mb-5 flex justify-end">
           <button
-            onClick={() => {
-              churnStore.markChurned(c.id, c.factors[0]?.label);
-              toast.success(`${c.name} marked as churned`);
-            }}
+            onClick={() => setAskChurn(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <UserMinus className="h-3.5 w-3.5" /> Mark as churned
