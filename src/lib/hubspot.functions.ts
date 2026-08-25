@@ -40,7 +40,7 @@ export const startHubspotConnect = createServerFn({ method: "POST" })
       returnUrl: data.targetOrigin,
       responseMode: "web_message",
       webMessageTargetOrigin: data.targetOrigin,
-      credentialsConfiguration: { scopes: HUBSPOT_SCOPES },
+      credentialsConfiguration: { scopes: HUBSPOT_SCOPE_LIST },
     });
     return { authorizationUrl };
   });
@@ -111,31 +111,8 @@ export const getHubspotStatus = createServerFn({ method: "GET" })
 export const disconnectHubspot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { getConnectionKeyForUser, deleteConnectionForUser } = await import(
-      "./app-user-connections.server"
-    );
-    const key = await getConnectionKeyForUser(context.userId, CONNECTOR_ID);
-    if (key) {
-      try {
-        const { disconnectAppUser } = await import(
-          "@/integrations/lovable/appUserConnector"
-        );
-        await disconnectAppUser({
-          gatewayBaseUrl: GATEWAY_BASE_URL,
-          connectionAPIKey: key,
-          connectorId: CONNECTOR_ID,
-        });
-      } catch (err) {
-        // Still delete the local row so the UI resets.
-        console.error(
-          "HubSpot gateway disconnect failed:",
-          err instanceof Error ? err.message : err,
-        );
-      }
-    }
-    await deleteConnectionForUser(context.userId, CONNECTOR_ID);
-    const { clearCrmSyncState } = await import("./crm.server");
-    await clearCrmSyncState(context.userId, "hubspot");
-
-    return { ok: true };
+    // Runs HubSpot's required external uninstall first, then clears local
+    // state. See `hubspot.server.ts` for the ordering guarantees.
+    const { disconnectHubspotForUser } = await import("./hubspot.server");
+    return disconnectHubspotForUser(context.userId);
   });
