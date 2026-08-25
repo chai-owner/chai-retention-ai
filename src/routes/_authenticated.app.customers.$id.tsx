@@ -144,6 +144,12 @@ function CustomerDetail() {
               <p className="text-xs text-muted-foreground">
                 They're excluded from active retention metrics. Focus here on winning them back.
               </p>
+              {override?.reason && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Reason: <span className="font-medium text-foreground">{override.reason}</span>
+                  {override.note ? <span className="block italic">“{override.note}”</span> : null}
+                </p>
+              )}
             </div>
           </div>
           <button
