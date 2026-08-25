@@ -235,16 +235,16 @@ function WelcomePage() {
           </div>
         ) : (
           <>
-            <h3 className="text-lg font-semibold">This is just the beginning.</h3>
-            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              We'll open up your full dashboard and detailed insights at your onboarding.{" "}
-              <button
-                onClick={openCalendly}
-                className="font-semibold text-primary underline underline-offset-2 hover:opacity-80"
-              >
-                Let's schedule that session now!
-              </button>
+            <p className="mx-auto max-w-md text-sm text-muted-foreground">
+              We'll open up your full dashboard and detailed insights at your onboarding.
             </p>
+            <button
+              onClick={openCalendly}
+              className="mt-4 text-xl font-semibold text-primary underline underline-offset-4 hover:opacity-80 sm:text-2xl"
+            >
+              Book your onboarding session now!
+            </button>
+            <h3 className="mt-6 text-lg font-semibold">This is just the beginning.</h3>
           </>
         )}
       </div>
