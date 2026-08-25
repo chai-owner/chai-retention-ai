@@ -15,7 +15,7 @@ export interface SchemaField {
 }
 
 /** Identifier columns accepted on every non-roster dataset, in match order. */
-export const IDENTIFIER_FIELDS = ["customer_id", "email", "customer_name"] as const;
+export const IDENTIFIER_FIELDS = ["customer_id", "email", "customer_name", "name"] as const;
 
 export const IDENTIFIER_HINT =
   "Provide at least one of customer_id, email or customer_name.";
@@ -69,11 +69,12 @@ export const datasetSchemas: DatasetSchema[] = [
   {
     key: "customers",
     label: "Customers",
-    description: "Your core customer list — one row per customer.",
+    description: "Your core customer list — one row per customer. " + IDENTIFIER_HINT,
     fields: [
-      { name: "customer_id", mandatory: true, description: "Unique ID for the customer", example: "CUS-1001" },
-      { name: "name", mandatory: true, description: "Customer or company name", example: "Northwind Labs" },
-      { name: "email", mandatory: true, description: "Primary contact email", example: "ops@northwind.com" },
+      // Identifier group: any ONE of these three makes the row valid.
+      { name: "customer_id", mandatory: false, identifier: true, description: `Your ID for the customer. ${IDENTIFIER_HINT}`, example: "CUS-1001" },
+      { name: "name", mandatory: false, identifier: true, description: `Customer or company name. ${IDENTIFIER_HINT}`, example: "Northwind Labs" },
+      { name: "email", mandatory: false, identifier: true, description: `Primary contact email. ${IDENTIFIER_HINT}`, example: "ops@northwind.com" },
       { name: "signup_date", mandatory: true, description: "When they became a customer (YYYY-MM-DD)", example: "2024-02-14" },
       { name: "monthly_revenue", mandatory: false, description: "Average revenue per month ($)", example: "1200" },
       { name: "plan", mandatory: false, description: "Plan or tier name", example: "Growth" },
