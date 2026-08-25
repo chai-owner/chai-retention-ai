@@ -58,8 +58,16 @@ export const churnStore = {
   getSnapshot() {
     return state;
   },
-  markChurned(id: string, reason?: string) {
-    state = { ...state, [id]: { status: "churned", reason, date: new Date().toISOString().slice(0, 10) } };
+  markChurned(id: string, reason?: string, note?: string) {
+    state = {
+      ...state,
+      [id]: {
+        status: "churned",
+        reason: reason?.trim() || undefined,
+        note: note?.trim() || undefined,
+        date: new Date().toISOString().slice(0, 10),
+      },
+    };
     emit();
   },
   markWonBack(id: string) {
