@@ -644,7 +644,8 @@ function TermsPage() {
         <div className="mx-auto max-w-[1280px] px-6 py-12 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-8 sm:flex-row">
             <div className="flex items-center gap-2.5">
-              <img src="/logo-dark.png" alt="ChAi" className="h-9 w-auto" />
+              <img src="/logo-dark.png" alt="ChAi" className="h-9 w-auto dark:hidden" />
+              <img src="/logo-light.png" alt="ChAi" className="hidden h-9 w-auto dark:block" />
             </div>
 
             <div className="flex flex-col items-center sm:items-end">
