@@ -388,13 +388,6 @@ function Onboarding() {
                       <input className={inputCls} value={form.avgValue} onChange={(e) => update("avgValue", e.target.value)} placeholder="e.g. $12,000 / year" />
                     </Field>
                   </div>
-                  <Field label="Business model">
-                    <select className={inputCls} value={form.model} onChange={(e) => update("model", e.target.value)}>
-                      {businessModels.map((m) => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  </Field>
                 </div>
               )}
 
