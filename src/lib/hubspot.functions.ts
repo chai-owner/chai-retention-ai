@@ -4,9 +4,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-import { GATEWAY_BASE_URL, CONNECTOR_ID, HUBSPOT_SCOPES } from "./hubspot.server";
+// Kept in sync with `hubspot.server.ts` (which owns the canonical list); this
+// file stays client-safe, so it can't import the server-only module here.
+const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
+const CONNECTOR_ID = "hubspot";
 
-const HUBSPOT_SCOPE_LIST: string[] = [...HUBSPOT_SCOPES];
+// Minimal scopes: ChAi reads companies and deals only.
+const HUBSPOT_SCOPE_LIST: string[] = [
+  "crm.objects.companies.read",
+  "crm.objects.deals.read",
+];
+
 
 
 export const startHubspotConnect = createServerFn({ method: "POST" })
