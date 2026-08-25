@@ -20,6 +20,7 @@ import {
   type Customer,
 } from "@/lib/mock-data";
 import { useChurnOverrides } from "@/lib/churn-store";
+import { useScoredData } from "@/lib/use-scored-data";
 import { useSignedIn } from "@/lib/use-auth-state";
 import { cn } from "@/lib/utils";
 
@@ -47,29 +48,89 @@ function winBackTone(score: number) {
   return score >= 70 ? "text-success" : score >= 45 ? "text-warning" : "text-danger";
 }
 
+function difficultyFor(score: number): "Easy" | "Moderate" | "Hard" {
+  if (score >= 70) return "Easy";
+  if (score >= 45) return "Moderate";
+  return "Hard";
+}
+
+// Turn a real (signed-in) customer that the user manually marked churned /
+// won-back into the same shape the win-back view renders.
+function toLifecycleCustomer(c: Customer, o: { reason?: string; date: string }): Customer {
+  const winBackScore = Math.max(5, Math.min(95, Math.round(c.health * 0.6 + c.sentiment * 0.4)));
+  return {
+    ...c,
+    status: "churned",
+    churnedDate: o.date,
+    winBackScore,
+    winBackDifficulty: difficultyFor(winBackScore),
+    winBackAction:
+      c.recommendations[0]?.title ??
+      `Reach out with a tailored win-back offer addressing ${
+        (o.reason ?? c.factors[0]?.label ?? "their main concern").toLowerCase()
+      }.`,
+  };
+}
+
 function Churned() {
-  // Subscribe so manual overrides re-render this view (used for won-back count).
-  useChurnOverrides();
+  const overrides = useChurnOverrides();
   const signedIn = useSignedIn();
-  // Signed-in users only ever see their own real data. We don't yet compute
-  // churn analytics from uploaded/synced data, so show an empty state instead
-  // of the illustrative sample dataset.
+  const { sortedByRisk } = useScoredData();
+  // Signed-in users only ever see their own real data — never the sample set.
   const isReal = signedIn === true;
 
-  const churned = useMemo(() => (isReal ? [] : getChurnedCustomers()), [isReal]);
-  const wonBack = useMemo(() => (isReal ? [] : getWonBackCustomers()), [isReal]);
-  const stats = useMemo(
-    () =>
-      isReal
-        ? { churnRate: 0, revenueLost: 0, winBackOpportunity: 0, avgTenureMonths: 0, topReasons: [] as { label: string; share: number }[] }
-        : churnAnalytics(activeCustomers.length),
-    [isReal],
-  );
+  const churned = useMemo(() => {
+    if (!isReal) return getChurnedCustomers();
+    return sortedByRisk
+      .filter((c) => overrides[c.id]?.status === "churned")
+      .map((c) => toLifecycleCustomer(c, overrides[c.id]!));
+  }, [isReal, sortedByRisk, overrides]);
+
+  const wonBack = useMemo(() => {
+    if (!isReal) return getWonBackCustomers();
+    return sortedByRisk
+      .filter((c) => overrides[c.id]?.status === "won-back")
+      .map((c) => ({ ...c, status: "won-back" as const }));
+  }, [isReal, sortedByRisk, overrides]);
+
+  const stats = useMemo(() => {
+    if (!isReal) return churnAnalytics(activeCustomers.length);
+    const activeCount = sortedByRisk.filter((c) => !overrides[c.id]).length;
+    const revenueLost = churned.reduce((s, c) => s + c.revenue, 0);
+    const winBackOpportunity = churned.reduce(
+      (s, c) => s + Math.round(c.revenue * ((c.winBackScore ?? 0) / 100)),
+      0,
+    );
+    const total = activeCount + churned.length;
+    const counts = new Map<string, number>();
+    churned.forEach((c) => {
+      const label = overrides[c.id]?.reason ?? c.factors[0]?.label ?? "Other";
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    });
+    const topReasons = [...counts.entries()]
+      .map(([label, count]) => ({
+        label,
+        count,
+        share: churned.length ? Math.round((count / churned.length) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+    const tenures = churned.map((c) => c.tenureMonths ?? 0).filter((t) => t > 0);
+    return {
+      churnRate: total ? Math.round((churned.length / total) * 100) : 0,
+      revenueLost,
+      winBackOpportunity,
+      avgTenureMonths: tenures.length
+        ? Math.round(tenures.reduce((s, t) => s + t, 0) / tenures.length)
+        : 0,
+      topReasons,
+    };
+  }, [isReal, churned, sortedByRisk, overrides]);
 
   const candidates = useMemo(
     () => [...churned].sort((a, b) => (b.winBackScore ?? 0) - (a.winBackScore ?? 0)),
     [churned],
   );
+
 
   return (
     <div>
