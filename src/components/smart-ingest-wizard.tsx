@@ -27,6 +27,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import {
+  cellIssue,
+  countRowIssues,
+  inferFieldType as inferType,
+  isIdentityFieldName,
+  rowHasIssue,
+} from "@/lib/row-validation";
 import { type DatasetSchema } from "@/lib/data-schemas";
 import { useAllSchemas } from "@/lib/all-datasets";
 import type { PlannerMetric } from "@/lib/mock-data";
@@ -40,36 +47,6 @@ import {
 } from "@/lib/uploads-store";
 import { ingestedStore, rowsToObjects, tagSource } from "@/lib/ingested-data-store";
 import { persistBatch } from "@/lib/ingest-persistence";
-
-type FieldType = "date" | "number" | "email" | "text";
-
-function inferType(name: string, example: string): FieldType {
-  const n = name.toLowerCase();
-  if (n.includes("email")) return "email";
-  if (n.includes("date")) return "date";
-  if (/^\d+(\.\d+)?$/.test((example || "").trim())) return "number";
-  if (/(amount|revenue|score|logins|minutes|features_used|price|qty|quantity|count)/.test(n))
-    return "number";
-  return "text";
-}
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validateValue(type: FieldType, raw: string): string | null {
-  const v = (raw ?? "").trim();
-  if (v === "") return null;
-  switch (type) {
-    case "number":
-      return /^-?\d+(\.\d+)?$/.test(v.replace(/[$,]/g, "")) ? null : `expected a number`;
-    case "date":
-      return DATE_RE.test(v) && !isNaN(Date.parse(v)) ? null : `expected YYYY-MM-DD`;
-    case "email":
-      return EMAIL_RE.test(v) ? null : `expected an email`;
-    default:
-      return null;
-  }
-}
 
 // CSV parse (shared shape with upload-wizard).
 function parseCsv(text: string): string[][] {
@@ -124,17 +101,6 @@ type Step = "select" | "review";
 
 /** Rows shown per page in the review table; every row is editable and imported. */
 const PREVIEW_ROWS = 50;
-
-/** Validation message for a single review cell, or null when it's fine. */
-function cellError(
-  field: { name: string; example: string; mandatory?: boolean },
-  raw: string,
-): string | null {
-  const value = (raw ?? "").trim();
-  if (value === "") return field.mandatory ? "required" : null;
-  return validateValue(inferType(field.name, field.example), value);
-}
-
 
 // Merge editable datasets from multiple files by dataset key, concatenating
 // their rows so a folder of documents collapses into one review screen.
@@ -415,16 +381,7 @@ export function SmartIngestWizard({
   // Validation across all datasets.
   const errorCount = useMemo(() => {
     let count = 0;
-    for (const d of datasets) {
-      for (const r of d.rows) {
-        d.schema.fields.forEach((f, ci) => {
-          const type = inferType(f.name, f.example);
-          const raw = (r[ci] ?? "").trim();
-          if (raw === "" && f.mandatory) count++;
-          else if (raw !== "" && validateValue(type, raw)) count++;
-        });
-      }
-    }
+    for (const d of datasets) count += countRowIssues(d.schema.fields, d.rows);
     return count;
   }, [datasets]);
 
@@ -556,8 +513,7 @@ export function SmartIngestWizard({
               const onlyErrors = errorsOnly[d.key] ?? false;
               // Keep the true row index so edits/removals always hit the right row.
               const indexed = d.rows.map((r, ri) => ({ r, ri }));
-              const rowHasError = (r: string[]) =>
-                d.schema.fields.some((f, ci) => cellError(f, r[ci] ?? "") !== null);
+              const rowHasError = (r: string[]) => rowHasIssue(d.schema.fields, r);
               const errorRowCount = indexed.filter((x) => rowHasError(x.r)).length;
               const filtered = indexed.filter(
                 (x) =>
@@ -657,7 +613,17 @@ export function SmartIngestWizard({
                         {d.schema.fields.map((f) => (
                           <th key={f.name} className="px-2 py-1.5 font-mono font-medium">
                             {f.name}
-                            {f.mandatory && <span className="text-danger"> *</span>}
+                            {f.mandatory ? (
+                              <span className="text-danger"> *</span>
+                            ) : isIdentityFieldName(f.name) ? (
+                              <span
+                                className="text-warning"
+                                title="Identifier — provide at least one of customer_id, name or email"
+                              >
+                                {" "}
+                                †
+                              </span>
+                            ) : null}
                           </th>
                         ))}
                         <th className="px-2 py-1.5" />
@@ -668,7 +634,7 @@ export function SmartIngestWizard({
                         <tr key={ri} className="border-t border-border">
                           <td className="px-2 py-0.5 text-[11px] text-muted-foreground">{ri + 1}</td>
                           {d.schema.fields.map((f, ci) => {
-                            const err = cellError(f, r[ci] ?? "");
+                            const err = cellIssue(d.schema.fields, r, ci);
                             return (
                               <td key={f.name} className="px-1 py-0.5">
                                 <input
