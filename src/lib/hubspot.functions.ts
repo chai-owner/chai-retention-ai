@@ -4,14 +4,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
-const CONNECTOR_ID = "hubspot";
+import { GATEWAY_BASE_URL, CONNECTOR_ID, HUBSPOT_SCOPES } from "./hubspot.server";
 
-const HUBSPOT_SCOPES = [
-  "crm.objects.contacts.read",
-  "crm.objects.companies.read",
-  "crm.objects.deals.read",
-];
+const HUBSPOT_SCOPE_LIST: string[] = [...HUBSPOT_SCOPES];
+
 
 export const startHubspotConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
