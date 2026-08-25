@@ -26,6 +26,7 @@ import {
   looksChurned,
   type TimelineEvent,
   type Customer,
+  type CustomerStatus,
 } from "@/lib/mock-data";
 import { useScoredData, useActiveMetrics } from "@/lib/use-scored-data";
 import { useSignedIn } from "@/lib/use-auth-state";
