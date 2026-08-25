@@ -186,10 +186,7 @@ function CustomerDetail() {
               Still active
             </button>
             <button
-              onClick={() => {
-                churnStore.markChurned(c.id, c.factors[0]?.label);
-                toast.success(`${c.name} marked as churned`);
-              }}
+              onClick={() => setAskChurn(true)}
               className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-danger px-3 py-2 text-sm font-medium text-danger-foreground hover:bg-danger/90"
             >
               <UserMinus className="h-4 w-4" /> Mark as churned
