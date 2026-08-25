@@ -359,9 +359,23 @@ function Onboarding() {
                     <input className={inputCls} value={form.company} onChange={(e) => update("company", e.target.value)} placeholder="Northwind Labs" />
                   </Field>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Industry">
-                      <input className={inputCls} value={form.industry} onChange={(e) => update("industry", e.target.value)} placeholder="e.g. B2B software" />
-                    </Field>
+                     <Field label="Industry">
+                       <select
+                         className={inputCls}
+                         value={form.industry}
+                         onChange={(e) => {
+                           update("industry", e.target.value);
+                           update("model", e.target.value);
+                         }}
+                       >
+                         <option value="" disabled>
+                           Select your industry
+                         </option>
+                         {businessModels.map((m) => (
+                           <option key={m} value={m}>{m}</option>
+                         ))}
+                       </select>
+                     </Field>
                     <Field label="Company size">
                       <select className={inputCls} value={form.size} onChange={(e) => update("size", e.target.value)}>
                         {companySizes.map((o) => <option key={o}>{o}</option>)}
@@ -374,13 +388,6 @@ function Onboarding() {
                       <input className={inputCls} value={form.avgValue} onChange={(e) => update("avgValue", e.target.value)} placeholder="e.g. $12,000 / year" />
                     </Field>
                   </div>
-                  <Field label="Business model">
-                    <select className={inputCls} value={form.model} onChange={(e) => update("model", e.target.value)}>
-                      {businessModels.map((m) => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  </Field>
                 </div>
               )}
 
