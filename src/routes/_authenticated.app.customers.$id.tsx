@@ -98,7 +98,7 @@ function CustomerDetail() {
   const sentimentLabel = c.sentiment >= 60 ? "Positive" : c.sentiment >= 40 ? "Neutral" : "Negative";
 
   // Effective lifecycle status = seeded status, overridden by any manual action.
-  const override = overrides[c.id] as { status: "churned" | "won-back" } | undefined;
+  const override = overrides[c.id];
   const status: "active" | "churned" | "won-back" = override?.status ?? c.status ?? "active";
   const suggestChurn = status === "active" && looksChurned(c);
 
