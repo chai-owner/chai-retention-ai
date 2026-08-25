@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 import {
   cellIssue,
   countRowIssues,
-  inferFieldType,
   isIdentityFieldName,
 } from "@/lib/row-validation";
 import { type DatasetSchema } from "@/lib/data-schemas";
@@ -32,36 +31,6 @@ import {
 } from "@/lib/uploads-store";
 import { ingestedStore, rowsToObjects, tagSource } from "@/lib/ingested-data-store";
 import { persistBatch } from "@/lib/ingest-persistence";
-
-type FieldType = "date" | "number" | "email" | "text";
-
-function inferType(name: string, example: string): FieldType {
-  const n = name.toLowerCase();
-  if (n.includes("email")) return "email";
-  if (n.includes("date")) return "date";
-  if (/^\d+(\.\d+)?$/.test((example || "").trim())) return "number";
-  if (/(amount|revenue|score|logins|minutes|features_used|price|qty|quantity|count)/.test(n))
-    return "number";
-  return "text";
-}
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validateValue(type: FieldType, raw: string): string | null {
-  const v = (raw ?? "").trim();
-  if (v === "") return null;
-  switch (type) {
-    case "number":
-      return /^-?\d+(\.\d+)?$/.test(v.replace(/[$,]/g, "")) ? null : `expected a number`;
-    case "date":
-      return DATE_RE.test(v) && !isNaN(Date.parse(v)) ? null : `expected YYYY-MM-DD`;
-    case "email":
-      return EMAIL_RE.test(v) ? null : `expected an email`;
-    default:
-      return null;
-  }
-}
 
 interface EditableDataset {
   key: string;
