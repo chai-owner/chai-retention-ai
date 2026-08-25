@@ -54,6 +54,28 @@ function difficultyFor(score: number): "Easy" | "Moderate" | "Hard" {
   return "Hard";
 }
 
+// Win-back play tailored to the reason the user recorded when marking churn.
+const reasonPlaybook: Record<string, string> = {
+  "Price / value": "Lead with proof of value, then offer a right-sized plan or a time-boxed discount to re-open the conversation.",
+  "Stopped using the product": "Re-onboard them: a short guided session on the one workflow that delivered value, plus a reminder of what's new.",
+  "Poor support experience": "Have a senior owner apologise directly, share what changed in support, and offer a dedicated contact on return.",
+  "Missing features": "Show them the roadmap items that closed their gap and invite them to test it before committing.",
+  "Switched to a competitor": "Position the differences they'll be missing and offer a low-risk parallel trial alongside their new tool.",
+  "Budget cut / business closed": "Keep it warm — a light, no-pressure check-in when their next budget cycle opens.",
+  "Onboarding never landed": "Restart with a hands-on setup, done for them, and a clear 30-day success milestone.",
+  Other: "Call them to hear the real story, then follow up with a written win-back offer addressing it.",
+};
+
+function winBackActionFor(c: Customer, reason?: string): string {
+  if (reason && reasonPlaybook[reason]) return reasonPlaybook[reason];
+  return (
+    c.recommendations[0]?.title ??
+    `Reach out with a tailored win-back offer addressing ${
+      (reason ?? c.factors[0]?.label ?? "their main concern").toLowerCase()
+    }.`
+  );
+}
+
 // Turn a real (signed-in) customer that the user manually marked churned /
 // won-back into the same shape the win-back view renders.
 function toLifecycleCustomer(c: Customer, o: { reason?: string; date: string }): Customer {
@@ -64,11 +86,7 @@ function toLifecycleCustomer(c: Customer, o: { reason?: string; date: string }):
     churnedDate: o.date,
     winBackScore,
     winBackDifficulty: difficultyFor(winBackScore),
-    winBackAction:
-      c.recommendations[0]?.title ??
-      `Reach out with a tailored win-back offer addressing ${
-        (o.reason ?? c.factors[0]?.label ?? "their main concern").toLowerCase()
-      }.`,
+    winBackAction: winBackActionFor(c, o.reason),
   };
 }
 
