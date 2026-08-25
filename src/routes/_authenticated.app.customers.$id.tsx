@@ -30,7 +30,7 @@ import {
 import { useScoredData, useActiveMetrics } from "@/lib/use-scored-data";
 import { useSignedIn } from "@/lib/use-auth-state";
 import { useIngestHydrated } from "@/lib/ingested-data-store";
-import { churnStore, useChurnOverrides } from "@/lib/churn-store";
+import { churnStore, useChurnOverrides, type ChurnOverride } from "@/lib/churn-store";
 import { ChurnReasonDialog } from "@/components/churn-reason-dialog";
 import { useIngested } from "@/lib/ingested-data-store";
 import { useCustomerAliases } from "@/lib/customer-aliases";
