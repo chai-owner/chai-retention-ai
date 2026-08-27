@@ -476,9 +476,18 @@ function Onboarding() {
                     <h2 className="text-xl font-semibold">How a healthy customer behaves</h2>
                     <p className="mt-1 text-sm text-muted-foreground">There are no wrong answers — describe it in your own words.</p>
                   </div>
-                  <Field label="What do customers buy from you?">
-                    <input className={inputCls} value={form.whatBuy} onChange={(e) => update("whatBuy", e.target.value)} placeholder="e.g. an annual software subscription" />
+                  <Field label="What do customers buy from you? Tell us about it in a short paragraph.">
+                    <textarea
+                      className={cn(inputCls, "min-h-28 resize-none")}
+                      value={form.whatBuy}
+                      onChange={(e) => update("whatBuy", e.target.value)}
+                      placeholder="Write a few sentences — what exactly are they paying for, how is it priced or packaged (one-off, monthly, contract), who typically uses it, what problem does it solve for them, and how do they usually get value from it?"
+                    />
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      A paragraph is perfect — the more context you give, the sharper ChAi's metrics will be.
+                    </p>
                   </Field>
+
                   <Field label="How often should a healthy customer engage?">
                     <input className={inputCls} value={form.cadence} onChange={(e) => update("cadence", e.target.value)} placeholder="e.g. logs in weekly" />
                   </Field>
