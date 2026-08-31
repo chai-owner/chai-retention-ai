@@ -170,9 +170,10 @@ class LovableAiProvider implements AiProvider {
     const prompt = [
       req.instructions?.trim() ||
         "Summarise the following clearly and concisely in plain business language.",
-      "",
-      req.content,
-    ].join("\n");
+      req.content.trim(),
+    ]
+      .filter(Boolean)
+      .join("\n\n");
     return this.generateText({ operation: req.operation, prompt, model: req.model });
   }
 
@@ -180,9 +181,10 @@ class LovableAiProvider implements AiProvider {
     const prompt = [
       req.instructions?.trim() ||
         "Based on the context below, give specific, actionable recommendations.",
-      "",
-      req.context,
-    ].join("\n");
+      req.context.trim(),
+    ]
+      .filter(Boolean)
+      .join("\n\n");
     return this.generateText({ operation: req.operation, prompt, model: req.model });
   }
 }
