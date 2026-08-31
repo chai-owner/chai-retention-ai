@@ -86,7 +86,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
 
         for (const profile of profiles ?? []) {
           const userId = profile.id as string;
-          const metrics = (Array.isArray(profile.metrics) ? profile.metrics : []) as PlannerMetric[];
+          const metrics = (Array.isArray(profile.metrics) ? profile.metrics : []) as unknown as PlannerMetric[];
           if (metrics.length === 0) continue;
 
           try {
