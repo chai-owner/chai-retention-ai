@@ -17,6 +17,8 @@ import {
   Link2,
 
   Settings,
+  UserCog,
+
   LogOut,
   LogIn,
   Eye,
@@ -34,6 +36,9 @@ import { clearPersistedImpersonatedAuth, millisecondsUntilExpiry } from "@/lib/i
 import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
 import { ensureLocalCacheOwner } from "@/lib/local-user-scope";
 import { hydrateCustomerAliases } from "@/lib/customer-aliases";
+import { useOrgRole } from "@/lib/use-team";
+import { canManageMembers } from "@/lib/organisations";
+
 
 const nav = [
   { to: "/app/welcome", label: "Welcome", icon: Sparkles },
@@ -47,10 +52,15 @@ const nav = [
   { to: "/app/insights", label: "Insights & Benchmarks", icon: Lightbulb },
   { to: "/app/data", label: "Data Uploads & Integrations", icon: Database },
   { to: "/app/settings", label: "Business Profile", icon: Settings },
+  { to: "/app/team", label: "Team & Access", icon: UserCog },
 ];
 
 // Pages a locked (onboarded but not yet unlocked) customer can still access.
 const LOCKED_ALLOWED = new Set(["/app/welcome", "/app/settings", "/app/data"]);
+
+// Members (non-owner/admin) don't get settings, integrations or team management.
+const MANAGER_ONLY = new Set(["/app/settings", "/app/data", "/app/team"]);
+
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -62,6 +72,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const profile = useProfile();
   const demo = useDemoMode();
 
+  // Role inside the user's organisation; members lose settings/integrations.
+  const orgRole = useOrgRole(!demo && signedIn === true);
+
   // Locked = a signed-in customer who has onboarded but hasn't been unlocked by
   // an admin yet. Demo visitors (no session) and demo mode see the full app.
   const locked = !demo && signedIn === true && profile != null && profile.unlocked !== true;
@@ -70,7 +83,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Once an admin unlocks the account, the Welcome/booking screen is done with.
   const hideWelcome = demo || (signedIn === true && profile?.unlocked === true);
   const baseNav = hideWelcome ? nav.filter((n) => n.to !== "/app/welcome") : nav;
-  const visibleNav = locked ? baseNav.filter((n) => LOCKED_ALLOWED.has(n.to)) : baseNav;
+  const roleNav =
+    orgRole && !canManageMembers(orgRole)
+      ? baseNav.filter((n) => !MANAGER_ONLY.has(n.to))
+      : baseNav;
+  const visibleNav = locked ? roleNav.filter((n) => LOCKED_ALLOWED.has(n.to)) : roleNav;
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
