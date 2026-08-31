@@ -392,6 +392,11 @@ function PricingPage() {
                   </Link>
                 </li>
                 <li>
+                  <Link className="transition-colors hover:text-primary" to="/privacy">
+                    Privacy
+                  </Link>
+                </li>
+                <li>
                   <Link className="transition-colors hover:text-primary" to="/auth" search={login}>
                     Log in
                   </Link>
