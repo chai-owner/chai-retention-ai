@@ -488,7 +488,7 @@ function Landing() {
 
           <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 text-sm text-muted-foreground sm:flex-row">
             <p>© {new Date().getFullYear()} ChAi. All rights reserved.</p>
-            <p className="hidden sm:block">Built for modern SaaS teams.</p>
+            <p className="hidden sm:block">Built for businesses that run on recurring revenue.</p>
           </div>
         </div>
       </footer>
