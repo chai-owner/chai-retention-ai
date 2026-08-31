@@ -40,7 +40,7 @@ const inputCls =
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
-  const dest = stripDemo(redirectTo ?? "/app/dashboard");
+  const dest = stripDemo(redirectTo ?? "/app/today");
   const [mode, setMode] = useState<"login" | "register" | "forgot">(
     initialMode === "signup" ? "register" : "login",
   );
@@ -56,7 +56,7 @@ function AuthPage() {
 
   function goToDest() {
     if (redirectTo) navigate({ href: stripDemo(redirectTo) });
-    else navigate({ to: "/app/dashboard", search: { demo: false } });
+    else navigate({ to: "/app/today", search: { demo: false } });
   }
 
   async function handleGoogle() {

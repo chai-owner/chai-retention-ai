@@ -12,6 +12,7 @@ import {
   Lightbulb,
   Sparkles,
   Menu,
+  Sun,
   X,
   BadgeCheck,
   Link2,
@@ -42,6 +43,7 @@ import { canManageMembers } from "@/lib/organisations";
 
 const nav = [
   { to: "/app/welcome", label: "Welcome", icon: Sparkles },
+  { to: "/app/today", label: "Today", icon: Sun },
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/customers", label: "Customer Risk Center", icon: Users },
   { to: "/app/churned", label: "Churned & Win-back", icon: UserMinus },
