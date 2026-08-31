@@ -193,12 +193,21 @@ function Settings() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Business profile</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          These answers power your customer health model. Update them any time your business changes.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Business profile</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            These answers power your customer health model. Update them any time your business changes.
+          </p>
+        </div>
+        <Link
+          to="/app/team"
+          className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+        >
+          Team &amp; access
+        </Link>
       </div>
+
 
       {/* Business */}
       <Card title="Your business">
