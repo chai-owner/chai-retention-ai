@@ -75,8 +75,28 @@ describe("Zendesk configuration", () => {
     expect(url.searchParams.get("redirect_uri")).toBe("https://app.test/cb");
     expect(url.searchParams.get("state")).toBe("state-123");
     expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("scope")).toBe("read offline_access");
+  });
+
+  it("requests offline_access so Zendesk issues a refresh token", () => {
+    expect(ZENDESK_SCOPE).toBe("read offline_access");
+    const scopes = ZENDESK_SCOPE.split(" ");
+    expect(scopes).toContain("read");
+    expect(scopes).toContain("offline_access");
+    expect(scopes).toHaveLength(2);
+  });
+
+  it("sends the same scope on the authorization-code exchange", async () => {
+    const http = mockFetch([
+      { match: "/oauth/tokens", json: { access_token: "at-1", refresh_token: "rt-1", expires_in: 3600 } },
+    ]);
+    await exchangeZendeskCode("acme", "code-1", "https://app.test/cb");
+    const body = http.requests[0].body as string;
+    const parsed = typeof body === "string" ? JSON.parse(body) : body;
+    expect(parsed.scope).toBe("read offline_access");
   });
 });
+
 
 describe("syncZendeskForUser", () => {
   it("normalizes tickets into ChAi's support dataset", async () => {
