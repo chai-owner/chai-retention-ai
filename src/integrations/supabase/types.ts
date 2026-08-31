@@ -239,6 +239,42 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_scores: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          is_latest: boolean
+          risk_level: string
+          score: number
+          score_breakdown: Json
+          scored_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          is_latest?: boolean
+          risk_level: string
+          score: number
+          score_breakdown?: Json
+          scored_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          is_latest?: boolean
+          risk_level?: string
+          score?: number
+          score_breakdown?: Json
+          scored_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       demo_leads: {
         Row: {
           company: string
@@ -1290,6 +1326,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      replace_customer_scores: {
+        Args: { p_rows: Json; p_user_id: string }
+        Returns: number
       }
     }
     Enums: {
