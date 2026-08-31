@@ -319,7 +319,7 @@ function PricingPage() {
       </section>
 
       {/* ── Section 3: ROI calculator ───────────────────── */}
-      <RoiCalculator annual={annual} />
+      <RoiCalculator />
 
       {/* ── Section 4: Perfect For ──────────────────────── */}
       <section className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8 lg:py-[7.5rem]">
@@ -425,10 +425,10 @@ const inputs = [
   { key: "churn", label: "Current monthly churn %", icon: TrendingDown, min: 0, step: 0.5, suffix: "%" },
 ] as const;
 
-function RoiCalculator({ annual }: { annual: boolean }) {
-  const [customers, setCustomers] = useState(500);
-  const [value, setValue] = useState(250);
-  const [churn, setChurn] = useState(4);
+function RoiCalculator() {
+  const [customers, setCustomers] = useState(200);
+  const [value, setValue] = useState(150);
+  const [churn, setChurn] = useState(3);
 
   const state = { customers, value, churn };
   const setters = {
@@ -437,17 +437,16 @@ function RoiCalculator({ annual }: { annual: boolean }) {
     churn: setChurn,
   } as const;
 
-  const { atRisk, protectedRev, roi } = useMemo(() => {
+  const { atRisk, protectedRev, multiple } = useMemo(() => {
     const atRisk = customers * value * (churn / 100);
     const protectedRev = atRisk * 0.3; // conservative 30% of at-risk revenue saved
-    const cost = annual ? 999 / 12 : 99;
-    const roi = cost > 0 ? ((protectedRev - cost) / cost) * 100 : 0;
-    return { atRisk, protectedRev, roi };
-  }, [customers, value, churn, annual]);
+    const multiple = protectedRev / 99;
+    return { atRisk, protectedRev, multiple };
+  }, [customers, value, churn]);
 
   const aAtRisk = useAnimatedNumber(atRisk);
   const aProtected = useAnimatedNumber(protectedRev);
-  const aRoi = useAnimatedNumber(roi);
+  const aMultiple = useAnimatedNumber(multiple);
 
   return (
     <section className="bg-card py-24 lg:py-[7.5rem]">
@@ -492,7 +491,7 @@ function RoiCalculator({ annual }: { annual: boolean }) {
 
         <Reveal delay={120}>
           <div className="mt-8 rounded-[20px] bg-navy p-8 shadow-lift sm:p-10">
-            <div className="grid gap-8 sm:grid-cols-3">
+            <div className="grid gap-8 sm:grid-cols-2">
               <div>
                 <p className="text-sm text-white/55">Estimated monthly revenue at risk</p>
                 <p className="mt-3 text-4xl font-semibold tracking-[-0.03em] text-white">
@@ -505,13 +504,10 @@ function RoiCalculator({ annual }: { annual: boolean }) {
                   {money(aProtected)}
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-white/55">Estimated ROI</p>
-                <p className="mt-3 text-4xl font-semibold tracking-[-0.03em] text-white">
-                  {Math.round(aRoi).toLocaleString("en-US")}%
-                </p>
-              </div>
             </div>
+            <p className="mt-8 border-t border-white/10 pt-6 text-center text-lg font-semibold tracking-tight text-white">
+              That's {aMultiple.toFixed(1)}× your monthly ChAi subscription
+            </p>
           </div>
           <p className="mt-5 text-center text-sm text-muted-foreground">
             These figures are estimates based on your inputs and do not guarantee business outcomes.
