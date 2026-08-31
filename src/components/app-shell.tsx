@@ -27,7 +27,9 @@ import { useProfileSync } from "@/lib/use-profile-sync";
 import { useProfile } from "@/lib/profile-store";
 import { useDemoMode } from "@/lib/use-demo-mode";
 import { impersonationStore, useImpersonation } from "@/lib/impersonation";
-import { endImpersonation } from "@/lib/admin.functions";
+import { endImpersonation, getImpersonationStatus } from "@/lib/admin.functions";
+import { Button } from "@/components/ui/button";
+import { millisecondsUntilExpiry } from "@/lib/impersonation";
 import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
 import { ensureLocalCacheOwner } from "@/lib/local-user-scope";
 import { hydrateCustomerAliases } from "@/lib/customer-aliases";
@@ -224,15 +226,17 @@ function ImpersonationBanner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const endImp = useServerFn(endImpersonation);
+  const getStatus = useServerFn(getImpersonationStatus);
   const [exiting, setExiting] = useState(false);
+  const [remainingMs, setRemainingMs] = useState(() =>
+    imp ? millisecondsUntilExpiry(imp.expiresAt) : 0,
+  );
 
-  if (!imp) return null;
-
-  async function exit() {
+  async function restoreAdmin(reason: "manual" | "timeout") {
     if (!imp) return;
     setExiting(true);
     try {
-      if (imp.auditId) await endImp({ data: { auditId: imp.auditId } }).catch(() => {});
+      await endImp({ data: { auditId: imp.auditId } }).catch(() => {});
       await supabase.auth.setSession({
         access_token: imp.adminSession.access_token,
         refresh_token: imp.adminSession.refresh_token,
@@ -241,23 +245,80 @@ function ImpersonationBanner() {
       impersonationStore.clear();
       await queryClient.cancelQueries();
       queryClient.clear();
+      if (reason === "timeout") toast.info("Impersonation ended after 30 minutes");
       navigate({ to: "/admin" });
     }
   }
 
+  useEffect(() => {
+    if (!imp) return;
+    let stopped = false;
+    let ending = false;
+
+    const verify = async () => {
+      if (stopped || ending) return;
+      const localRemaining = millisecondsUntilExpiry(imp.expiresAt);
+      setRemainingMs(localRemaining);
+      try {
+        const status = await getStatus({ data: { auditId: imp.auditId } });
+        if (stopped) return;
+        setRemainingMs(millisecondsUntilExpiry(status.expiresAt));
+        if (!status.active) {
+          ending = true;
+          await restoreAdmin(status.reason ?? "timeout");
+        }
+      } catch {
+        // Fail closed once the known server-issued deadline is reached.
+        if (localRemaining === 0) {
+          ending = true;
+          await restoreAdmin("timeout");
+        }
+      }
+    };
+
+    void verify();
+    const deadlineTimer = window.setTimeout(() => void verify(), millisecondsUntilExpiry(imp.expiresAt));
+    const statusTimer = window.setInterval(() => void verify(), 60_000);
+    const countdownTimer = window.setInterval(
+      () => setRemainingMs(millisecondsUntilExpiry(imp.expiresAt)),
+      1_000,
+    );
+    const onFocus = () => void verify();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      stopped = true;
+      window.clearTimeout(deadlineTimer);
+      window.clearInterval(statusTimer);
+      window.clearInterval(countdownTimer);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+    // restoreAdmin intentionally uses the current in-memory impersonation record.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imp?.auditId, imp?.expiresAt, getStatus]);
+
+  if (!imp) return null;
+
+  const remainingMinutes = Math.max(0, Math.ceil(remainingMs / 60_000));
+
   return (
-    <div className="flex items-center justify-between gap-3 bg-primary px-4 py-2 text-sm text-primary-foreground lg:px-8">
+    <div className="sticky top-16 z-30 flex flex-wrap items-center justify-between gap-3 bg-primary px-4 py-2 text-sm text-primary-foreground shadow lg:px-8">
       <span className="flex items-center gap-2">
         <Eye className="h-4 w-4" />
-        Viewing as <strong>{imp.targetName || imp.targetEmail}</strong> (admin impersonation)
+        Viewing as <strong>{imp.targetName || imp.targetEmail}</strong>
+        <span aria-live="polite">· {remainingMinutes} min remaining</span>
       </span>
-      <button
-        onClick={exit}
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        onClick={() => void restoreAdmin("manual")}
         disabled={exiting}
-        className="inline-flex items-center gap-1.5 rounded-md bg-primary-foreground/15 px-3 py-1 font-medium transition-colors hover:bg-primary-foreground/25 disabled:opacity-60"
+        className="shrink-0"
       >
-        <LogOut className="h-3.5 w-3.5" /> Exit impersonation
-      </button>
+        <LogOut /> {exiting ? "Ending…" : "End impersonation"}
+      </Button>
     </div>
   );
 }

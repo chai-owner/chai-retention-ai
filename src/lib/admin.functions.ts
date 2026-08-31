@@ -6,6 +6,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireConnectedAuth } from "@/lib/connected-auth-middleware";
 
+const IMPERSONATION_DURATION_MS = 30 * 60 * 1000;
+type ImpersonationEndReason = "manual" | "timeout";
+
+function expiryFor(startedAt: string): string {
+  return new Date(new Date(startedAt).getTime() + IMPERSONATION_DURATION_MS).toISOString();
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data } = await context.supabase.rpc("has_role", {
@@ -155,36 +162,93 @@ export const startImpersonation = createServerFn({ method: "POST" })
       throw new Error("Could not create impersonation session");
     }
 
-    const { data: auditRow } = await supabaseAdmin
+    const { data: auditRow, error: auditError } = await supabaseAdmin
       .from("impersonation_audit")
       .insert({ admin_id: context.userId, target_id: data.userId })
-      .select("id")
+      .select("id, started_at")
       .single();
+    if (auditError || !auditRow) {
+      throw new Error("Could not create the impersonation audit record");
+    }
 
     return {
       email,
       tokenHash: linkData.properties.hashed_token,
-      auditId: auditRow?.id ?? null,
+      auditId: auditRow.id,
+      expiresAt: expiryFor(auditRow.started_at),
     };
   });
 
-// Ends an impersonation session. Called while acting as the target user, so it
-// verifies the caller is that target before stamping ended_at (service role).
-export const endImpersonation = createServerFn({ method: "POST" })
+async function closeImpersonation(
+  auditId: string,
+  targetId: string,
+): Promise<{ active: false; reason: ImpersonationEndReason }> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: row, error: readError } = await supabaseAdmin
+    .from("impersonation_audit")
+    .select("started_at, ended_at, end_reason")
+    .eq("id", auditId)
+    .eq("target_id", targetId)
+    .maybeSingle();
+  if (readError || !row) throw new Error("Impersonation session not found");
+
+  if (row.ended_at) {
+    return { active: false, reason: row.end_reason === "timeout" ? "timeout" : "manual" };
+  }
+
+  const timedOut = Date.now() >= Date.parse(expiryFor(row.started_at));
+  const reason: ImpersonationEndReason = timedOut ? "timeout" : "manual";
+  const { error: updateError } = await supabaseAdmin
+    .from("impersonation_audit")
+    .update({ ended_at: new Date().toISOString(), end_reason: reason })
+    .eq("id", auditId)
+    .eq("target_id", targetId)
+    .is("ended_at", null);
+  if (updateError) throw updateError;
+  return { active: false, reason };
+}
+
+// The target session checks this server-authoritative deadline on mount, focus,
+// and periodically. Expired sessions are atomically closed as timeouts.
+export const getImpersonationStatus = createServerFn({ method: "POST" })
   .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) =>
     z.object({ auditId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { data: row, error } = await supabaseAdmin
       .from("impersonation_audit")
-      .update({ ended_at: new Date().toISOString() })
+      .select("started_at, ended_at, end_reason")
       .eq("id", data.auditId)
       .eq("target_id", context.userId)
-      .is("ended_at", null);
-    if (error) throw error;
-    return { ok: true };
+      .maybeSingle();
+    if (error || !row) throw new Error("Impersonation session not found");
+
+    const expiresAt = expiryFor(row.started_at);
+    if (row.ended_at) {
+      return {
+        active: false as const,
+        expiresAt,
+        reason: row.end_reason === "timeout" ? "timeout" as const : "manual" as const,
+      };
+    }
+    if (Date.now() >= Date.parse(expiresAt)) {
+      const closed = await closeImpersonation(data.auditId, context.userId);
+      return { ...closed, expiresAt };
+    }
+    return { active: true as const, expiresAt, reason: null };
+  });
+
+// Ends an impersonation session. The server derives whether the ending is
+// manual or a timeout from its own authoritative clock.
+export const endImpersonation = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ auditId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    return closeImpersonation(data.auditId, context.userId);
   });
 
 // Wipes every piece of customer data for one account and sends the user back to

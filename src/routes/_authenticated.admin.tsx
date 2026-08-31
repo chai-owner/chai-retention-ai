@@ -126,6 +126,7 @@ function AdminPage() {
         targetName: c.fullName,
         targetEmail: c.email,
         auditId: res.auditId,
+         expiresAt: res.expiresAt,
       });
       await queryClient.cancelQueries();
       queryClient.clear();

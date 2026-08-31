@@ -8,9 +8,7 @@
 // so the user never sees someone else's numbers.
 
 const OWNER_KEY = "chai.cache.owner";
-// Impersonation state must survive the wipe: it holds the admin session needed
-// to switch back.
-const PRESERVED_KEYS = new Set(["chai.impersonation", OWNER_KEY]);
+const PRESERVED_KEYS = new Set([OWNER_KEY]);
 
 type ClearFn = () => void;
 const scopedStores = new Set<ClearFn>();
