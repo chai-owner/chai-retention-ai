@@ -32,12 +32,14 @@ import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppPlannerRouteImport } from './routes/_authenticated.app.planner'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated.app.settings'
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated.app.team'
+import { Route as AuthenticatedAppTodayRouteImport } from './routes/_authenticated.app.today'
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
 import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
 import { Route as ApiPublicHooksDailyScoreRouteImport } from './routes/api/public/hooks/daily-score'
 import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public/hooks/daily-sync'
+import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 import { Route as ApiPublicIntercomCallbackRouteImport } from './routes/api/public/intercom.callback'
 import { Route as ApiPublicZendeskCallbackRouteImport } from './routes/api/public/zendesk.callback'
 import { Route as ApiPublicZohoCallbackRouteImport } from './routes/api/public/zoho.callback'
@@ -165,6 +167,11 @@ const AuthenticatedAppTeamRoute = AuthenticatedAppTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppTodayRoute = AuthenticatedAppTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppWelcomeRoute = AuthenticatedAppWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -199,6 +206,12 @@ const ApiPublicHooksDailySyncRoute = ApiPublicHooksDailySyncRouteImport.update({
   path: '/api/public/hooks/daily-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWeeklyDigestRoute =
+  ApiPublicHooksWeeklyDigestRouteImport.update({
+    id: '/api/public/hooks/weekly-digest',
+    path: '/api/public/hooks/weekly-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIntercomCallbackRoute =
   ApiPublicIntercomCallbackRouteImport.update({
     id: '/api/public/intercom/callback',
@@ -255,12 +268,14 @@ export interface FileRoutesByFullPath {
   '/app/planner': typeof AuthenticatedAppPlannerRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
+  '/app/today': typeof AuthenticatedAppTodayRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
@@ -289,12 +304,14 @@ export interface FileRoutesByTo {
   '/app/planner': typeof AuthenticatedAppPlannerRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
+  '/app/today': typeof AuthenticatedAppTodayRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
@@ -327,12 +344,14 @@ export interface FileRoutesById {
   '/_authenticated/app/planner': typeof AuthenticatedAppPlannerRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
+  '/_authenticated/app/today': typeof AuthenticatedAppTodayRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
@@ -365,12 +384,14 @@ export interface FileRouteTypes {
     | '/app/planner'
     | '/app/settings'
     | '/app/team'
+    | '/app/today'
     | '/app/welcome'
     | '/app/'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
@@ -399,12 +420,14 @@ export interface FileRouteTypes {
     | '/app/planner'
     | '/app/settings'
     | '/app/team'
+    | '/app/today'
     | '/app/welcome'
     | '/app'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
@@ -436,12 +459,14 @@ export interface FileRouteTypes {
     | '/_authenticated/app/planner'
     | '/_authenticated/app/settings'
     | '/_authenticated/app/team'
+    | '/_authenticated/app/today'
     | '/_authenticated/app/welcome'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
@@ -464,6 +489,7 @@ export interface RootRouteChildren {
   ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
   ApiPublicHooksDailyScoreRoute: typeof ApiPublicHooksDailyScoreRoute
   ApiPublicHooksDailySyncRoute: typeof ApiPublicHooksDailySyncRoute
+  ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
   ApiPublicIntercomCallbackRoute: typeof ApiPublicIntercomCallbackRoute
   ApiPublicZendeskCallbackRoute: typeof ApiPublicZendeskCallbackRoute
   ApiPublicZohoCallbackRoute: typeof ApiPublicZohoCallbackRoute
@@ -635,6 +661,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppTeamRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/today': {
+      id: '/_authenticated/app/today'
+      path: '/today'
+      fullPath: '/app/today'
+      preLoaderRoute: typeof AuthenticatedAppTodayRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/welcome': {
       id: '/_authenticated/app/welcome'
       path: '/welcome'
@@ -675,6 +708,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/daily-sync'
       fullPath: '/api/public/hooks/daily-sync'
       preLoaderRoute: typeof ApiPublicHooksDailySyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/weekly-digest': {
+      id: '/api/public/hooks/weekly-digest'
+      path: '/api/public/hooks/weekly-digest'
+      fullPath: '/api/public/hooks/weekly-digest'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/intercom/callback': {
@@ -749,6 +789,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppPlannerRoute: typeof AuthenticatedAppPlannerRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
+  AuthenticatedAppTodayRoute: typeof AuthenticatedAppTodayRoute
   AuthenticatedAppWelcomeRoute: typeof AuthenticatedAppWelcomeRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
@@ -764,6 +805,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppPlannerRoute: AuthenticatedAppPlannerRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
+  AuthenticatedAppTodayRoute: AuthenticatedAppTodayRoute,
   AuthenticatedAppWelcomeRoute: AuthenticatedAppWelcomeRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
@@ -800,6 +842,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
   ApiPublicHooksDailyScoreRoute: ApiPublicHooksDailyScoreRoute,
   ApiPublicHooksDailySyncRoute: ApiPublicHooksDailySyncRoute,
+  ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
   ApiPublicIntercomCallbackRoute: ApiPublicIntercomCallbackRoute,
   ApiPublicZendeskCallbackRoute: ApiPublicZendeskCallbackRoute,
   ApiPublicZohoCallbackRoute: ApiPublicZohoCallbackRoute,
