@@ -2,12 +2,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   buildZendeskAuthorizeUrl,
+  exchangeZendeskCode,
   getZendeskCreds,
   hasZendeskCreds,
   normalizeSubdomain,
   getZendeskRedirectUri,
   verifyZendeskConnection,
   syncZendeskForUser,
+  ZENDESK_SCOPE,
 } from "@/lib/zendesk.server";
 import { mockFetch } from "@/test/http";
 import { setSupabaseResult, supabaseMock } from "@/test/setup";
