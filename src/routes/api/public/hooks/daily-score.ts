@@ -73,7 +73,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
 
         const { data: profiles, error: profileError } = await supabaseAdmin
           .from("profiles")
-          .select("id, metrics");
+          .select("id, metrics, cadence, lifespan");
         if (profileError) {
           return new Response(JSON.stringify({ error: profileError.message }), {
             status: 500,
