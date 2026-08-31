@@ -32,6 +32,7 @@ import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppPlannerRouteImport } from './routes/_authenticated.app.planner'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated.app.settings'
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated.app.team'
+import { Route as AuthenticatedAppTodayRouteImport } from './routes/_authenticated.app.today'
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
@@ -165,6 +166,11 @@ const AuthenticatedAppTeamRoute = AuthenticatedAppTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppTodayRoute = AuthenticatedAppTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppWelcomeRoute = AuthenticatedAppWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -255,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/app/planner': typeof AuthenticatedAppPlannerRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
+  '/app/today': typeof AuthenticatedAppTodayRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -289,6 +296,7 @@ export interface FileRoutesByTo {
   '/app/planner': typeof AuthenticatedAppPlannerRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
+  '/app/today': typeof AuthenticatedAppTodayRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -327,6 +335,7 @@ export interface FileRoutesById {
   '/_authenticated/app/planner': typeof AuthenticatedAppPlannerRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
+  '/_authenticated/app/today': typeof AuthenticatedAppTodayRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -365,6 +374,7 @@ export interface FileRouteTypes {
     | '/app/planner'
     | '/app/settings'
     | '/app/team'
+    | '/app/today'
     | '/app/welcome'
     | '/app/'
     | '/app/customers/$id'
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
     | '/app/planner'
     | '/app/settings'
     | '/app/team'
+    | '/app/today'
     | '/app/welcome'
     | '/app'
     | '/app/customers/$id'
@@ -436,6 +447,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/planner'
     | '/_authenticated/app/settings'
     | '/_authenticated/app/team'
+    | '/_authenticated/app/today'
     | '/_authenticated/app/welcome'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
@@ -635,6 +647,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppTeamRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/today': {
+      id: '/_authenticated/app/today'
+      path: '/today'
+      fullPath: '/app/today'
+      preLoaderRoute: typeof AuthenticatedAppTodayRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/welcome': {
       id: '/_authenticated/app/welcome'
       path: '/welcome'
@@ -749,6 +768,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppPlannerRoute: typeof AuthenticatedAppPlannerRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
+  AuthenticatedAppTodayRoute: typeof AuthenticatedAppTodayRoute
   AuthenticatedAppWelcomeRoute: typeof AuthenticatedAppWelcomeRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
@@ -764,6 +784,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppPlannerRoute: AuthenticatedAppPlannerRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
+  AuthenticatedAppTodayRoute: AuthenticatedAppTodayRoute,
   AuthenticatedAppWelcomeRoute: AuthenticatedAppWelcomeRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
