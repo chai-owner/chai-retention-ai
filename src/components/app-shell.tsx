@@ -36,6 +36,9 @@ import { clearPersistedImpersonatedAuth, millisecondsUntilExpiry } from "@/lib/i
 import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
 import { ensureLocalCacheOwner } from "@/lib/local-user-scope";
 import { hydrateCustomerAliases } from "@/lib/customer-aliases";
+import { useOrgRole } from "@/lib/use-team";
+import { canManageMembers } from "@/lib/organisations";
+
 
 const nav = [
   { to: "/app/welcome", label: "Welcome", icon: Sparkles },
