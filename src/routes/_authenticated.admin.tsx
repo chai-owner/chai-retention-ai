@@ -124,6 +124,7 @@ function AdminPage() {
        clearPersistedImpersonatedAuth();
       impersonationStore.start({
         adminSession: sess.session,
+         targetUserId: c.id,
         targetName: c.fullName,
         targetEmail: c.email,
         auditId: res.auditId,

@@ -285,8 +285,8 @@ function ImpersonationBanner() {
       1_000,
     );
     const onFocus = () => void verify();
-    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
-      clearPersistedImpersonatedAuth();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user.id === imp.targetUserId) clearPersistedImpersonatedAuth();
     });
     clearPersistedImpersonatedAuth();
     window.addEventListener("focus", onFocus);

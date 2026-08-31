@@ -49,6 +49,7 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   "google/gemini-3-flash-preview": { input: 0.3, output: 2.5 },
 };
 const DEFAULT_PRICING = { input: 0.3, output: 2.5 };
+const IMPERSONATION_COOKIE = "chai-impersonation";
 
 export const listCustomers = createServerFn({ method: "GET" })
   .middleware([requireConnectedAuth])
@@ -168,6 +169,13 @@ export const startImpersonation = createServerFn({ method: "POST" })
     if (auditError || !auditRow) {
       throw new Error("Could not create the impersonation audit record");
     }
+    const { setCookie } = await import("@tanstack/react-start/server");
+    setCookie(IMPERSONATION_COOKIE, auditRow.id, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      path: "/",
+    });
 
     return {
       email,
@@ -202,6 +210,8 @@ async function closeImpersonation(
     .eq("target_id", targetId)
     .is("ended_at", null);
   if (updateError) throw updateError;
+  const { deleteCookie } = await import("@tanstack/react-start/server");
+  deleteCookie(IMPERSONATION_COOKIE, { path: "/" });
   return { active: false, reason };
 }
 
@@ -224,6 +234,8 @@ export const getImpersonationStatus = createServerFn({ method: "POST" })
 
     const expiresAt = impersonationExpiresAt(row.started_at);
     if (row.ended_at) {
+      const { deleteCookie } = await import("@tanstack/react-start/server");
+      deleteCookie(IMPERSONATION_COOKIE, { path: "/" });
       return {
         active: false as const,
         expiresAt,

@@ -9,6 +9,7 @@ export { IMPERSONATION_DURATION_MS };
 
 export interface ImpersonationState {
   adminSession: Session;
+  targetUserId: string;
   targetName: string;
   targetEmail: string;
   auditId: string;

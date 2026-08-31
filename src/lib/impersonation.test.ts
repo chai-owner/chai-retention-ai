@@ -31,6 +31,7 @@ describe("impersonation lifecycle", () => {
     const session = { access_token: "admin-access", refresh_token: "admin-refresh" };
     impersonationStore.start({
       adminSession: session as never,
+      targetUserId: "00000000-0000-4000-8000-000000000001",
       targetName: "Customer",
       targetEmail: "customer@example.com",
       auditId: "00000000-0000-4000-8000-000000000000",
