@@ -17,6 +17,8 @@ import {
   Link2,
 
   Settings,
+  UserCog,
+
   LogOut,
   LogIn,
   Eye,
