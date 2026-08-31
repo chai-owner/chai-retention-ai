@@ -20,6 +20,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as AuthenticatedAppChurnedRouteImport } from './routes/_authenticated.app.churned'
 import { Route as AuthenticatedAppCustomersRouteImport } from './routes/_authenticated.app.customers'
@@ -96,6 +97,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
   '/app/customers': typeof AuthenticatedAppCustomersRouteWithChildren
   '/app/dashboard': typeof AuthenticatedAppDashboardRoute
@@ -264,6 +271,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardRoute
   '/app/data': typeof AuthenticatedAppDataRoute
@@ -299,6 +307,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/app/churned': typeof AuthenticatedAppChurnedRoute
   '/_authenticated/app/customers': typeof AuthenticatedAppCustomersRouteWithChildren
   '/_authenticated/app/dashboard': typeof AuthenticatedAppDashboardRoute
@@ -335,6 +344,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/onboarding'
+    | '/invite/$token'
     | '/app/churned'
     | '/app/customers'
     | '/app/dashboard'
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/onboarding'
+    | '/invite/$token'
     | '/app/churned'
     | '/app/dashboard'
     | '/app/data'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/app'
     | '/_authenticated/onboarding'
+    | '/invite/$token'
     | '/_authenticated/app/churned'
     | '/_authenticated/app/customers'
     | '/_authenticated/app/dashboard'
@@ -435,6 +447,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
   ApiPublicHooksDailySyncRoute: typeof ApiPublicHooksDailySyncRoute
   ApiPublicIntercomCallbackRoute: typeof ApiPublicIntercomCallbackRoute
@@ -523,6 +536,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
@@ -755,6 +775,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  InviteTokenRoute: InviteTokenRoute,
   ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
   ApiPublicHooksDailySyncRoute: ApiPublicHooksDailySyncRoute,
   ApiPublicIntercomCallbackRoute: ApiPublicIntercomCallbackRoute,
