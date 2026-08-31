@@ -39,6 +39,7 @@ import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authe
 import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
 import { Route as ApiPublicHooksDailyScoreRouteImport } from './routes/api/public/hooks/daily-score'
 import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public/hooks/daily-sync'
+import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 import { Route as ApiPublicIntercomCallbackRouteImport } from './routes/api/public/intercom.callback'
 import { Route as ApiPublicZendeskCallbackRouteImport } from './routes/api/public/zendesk.callback'
 import { Route as ApiPublicZohoCallbackRouteImport } from './routes/api/public/zoho.callback'
@@ -205,6 +206,12 @@ const ApiPublicHooksDailySyncRoute = ApiPublicHooksDailySyncRouteImport.update({
   path: '/api/public/hooks/daily-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWeeklyDigestRoute =
+  ApiPublicHooksWeeklyDigestRouteImport.update({
+    id: '/api/public/hooks/weekly-digest',
+    path: '/api/public/hooks/weekly-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIntercomCallbackRoute =
   ApiPublicIntercomCallbackRouteImport.update({
     id: '/api/public/intercom/callback',
@@ -268,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
@@ -303,6 +311,7 @@ export interface FileRoutesByTo {
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
@@ -342,6 +351,7 @@ export interface FileRoutesById {
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
@@ -454,6 +466,7 @@ export interface FileRouteTypes {
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
@@ -476,6 +489,7 @@ export interface RootRouteChildren {
   ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
   ApiPublicHooksDailyScoreRoute: typeof ApiPublicHooksDailyScoreRoute
   ApiPublicHooksDailySyncRoute: typeof ApiPublicHooksDailySyncRoute
+  ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
   ApiPublicIntercomCallbackRoute: typeof ApiPublicIntercomCallbackRoute
   ApiPublicZendeskCallbackRoute: typeof ApiPublicZendeskCallbackRoute
   ApiPublicZohoCallbackRoute: typeof ApiPublicZohoCallbackRoute
@@ -696,6 +710,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailySyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/weekly-digest': {
+      id: '/api/public/hooks/weekly-digest'
+      path: '/api/public/hooks/weekly-digest'
+      fullPath: '/api/public/hooks/weekly-digest'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/intercom/callback': {
       id: '/api/public/intercom/callback'
       path: '/api/public/intercom/callback'
@@ -821,6 +842,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
   ApiPublicHooksDailyScoreRoute: ApiPublicHooksDailyScoreRoute,
   ApiPublicHooksDailySyncRoute: ApiPublicHooksDailySyncRoute,
+  ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
   ApiPublicIntercomCallbackRoute: ApiPublicIntercomCallbackRoute,
   ApiPublicZendeskCallbackRoute: ApiPublicZendeskCallbackRoute,
   ApiPublicZohoCallbackRoute: ApiPublicZohoCallbackRoute,
