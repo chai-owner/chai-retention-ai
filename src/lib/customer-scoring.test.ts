@@ -1,13 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { scoreCustomers, riskLevelFor } from "@/lib/customer-scoring";
+import {
+  scoreCustomers,
+  riskLevelFor,
+  metricDirection,
+  horizonDays,
+  type HistoryPoint,
+} from "@/lib/customer-scoring";
 import type { PlannerMetric } from "@/lib/mock-data";
 import type { IngestedData } from "@/lib/ingested-data-store";
+
+const DAY = 86_400_000;
+const NOW = Date.parse("2026-08-31T00:00:00Z");
 
 const metric: PlannerMetric = {
   name: "Average Workout Duration",
   why: "Average duration of each workout session in minutes.",
   churn: "Shorter sessions signal disengagement.",
-  category: "Usage",
+  category: "Engagement",
   weight: 2,
 };
 
@@ -20,6 +29,9 @@ const data: IngestedData = {
   ],
 };
 
+const byId = (scores: ReturnType<typeof scoreCustomers>) =>
+  Object.fromEntries(scores.map((s) => [s.customer_id, s]));
+
 describe("riskLevelFor", () => {
   it("bands scores", () => {
     expect(riskLevelFor(70)).toBe("healthy");
@@ -28,29 +40,132 @@ describe("riskLevelFor", () => {
   });
 });
 
+describe("metricDirection", () => {
+  it("treats elapsed-time and transaction recency as lower-is-better", () => {
+    expect(
+      metricDirection({
+        name: "Days Since Last Premium Payment",
+        why: "Payment timeliness",
+        churn: "Overdue payments precede lapse",
+        category: "Transactions",
+      }),
+    ).toBe("lower");
+    expect(
+      metricDirection({
+        name: "Support Ticket Volume",
+        why: "Friction",
+        churn: "Spikes predict churn",
+        category: "Support",
+      }),
+    ).toBe("lower");
+  });
+
+  it("treats engagement and retention as higher-is-better", () => {
+    expect(metricDirection(metric)).toBe("higher");
+    expect(
+      metricDirection({
+        name: "Policy Renewal Rate",
+        why: "Renewals",
+        churn: "Low renewals mean shopping around",
+        category: "Retention",
+      }),
+    ).toBe("higher");
+  });
+
+  it("respects explicit display anchors over inference", () => {
+    expect(metricDirection({ ...metric, valueAt0: 90, valueAt100: 10 })).toBe("lower");
+  });
+});
+
+describe("horizonDays", () => {
+  it("derives the horizon from stated purchase cadence", () => {
+    expect(horizonDays("Customers buy every 30 days")).toBe(90);
+    expect(horizonDays("Weekly")).toBe(21);
+  });
+
+  it("falls back to lifespan, then to 180 days", () => {
+    expect(horizonDays("", "2 years")).toBe(73);
+    expect(horizonDays()).toBe(180);
+  });
+});
+
 describe("scoreCustomers", () => {
-  it("min-max normalises across the customer base", () => {
-    const scores = scoreCustomers([metric], data);
-    const byId = Object.fromEntries(scores.map((s) => [s.customer_id, s]));
-    expect(byId.a!.score).toBe(0);
-    expect(byId.c!.score).toBe(100);
-    expect(byId.b!.score).toBeGreaterThan(0);
-    expect(byId.c!.risk_level).toBe("healthy");
-    expect(byId.a!.risk_level).toBe("critical");
+  it("falls back to cohort min-max with no history", () => {
+    const scores = byId(scoreCustomers([metric], data, { now: NOW }));
+    expect(scores.a!.score).toBe(0);
+    expect(scores.c!.score).toBe(100);
+    expect(scores.a!.score_breakdown[0]!.basis).toBe("cohort");
   });
 
-  it("records a breakdown entry per resolved metric", () => {
-    const [first] = scoreCustomers([metric], data);
-    expect(first!.score_breakdown).toHaveLength(1);
-    expect(first!.score_breakdown[0]).toMatchObject({ metric: metric.name, weight: 2 });
+  it("scores against the customer's own 30-day baseline when history exists", () => {
+    const history: HistoryPoint[] = [
+      { customer_id: "a", metric: metric.name, value: 5, scored_at: NOW - 2 * DAY },
+      { customer_id: "a", metric: metric.name, value: 5, scored_at: NOW - 10 * DAY },
+    ];
+    const scores = byId(scoreCustomers([metric], data, { now: NOW, history }));
+    // a resolves to 10 against a baseline of 5 — improving, so well above 50.
+    expect(scores.a!.score).toBe(100);
+    expect(scores.a!.score_breakdown[0]).toMatchObject({ basis: "baseline-30d", baseline: 5 });
+    // c has no history and still uses the cohort fallback.
+    expect(scores.c!.score_breakdown[0]!.basis).toBe("cohort");
   });
 
-  it("inverts metrics where lower is better", () => {
-    const inverted: PlannerMetric = { ...metric, valueAt0: 90, valueAt100: 10 };
-    const scores = scoreCustomers([inverted], data);
-    const byId = Object.fromEntries(scores.map((s) => [s.customer_id, s]));
-    expect(byId.a!.score).toBe(100);
-    expect(byId.c!.score).toBe(0);
+  it("sits at 50 when the value matches the baseline", () => {
+    const history: HistoryPoint[] = [
+      { customer_id: "b", metric: metric.name, value: 50, scored_at: NOW - DAY },
+    ];
+    const scores = byId(scoreCustomers([metric], data, { now: NOW, history }));
+    expect(scores.b!.score).toBe(50);
+  });
+
+  it("uses the 90-day baseline when there is nothing in the last 30 days", () => {
+    const history: HistoryPoint[] = [
+      { customer_id: "b", metric: metric.name, value: 100, scored_at: NOW - 60 * DAY },
+    ];
+    const scores = byId(scoreCustomers([metric], data, { now: NOW, history }));
+    expect(scores.b!.score_breakdown[0]).toMatchObject({ basis: "baseline-90d", baseline: 100 });
+    // 50 against a baseline of 100 is a decline for a higher-is-better metric.
+    expect(scores.b!.score).toBe(25);
+  });
+
+  it("rewards lower-is-better metrics that improve toward zero", () => {
+    const lower: PlannerMetric = {
+      name: "Days Since Last Payment",
+      why: "Payment recency",
+      churn: "Overdue payments precede lapse",
+      category: "Transactions",
+      weight: 1,
+    };
+    const payData: IngestedData = {
+      customers: [{ customer_id: "a" }],
+      transactions: [{ customer_id: "a", amount: "10", payment_date: "2026-08-21" }],
+    };
+    const history: HistoryPoint[] = [
+      { customer_id: "a", metric: lower.name, value: 40, scored_at: NOW - 3 * DAY },
+    ];
+    const scores = byId(scoreCustomers([lower], payData, { now: NOW, history }));
+    // 10 days since payment against a 40-day baseline is a big improvement.
+    expect(scores.a!.score).toBeGreaterThan(50);
+    expect(scores.a!.score_breakdown[0]!.basis).toBe("baseline-30d");
+  });
+
+  it("uses the cadence horizon for elapsed metrics without history", () => {
+    const lower: PlannerMetric = {
+      name: "Days Since Last Payment",
+      why: "Payment recency",
+      churn: "Overdue payments precede lapse",
+      category: "Transactions",
+      weight: 1,
+    };
+    const payData: IngestedData = {
+      customers: [{ customer_id: "a" }],
+      transactions: [{ customer_id: "a", amount: "10", payment_date: "2026-08-21" }],
+    };
+    const scores = byId(scoreCustomers([lower], payData, { now: NOW, cadence: "every 30 days" }));
+    const entry = scores.a!.score_breakdown[0]!;
+    expect(entry.basis).toBe("horizon");
+    // 10 days elapsed against a 90-day horizon.
+    expect(scores.a!.score).toBeCloseTo(88.89, 1);
   });
 
   it("returns nothing without customers or metrics", () => {
