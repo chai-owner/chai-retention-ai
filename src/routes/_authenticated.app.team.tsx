@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Mail, ShieldCheck, Trash2, UserPlus, Users } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { TEAM_QUERY_KEY, useTeam } from "@/lib/use-team";
 import {
@@ -104,8 +103,7 @@ function TeamPage() {
   const seatFull = data ? !hasSeatAvailable(data.organisation.plan, data.seatsUsed) : false;
 
   return (
-    <AppShell>
-      <div className="mx-auto max-w-4xl space-y-6 p-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-6">
         <header className="space-y-1">
           <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
             <Users className="h-6 w-6 text-primary" />
@@ -277,6 +275,5 @@ function TeamPage() {
           </>
         )}
       </div>
-    </AppShell>
   );
 }
