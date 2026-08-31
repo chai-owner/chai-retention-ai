@@ -3,7 +3,7 @@
 // surfaces never drift apart.
 
 export const businessModels = [
-  "SaaS", "Subscription", "Ecommerce", "Agency", "Professional Services", "Insurance",
+  "Subscription business", "Ecommerce", "Agency", "Professional Services", "Insurance",
   "Telecom", "Education", "Financial Services", "Membership", "Marketplace", "Healthcare",
   "Logistics", "Fitness / Gym", "Hospitality", "Property", "Manufacturing", "Other",
 ];
@@ -18,8 +18,7 @@ export const companySizes = ["1–10", "11–50", "51–200", "201–1000", "100
 // Industry-specific questions generated based on the chosen model. Broadened
 // to cover every business model offered above.
 export const industryQuestions: Record<string, string[]> = {
-  SaaS: ["Do you track logins?", "Do you track feature adoption?", "Do you track seat utilization?", "Do customers renew contracts?"],
-  Subscription: ["Do you track renewals?", "Do you track plan upgrades/downgrades?", "Do you track failed payments?", "Do you track pause/cancel requests?"],
+  "Subscription business": ["Do you track customer engagement?", "Do you track product or service usage?", "Do you track renewals?", "Do you track plan changes or cancellations?"],
   Ecommerce: ["Do you track repeat purchases?", "Do you track average order value?", "Do you track days since last purchase?", "Do you track cart abandonment?"],
   Agency: ["Do you track retainer renewals?", "Do you track scope/usage of hours?", "Do you track client satisfaction?", "Do you track project delivery on time?"],
   "Professional Services": ["Do you track engagement renewals?", "Do you track billable utilization?", "Do you track client satisfaction?", "Do you track referrals?"],
@@ -51,8 +50,7 @@ export function getQuestions(model: string): string[] {
 // model. Shown during onboarding so users can accept a sensible default or
 // refine it, rather than us assuming what churn means for their business.
 export const churnDefinitions: Record<string, string> = {
-  SaaS: "No logins for 60+ days, or a subscription that wasn't renewed at term.",
-  Subscription: "Cancelled their subscription, or a failed payment that wasn't recovered within 30 days.",
+  "Subscription business": "Cancelled their subscription, stopped engaging for a sustained period, or didn't renew at the end of the term.",
   Ecommerce: "No purchase in the last 6 months, having previously bought regularly.",
   Agency: "Ended their retainer or hasn't renewed an engagement after it lapsed.",
   "Professional Services": "No active engagement and no new work booked in the last 6 months.",

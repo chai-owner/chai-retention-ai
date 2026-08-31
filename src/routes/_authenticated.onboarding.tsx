@@ -56,7 +56,7 @@ function Onboarding() {
     size: "1–10",
     customers: "",
     avgValue: "",
-    model: "SaaS",
+    model: "Subscription business",
     whatBuy: "",
     cadence: "",
     lifespan: "",
@@ -481,7 +481,7 @@ function Onboarding() {
                       className={cn(inputCls, "min-h-28 resize-none")}
                       value={form.whatBuy}
                       onChange={(e) => update("whatBuy", e.target.value)}
-                      placeholder="Write a few sentences — what exactly are they paying for, how is it priced or packaged (one-off, monthly, contract), who typically uses it, what problem does it solve for them, and how do they usually get value from it?"
+                      placeholder="Write a few sentences — what exactly are they paying for, how is it priced or packaged (one-off, monthly, contract), which customers typically buy it, what problem does it solve for them, and how do they usually get value from it?"
                     />
                     <p className="mt-1.5 text-xs text-muted-foreground">
                       A paragraph is perfect — the more context you give, the sharper ChAi's metrics will be.
@@ -489,16 +489,16 @@ function Onboarding() {
                   </Field>
 
                   <Field label="How often should a healthy customer engage?">
-                    <input className={inputCls} value={form.cadence} onChange={(e) => update("cadence", e.target.value)} placeholder="e.g. logs in weekly" />
+                    <input className={inputCls} value={form.cadence} onChange={(e) => update("cadence", e.target.value)} placeholder="e.g. engages weekly or buys monthly" />
                   </Field>
                   <Field label="How long should a healthy customer stay?">
                     <input className={inputCls} value={form.lifespan} onChange={(e) => update("lifespan", e.target.value)} placeholder="e.g. 3+ years" />
                   </Field>
                   <Field label="What actions show a customer is succeeding?">
-                    <input className={inputCls} value={form.successActions} onChange={(e) => update("successActions", e.target.value)} placeholder="e.g. inviting teammates, renewing" />
+                    <input className={inputCls} value={form.successActions} onChange={(e) => update("successActions", e.target.value)} placeholder="e.g. repeat visits, regular usage, renewing" />
                   </Field>
                   <Field label="What actions show disengagement?">
-                    <input className={inputCls} value={form.disengagement} onChange={(e) => update("disengagement", e.target.value)} placeholder="e.g. no logins for 30 days" />
+                    <input className={inputCls} value={form.disengagement} onChange={(e) => update("disengagement", e.target.value)} placeholder="e.g. no visits, purchases or activity for 30 days" />
                   </Field>
                   <div>
                     <Field label="When would you consider a customer churned?">
