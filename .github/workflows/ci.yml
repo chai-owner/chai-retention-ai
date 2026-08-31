@@ -20,7 +20,8 @@ jobs:
       SUPABASE_URL: https://test.supabase.co
       SUPABASE_PUBLISHABLE_KEY: test-publishable-key
       SUPABASE_SERVICE_ROLE_KEY: test-service-role-key
-      APP_USER_CONNECTION_KEY_SECRET: dGVzdC1rZXk=
+      # 32-byte deterministic key for token-at-rest encryption tests.
+      APP_USER_CONNECTION_KEY_SECRET: BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=
 
     steps:
       - name: Checkout code
