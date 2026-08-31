@@ -1,11 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import { logAiUsage } from "./ai-usage.server";
+import { getAiProvider, DEFAULT_AI_MODEL } from "./ai-provider.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const MODEL = "google/gemini-3-flash-preview";
+const MODEL = DEFAULT_AI_MODEL;
+
+const FALLBACK_REPLY =
+  "I couldn't reach the analysis service just now. In the meantime, check the Risk Center for your highest-risk accounts and the Data Quality page for gaps worth filling.";
 
 // ---------------------------------------------------------------------------
 
@@ -28,11 +29,6 @@ export const askChai = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => AskChAiInput.parse(input))
   .handler(async ({ data }): Promise<{ reply: string }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
     const system = `You are ChAi, an AI customer-retention analyst inside a churn-intelligence app.
 Answer in plain, friendly language for a non-technical business owner. Be concise (2-4 sentences).
 Focus on customer health, churn risk, what data to track, and concrete next steps.
@@ -46,13 +42,14 @@ ${data.context?.trim() || "(no live workspace data provided)"}`;
       .map((m) => `${m.role === "user" ? "User" : "ChAi"}: ${m.text}`)
       .join("\n");
 
-    const { text, usage } = await generateText({
-      model: gateway(MODEL),
+    const result = await getAiProvider().generateText({
+      operation: "askChai",
+      model: MODEL,
       prompt: `${system}\n\nConversation so far:\n${convo}\n\nChAi:`,
     });
-    await logAiUsage("askChai", MODEL, usage);
+    if (!result.ok) return { reply: result.message ?? FALLBACK_REPLY };
 
-    return { reply: text.trim() };
+    return { reply: result.text.trim() || FALLBACK_REPLY };
   });
 
 // ---------------------------------------------------------------------------
@@ -81,11 +78,6 @@ export const summarizeRiskReasons = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => RiskSummaryInput.parse(input))
   .handler(async ({ data }): Promise<Record<string, string>> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
     const lines = data.customers
       .map(
         (c) =>
@@ -102,15 +94,20 @@ ${lines}
 
 Return ONLY a JSON object (no markdown, no code fences) mapping each account id to its one-sentence summary string.`;
 
-    const { text, usage } = await generateText({
-      model: gateway(MODEL),
-      prompt,
+    const result = await getAiProvider().generateSummary({
+      operation: "summarizeRiskReasons",
+      model: MODEL,
+      instructions: prompt,
+      content: "",
     });
-    await logAiUsage("summarizeRiskReasons", MODEL, usage);
+    if (!result.ok) return {};
 
-    const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
-    const parsed = z.record(z.string(), z.string()).parse(JSON.parse(jsonText));
-    return parsed;
+    const jsonText = result.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    try {
+      return z.record(z.string(), z.string()).parse(JSON.parse(jsonText));
+    } catch {
+      return {};
+    }
   });
 
 // ---------------------------------------------------------------------------
@@ -128,11 +125,6 @@ export const generateCollectiveInsights = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => CollectiveInsightsInput.parse(input))
   .handler(async ({ data }): Promise<{ insights: string[] }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
     const prompt = `You are ChAi, a customer-retention analyst. Based on the workspace analysis below, write the TOP 5 most interesting, high-level collective insights a business owner would most want to know about their customer base and retention. Each insight is ONE punchy plain-language sentence (max ~18 words), specific and useful. Do not invent precise numbers that aren't given.
 
 Workspace analysis:
@@ -140,13 +132,15 @@ ${data.summary}
 
 Return ONLY a JSON array of 5 strings (no markdown, no code fences).`;
 
-    const { text, usage } = await generateText({
-      model: gateway(MODEL),
-      prompt,
+    const result = await getAiProvider().generateSummary({
+      operation: "generateCollectiveInsights",
+      model: MODEL,
+      instructions: prompt,
+      content: "",
     });
-    await logAiUsage("generateCollectiveInsights", MODEL, usage);
+    if (!result.ok) return { insights: [] };
 
-    const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    const jsonText = result.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
     let insights: string[] = [];
     try {
       insights = z.array(z.string()).parse(JSON.parse(jsonText));
@@ -190,11 +184,6 @@ export const recommendMetricWeights = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => RecommendMetricWeightsInput.parse(input))
   .handler(async ({ data }): Promise<{ recommendations: MetricRecommendation[] }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
     const p = data.profile;
     const profileLines = [
       p.company && `Company: ${p.company}`,
@@ -228,13 +217,15 @@ Tailor the weights to this business. For example, a low-frequency high-value Saa
 Return ONLY a JSON array (no markdown, no code fences) where each item is:
 {"name": "<exact metric name>", "weight": <integer 1-5>, "reason": "<short reason>"}`;
 
-    const { text, usage } = await generateText({
-      model: gateway(MODEL),
-      prompt,
+    const result = await getAiProvider().generateRecommendations({
+      operation: "recommendMetricWeights",
+      model: MODEL,
+      instructions: prompt,
+      context: "",
     });
-    await logAiUsage("recommendMetricWeights", MODEL, usage);
+    if (!result.ok) return { recommendations: [] };
 
-    const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    const jsonText = result.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
     const validNames = new Set(data.metrics.map((m) => m.name));
     let recommendations: MetricRecommendation[] = [];
     try {
@@ -299,11 +290,6 @@ export const recommendMetrics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => RecommendMetricsInput.parse(input))
   .handler(async ({ data }): Promise<{ metrics: GeneratedMetric[] }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
     const p = data.profile;
     const profileLines = [
       p.company && `Company: ${p.company}`,
@@ -411,19 +397,27 @@ Return ONLY a JSON array (no prose, no markdown, no code fences) of 6-8 objects 
       return [];
     }
 
-    const first = await generateText({ model: gateway(MODEL), prompt });
-    await logAiUsage("recommendMetrics", MODEL, first.usage);
+    const ai = getAiProvider();
+    const first = await ai.generateRecommendations({
+      operation: "recommendMetrics",
+      model: MODEL,
+      instructions: prompt,
+      context: "",
+    });
+    if (!first.ok) return { metrics: [] };
     let metrics = extractMetrics(first.text);
 
     // One strict retry before we give up and show the generic fallback set.
     if (metrics.length === 0) {
-      const retry = await generateText({
-        model: gateway(MODEL),
-        prompt: `${prompt}
+      const retry = await ai.generateRecommendations({
+        operation: "recommendMetrics",
+        model: MODEL,
+        instructions: `${prompt}
 
 Your previous answer could not be parsed. Reply with the raw JSON array only — start with "[" and end with "]".`,
+        context: "",
       });
-      await logAiUsage("recommendMetrics", MODEL, retry.usage);
+      if (!retry.ok) return { metrics: [] };
       metrics = extractMetrics(retry.text);
     }
 

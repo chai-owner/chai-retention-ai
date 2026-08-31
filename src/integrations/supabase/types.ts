@@ -110,31 +110,40 @@ export type Database = {
       ai_usage_log: {
         Row: {
           created_at: string
+          error_message: string | null
           id: string
           input_tokens: number
           model: string
           operation: string
           output_tokens: number
+          provider: string
+          success: boolean
           total_tokens: number
           user_id: string
         }
         Insert: {
           created_at?: string
+          error_message?: string | null
           id?: string
           input_tokens?: number
           model?: string
           operation: string
           output_tokens?: number
+          provider?: string
+          success?: boolean
           total_tokens?: number
           user_id: string
         }
         Update: {
           created_at?: string
+          error_message?: string | null
           id?: string
           input_tokens?: number
           model?: string
           operation?: string
           output_tokens?: number
+          provider?: string
+          success?: boolean
           total_tokens?: number
           user_id?: string
         }
