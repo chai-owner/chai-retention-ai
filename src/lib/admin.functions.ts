@@ -5,13 +5,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireConnectedAuth } from "@/lib/connected-auth-middleware";
-
-const IMPERSONATION_DURATION_MS = 30 * 60 * 1000;
-type ImpersonationEndReason = "manual" | "timeout";
-
-function expiryFor(startedAt: string): string {
-  return new Date(new Date(startedAt).getTime() + IMPERSONATION_DURATION_MS).toISOString();
-}
+import {
+  impersonationEndReason,
+  impersonationExpiresAt,
+  type ImpersonationEndReason,
+} from "@/lib/impersonation-policy";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertAdmin(context: { supabase: any; userId: string }) {
@@ -175,7 +173,7 @@ export const startImpersonation = createServerFn({ method: "POST" })
       email,
       tokenHash: linkData.properties.hashed_token,
       auditId: auditRow.id,
-      expiresAt: expiryFor(auditRow.started_at),
+      expiresAt: impersonationExpiresAt(auditRow.started_at),
     };
   });
 
@@ -196,8 +194,7 @@ async function closeImpersonation(
     return { active: false, reason: row.end_reason === "timeout" ? "timeout" : "manual" };
   }
 
-  const timedOut = Date.now() >= Date.parse(expiryFor(row.started_at));
-  const reason: ImpersonationEndReason = timedOut ? "timeout" : "manual";
+  const reason: ImpersonationEndReason = impersonationEndReason(row.started_at);
   const { error: updateError } = await supabaseAdmin
     .from("impersonation_audit")
     .update({ ended_at: new Date().toISOString(), end_reason: reason })
@@ -225,7 +222,7 @@ export const getImpersonationStatus = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !row) throw new Error("Impersonation session not found");
 
-    const expiresAt = expiryFor(row.started_at);
+    const expiresAt = impersonationExpiresAt(row.started_at);
     if (row.ended_at) {
       return {
         active: false as const,

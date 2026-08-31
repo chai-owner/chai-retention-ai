@@ -30,7 +30,7 @@ import { useDemoMode } from "@/lib/use-demo-mode";
 import { impersonationStore, useImpersonation } from "@/lib/impersonation";
 import { endImpersonation, getImpersonationStatus } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
-import { millisecondsUntilExpiry } from "@/lib/impersonation";
+import { clearPersistedImpersonatedAuth, millisecondsUntilExpiry } from "@/lib/impersonation";
 import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
 import { ensureLocalCacheOwner } from "@/lib/local-user-scope";
 import { hydrateCustomerAliases } from "@/lib/customer-aliases";
@@ -285,6 +285,10 @@ function ImpersonationBanner() {
       1_000,
     );
     const onFocus = () => void verify();
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      clearPersistedImpersonatedAuth();
+    });
+    clearPersistedImpersonatedAuth();
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onFocus);
     return () => {
@@ -294,6 +298,7 @@ function ImpersonationBanner() {
       window.clearInterval(countdownTimer);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onFocus);
+      authListener.subscription.unsubscribe();
     };
     // restoreAdmin intentionally uses the current in-memory impersonation record.
     // eslint-disable-next-line react-hooks/exhaustive-deps
