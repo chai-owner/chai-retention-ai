@@ -33,7 +33,7 @@ function Settings() {
 
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
-  const [model, setModel] = useState("SaaS");
+  const [model, setModel] = useState("Subscription business");
   const [size, setSize] = useState("1–10");
   const [customers, setCustomers] = useState("");
   const [avgValue, setAvgValue] = useState("");
@@ -54,7 +54,7 @@ function Settings() {
     if (!profile) return;
     setCompany(profile.company ?? "");
     setIndustry(profile.industry ?? "");
-    setModel(profile.model || "SaaS");
+    setModel(profile.model === "SaaS" || profile.model === "Subscription" ? "Subscription business" : profile.model || "Subscription business");
     setSize(profile.size || "1–10");
     setCustomers(profile.customers ?? "");
     setAvgValue(profile.avgValue ?? "");
@@ -207,7 +207,7 @@ function Settings() {
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Industry">
-            <input className={inputCls} value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. B2B software" />
+            <input className={inputCls} value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. Membership, education or professional services" />
           </Field>
           <Field label="Business model">
             <select className={inputCls} value={model} onChange={(e) => setModel(e.target.value)}>
@@ -273,19 +273,19 @@ function Settings() {
       {/* How you work */}
       <Card title="How a healthy customer behaves">
         <Field label="What do customers buy from you?">
-          <input className={inputCls} value={whatBuy} onChange={(e) => setWhatBuy(e.target.value)} placeholder="e.g. an annual software subscription" />
+          <input className={inputCls} value={whatBuy} onChange={(e) => setWhatBuy(e.target.value)} placeholder="e.g. a monthly membership or ongoing service" />
         </Field>
         <Field label="How often should a healthy customer engage?">
-          <input className={inputCls} value={cadence} onChange={(e) => setCadence(e.target.value)} placeholder="e.g. logs in weekly" />
+          <input className={inputCls} value={cadence} onChange={(e) => setCadence(e.target.value)} placeholder="e.g. engages weekly or buys monthly" />
         </Field>
         <Field label="How long should a healthy customer stay?">
           <input className={inputCls} value={lifespan} onChange={(e) => setLifespan(e.target.value)} placeholder="e.g. 3+ years" />
         </Field>
         <Field label="What actions show a customer is succeeding?">
-          <input className={inputCls} value={successActions} onChange={(e) => setSuccessActions(e.target.value)} placeholder="e.g. inviting teammates, renewing" />
+          <input className={inputCls} value={successActions} onChange={(e) => setSuccessActions(e.target.value)} placeholder="e.g. repeat visits, regular usage, renewing" />
         </Field>
         <Field label="What actions show disengagement?">
-          <input className={inputCls} value={disengagement} onChange={(e) => setDisengagement(e.target.value)} placeholder="e.g. no logins for 30 days" />
+          <input className={inputCls} value={disengagement} onChange={(e) => setDisengagement(e.target.value)} placeholder="e.g. no visits, purchases or activity for 30 days" />
         </Field>
         <div>
           <Field label="When would you consider a customer churned?">
