@@ -35,6 +35,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
         } = await import("@/lib/ingest-row-normalize");
         type PlannerMetric = import("@/lib/mock-data").PlannerMetric;
         type IngestedData = import("@/lib/ingested-data-store").IngestedData;
+        type HistoryPoint = import("@/lib/customer-scoring").HistoryPoint;
 
         const logRun = async (userId: string, ok: boolean, error?: string) => {
           try {
