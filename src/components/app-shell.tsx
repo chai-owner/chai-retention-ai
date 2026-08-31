@@ -69,6 +69,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const profile = useProfile();
   const demo = useDemoMode();
 
+  // Role inside the user's organisation; members lose settings/integrations.
+  const orgRole = useOrgRole(!demo && signedIn === true);
+
   // Locked = a signed-in customer who has onboarded but hasn't been unlocked by
   // an admin yet. Demo visitors (no session) and demo mode see the full app.
   const locked = !demo && signedIn === true && profile != null && profile.unlocked !== true;
@@ -77,7 +80,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Once an admin unlocks the account, the Welcome/booking screen is done with.
   const hideWelcome = demo || (signedIn === true && profile?.unlocked === true);
   const baseNav = hideWelcome ? nav.filter((n) => n.to !== "/app/welcome") : nav;
-  const visibleNav = locked ? baseNav.filter((n) => LOCKED_ALLOWED.has(n.to)) : baseNav;
+  const roleNav =
+    orgRole && !canManageMembers(orgRole)
+      ? baseNav.filter((n) => !MANAGER_ONLY.has(n.to))
+      : baseNav;
+  const visibleNav = locked ? roleNav.filter((n) => LOCKED_ALLOWED.has(n.to)) : roleNav;
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
