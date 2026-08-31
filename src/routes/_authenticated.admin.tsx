@@ -15,7 +15,7 @@ import {
   resetAccount,
   type AdminCustomer,
 } from "@/lib/admin.functions";
-import { impersonationStore } from "@/lib/impersonation";
+import { clearPersistedImpersonatedAuth, impersonationStore } from "@/lib/impersonation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -121,11 +121,14 @@ function AdminPage() {
         token_hash: res.tokenHash,
       });
       if (error) throw error;
+       clearPersistedImpersonatedAuth();
       impersonationStore.start({
         adminSession: sess.session,
+         targetUserId: c.id,
         targetName: c.fullName,
         targetEmail: c.email,
         auditId: res.auditId,
+         expiresAt: res.expiresAt,
       });
       await queryClient.cancelQueries();
       queryClient.clear();

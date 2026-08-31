@@ -380,6 +380,7 @@ export type Database = {
       impersonation_audit: {
         Row: {
           admin_id: string
+          end_reason: string | null
           ended_at: string | null
           id: string
           started_at: string
@@ -387,6 +388,7 @@ export type Database = {
         }
         Insert: {
           admin_id: string
+          end_reason?: string | null
           ended_at?: string | null
           id?: string
           started_at?: string
@@ -394,6 +396,7 @@ export type Database = {
         }
         Update: {
           admin_id?: string
+          end_reason?: string | null
           ended_at?: string | null
           id?: string
           started_at?: string
