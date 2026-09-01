@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Mail, ShieldCheck, Trash2, UserPlus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UpgradePlanButton } from "@/components/plan-limits";
 import { TEAM_QUERY_KEY, useTeam } from "@/lib/use-team";
 import {
   PLAN_LABELS,
@@ -180,10 +181,13 @@ function TeamPage() {
                   </Button>
                 </form>
                 {seatFull && (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Every seat on the {PLAN_LABELS[data.organisation.plan]} plan is in use.
-                    Upgrade your plan or remove a teammate to invite someone new.
-                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      Every seat on the {PLAN_LABELS[data.organisation.plan]} plan is in use.
+                      Upgrade your plan or remove a teammate to invite someone new.
+                    </p>
+                    <UpgradePlanButton plan={data.organisation.plan} />
+                  </div>
                 )}
                 <p className="mt-3 text-xs text-muted-foreground">
                   Admins can manage the team, integrations and business profile. Members see

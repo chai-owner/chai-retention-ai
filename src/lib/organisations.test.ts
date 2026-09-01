@@ -18,6 +18,12 @@ import {
   seatsAllowed,
   seatsLabel,
   seatsUsed,
+  customersAllowed,
+  customerHeadroom,
+  customerLimitMessage,
+  hasCustomerCapacity,
+  nextPlan,
+  shouldWarnCustomerLimit,
 } from "@/lib/organisations";
 
 describe("plans and seats", () => {
@@ -97,5 +103,40 @@ describe("invites", () => {
     expect(inviteAcceptUrl("https://chai-retention-ai.lovable.app/", "abc")).toBe(
       "https://chai-retention-ai.lovable.app/invite/abc",
     );
+  });
+});
+
+describe("customer limits", () => {
+  it("uses the documented per-plan allowances", () => {
+    expect(customersAllowed("starter")).toBe(250);
+    expect(customersAllowed("growth")).toBe(1500);
+    expect(customersAllowed("pro")).toBeNull();
+  });
+
+  it("blocks imports that would exceed the plan", () => {
+    expect(hasCustomerCapacity("starter", 240, 10)).toBe(true);
+    expect(hasCustomerCapacity("starter", 240, 11)).toBe(false);
+    expect(hasCustomerCapacity("pro", 1_000_000, 5000)).toBe(true);
+    expect(customerHeadroom("growth", 1400)).toBe(100);
+    expect(customerHeadroom("pro", 10)).toBeNull();
+  });
+
+  it("warns from 80% of a finite limit only", () => {
+    expect(shouldWarnCustomerLimit("starter", 199)).toBe(false);
+    expect(shouldWarnCustomerLimit("starter", 200)).toBe(true);
+    expect(shouldWarnCustomerLimit("pro", 999_999)).toBe(false);
+  });
+
+  it("upgrades to the next tier", () => {
+    expect(nextPlan("starter")).toBe("growth");
+    expect(nextPlan("growth")).toBe("pro");
+    expect(nextPlan("pro")).toBeNull();
+  });
+
+  it("explains a rejected import", () => {
+    const msg = customerLimitMessage("starter", 240, 30);
+    expect(msg).toContain("240");
+    expect(msg).toContain("250");
+    expect(msg).toContain("upgrade your plan to continue");
   });
 });

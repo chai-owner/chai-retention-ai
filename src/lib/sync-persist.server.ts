@@ -6,6 +6,8 @@ import type { ExtractedDataset } from "./ingest.functions";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { SOURCE_FIELD, UNKNOWN_SOURCE } from "./ingested-data-store";
 import { customerKeyForRow } from "./row-validation";
+import { assertCustomerCapacity } from "./plan-limits.server";
+
 
 function toNumberOrNull(v: unknown): number | null {
   if (v == null || v === "") return null;
@@ -83,6 +85,13 @@ export async function persistDatasetsAdmin(
             customer_id: key,
             data: r,
           }));
+        // Pause the sync rather than silently pushing the account over its plan.
+        await assertCustomerCapacity(
+          supabaseAdmin,
+          userId,
+          payload.map((p) => p.customer_id),
+        );
+
         await inChunks(payload, async (c) => {
           const { error } = await supabaseAdmin
             .from("ingested_customers")

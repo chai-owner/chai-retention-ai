@@ -39,6 +39,7 @@ import { ensureLocalCacheOwner } from "@/lib/local-user-scope";
 import { hydrateCustomerAliases } from "@/lib/customer-aliases";
 import { useOrgRole } from "@/lib/use-team";
 import { canManageMembers } from "@/lib/organisations";
+import { CustomerLimitBanner, PlanLimitNoticeDialog } from "@/components/plan-limits";
 
 
 const nav = [
@@ -234,9 +235,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex-1" />
         </header>
         <ImpersonationBanner />
+        <CustomerLimitBanner enabled={!demo && signedIn === true} />
         <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">{children}</main>
       </div>
 
+      <PlanLimitNoticeDialog enabled={!demo && signedIn === true} />
       <AskChAi />
     </div>
   );

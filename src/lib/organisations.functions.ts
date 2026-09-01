@@ -14,6 +14,8 @@ import {
   normaliseEmail,
   seatsAllowed,
   seatsUsed,
+  customersAllowed,
+  nextPlan,
   ROLE_LABELS,
   inviteAcceptUrl,
   type InviteRole,
@@ -515,4 +517,57 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
     }
 
     return { ok: true as const, emailQueued, acceptUrl: inviteAcceptUrl(SITE_ORIGIN, token) };
+  });
+
+// --- Plan usage & upgrades ---------------------------------------------------
+
+export interface PlanUsage {
+  plan: OrgPlan;
+  myRole: OrgRole;
+  customers: number;
+  customersAllowed: number | null;
+  nextPlan: OrgPlan | null;
+}
+
+export const getPlanUsage = createServerFn({ method: "GET" })
+  .middleware([requireConnectedAuth])
+  .handler(async ({ context }): Promise<PlanUsage> => {
+    const membership = await loadMembership(context as Ctx);
+    const { countCustomers } = await import("@/lib/plan-limits.server");
+    const customers = await countCustomers(
+      (context as Ctx).supabase,
+      (context as Ctx).userId,
+    );
+    const plan = membership.organisation.plan;
+    return {
+      plan,
+      myRole: membership.role,
+      customers,
+      customersAllowed: customersAllowed(plan),
+      nextPlan: nextPlan(plan),
+    };
+  });
+
+/**
+ * Placeholder upgrade: flips the organisation to the next tier immediately so
+ * limits lift. Billing is arranged manually — no payment provider involved.
+ */
+export const upgradeOrganisationPlan = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .handler(async ({ context }) => {
+    const membership = await loadMembership(context as Ctx);
+    if (!canManageMembers(membership.role)) {
+      throw new Error("Only the team owner or an admin can change the plan.");
+    }
+    const target = nextPlan(membership.organisation.plan);
+    if (!target) throw new Error("You're already on our highest plan.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("organisations")
+      .update({ plan: target })
+      .eq("id", membership.orgId);
+    if (error) throw new Error(error.message);
+
+    return { ok: true as const, plan: target };
   });

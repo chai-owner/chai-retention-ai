@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { UpgradePlanButton } from "@/components/plan-limits";
 import { supabase } from "@/integrations/supabase/client";
 import { TEAM_QUERY_KEY, useTeam } from "@/lib/use-team";
 import {
@@ -316,10 +317,13 @@ function AccountSettingsPage() {
                 </Button>
               </form>
               {seatFull && (
-                <p className="px-5 pb-5 text-xs text-muted-foreground">
-                  Every seat on the {PLAN_LABELS[data.organisation.plan]} plan is in use.
-                  Upgrade your plan or remove a teammate to invite someone new.
-                </p>
+                <div className="flex flex-wrap items-center gap-3 px-5 pb-5">
+                  <p className="text-xs text-muted-foreground">
+                    Every seat on the {PLAN_LABELS[data.organisation.plan]} plan is in use.
+                    Upgrade your plan or remove a teammate to invite someone new.
+                  </p>
+                  <UpgradePlanButton plan={data.organisation.plan} />
+                </div>
               )}
             </section>
           )}
