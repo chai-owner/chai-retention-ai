@@ -34,9 +34,15 @@ export function useAuthUserId(): string | null | undefined {
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) setUserId(data.session?.user.id ?? null);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (active) setUserId(data.session?.user.id ?? null);
+      })
+      .catch((err) => {
+        console.error("[auth] getSession failed; treating as signed out", err);
+        if (active) setUserId(null);
+      });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
       setUserId(session?.user.id ?? null),
     );
