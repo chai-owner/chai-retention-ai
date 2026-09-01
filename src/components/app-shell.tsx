@@ -31,6 +31,7 @@ import { useProfileSync } from "@/lib/use-profile-sync";
 import { useProfile } from "@/lib/profile-store";
 import { useDemoMode } from "@/lib/use-demo-mode";
 import { impersonationStore, useImpersonation } from "@/lib/impersonation";
+import { useEffectiveSignedIn, useSignedIn } from "@/lib/use-auth-state";
 import { endImpersonation, getImpersonationStatus } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { clearPersistedImpersonatedAuth, millisecondsUntilExpiry } from "@/lib/impersonation";
@@ -67,7 +68,10 @@ const MANAGER_ONLY = new Set(["/app/settings", "/app/data"]);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  // Raw Supabase session (used for real-session side effects) vs. the
+  // impersonation-aware value used for every UI decision below.
+  const realSignedIn = useSignedIn();
+  const signedIn = useEffectiveSignedIn();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -95,18 +99,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      const isIn = !!data.session;
       // Drop any cache left behind by a different account (sign-in as another
       // user, or admin impersonation) before rendering anything account-specific.
       ensureLocalCacheOwner(data.session?.user?.id ?? null);
-      setSignedIn(isIn);
-      if (isIn && !demo) {
+      if (data.session && !demo) {
         void hydrateIngestFromServer();
         void hydrateCustomerAliases();
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      setSignedIn(!!session);
       const switched = ensureLocalCacheOwner(session?.user?.id ?? null);
       if ((event === "SIGNED_IN" || switched) && !demo) {
         void hydrateIngestFromServer();
@@ -261,6 +262,9 @@ function ImpersonationBanner() {
     setExiting(true);
     try {
       await endImp({ data: { auditId: imp.auditId } }).catch(() => {});
+      // Remove the impersonated token before restoring the admin session, so
+      // no impersonated credentials remain in storage afterwards.
+      clearPersistedImpersonatedAuth();
       await supabase.auth.setSession({
         access_token: imp.adminSession.access_token,
         refresh_token: imp.adminSession.refresh_token,
@@ -308,10 +312,12 @@ function ImpersonationBanner() {
       1_000,
     );
     const onFocus = () => void verify();
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user.id === imp.targetUserId) clearPersistedImpersonatedAuth();
-    });
-    clearPersistedImpersonatedAuth();
+    // Keep the impersonated session in storage while impersonation is active so
+    // Supabase can refresh the token for server calls, but never let it outlive
+    // the tab: wipe it on unload (impersonation state is memory-only, so a
+    // reload would otherwise leave a usable impersonated session behind).
+    const onUnload = () => clearPersistedImpersonatedAuth();
+    window.addEventListener("pagehide", onUnload);
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onFocus);
     return () => {
@@ -321,7 +327,7 @@ function ImpersonationBanner() {
       window.clearInterval(countdownTimer);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onFocus);
-      authListener.subscription.unsubscribe();
+      window.removeEventListener("pagehide", onUnload);
     };
     // restoreAdmin intentionally uses the current in-memory impersonation record.
     // eslint-disable-next-line react-hooks/exhaustive-deps
