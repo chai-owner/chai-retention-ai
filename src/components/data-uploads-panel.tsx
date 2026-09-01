@@ -139,8 +139,7 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
             <DialogHeader>
               <DialogTitle>Add ChAi Data Drop</DialogTitle>
               <DialogDescription>
-                You're adding ChAi Data Drop for ${SMART_INGEST_PRICING.monthly}/mo. Our team will be
-                in touch to arrange billing.
+                You're adding ChAi Data Drop for $39/mo. Our team will be in touch to arrange billing.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
