@@ -156,7 +156,7 @@ export function CustomerLimitBanner({ enabled = true }: { enabled?: boolean }) {
 
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-warning/30 bg-warning/15 px-4 py-3 text-sm text-foreground lg:px-8">
-      <AlertTriangle className="h-4 w-4 text-warning-foreground" />
+      <AlertTriangle className="h-4 w-4 text-warning" />
       <span className="flex-1">
         You're using {data.customers.toLocaleString()} of your{" "}
         {(data.customersAllowed ?? 0).toLocaleString()} customer slots. Upgrade to{" "}

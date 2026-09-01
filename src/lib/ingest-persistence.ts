@@ -3,6 +3,7 @@
 // `hydrateIngestFromServer()` loads persisted rows + batch history back into
 // those stores so history survives refresh and follows the user.
 import { toast } from "sonner";
+import { isPlanLimitMessage, raisePlanLimitNotice } from "@/lib/plan-limit-store";
 import { ingestedStore, type IngestRow } from "@/lib/ingested-data-store";
 import { uploadsStore, type UploadRecord } from "@/lib/uploads-store";
 import {
@@ -34,6 +35,13 @@ export async function persistBatch(args: PersistBatchArgs): Promise<{ batchId: s
     return { batchId: res.batchId };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not save to your account";
+    if (isPlanLimitMessage(message)) {
+      // Nothing was imported server-side — drop the optimistic local rows too.
+      raisePlanLimitNotice(message);
+      toast.error("Import blocked by your plan limit", { description: message });
+      void hydrateIngestFromServer();
+      return null;
+    }
     toast.error("Saved locally, but not to your account", { description: message });
     return null;
   }
