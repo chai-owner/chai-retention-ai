@@ -3,6 +3,8 @@
 // the onboarding "Add your data" step so they stay identical.
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Check, Download, FileSpreadsheet, Info, Lock, Sparkles, Upload } from "lucide-react";
 import { Card } from "@/components/ui/chai";
 import { UploadWizard } from "@/components/upload-wizard";
@@ -21,8 +23,8 @@ import type { PlannerMetric } from "@/lib/mock-data";
 
 import { useAllDatasets } from "@/lib/all-datasets";
 import { useUploads } from "@/lib/uploads-store";
-import { SMART_INGEST_PRICING } from "@/lib/addons-store";
-import { useDataDropAccess, useEnableDataDropAddon } from "@/lib/use-smart-ingest";
+import { usePlanUsage, PLAN_USAGE_QUERY_KEY } from "@/lib/use-plan-usage";
+import { enableSmartIngestAddon } from "@/lib/organisations.functions";
 import {
   Dialog,
   DialogContent,
