@@ -6,6 +6,8 @@ import type { ExtractedDataset } from "./ingest.functions";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { SOURCE_FIELD, UNKNOWN_SOURCE } from "./ingested-data-store";
 import { customerKeyForRow } from "./row-validation";
+import { assertCustomerCapacity } from "./plan-limits.server";
+
 
 function toNumberOrNull(v: unknown): number | null {
   if (v == null || v === "") return null;
