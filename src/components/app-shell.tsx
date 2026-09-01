@@ -19,6 +19,7 @@ import {
 
   Settings,
   UserCog,
+  UserCircle,
 
   LogOut,
   LogIn,
