@@ -16,6 +16,52 @@ export const PLAN_SEATS: Record<OrgPlan, number | null> = {
   pro: null,
 };
 
+/** Customer records included with each plan. `null` means unlimited. */
+export const PLAN_CUSTOMERS: Record<OrgPlan, number | null> = {
+  starter: 250,
+  growth: 1500,
+  pro: null,
+};
+
+/** The tier a plan upgrades to, or `null` when already on the top tier. */
+export function nextPlan(plan: OrgPlan): OrgPlan | null {
+  const i = ORG_PLANS.indexOf(plan);
+  return i >= 0 && i < ORG_PLANS.length - 1 ? ORG_PLANS[i + 1]! : null;
+}
+
+export function customersAllowed(plan: OrgPlan): number | null {
+  return PLAN_CUSTOMERS[plan];
+}
+
+/** How many more customers the plan allows. `null` means unlimited. */
+export function customerHeadroom(plan: OrgPlan, current: number): number | null {
+  const allowed = customersAllowed(plan);
+  return allowed === null ? null : Math.max(0, allowed - current);
+}
+
+/** True when adding `incoming` new customers stays inside the plan limit. */
+export function hasCustomerCapacity(plan: OrgPlan, current: number, incoming = 0): boolean {
+  const allowed = customersAllowed(plan);
+  return allowed === null || current + incoming <= allowed;
+}
+
+/** Show the 80% warning banner once usage reaches 80% of a finite limit. */
+export function shouldWarnCustomerLimit(plan: OrgPlan, current: number): boolean {
+  const allowed = customersAllowed(plan);
+  return allowed !== null && allowed > 0 && current / allowed >= 0.8;
+}
+
+export function customerLimitMessage(plan: OrgPlan, current: number, incoming: number): string {
+  const allowed = customersAllowed(plan) ?? 0;
+  return (
+    `This import would take you to ${(current + incoming).toLocaleString()} customers, ` +
+    `but the ${PLAN_LABELS[plan]} plan includes ${allowed.toLocaleString()}. ` +
+    `You currently have ${current.toLocaleString()}. Nothing was imported — ` +
+    `upgrade your plan to continue.`
+  );
+}
+
+
 export const PLAN_LABELS: Record<OrgPlan, string> = {
   starter: "Starter",
   growth: "Growth",
