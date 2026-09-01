@@ -1,4 +1,9 @@
 import { useState } from "react";
+import {
+  churnConfidenceFor,
+  churnConfidenceLabel,
+  churnProbabilityPhrase,
+} from "@/lib/churn-probability";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -211,7 +216,13 @@ function CustomerDetail() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Health score" value={c.health} icon={HeartPulse} tone={cat === "healthy" ? "success" : cat === "watch" ? "warning" : cat === "at-risk" ? "caution" : "danger"} />
-        <StatCard label="Churn probability" value={`${c.churnProbability}%`} icon={AlertTriangle} tone="danger" />
+        <StatCard
+          label="Churn probability"
+          value={`${c.churnProbability}%`}
+          icon={AlertTriangle}
+          tone="danger"
+          hint={`${churnProbabilityPhrase(c.churnProbability)} · ${churnConfidenceLabel(c.churnConfidence ?? churnConfidenceFor(c.dataCategories ?? 0))}`}
+        />
         <StatCard label="Revenue value" value={formatCurrency(c.revenue)} icon={DollarSign} />
         <StatCard label="Sentiment" value={sentimentLabel} icon={Smile} tone={c.sentiment >= 60 ? "success" : c.sentiment >= 40 ? "warning" : "danger"} hint={`Score ${c.sentiment}/100`} />
       </div>

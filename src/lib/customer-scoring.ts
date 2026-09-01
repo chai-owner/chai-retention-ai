@@ -10,6 +10,12 @@
 import type { IngestedData } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { resolveMetric } from "@/lib/metric-resolution";
+import {
+  CHURN_HORIZON_DAYS,
+  churnConfidenceFor,
+  churnProbabilityFromHealth,
+  type ChurnConfidence,
+} from "@/lib/churn-probability";
 
 export type RiskLevel = "healthy" | "at-risk" | "critical";
 
@@ -24,12 +30,44 @@ export interface ScoreBreakdownEntry {
   baseline: number | null;
 }
 
+/**
+ * Sentinel entry appended to `score_breakdown` so the churn probability and its
+ * confidence are stored historically alongside the metric contributions. It
+ * carries no numeric `value`, so metric consumers skip it.
+ */
+export const CHURN_META_METRIC = "__churn__";
+
+export interface ChurnMetaEntry {
+  metric: typeof CHURN_META_METRIC;
+  churn_probability: number;
+  churn_horizon_days: number;
+  confidence: ChurnConfidence;
+  data_categories: number;
+}
+
+export function isChurnMeta(entry: unknown): entry is ChurnMetaEntry {
+  return (
+    !!entry &&
+    typeof entry === "object" &&
+    (entry as { metric?: unknown }).metric === CHURN_META_METRIC
+  );
+}
+
+/** Reads the stored churn meta out of a `score_breakdown` array, if present. */
+export function churnMetaOf(breakdown: unknown): ChurnMetaEntry | null {
+  if (!Array.isArray(breakdown)) return null;
+  return (breakdown.find(isChurnMeta) as ChurnMetaEntry | undefined) ?? null;
+}
+
 export interface CustomerScore {
   customer_id: string;
   score: number;
   risk_level: RiskLevel;
-  score_breakdown: ScoreBreakdownEntry[];
+  churn_probability: number;
+  churn_confidence: ChurnConfidence;
+  score_breakdown: Array<ScoreBreakdownEntry | ChurnMetaEntry>;
 }
+
 
 /** One historical metric observation, read back from `customer_scores`. */
 export interface HistoryPoint {
@@ -229,15 +267,20 @@ export function scoreCustomers(
       max: values.length ? Math.max(...values) : 0,
       direction: metricDirection(metric),
       elapsed: isElapsedMetric(metric),
+      // Which data category this metric draws on — used for the confidence
+      // indicator on the churn probability.
+      category: (metric.category ?? result.dataset ?? metric.name).toLowerCase(),
     };
   });
 
   return customerIds.map((customerId) => {
-    const breakdown: ScoreBreakdownEntry[] = [];
+    const breakdown: Array<ScoreBreakdownEntry | ChurnMetaEntry> = [];
+    const categories = new Set<string>();
     let weighted = 0;
     let totalWeight = 0;
 
     for (const entry of resolved) {
+
       const value = entry.values.get(customerId);
       if (value == null || !Number.isFinite(value)) continue;
       const weight = Number(entry.metric.weight ?? 1) || 1;
@@ -274,16 +317,29 @@ export function scoreCustomers(
         basis,
         baseline: baseline == null ? null : round(baseline),
       });
+      categories.add(entry.category);
       weighted += normalised * weight;
       totalWeight += weight;
     }
 
     const score = totalWeight > 0 ? round(weighted / totalWeight) : 0;
+    const churnProbability = churnProbabilityFromHealth(score);
+    const confidence = churnConfidenceFor(categories.size);
+    breakdown.push({
+      metric: CHURN_META_METRIC,
+      churn_probability: churnProbability,
+      churn_horizon_days: CHURN_HORIZON_DAYS,
+      confidence,
+      data_categories: categories.size,
+    });
     return {
       customer_id: customerId,
       score,
       risk_level: riskLevelFor(score),
+      churn_probability: churnProbability,
+      churn_confidence: confidence,
       score_breakdown: breakdown,
     };
+
   });
 }

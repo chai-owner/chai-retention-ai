@@ -20,6 +20,9 @@ export interface WeeklyDigestCustomer {
   riskLabel: string
   topMetric: string | null
   action: string
+  /** e.g. "73% probability of churning in the next 90 days" */
+  churnProbability: number
+  confidenceLabel: string
 }
 
 export interface WeeklyDigestEmailProps {
@@ -82,6 +85,10 @@ export const WeeklyDigestEmail = ({
             <Section key={`${customer.name}-${index}`} style={card}>
               <Text style={cardTitle}>
                 {index + 1}. {customer.name} — {customer.score}/100 · {customer.riskLabel}
+              </Text>
+              <Text style={cardMeta}>
+                {customer.churnProbability}% probability of churning in the next 90 days ·{' '}
+                {customer.confidenceLabel}
               </Text>
               {customer.topMetric ? (
                 <Text style={cardMeta}>Driving the risk: {customer.topMetric}</Text>

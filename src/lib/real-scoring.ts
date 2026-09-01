@@ -19,6 +19,11 @@ import type { IngestedData } from "@/lib/ingested-data-store";
 import { customMetricKeys, type CustomMetricKey } from "@/lib/personalize-data";
 import { resolveMetric } from "@/lib/metric-resolution";
 import { playbookFor } from "@/lib/metric-playbooks";
+import {
+  churnConfidenceFor,
+  churnProbabilityFromHealth,
+  type ChurnConfidence,
+} from "@/lib/churn-probability";
 
 
 const DAY = 86400000;
@@ -417,7 +422,20 @@ export function buildRealDataset(
 
     const cat = categoryFromHealth(health);
     const risk = Math.round(clamp(100 - health));
-    const churnProbability = Math.round(clamp((100 - health) * 0.9 + (cat === "critical" ? 8 : 0), 3, 96));
+    const churnProbability = churnProbabilityFromHealth(health);
+    // Confidence reflects data completeness: how many distinct data categories
+    // this customer actually has signals in.
+    const dataCategories = new Set<string>();
+    if (txg) dataCategories.add("transactions");
+    if (loginAvgByCust.has(cid) || featAvgByCust.has(cid)) dataCategories.add("usage");
+    if (supg) dataCategories.add("support");
+    if (cs != null) dataCategories.add("satisfaction");
+    for (const cm of customMetrics) {
+      if (customLatest.get(cm.metric.name)?.get(cid) != null) {
+        dataCategories.add((cm.metric.category ?? cm.metric.name).toLowerCase());
+      }
+    }
+    const churnConfidence: ChurnConfidence = churnConfidenceFor(dataCategories.size);
     const sentiment = cs != null ? Math.round(cs) : Math.round(clamp(40 + health * 0.5));
     const lastTs = txg?.lastDate ?? parseDate(r.signup_date);
     const lastActivity = lastTs ? `${Math.max(0, Math.round((now - lastTs) / DAY))} days ago` : "—";
@@ -474,6 +492,8 @@ export function buildRealDataset(
       health,
       risk,
       churnProbability,
+      churnConfidence,
+      dataCategories: dataCategories.size,
       revenue,
       sentiment,
       lastActivity,

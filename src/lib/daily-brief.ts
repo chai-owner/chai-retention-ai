@@ -2,7 +2,13 @@
 // digest. It reads ONLY the stored scoring snapshots in `customer_scores`
 // (produced by the daily scoring job) — the client-side scoring path is
 // untouched and is not involved here.
-import type { RiskLevel, ScoreBreakdownEntry } from "@/lib/customer-scoring";
+import {
+  churnMetaOf,
+  type ChurnMetaEntry,
+  type RiskLevel,
+  type ScoreBreakdownEntry,
+} from "@/lib/customer-scoring";
+import { churnConfidenceFor, churnProbabilityFromHealth, type ChurnConfidence } from "@/lib/churn-probability";
 import { playbookFor } from "@/lib/metric-playbooks";
 
 /** A row as stored in `customer_scores`. */
@@ -10,7 +16,7 @@ export interface SnapshotRow {
   customer_id: string;
   score: number;
   risk_level: RiskLevel;
-  score_breakdown?: ScoreBreakdownEntry[] | null;
+  score_breakdown?: Array<ScoreBreakdownEntry | ChurnMetaEntry> | null;
   scored_at?: string | null;
 }
 
@@ -27,6 +33,9 @@ export interface BriefAction {
   /** Plain-English next step. */
   action: string;
   actionTitle: string;
+  /** Probability of churning within the next 90 days, derived from the score. */
+  churnProbability: number;
+  churnConfidence: ChurnConfidence;
 }
 
 export interface DailyBrief {
@@ -64,7 +73,7 @@ function displayName(id: string, names?: Record<string, string>): string {
 
 /** The breakdown entry hurting a customer's score the most (lowest weighted contribution). */
 export function topDragEntry(row: SnapshotRow): ScoreBreakdownEntry | null {
-  const entries = (row.score_breakdown ?? []).filter(
+  const entries = ((row.score_breakdown ?? []) as ScoreBreakdownEntry[]).filter(
     (e) => e && typeof e.metric === "string" && Number.isFinite(e.normalised),
   );
   if (entries.length === 0) return null;
@@ -84,7 +93,7 @@ export function topDragEntry(row: SnapshotRow): ScoreBreakdownEntry | null {
 function peerTarget(rows: SnapshotRow[], metric: string): number | null {
   const values = rows
     .filter((r) => r.score >= HEALTHY_SCORE)
-    .map((r) => (r.score_breakdown ?? []).find((e) => e.metric === metric)?.value)
+    .map((r) => ((r.score_breakdown ?? []) as ScoreBreakdownEntry[]).find((e) => e.metric === metric)?.value)
     .filter((v): v is number => typeof v === "number" && Number.isFinite(v))
     .sort((a, b) => a - b);
   if (values.length === 0) return null;
@@ -156,6 +165,7 @@ export function buildDailyBrief(input: BriefInput): DailyBrief {
 
   const actions: BriefAction[] = ranked.map((row) => {
     const drag = topDragEntry(row);
+    const meta = churnMetaOf(row.score_breakdown);
     const name = displayName(row.customer_id, input.names);
     const metric = drag?.metric ?? null;
     const play = playbookFor({
@@ -179,6 +189,8 @@ export function buildDailyBrief(input: BriefInput): DailyBrief {
       topMetricValue: drag?.value ?? null,
       action: play.steps[0] ?? play.title,
       actionTitle: play.title,
+      churnProbability: meta?.churn_probability ?? churnProbabilityFromHealth(row.score),
+      churnConfidence: meta?.confidence ?? churnConfidenceFor(new Set((row.score_breakdown ?? []).map((e) => (e as ScoreBreakdownEntry).metric)).size),
     };
   });
 

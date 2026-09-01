@@ -1,13 +1,19 @@
 import { describe, it, expect } from "vitest";
 import {
+  churnMetaOf,
   scoreCustomers,
   riskLevelFor,
   metricDirection,
   horizonDays,
   type HistoryPoint,
+  type ScoreBreakdownEntry,
 } from "@/lib/customer-scoring";
 import type { PlannerMetric } from "@/lib/mock-data";
 import type { IngestedData } from "@/lib/ingested-data-store";
+
+/** Metric contributions only, with the churn meta entry filtered out. */
+const entries = (score: { score_breakdown: unknown[] }): ScoreBreakdownEntry[] =>
+  score.score_breakdown.filter((e) => !churnMetaOf([e])) as ScoreBreakdownEntry[];
 
 const DAY = 86_400_000;
 const NOW = Date.parse("2026-08-31T00:00:00Z");
@@ -94,7 +100,7 @@ describe("scoreCustomers", () => {
     const scores = byId(scoreCustomers([metric], data, { now: NOW }));
     expect(scores.a!.score).toBe(0);
     expect(scores.c!.score).toBe(100);
-    expect(scores.a!.score_breakdown[0]!.basis).toBe("cohort");
+    expect(entries(scores.a!)[0]!.basis).toBe("cohort");
   });
 
   it("scores against the customer's own 30-day baseline when history exists", () => {
@@ -105,9 +111,9 @@ describe("scoreCustomers", () => {
     const scores = byId(scoreCustomers([metric], data, { now: NOW, history }));
     // a resolves to 10 against a baseline of 5 — improving, so well above 50.
     expect(scores.a!.score).toBe(100);
-    expect(scores.a!.score_breakdown[0]).toMatchObject({ basis: "baseline-30d", baseline: 5 });
+    expect(entries(scores.a!)[0]).toMatchObject({ basis: "baseline-30d", baseline: 5 });
     // c has no history and still uses the cohort fallback.
-    expect(scores.c!.score_breakdown[0]!.basis).toBe("cohort");
+    expect(entries(scores.c!)[0]!.basis).toBe("cohort");
   });
 
   it("sits at 50 when the value matches the baseline", () => {
@@ -123,7 +129,7 @@ describe("scoreCustomers", () => {
       { customer_id: "b", metric: metric.name, value: 100, scored_at: NOW - 60 * DAY },
     ];
     const scores = byId(scoreCustomers([metric], data, { now: NOW, history }));
-    expect(scores.b!.score_breakdown[0]).toMatchObject({ basis: "baseline-90d", baseline: 100 });
+    expect(entries(scores.b!)[0]).toMatchObject({ basis: "baseline-90d", baseline: 100 });
     // 50 against a baseline of 100 is a decline for a higher-is-better metric.
     expect(scores.b!.score).toBe(25);
   });
@@ -146,7 +152,7 @@ describe("scoreCustomers", () => {
     const scores = byId(scoreCustomers([lower], payData, { now: NOW, history }));
     // 10 days since payment against a 40-day baseline is a big improvement.
     expect(scores.a!.score).toBeGreaterThan(50);
-    expect(scores.a!.score_breakdown[0]!.basis).toBe("baseline-30d");
+    expect(entries(scores.a!)[0]!.basis).toBe("baseline-30d");
   });
 
   it("uses the cadence horizon for elapsed metrics without history", () => {
@@ -162,7 +168,7 @@ describe("scoreCustomers", () => {
       transactions: [{ customer_id: "a", amount: "10", payment_date: "2026-08-21" }],
     };
     const scores = byId(scoreCustomers([lower], payData, { now: NOW, cadence: "every 30 days" }));
-    const entry = scores.a!.score_breakdown[0]!;
+    const entry = entries(scores.a!)[0]!;
     expect(entry.basis).toBe("horizon");
     // 10 days elapsed against a 90-day horizon.
     expect(scores.a!.score).toBeCloseTo(88.89, 1);
@@ -176,5 +182,21 @@ describe("scoreCustomers", () => {
   it("scores 0 when no metric resolves for a customer", () => {
     const scores = scoreCustomers([metric], { customers: [{ customer_id: "z" }] });
     expect(scores[0]).toMatchObject({ customer_id: "z", score: 0, risk_level: "critical" });
+  });
+});
+
+describe("churn probability meta", () => {
+  it("stores churn probability and confidence in score_breakdown", () => {
+    const scores = byId(scoreCustomers([metric], data, { now: NOW }));
+    const meta = churnMetaOf(scores.a!.score_breakdown)!;
+    expect(meta).toBeTruthy();
+    expect(meta.churn_horizon_days).toBe(90);
+    expect(meta.churn_probability).toBe(scores.a!.churn_probability);
+    // Score 0 → deep in the critical band.
+    expect(scores.a!.churn_probability).toBe(85);
+    // Only one metric category present.
+    expect(meta.data_categories).toBe(1);
+    expect(scores.a!.churn_confidence).toBe("low");
+    expect(scores.c!.churn_probability).toBe(2);
   });
 });
