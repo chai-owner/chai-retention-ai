@@ -31,7 +31,7 @@ import { useProfileSync } from "@/lib/use-profile-sync";
 import { useProfile } from "@/lib/profile-store";
 import { useDemoMode } from "@/lib/use-demo-mode";
 import { impersonationStore, useImpersonation } from "@/lib/impersonation";
-import { useEffectiveSignedIn, useSignedIn } from "@/lib/use-auth-state";
+import { useEffectiveSignedIn } from "@/lib/use-auth-state";
 import { endImpersonation, getImpersonationStatus } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { clearPersistedImpersonatedAuth, millisecondsUntilExpiry } from "@/lib/impersonation";
@@ -68,9 +68,8 @@ const MANAGER_ONLY = new Set(["/app/settings", "/app/data"]);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  // Raw Supabase session (used for real-session side effects) vs. the
-  // impersonation-aware value used for every UI decision below.
-  const realSignedIn = useSignedIn();
+  // Single source of truth: the raw Supabase session drives the hydration
+  // side effect below, while UI decisions use the impersonation-aware value.
   const signedIn = useEffectiveSignedIn();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
