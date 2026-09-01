@@ -3,6 +3,7 @@
 // uploaded/synced data only — never sample data).
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useImpersonation } from "@/lib/impersonation";
 
 export function useSignedIn(): boolean | null {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -52,4 +53,14 @@ export function useAuthUserId(): string | null | undefined {
     };
   }, []);
   return userId;
+}
+
+// Effective session for UI/data decisions. During admin impersonation the
+// target session lives in memory only (its persisted token is deliberately not
+// left in localStorage), so the raw Supabase check can read as signed out even
+// though impersonation is active. Treat an active impersonation as signed in.
+export function useEffectiveSignedIn(): boolean | null {
+  const impersonation = useImpersonation();
+  const signedIn = useSignedIn();
+  return impersonation ? true : signedIn;
 }
