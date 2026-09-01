@@ -34,6 +34,7 @@ import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated.app.team'
 import { Route as AuthenticatedAppTodayRouteImport } from './routes/_authenticated.app.today'
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
+import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated.settings.account'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
 import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
@@ -177,6 +178,12 @@ const AuthenticatedAppWelcomeRoute = AuthenticatedAppWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedSettingsAccountRoute =
+  AuthenticatedSettingsAccountRouteImport.update({
+    id: '/settings/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAppCustomersIndexRoute =
   AuthenticatedAppCustomersIndexRouteImport.update({
     id: '/',
@@ -270,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/app/today': typeof AuthenticatedAppTodayRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
+  '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
@@ -306,6 +314,7 @@ export interface FileRoutesByTo {
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/app/today': typeof AuthenticatedAppTodayRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
+  '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
@@ -346,6 +355,7 @@ export interface FileRoutesById {
   '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
   '/_authenticated/app/today': typeof AuthenticatedAppTodayRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
+  '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
@@ -386,6 +396,7 @@ export interface FileRouteTypes {
     | '/app/team'
     | '/app/today'
     | '/app/welcome'
+    | '/settings/account'
     | '/app/'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
@@ -422,6 +433,7 @@ export interface FileRouteTypes {
     | '/app/team'
     | '/app/today'
     | '/app/welcome'
+    | '/settings/account'
     | '/app'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
@@ -461,6 +473,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/team'
     | '/_authenticated/app/today'
     | '/_authenticated/app/welcome'
+    | '/_authenticated/settings/account'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
     | '/api/public/accounting/callback'
@@ -675,6 +688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppWelcomeRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/settings/account': {
+      id: '/_authenticated/settings/account'
+      path: '/settings/account'
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/app/customers/': {
       id: '/_authenticated/app/customers/'
       path: '/'
@@ -817,12 +837,14 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

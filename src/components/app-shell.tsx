@@ -54,11 +54,12 @@ const nav = [
   { to: "/app/insights", label: "Insights & Benchmarks", icon: Lightbulb },
   { to: "/app/data", label: "Data Uploads & Integrations", icon: Database },
   { to: "/app/settings", label: "Business Profile", icon: Settings },
+  { to: "/settings/account", label: "Account Settings", icon: UserCircle },
   { to: "/app/team", label: "Team & Access", icon: UserCog },
 ];
 
 // Pages a locked (onboarded but not yet unlocked) customer can still access.
-const LOCKED_ALLOWED = new Set(["/app/welcome", "/app/settings", "/app/data"]);
+const LOCKED_ALLOWED = new Set(["/app/welcome", "/app/settings", "/app/data", "/settings/account"]);
 
 // Members (non-owner/admin) don't get settings, integrations or team management.
 const MANAGER_ONLY = new Set(["/app/settings", "/app/data", "/app/team"]);
