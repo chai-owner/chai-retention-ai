@@ -38,6 +38,8 @@
   --color-navy: var(--navy);
   --color-navy-foreground: var(--navy-foreground);
   --color-gold: var(--gold);
+  --color-hero-charcoal: var(--hero-charcoal);
+  --color-hero-charcoal-foreground: var(--hero-charcoal-foreground);
 
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
@@ -92,6 +94,10 @@
   --navy: #152238;
   --navy-foreground: #F7F9E1;
   --gold: #E0A93A;
+
+  /* Flat hero charcoal — no gradient, no glow */
+  --hero-charcoal: #0E141C;
+  --hero-charcoal-foreground: #F7F9E1;
 
   --destructive: #B6423F;
   --destructive-foreground: #FFFFFF;
