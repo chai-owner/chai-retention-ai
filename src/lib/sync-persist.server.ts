@@ -108,6 +108,10 @@ export async function persistDatasetsAdmin(
             customer_id: r["customer_id"] || null,
             amount: toNumberOrNull(r["amount"]),
             occurred_at: toDateOrNull(r["transaction_date"] ?? r["date"]),
+            due_date: toDateOrNull(r["due_date"]),
+            amount_due: toNumberOrNull(r["amount_due"]),
+            paid_date: toDateOrNull(r["paid_date"]),
+            days_overdue: toNumberOrNull(r["days_overdue"]),
             data: r,
           }));
         await inChunks(payload, async (c) => {
