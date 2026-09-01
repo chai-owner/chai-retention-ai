@@ -96,7 +96,7 @@ function CustomerDetail() {
 
   if (!found) {
     // Real data loads client-side; don't declare "not found" until it's in.
-    if (signedIn !== false && !hydrated) {
+    if (signedIn === null || (signedIn !== false && !hydrated)) {
       return <p className="py-16 text-center text-sm text-muted-foreground">Loading customer…</p>;
     }
     return <CustomerMissing />;
