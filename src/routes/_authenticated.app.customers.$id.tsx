@@ -42,6 +42,7 @@ import { useIngested } from "@/lib/ingested-data-store";
 import { useCustomerAliases } from "@/lib/customer-aliases";
 import { sourceLabel, identityCardTitle } from "@/lib/customer-matching";
 import { customerIdentities } from "@/lib/customer-merge";
+import { worstOverdueInvoice } from "@/lib/payment-health";
 import { cn } from "@/lib/utils";
 
 
@@ -85,6 +86,7 @@ function CustomerDetail() {
   const hydrated = useIngestHydrated();
   const overrides = useChurnOverrides();
   const metrics = useActiveMetrics();
+  const ingested = useIngested();
   const [dismissed, setDismissed] = useState(false);
   const [askChurn, setAskChurn] = useState(false);
   // Resolve strictly from the live dataset. Signed-out (demo) visitors can also
@@ -209,6 +211,29 @@ function CustomerDetail() {
           </button>
         </div>
       ) : null}
+
+      {(() => {
+        const overdue = worstOverdueInvoice(
+          ingested.transactions as Array<Record<string, unknown>> | undefined,
+          c.id,
+        );
+        if (!overdue) return null;
+        return (
+          <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-4">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                ⚠️ Invoice {overdue.daysOverdue} {overdue.daysOverdue === 1 ? "day" : "days"} overdue —{" "}
+                {formatCurrency(overdue.amountDue)} outstanding
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {overdue.transactionId ? `Invoice ${overdue.transactionId}` : "Open invoice"}
+                {overdue.dueDate ? ` · due ${overdue.dueDate}` : ""} · unpaid invoices are a strong churn signal.
+              </p>
+            </div>
+          </div>
+        );
+      })()}
 
       <PageHeader title={c.name} description={`${c.segment} · ${c.contact} · last active ${c.lastActivity}`}>
         <HealthBadge category={cat} />
