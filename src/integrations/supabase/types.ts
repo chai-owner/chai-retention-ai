@@ -608,34 +608,46 @@ export type Database = {
       ingested_transactions: {
         Row: {
           amount: number | null
+          amount_due: number | null
           batch_id: string | null
           created_at: string
           customer_id: string | null
           data: Json
+          days_overdue: number | null
+          due_date: string | null
           id: string
           occurred_at: string | null
+          paid_date: string | null
           transaction_id: string
           user_id: string
         }
         Insert: {
           amount?: number | null
+          amount_due?: number | null
           batch_id?: string | null
           created_at?: string
           customer_id?: string | null
           data?: Json
+          days_overdue?: number | null
+          due_date?: string | null
           id?: string
           occurred_at?: string | null
+          paid_date?: string | null
           transaction_id: string
           user_id: string
         }
         Update: {
           amount?: number | null
+          amount_due?: number | null
           batch_id?: string | null
           created_at?: string
           customer_id?: string | null
           data?: Json
+          days_overdue?: number | null
+          due_date?: string | null
           id?: string
           occurred_at?: string | null
+          paid_date?: string | null
           transaction_id?: string
           user_id?: string
         }
