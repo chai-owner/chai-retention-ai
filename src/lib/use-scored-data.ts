@@ -59,6 +59,30 @@ export function useActiveMetrics(): PlannerMetric[] {
 }
 
 
+// Neutral, all-zero dataset used while the auth session is still resolving, so
+// no one ever sees the fabricated sample companies in place of their own data.
+export function emptyDataset(): ScoredDataset {
+  return {
+    customers: [],
+    sortedByRisk: [],
+    totalRevenue: 0,
+    revenueAtRisk: 0,
+    executive: {
+      totalCustomers: 0,
+      healthy: 0,
+      watch: 0,
+      atRisk: 0,
+      critical: 0,
+      predictedMonthlyChurn: 0,
+      predictedRevenueLoss: 0,
+      revenueAtRisk: 0,
+      retentionOpportunity: 0,
+    },
+    healthDistribution: [],
+    segmentRevenue: [],
+  };
+}
+
 export function useScoredData(): ScoredDataset {
   const weights = useMetricWeights();
   const raw = useIngested();
@@ -68,9 +92,11 @@ export function useScoredData(): ScoredDataset {
   const signedIn = useSignedIn();
   const demo = useDemoMode();
   return useMemo(() => {
+    // Session still resolving — show a neutral empty state, never sample data.
+    if (signedIn === null) return emptyDataset();
     // Signed-in users ALWAYS see their own real data — never sample data,
     // even if a `?demo=1` flag leaked into the URL.
-    if (signedIn) return buildRealDataset(ingested, weights, profile);
+    if (signedIn === true) return buildRealDataset(ingested, weights, profile);
     // Demo mode (public, no-login) shows the illustrative sample dataset.
     if (demo) return buildDataset(weights);
     return buildDataset(weights);
