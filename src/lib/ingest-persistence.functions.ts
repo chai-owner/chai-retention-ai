@@ -77,9 +77,17 @@ export const saveIngestBatch = createServerFn({ method: "POST" })
       r["__source"]?.trim() ? r : { ...r, __source: stamp },
     );
 
-
+    // 0. Plan limit: refuse the whole upload rather than partially importing.
+    if (dataset === "customers") {
+      const { assertCustomerCapacity } = await import("@/lib/plan-limits.server");
+      const keys = data.rows
+        .map((r) => customerKeyForRow(r))
+        .filter((k): k is string => typeof k === "string" && k.length > 0);
+      await assertCustomerCapacity(supabase, userId, keys);
+    }
 
     // 1. Create the batch row.
+
     const { data: batchRow, error: batchErr } = await supabase
       .from("ingest_batches")
       .insert({
