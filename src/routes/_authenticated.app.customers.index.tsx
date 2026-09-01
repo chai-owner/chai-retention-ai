@@ -136,7 +136,7 @@ function Customers() {
       </div>
 
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+      <div className="overflow-hidden rounded-[14px] border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
