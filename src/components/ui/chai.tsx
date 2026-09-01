@@ -113,7 +113,7 @@ export function Card({
   return (
     <div className={cn("rounded-[14px] border border-border bg-card p-5", className)}>
       {(title || subtitle) && (
-        <div className="mb-4">
+        <div>
           {title && <h2 className="text-lg font-semibold">{title}</h2>}
           {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
         </div>
