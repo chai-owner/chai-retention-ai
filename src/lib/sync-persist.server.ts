@@ -83,6 +83,13 @@ export async function persistDatasetsAdmin(
             customer_id: key,
             data: r,
           }));
+        // Pause the sync rather than silently pushing the account over its plan.
+        await assertCustomerCapacity(
+          supabaseAdmin,
+          userId,
+          payload.map((p) => p.customer_id),
+        );
+
         await inChunks(payload, async (c) => {
           const { error } = await supabaseAdmin
             .from("ingested_customers")
