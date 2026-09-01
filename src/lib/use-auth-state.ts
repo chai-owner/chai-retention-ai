@@ -8,9 +8,15 @@ export function useSignedIn(): boolean | null {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   useEffect(() => {
     let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) setSignedIn(!!data.session);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (active) setSignedIn(!!data.session);
+      })
+      .catch((err) => {
+        console.error("[auth] getSession failed; treating as signed out", err);
+        if (active) setSignedIn(false);
+      });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
       setSignedIn(!!session),
     );
