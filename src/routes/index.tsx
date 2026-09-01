@@ -227,7 +227,7 @@ function Landing() {
                 alt="ChAi customer detail showing churn probability, risk drivers, and recommended actions"
                 width={1587}
                 height={896}
-                className="h-[420px] w-full object-cover object-top lg:h-[480px]"
+                className="h-[440px] w-full object-cover object-left-top lg:h-[500px]"
               />
             </div>
           </Reveal>
