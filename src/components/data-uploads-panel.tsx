@@ -66,8 +66,20 @@ function rawDataHint(metric: PlannerMetric): string | null {
 }
 
 export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {}) {
-  const { hasAccess, isAddon } = useDataDropAccess();
-  const enableAddon = useEnableDataDropAddon();
+  const { data: planUsage } = usePlanUsage();
+  const queryClient = useQueryClient();
+  const enable = useServerFn(enableSmartIngestAddon);
+  const enableAddon = useMutation({
+    mutationFn: () => enable(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: PLAN_USAGE_QUERY_KEY });
+    },
+  });
+  const hasAccess =
+    planUsage?.plan === "growth" ||
+    planUsage?.plan === "pro" ||
+    (planUsage?.plan === "starter" && planUsage?.smartIngestAddon === true);
+  const isAddon = planUsage?.plan === "starter" && planUsage?.smartIngestAddon === true;
   const profile = useProfile();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
