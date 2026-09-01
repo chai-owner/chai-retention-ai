@@ -38,6 +38,8 @@
   --color-navy: var(--navy);
   --color-navy-foreground: var(--navy-foreground);
   --color-gold: var(--gold);
+  --color-hero-charcoal: var(--hero-charcoal);
+  --color-hero-charcoal-foreground: var(--hero-charcoal-foreground);
 
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
