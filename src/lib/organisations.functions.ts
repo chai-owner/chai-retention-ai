@@ -63,7 +63,7 @@ type Ctx = { supabase: any; userId: string };
 async function loadMembership(context: Ctx) {
   const { data, error } = await context.supabase
     .from("organisation_members")
-    .select("org_id, role, organisations(id, name, plan)")
+    .select("org_id, role, organisations(id, name, plan, smart_ingest_addon)")
     .eq("user_id", context.userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -76,9 +76,11 @@ async function loadMembership(context: Ctx) {
       id: org?.id ?? data.org_id,
       name: org?.name ?? "My organisation",
       plan: (isOrgPlan(org?.plan) ? org.plan : "starter") as OrgPlan,
+      smartIngestAddon: Boolean(org?.smart_ingest_addon),
     },
   };
 }
+
 
 export const getMyTeam = createServerFn({ method: "GET" })
   .middleware([requireConnectedAuth])
