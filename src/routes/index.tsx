@@ -187,28 +187,18 @@ function Landing() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────── */}
-      <section id="top" className="relative overflow-hidden bg-navy pt-36 pb-28 lg:pt-44 lg:pb-36">
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="mesh-drift absolute -right-40 -top-52 h-[38rem] w-[38rem] rounded-full bg-primary/25 blur-[120px]" />
-          <div className="mesh-drift absolute -bottom-56 -left-40 h-[34rem] w-[34rem] rounded-full bg-[#204654]/30 blur-[130px]" />
-          <div className="absolute left-1/3 top-1/4 h-72 w-72 rounded-full bg-gold/10 blur-[110px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_70%_0%,rgba(169,224,241,0.18),transparent_60%)]" />
-        </div>
-
+      <section id="top" className="relative overflow-hidden bg-hero-charcoal pt-36 pb-28 lg:pt-44 lg:pb-36">
         <div className="relative mx-auto grid max-w-[1280px] items-center gap-16 px-6 lg:grid-cols-[1fr_1.05fr] lg:px-8">
           <Reveal>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur">
               <Sparkles className="h-3.5 w-3.5 text-gold" />
-              AI retention analyst, on demand
+              No analytics degree required
             </span>
             <h1 className="mt-7 text-[2.75rem] font-semibold leading-[1.05] tracking-[-0.03em] text-white sm:text-6xl lg:text-[4.25rem]">
-              Know who's about to leave.
-              <span className="block text-white/55">Before they do.</span>
+              See who's about to leave — and what to say to keep them.
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/65">
-              ChAi learns how your business operates, helps you pick the metrics that actually matter for your
-              industry, predicts who's about to churn, explains why, and tells you what to do — all in
-              plain English. Get your 2-week free trial now!
+              ChAi reads your customer data and explains it in plain English. No dashboards to decode, no jargon to learn.
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -231,19 +221,16 @@ function Landing() {
           </Reveal>
 
           <Reveal delay={120}>
-            <div>
-              <div className="overflow-hidden rounded-[22px] ring-1 ring-white/10 shadow-[0_40px_90px_-30px_rgba(2,8,23,0.65)]">
-                <img
-                  src="/screenshots/hero-dashboard.png"
-                  alt="ChAi retention dashboard showing customer health, revenue at risk and revenue by segment"
-                  width={1560}
-                  height={1057}
-                  className="block w-full"
-                />
-              </div>
+            <div className="overflow-hidden rounded-[10px] border border-white/10 bg-hero-charcoal">
+              <img
+                src="/screenshots/customer-detail.png"
+                alt="ChAi customer detail showing churn probability, risk drivers, and recommended actions"
+                width={1587}
+                height={896}
+                className="h-[420px] w-full object-cover object-top lg:h-[480px]"
+              />
             </div>
           </Reveal>
-
         </div>
       </section>
 
