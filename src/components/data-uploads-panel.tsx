@@ -3,6 +3,8 @@
 // the onboarding "Add your data" step so they stay identical.
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Check, Download, FileSpreadsheet, Info, Lock, Sparkles, Upload } from "lucide-react";
 import { Card } from "@/components/ui/chai";
 import { UploadWizard } from "@/components/upload-wizard";
@@ -21,8 +23,8 @@ import type { PlannerMetric } from "@/lib/mock-data";
 
 import { useAllDatasets } from "@/lib/all-datasets";
 import { useUploads } from "@/lib/uploads-store";
-import { SMART_INGEST_PRICING } from "@/lib/addons-store";
-import { useDataDropAccess, useEnableDataDropAddon } from "@/lib/use-smart-ingest";
+import { usePlanUsage, PLAN_USAGE_QUERY_KEY } from "@/lib/use-plan-usage";
+import { enableSmartIngestAddon } from "@/lib/organisations.functions";
 import {
   Dialog,
   DialogContent,
@@ -64,8 +66,20 @@ function rawDataHint(metric: PlannerMetric): string | null {
 }
 
 export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {}) {
-  const { hasAccess, isAddon } = useDataDropAccess();
-  const enableAddon = useEnableDataDropAddon();
+  const { data: planUsage } = usePlanUsage();
+  const queryClient = useQueryClient();
+  const enable = useServerFn(enableSmartIngestAddon);
+  const enableAddon = useMutation({
+    mutationFn: () => enable(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: PLAN_USAGE_QUERY_KEY });
+    },
+  });
+  const hasAccess =
+    planUsage?.plan === "growth" ||
+    planUsage?.plan === "pro" ||
+    (planUsage?.plan === "starter" && planUsage?.smartIngestAddon === true);
+  const isAddon = planUsage?.plan === "starter" && planUsage?.smartIngestAddon === true;
   const profile = useProfile();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -115,7 +129,7 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
               onClick={() => setConfirmOpen(true)}
               className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Add Data Drop — ${SMART_INGEST_PRICING.monthly}/mo
+              Add Data Drop — $39/mo
             </button>
           </div>
         </div>
@@ -125,8 +139,7 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
             <DialogHeader>
               <DialogTitle>Add ChAi Data Drop</DialogTitle>
               <DialogDescription>
-                You're adding ChAi Data Drop for ${SMART_INGEST_PRICING.monthly}/mo. Our team will be
-                in touch to arrange billing.
+                You're adding ChAi Data Drop for $39/mo. Our team will be in touch to arrange billing.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -171,7 +184,7 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
             </span>
             <h3 className="font-semibold">ChAi Data Drop</h3>
             {isAddon && (
-              <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                 Add-on active
               </span>
             )}
