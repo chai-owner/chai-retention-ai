@@ -17,7 +17,7 @@ import { applyAliases, resolveIdentities } from "@/lib/customer-matching";
 import { mergeRoster } from "@/lib/customer-merge";
 import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/real-scoring";
 import { assessCoverage, type DataCoverage } from "@/lib/data-coverage";
-import { useEffectiveSignedIn, useSignedIn } from "@/lib/use-auth-state";
+import { useEffectiveSignedIn } from "@/lib/use-auth-state";
 import { useDemoMode } from "@/lib/use-demo-mode";
 
 // Resolve the active importance weights. Merges the user's saved importance
@@ -131,7 +131,7 @@ export function useDataCoverage(): DataCoverage {
     [raw, aliases],
   );
   const profile = useProfile();
-  const signedIn = useSignedIn();
+  const signedIn = useEffectiveSignedIn();
   return useMemo(() => {
     const c = assessCoverage(ingested, profile?.metrics);
     if (!signedIn) return { ...c, flagged: false, confidence: "good" as const, notes: [] };
