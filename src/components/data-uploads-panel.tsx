@@ -21,7 +21,16 @@ import type { PlannerMetric } from "@/lib/mock-data";
 
 import { useAllDatasets } from "@/lib/all-datasets";
 import { useUploads } from "@/lib/uploads-store";
-import { useAddons, addonsStore, SMART_INGEST_PRICING } from "@/lib/addons-store";
+import { SMART_INGEST_PRICING } from "@/lib/addons-store";
+import { useSmartIngestAccess, useEnableSmartIngestAddon } from "@/lib/use-smart-ingest";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 
