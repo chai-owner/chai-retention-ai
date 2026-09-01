@@ -136,6 +136,10 @@ export const saveIngestBatch = createServerFn({ method: "POST" })
             customer_id: r["customer_id"] || null,
             amount: toNumberOrNull(r["amount"]),
             occurred_at: toDateOrNull(r["transaction_date"] ?? r["date"]),
+            due_date: toDateOrNull(r["due_date"]),
+            amount_due: toNumberOrNull(r["amount_due"]),
+            paid_date: toDateOrNull(r["paid_date"]),
+            days_overdue: toNumberOrNull(r["days_overdue"]),
             data: r,
           }));
         await chunkedUpsert(payload, (chunk) =>
@@ -228,7 +232,10 @@ export const listAllIngested = createServerFn({ method: "POST" })
 
     const [c, t, s, u, sv, batches] = await Promise.all([
       read("ingested_customers", "data, customer_id, batch_id"),
-      read("ingested_transactions", "data, transaction_id, customer_id, amount, occurred_at, batch_id"),
+      read(
+        "ingested_transactions",
+        "data, transaction_id, customer_id, amount, occurred_at, due_date, amount_due, paid_date, days_overdue, batch_id",
+      ),
       read("ingested_support", "data, ticket_id, customer_id, batch_id"),
       read("ingested_usage", "data, customer_id, occurred_at, batch_id"),
       read("ingested_surveys", "data, customer_id, submitted_at, batch_id"),

@@ -16,6 +16,10 @@ export const INGEST_COLUMNS: Record<string, Col[]> = {
     { from: "customer_id", to: ["customer_id"] },
     { from: "amount", to: ["amount"] },
     { from: "occurred_at", to: ["transaction_date", "date"] },
+    { from: "due_date", to: ["due_date"] },
+    { from: "amount_due", to: ["amount_due"] },
+    { from: "paid_date", to: ["paid_date"] },
+    { from: "days_overdue", to: ["days_overdue"] },
   ],
   support: [
     { from: "ticket_id", to: ["ticket_id"] },

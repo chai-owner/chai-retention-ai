@@ -16,10 +16,16 @@ import {
   churnProbabilityFromHealth,
   type ChurnConfidence,
 } from "@/lib/churn-probability";
+import {
+  PAYMENT_HEALTH_METRIC,
+  PAYMENT_HEALTH_WEIGHT,
+  maxDaysOverdueByCustomer,
+  paymentHealthScore,
+} from "@/lib/payment-health";
 
 export type RiskLevel = "healthy" | "at-risk" | "critical";
 
-export type ScoreBasis = "baseline-30d" | "baseline-90d" | "horizon" | "cohort";
+export type ScoreBasis = "baseline-30d" | "baseline-90d" | "horizon" | "cohort" | "payment";
 
 export interface ScoreBreakdownEntry {
   metric: string;
@@ -273,6 +279,13 @@ export function scoreCustomers(
     };
   });
 
+  // Overdue invoices (Xero/QuickBooks) score as their own high-weight metric.
+  const overdueByCustomer = maxDaysOverdueByCustomer(
+    data.transactions as Array<Record<string, unknown>> | undefined,
+    now,
+  );
+  const hasPaymentSignal = overdueByCustomer.size > 0;
+
   return customerIds.map((customerId) => {
     const breakdown: Array<ScoreBreakdownEntry | ChurnMetaEntry> = [];
     const categories = new Set<string>();
@@ -320,6 +333,22 @@ export function scoreCustomers(
       categories.add(entry.category);
       weighted += normalised * weight;
       totalWeight += weight;
+    }
+
+    if (hasPaymentSignal) {
+      const days = overdueByCustomer.get(customerId) ?? 0;
+      const normalised = clamp(round(paymentHealthScore(days)));
+      breakdown.push({
+        metric: PAYMENT_HEALTH_METRIC,
+        value: days,
+        normalised,
+        weight: PAYMENT_HEALTH_WEIGHT,
+        basis: "payment",
+        baseline: null,
+      });
+      categories.add("payments");
+      weighted += normalised * PAYMENT_HEALTH_WEIGHT;
+      totalWeight += PAYMENT_HEALTH_WEIGHT;
     }
 
     const score = totalWeight > 0 ? round(weighted / totalWeight) : 0;
