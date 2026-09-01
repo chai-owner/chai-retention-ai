@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Sun, AlertTriangle, ActivityIcon, ArrowRight, RefreshCw, Sparkles } from "lucide-react";
+import { churnConfidenceLabel, churnProbabilityPhrase } from "@/lib/churn-probability";
 import { getTodayBrief } from "@/lib/daily-brief.functions";
 import { useAuthUserId } from "@/lib/use-auth-state";
 import { Button } from "@/components/ui/button";
@@ -169,6 +170,16 @@ function TodayPage() {
                   ) : null}
                 </span>
               </div>
+
+              <p className="mt-2 text-sm text-foreground">
+                <span className="font-semibold text-[var(--danger)]">
+                  {churnProbabilityPhrase(action.churnProbability)}
+                </span>
+                <span className="text-muted-foreground">
+                  {" "}
+                  · {churnConfidenceLabel(action.churnConfidence)}
+                </span>
+              </p>
 
               {action.topMetric ? (
                 <p className="mt-3 text-sm text-muted-foreground">

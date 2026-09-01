@@ -1,5 +1,11 @@
 // Central mock data + helpers powering the ChAi demo experience.
 // All numbers are illustrative sample data for a fictional company.
+import {
+  churnProbabilityFromHealth,
+  type ChurnConfidence,
+} from "@/lib/churn-probability";
+
+
 
 export type RiskCategory = "healthy" | "watch" | "at-risk" | "critical";
 
@@ -78,6 +84,10 @@ export interface Customer {
   health: number;
   risk: number;
   churnProbability: number;
+  /** Confidence in the churn probability, from how many data categories exist. */
+  churnConfidence?: ChurnConfidence;
+  /** Number of distinct data categories with signals for this customer. */
+  dataCategories?: number;
   revenue: number;
   sentiment: number;
   lastActivity: string;
@@ -310,7 +320,7 @@ export function scoreCustomers(weights: MetricWeights): Customer[] {
     const health = weightedHealth(b, weights);
     const cat = categoryFromHealth(health);
     const risk = Math.max(2, Math.min(99, Math.round(100 - health + (rand() * 12 - 6))));
-    const churnProbability = Math.min(96, Math.max(3, Math.round((100 - health) * 0.9 + rand() * 10)));
+    const churnProbability = churnProbabilityFromHealth(health);
     const nFactors = cat === "healthy" ? 1 : cat === "watch" ? 2 : 3;
     const factors = [...factorPool].sort(() => rand() - 0.5).slice(0, nFactors);
     const recommendations = [...recPool]
@@ -325,6 +335,8 @@ export function scoreCustomers(weights: MetricWeights): Customer[] {
       health,
       risk,
       churnProbability,
+      churnConfidence: "high" as const,
+      dataCategories: 4,
       revenue: b.revenue,
       sentiment: b.sentiment,
       lastActivity: b.lastActivity,

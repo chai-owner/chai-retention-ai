@@ -149,7 +149,7 @@ function Customers() {
                   </span>
                 </th>
                 <th className="px-4 py-3 font-medium">Revenue</th>
-                <th className="hidden px-4 py-3 font-medium md:table-cell">Churn prob.</th>
+                <th className="hidden px-4 py-3 font-medium md:table-cell">Churn probability</th>
                 <th className="px-4 py-3 font-medium">Status</th>
               </tr>
             </thead>
@@ -180,7 +180,10 @@ function Customers() {
                       <span className={cn("font-semibold tabular-nums", riskMeta[cat].text)}>{c.risk}</span>
                     </td>
                     <td className="px-4 py-3 tabular-nums">{formatCurrency(c.revenue)}</td>
-                    <td className="hidden px-4 py-3 tabular-nums md:table-cell">{c.churnProbability}%</td>
+                    <td className="hidden px-4 py-3 md:table-cell">
+                      <span className="font-medium tabular-nums">{c.churnProbability}%</span>
+                      <span className="block text-xs text-muted-foreground">in the next 90 days</span>
+                    </td>
                     <td className="px-4 py-3">
                       <HealthBadge category={cat} />
                     </td>

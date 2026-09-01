@@ -5,6 +5,7 @@
 //
 // Auth: pg_cron sends the server-only CRON_SECRET in the `x-cron-secret`
 // header, exactly as the daily scoring job does.
+import { churnConfidenceLabel } from "@/lib/churn-probability";
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 
@@ -127,6 +128,8 @@ export const Route = createFileRoute("/api/public/hooks/weekly-digest")({
                 riskLabel: RISK_LABELS[a.riskLevel] ?? a.riskLevel,
                 topMetric: a.topMetric,
                 action: a.action,
+                churnProbability: a.churnProbability,
+                confidenceLabel: churnConfidenceLabel(a.churnConfidence),
               })),
               todayUrl: TODAY_URL,
             });
