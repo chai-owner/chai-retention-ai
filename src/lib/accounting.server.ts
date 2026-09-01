@@ -830,12 +830,39 @@ const TRANSACTION_HEADERS = [
   "transaction_date",
   "product",
   "currency",
+  "due_date",
+  "amount_due",
+  "paid_date",
+  "days_overdue",
 ];
 
 function isoDate(v: any): string {
   if (!v) return "";
   const d = new Date(v);
   return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+}
+
+/**
+ * Days an invoice is past due. Only an invoice with money still outstanding can
+ * be overdue, so a fully paid (or credited) invoice always scores 0.
+ */
+export function daysOverdue(
+  dueDate: unknown,
+  amountDue: unknown,
+  now: number = Date.now(),
+): number {
+  const due = isoDate(dueDate);
+  const outstanding = Number(amountDue);
+  if (!due || !Number.isFinite(outstanding) || outstanding <= 0) return 0;
+  const dueMs = Date.parse(`${due}T00:00:00Z`);
+  const today = Date.parse(`${new Date(now).toISOString().slice(0, 10)}T00:00:00Z`);
+  if (isNaN(dueMs) || dueMs >= today) return 0;
+  return Math.round((today - dueMs) / 86_400_000);
+}
+
+function numStr(v: unknown): string {
+  const n = Number(v);
+  return Number.isFinite(n) ? String(n) : "";
 }
 
 export async function fetchAndNormalize(
@@ -891,6 +918,12 @@ export async function fetchAndNormalize(
         isoDate(inv.TxnDate),
         inv.Line?.find((l: any) => l.SalesItemLineDetail)?.Description ?? "Invoice",
         inv.CurrencyRef?.value ?? "USD",
+        isoDate(inv.DueDate),
+        numStr(inv.Balance),
+        // QuickBooks only exposes settlement dates through the Payments API,
+        // which this sync does not call yet.
+        "",
+        String(daysOverdue(inv.DueDate, inv.Balance)),
       ]);
     }
   } else if (provider === "xero") {
@@ -956,6 +989,10 @@ export async function fetchAndNormalize(
             isoDate(inv.DateString || inv.Date),
             inv.LineItems?.[0]?.Description ?? "Invoice",
             inv.CurrencyCode ?? "",
+            isoDate(inv.DueDateString || inv.DueDate),
+            numStr(inv.AmountDue),
+            isoDate(inv.FullyPaidOnDate),
+            String(daysOverdue(inv.DueDateString || inv.DueDate, inv.AmountDue)),
           ]);
         }
         if (invoices.length < PAGE_SIZE) break;
@@ -1034,6 +1071,10 @@ export async function fetchAndNormalize(
           isoDate(inv.create_date),
           inv.lines?.[0]?.name ?? "Invoice",
           inv.amount?.code ?? inv.currency_code ?? "",
+          isoDate(inv.due_date),
+          numStr(inv.outstanding?.amount),
+          "",
+          String(daysOverdue(inv.due_date, inv.outstanding?.amount)),
         ]);
       }
       if (invoices.length < PER_PAGE || page >= (result.pages ?? page)) break;
