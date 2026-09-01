@@ -430,3 +430,89 @@ export const acceptTeamInvite = createServerFn({ method: "POST" })
 
     return { ok: true as const, organisationName: (invite as any).organisations?.name ?? "" };
   });
+
+/**
+ * Re-issues a pending invitation: a fresh token and expiry, plus another email.
+ * Owners and admins only.
+ */
+export const resendTeamInvite = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: { inviteId: string }) => ({ inviteId: String(input?.inviteId ?? "") }))
+  .handler(async ({ data, context }) => {
+    const membership = await loadMembership(context as Ctx);
+    if (!canManageMembers(membership.role)) throw new Error("You don't have permission to do that.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: invite, error: loadError } = await supabaseAdmin
+      .from("organisation_invites")
+      .select("id, email, role")
+      .eq("id", data.inviteId)
+      .eq("org_id", membership.orgId)
+      .is("accepted_at", null)
+      .maybeSingle();
+    if (loadError) throw new Error(loadError.message);
+    if (!invite) throw new Error("That invitation no longer exists.");
+
+    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const expiresAt = inviteExpiryFrom().toISOString();
+    const { error: updateError } = await supabaseAdmin
+      .from("organisation_invites")
+      .update({ token, expires_at: expiresAt })
+      .eq("id", invite.id)
+      .eq("org_id", membership.orgId);
+    if (updateError) throw new Error(updateError.message);
+
+    const role: InviteRole = invite.role === "admin" ? "admin" : "member";
+    let emailQueued = false;
+    try {
+      const [{ render }, React, { OrgInviteEmail }] = await Promise.all([
+        import("@react-email/render"),
+        import("react"),
+        import("@/lib/email-templates/org-invite"),
+      ]);
+      const { data: inviterProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", (context as Ctx).userId)
+        .maybeSingle();
+
+      const element = React.createElement(OrgInviteEmail, {
+        organisationName: membership.organisation.name || "your team",
+        inviterName: inviterProfile?.full_name || inviterProfile?.email || "A teammate",
+        roleLabel: ROLE_LABELS[role],
+        acceptUrl: inviteAcceptUrl(SITE_ORIGIN, token),
+        expiresInDays: INVITE_TTL_DAYS,
+      });
+      const html = await render(element);
+      const text = await render(element, { plainText: true });
+      const messageId = crypto.randomUUID();
+
+      await supabaseAdmin.from("email_send_log").insert({
+        message_id: messageId,
+        template_name: "org_invite",
+        recipient_email: invite.email,
+        status: "pending",
+      });
+
+      const { error: enqueueError } = await supabaseAdmin.rpc("enqueue_email", {
+        queue_name: "transactional_emails",
+        payload: {
+          message_id: messageId,
+          to: invite.email,
+          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+          sender_domain: SENDER_DOMAIN,
+          subject: `Reminder: you've been invited to join ${membership.organisation.name || "a team"} on ChAi`,
+          html,
+          text,
+          purpose: "transactional",
+          label: "org_invite",
+          queued_at: new Date().toISOString(),
+        },
+      });
+      emailQueued = !enqueueError;
+    } catch (error) {
+      console.error("Failed to resend organisation invite email", error);
+    }
+
+    return { ok: true as const, emailQueued, acceptUrl: inviteAcceptUrl(SITE_ORIGIN, token) };
+  });
