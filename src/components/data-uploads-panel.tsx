@@ -129,7 +129,7 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
               onClick={() => setConfirmOpen(true)}
               className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Add Data Drop — ${SMART_INGEST_PRICING.monthly}/mo
+              Add Data Drop — $39/mo
             </button>
           </div>
         </div>
