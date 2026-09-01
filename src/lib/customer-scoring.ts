@@ -286,7 +286,8 @@ export function scoreCustomers(
   );
   const hasPaymentSignal = overdueByCustomer.size > 0;
 
-  return customerIds.map((customerId) => {
+  const scores: CustomerScore[] = [];
+  for (const customerId of customerIds) {
     const breakdown: Array<ScoreBreakdownEntry | ChurnMetaEntry> = [];
     const categories = new Set<string>();
     let weighted = 0;
@@ -351,7 +352,12 @@ export function scoreCustomers(
       totalWeight += PAYMENT_HEALTH_WEIGHT;
     }
 
-    const score = totalWeight > 0 ? round(weighted / totalWeight) : 0;
+    // No behavioural signal for this account → omit it rather than writing a
+    // fabricated score. A hard 0 would read as "critical" in the daily brief
+    // and digest when the honest answer is "we don't know yet".
+    if (totalWeight === 0) continue;
+
+    const score = round(weighted / totalWeight);
     const churnProbability = churnProbabilityFromHealth(score);
     const confidence = churnConfidenceFor(categories.size);
     breakdown.push({
@@ -361,14 +367,15 @@ export function scoreCustomers(
       confidence,
       data_categories: categories.size,
     });
-    return {
+    scores.push({
       customer_id: customerId,
       score,
       risk_level: riskLevelFor(score),
       churn_probability: churnProbability,
       churn_confidence: confidence,
       score_breakdown: breakdown,
-    };
+    });
+  }
 
-  });
+  return scores;
 }

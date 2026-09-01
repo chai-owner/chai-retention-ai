@@ -179,9 +179,9 @@ describe("scoreCustomers", () => {
     expect(scoreCustomers([metric], { customers: [] })).toEqual([]);
   });
 
-  it("scores 0 when no metric resolves for a customer", () => {
+  it("omits customers when no metric resolves", () => {
     const scores = scoreCustomers([metric], { customers: [{ customer_id: "z" }] });
-    expect(scores[0]).toMatchObject({ customer_id: "z", score: 0, risk_level: "critical" });
+    expect(scores).toEqual([]);
   });
 });
 
