@@ -63,7 +63,7 @@ type Ctx = { supabase: any; userId: string };
 async function loadMembership(context: Ctx) {
   const { data, error } = await context.supabase
     .from("organisation_members")
-    .select("org_id, role, organisations(id, name, plan)")
+    .select("org_id, role, organisations(id, name, plan, smart_ingest_addon)")
     .eq("user_id", context.userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -76,9 +76,11 @@ async function loadMembership(context: Ctx) {
       id: org?.id ?? data.org_id,
       name: org?.name ?? "My organisation",
       plan: (isOrgPlan(org?.plan) ? org.plan : "starter") as OrgPlan,
+      smartIngestAddon: Boolean(org?.smart_ingest_addon),
     },
   };
 }
+
 
 export const getMyTeam = createServerFn({ method: "GET" })
   .middleware([requireConnectedAuth])
@@ -527,6 +529,8 @@ export interface PlanUsage {
   customers: number;
   customersAllowed: number | null;
   nextPlan: OrgPlan | null;
+  /** Starter-only paid add-on flag stored on the organisation. */
+  smartIngestAddon: boolean;
 }
 
 export const getPlanUsage = createServerFn({ method: "GET" })
@@ -545,8 +549,28 @@ export const getPlanUsage = createServerFn({ method: "GET" })
       customers,
       customersAllowed: customersAllowed(plan),
       nextPlan: nextPlan(plan),
+      smartIngestAddon: membership.organisation.smartIngestAddon,
     };
   });
+
+/**
+ * Placeholder purchase of the ChAi Data Drop add-on. Flips the flag on the
+ * organisation; billing is arranged manually by the team afterwards.
+ */
+export const enableSmartIngestAddon = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .handler(async ({ context }) => {
+    const membership = await loadMembership(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("organisations")
+      .update({ smart_ingest_addon: true })
+      .eq("id", membership.orgId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+
 
 /**
  * Placeholder upgrade: flips the organisation to the next tier immediately so
