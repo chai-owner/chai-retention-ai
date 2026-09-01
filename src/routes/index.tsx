@@ -18,6 +18,7 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
+import { HeroRiskCard, heroCustomer } from "@/components/landing/hero-risk-card";
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
   FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
