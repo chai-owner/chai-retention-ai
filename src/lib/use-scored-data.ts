@@ -17,7 +17,7 @@ import { applyAliases, resolveIdentities } from "@/lib/customer-matching";
 import { mergeRoster } from "@/lib/customer-merge";
 import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/real-scoring";
 import { assessCoverage, type DataCoverage } from "@/lib/data-coverage";
-import { useSignedIn } from "@/lib/use-auth-state";
+import { useEffectiveSignedIn, useSignedIn } from "@/lib/use-auth-state";
 import { useDemoMode } from "@/lib/use-demo-mode";
 
 // Resolve the active importance weights. Merges the user's saved importance
@@ -89,7 +89,7 @@ export function useScoredData(): ScoredDataset {
   const aliases = useCustomerAliases();
   const ingested = useMemo(() => mergeRoster(applyAliases(resolveIdentities(raw), aliases), aliases), [raw, aliases]);
   const profile = useProfile();
-  const signedIn = useSignedIn();
+  const signedIn = useEffectiveSignedIn();
   const demo = useDemoMode();
   return useMemo(() => {
     // Session still resolving — show a neutral empty state, never sample data.
