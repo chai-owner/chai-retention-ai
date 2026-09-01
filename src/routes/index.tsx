@@ -18,6 +18,7 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
+import { HeroRiskCard, heroCustomer } from "@/components/landing/hero-risk-card";
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
   FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
@@ -221,15 +222,7 @@ function Landing() {
           </Reveal>
 
           <Reveal delay={120}>
-            <div className="overflow-hidden rounded-[10px] border border-white/10 bg-hero-charcoal">
-              <img
-                src="/screenshots/customer-detail.png"
-                alt="ChAi customer detail showing churn probability, risk drivers, and recommended actions"
-                width={1587}
-                height={896}
-                className="h-[440px] w-full object-cover object-left-top lg:h-[500px]"
-              />
-            </div>
+            <HeroRiskCard customer={heroCustomer} />
           </Reveal>
         </div>
       </section>
