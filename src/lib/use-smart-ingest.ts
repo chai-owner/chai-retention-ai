@@ -5,30 +5,30 @@ import { useServerFn } from "@tanstack/react-start";
 import { enableSmartIngestAddon } from "@/lib/organisations.functions";
 import { usePlanUsage, PLAN_USAGE_QUERY_KEY } from "@/lib/use-plan-usage";
 
-export interface SmartIngestAccess {
+export interface DataDropAccess {
   /** True when the Data Drop UI should be unlocked. */
-  enabled: boolean;
+  hasAccess: boolean;
   /** True only for Starter orgs that bought the add-on. */
-  addonActive: boolean;
+  isAddon: boolean;
   /** Included with the plan (Growth / Pro) — no add-on badge needed. */
   includedInPlan: boolean;
   loading: boolean;
 }
 
-export function useSmartIngestAccess(): SmartIngestAccess {
+export function useDataDropAccess(): DataDropAccess {
   const { data, isLoading } = usePlanUsage();
   const plan = data?.plan ?? "starter";
   const includedInPlan = plan === "growth" || plan === "pro";
-  const addonActive = !includedInPlan && Boolean(data?.smartIngestAddon);
+  const isAddon = !includedInPlan && Boolean(data?.smartIngestAddon);
   return {
-    enabled: includedInPlan || addonActive,
-    addonActive,
+    hasAccess: includedInPlan || isAddon,
+    isAddon,
     includedInPlan,
     loading: isLoading,
   };
 }
 
-export function useEnableSmartIngestAddon() {
+export function useEnableDataDropAddon() {
   const enable = useServerFn(enableSmartIngestAddon);
   const queryClient = useQueryClient();
   return useMutation({
