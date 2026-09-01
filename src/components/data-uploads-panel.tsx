@@ -22,7 +22,7 @@ import type { PlannerMetric } from "@/lib/mock-data";
 import { useAllDatasets } from "@/lib/all-datasets";
 import { useUploads } from "@/lib/uploads-store";
 import { SMART_INGEST_PRICING } from "@/lib/addons-store";
-import { useSmartIngestAccess, useEnableSmartIngestAddon } from "@/lib/use-smart-ingest";
+import { useDataDropAccess, useEnableDataDropAddon } from "@/lib/use-smart-ingest";
 import {
   Dialog,
   DialogContent,
@@ -64,8 +64,8 @@ function rawDataHint(metric: PlannerMetric): string | null {
 }
 
 export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {}) {
-  const { enabled, addonActive } = useSmartIngestAccess();
-  const enableAddon = useEnableSmartIngestAddon();
+  const { hasAccess, isAddon } = useDataDropAccess();
+  const enableAddon = useEnableDataDropAddon();
   const profile = useProfile();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -78,7 +78,7 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
   }, [metrics, profile]);
 
 
-  if (!enabled) {
+  if (!hasAccess) {
     const benefits = [
       "Drop in scanned invoices, PDFs, spreadsheets, receipts or text",
       "AI reads the document and maps the data into your ChAi datasets",
@@ -170,7 +170,7 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
               <Sparkles className="h-4 w-4" />
             </span>
             <h3 className="font-semibold">ChAi Data Drop</h3>
-            {addonActive && (
+            {isAddon && (
               <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
                 Add-on active
               </span>
