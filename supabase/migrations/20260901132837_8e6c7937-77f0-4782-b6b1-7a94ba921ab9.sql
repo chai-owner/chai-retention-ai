@@ -1,0 +1,1 @@
+ALTER TABLE public.organisations ADD COLUMN IF NOT EXISTS smart_ingest_addon boolean NOT NULL DEFAULT false;
