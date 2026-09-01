@@ -200,3 +200,40 @@ describe("churn probability meta", () => {
     expect(scores.c!.churn_probability).toBe(2);
   });
 });
+
+describe("payment health metric", () => {
+  const overdueData = {
+    ...data,
+    transactions: [
+      {
+        customer_id: "a",
+        transaction_id: "INV-9",
+        amount_due: "500",
+        due_date: new Date(NOW - 45 * DAY).toISOString().slice(0, 10),
+        transaction_date: new Date(NOW - 50 * DAY).toISOString().slice(0, 10),
+      },
+    ],
+  } as typeof data;
+
+  it("adds a weighted Payment Health contribution when invoices are overdue", () => {
+    const scores = byId(scoreCustomers([metric], overdueData, { now: NOW }));
+    const payment = entries(scores.a!).find((e) => e.metric === "Payment Health")!;
+    expect(payment).toBeTruthy();
+    expect(payment.weight).toBe(5);
+    expect(payment.basis).toBe("payment");
+    expect(payment.value).toBe(45);
+    expect(payment.normalised).toBeGreaterThan(15);
+    expect(payment.normalised).toBeLessThan(40);
+  });
+
+  it("scores customers with no overdue invoices at full payment health", () => {
+    const scores = byId(scoreCustomers([metric], overdueData, { now: NOW }));
+    const payment = entries(scores.b!).find((e) => e.metric === "Payment Health")!;
+    expect(payment.normalised).toBe(100);
+  });
+
+  it("is omitted entirely when no payment data is present", () => {
+    const scores = byId(scoreCustomers([metric], data, { now: NOW }));
+    expect(entries(scores.a!).some((e) => e.metric === "Payment Health")).toBe(false);
+  });
+});
