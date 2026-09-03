@@ -132,3 +132,72 @@ export async function updateSubscriptionItems(
     throw new Error(`Paddle subscription update failed (${res.status}): ${body.slice(0, 300)}`);
   }
 }
+
+export interface PaddleTransactionSummary {
+  id: string;
+  amount: number;
+  currency: string;
+  createdAt: string;
+}
+
+/** Most recent completed transaction on a subscription, if any. */
+export async function latestCompletedTransaction(
+  env: PaddleEnv,
+  subscriptionId: string,
+): Promise<PaddleTransactionSummary | null> {
+  const res = await paddleFetch(
+    env,
+    `/transactions?subscription_id=${encodeURIComponent(subscriptionId)}&status=completed&order_by=created_at[DESC]&per_page=1`,
+  );
+  const json = (await res.json()) as {
+    data?: Array<{ id: string; created_at?: string; currency_code?: string; details?: { totals?: { grand_total?: string } } }>;
+  };
+  if (!res.ok) throw new Error("Couldn't read transactions from Paddle");
+  const t = json.data?.[0];
+  if (!t) return null;
+  return {
+    id: t.id,
+    amount: Number(t.details?.totals?.grand_total ?? 0) / 100,
+    currency: t.currency_code ?? "USD",
+    createdAt: t.created_at ?? new Date().toISOString(),
+  };
+}
+
+/** Issue a full refund for a transaction. */
+export async function refundTransaction(
+  env: PaddleEnv,
+  transactionId: string,
+  reason: string,
+): Promise<void> {
+  const res = await paddleFetch(env, `/adjustments`, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "refund",
+      type: "full",
+      transaction_id: transactionId,
+      reason,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Paddle refund failed (${res.status}): ${body.slice(0, 300)}`);
+  }
+}
+
+/** Cancel a subscription now or at the end of the paid period. */
+export async function cancelSubscription(
+  env: PaddleEnv,
+  subscriptionId: string,
+  immediately: boolean,
+): Promise<void> {
+  const res = await paddleFetch(env, `/subscriptions/${subscriptionId}/cancel`, {
+    method: "POST",
+    body: JSON.stringify({
+      effective_from: immediately ? "immediately" : "next_billing_period",
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Paddle cancellation failed (${res.status}): ${body.slice(0, 300)}`);
+  }
+}

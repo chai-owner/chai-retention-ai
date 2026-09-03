@@ -10,6 +10,19 @@ import {
   impersonationExpiresAt,
   type ImpersonationEndReason,
 } from "@/lib/impersonation-policy";
+import {
+  PLAN_PRICING,
+  type BillingPeriod,
+  type OrgPlan,
+} from "@/lib/organisations";
+import {
+  ADDON_PRICE_ID,
+  PLAN_PRICE_IDS,
+  planChangeKind,
+  planPeriodForPrice,
+  type PlanChangeKind,
+} from "@/lib/paddle-shared";
+import type { PaddleEnv } from "@/lib/paddle-server.types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertAdmin(context: { supabase: any; userId: string }) {
@@ -327,4 +340,253 @@ export const resetAccount = createServerFn({ method: "POST" })
     if (profileErr) throw profileErr;
 
     return { ok: true };
+  });
+
+// ---------------------------------------------------------------------------
+// Billing admin: overview of every customer's Paddle subscription plus the
+// admin-only actions (refund, cancel, plan change, portal link).
+// ---------------------------------------------------------------------------
+
+export interface AdminBillingRow {
+  userId: string;
+  fullName: string;
+  email: string;
+  plan: OrgPlan | null;
+  period: BillingPeriod | null;
+  status: string;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  pendingPlan: OrgPlan | null;
+  pendingPlanEffectiveAt: string | null;
+  subscriptionId: string | null;
+  monthlyValueUsd: number;
+}
+
+const envInput = z.object({ environment: z.enum(["sandbox", "live"]) });
+
+function monthlyValue(plan: OrgPlan | null, period: BillingPeriod | null): number {
+  if (!plan) return 0;
+  const p = PLAN_PRICING[plan];
+  return period === "annual" ? p.annualMonthly : p.monthly;
+}
+
+const ACTIVE_STATUSES = ["active", "trialing", "past_due"];
+
+export const listBilling = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: unknown) => envInput.parse(input))
+  .handler(async ({ data, context }): Promise<AdminBillingRow[]> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [{ data: profiles }, { data: subs }, { data: members }] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id, full_name, email"),
+      supabaseAdmin
+        .from("subscriptions")
+        .select("*")
+        .eq("provider", "paddle")
+        .eq("environment", data.environment)
+        .order("created_at", { ascending: false }),
+      supabaseAdmin
+        .from("organisation_members")
+        .select("user_id, organisations(plan, pending_plan, pending_plan_effective_at)"),
+    ]);
+
+    const orgByUser = new Map<string, any>();
+    for (const m of members ?? []) {
+      const org = Array.isArray(m.organisations) ? m.organisations[0] : m.organisations;
+      if (org && !orgByUser.has(m.user_id)) orgByUser.set(m.user_id, org);
+    }
+
+    // Newest subscription per user (list is already newest-first).
+    const subByUser = new Map<string, any>();
+    for (const s of subs ?? []) if (!subByUser.has(s.user_id)) subByUser.set(s.user_id, s);
+
+    const rows: AdminBillingRow[] = [];
+    for (const p of profiles ?? []) {
+      const sub = subByUser.get(p.id);
+      const org = orgByUser.get(p.id);
+      if (!sub && !org) continue;
+
+      const priceExt =
+        sub && typeof (sub.raw as any)?.priceExternalId === "string"
+          ? ((sub.raw as any).priceExternalId as string)
+          : null;
+      const resolved = planPeriodForPrice(priceExt);
+      const plan: OrgPlan | null = resolved?.plan ?? (org?.plan ?? null);
+      const period: BillingPeriod | null =
+        resolved?.period ??
+        (sub?.billing_interval === "year" ? "annual" : sub?.billing_interval === "month" ? "monthly" : null);
+      const status = sub?.status ?? "none";
+
+      rows.push({
+        userId: p.id,
+        fullName: p.full_name ?? "",
+        email: p.email ?? "",
+        plan,
+        period,
+        status,
+        currentPeriodEnd: sub?.current_period_end ?? null,
+        cancelAtPeriodEnd: !!sub?.cancel_at_period_end,
+        pendingPlan: (org?.pending_plan as OrgPlan | null) ?? null,
+        pendingPlanEffectiveAt: org?.pending_plan_effective_at ?? null,
+        subscriptionId: sub?.provider_subscription_id ?? null,
+        monthlyValueUsd: ACTIVE_STATUSES.includes(status) ? monthlyValue(plan, period) : 0,
+      });
+    }
+    rows.sort((a, b) => b.monthlyValueUsd - a.monthlyValueUsd);
+    return rows;
+  });
+
+async function adminLatestSubscription(userId: string, env: PaddleEnv) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("provider", "paddle")
+    .eq("environment", env)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) throw new Error("This customer has no subscription yet.");
+  return data as any;
+}
+
+const userEnvInput = envInput.extend({ userId: z.string().uuid() });
+
+export const adminRefundLastPayment = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: unknown) => userEnvInput.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const sub = await adminLatestSubscription(data.userId, data.environment);
+    const { latestCompletedTransaction, refundTransaction } = await import("@/lib/paddle.server");
+    const txn = await latestCompletedTransaction(data.environment, sub.provider_subscription_id);
+    if (!txn) throw new Error("No completed payment to refund.");
+    await refundTransaction(data.environment, txn.id, "Refund issued by ChAi support");
+    return { amount: txn.amount, currency: txn.currency };
+  });
+
+/** Amount of the most recent completed payment, for the confirmation dialog. */
+export const adminLastPayment = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: unknown) => userEnvInput.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const sub = await adminLatestSubscription(data.userId, data.environment);
+    const { latestCompletedTransaction } = await import("@/lib/paddle.server");
+    return latestCompletedTransaction(data.environment, sub.provider_subscription_id);
+  });
+
+export const adminCancelSubscription = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: unknown) =>
+    userEnvInput.extend({ immediately: z.boolean() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const sub = await adminLatestSubscription(data.userId, data.environment);
+    const { cancelSubscription } = await import("@/lib/paddle.server");
+    await cancelSubscription(data.environment, sub.provider_subscription_id, data.immediately);
+    return {
+      immediately: data.immediately,
+      accessUntil: data.immediately ? null : (sub.current_period_end ?? null),
+    };
+  });
+
+export const adminOpenPortal = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: unknown) => userEnvInput.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const sub = await adminLatestSubscription(data.userId, data.environment);
+    const customerId = (sub.raw as any)?.customerId;
+    if (typeof customerId !== "string") throw new Error("No Paddle customer on this subscription.");
+    const { createPortalSession } = await import("@/lib/paddle.server");
+    const url = await createPortalSession(data.environment, customerId, [
+      sub.provider_subscription_id,
+    ]);
+    return { url };
+  });
+
+/**
+ * Change a customer's plan on their behalf. Mirrors the customer-facing
+ * `requestPlanChange` rules: upgrades bill immediately (prorated), downgrades
+ * are scheduled for the end of the current paid period.
+ */
+export const adminChangePlan = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: unknown) =>
+    userEnvInput
+      .extend({
+        plan: z.enum(["core", "standard", "enterprise"]),
+        period: z.enum(["monthly", "annual"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }): Promise<{ kind: PlanChangeKind; effectiveAt?: string }> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const sub = await adminLatestSubscription(data.userId, data.environment);
+    if (!["active", "trialing"].includes(sub.status)) {
+      throw new Error("This subscription isn't active, so it can't be changed.");
+    }
+
+    const { data: member } = await supabaseAdmin
+      .from("organisation_members")
+      .select("org_id, organisations(plan)")
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const org = member
+      ? ((Array.isArray(member.organisations) ? member.organisations[0] : member.organisations) as any)
+      : null;
+
+    const priceExt =
+      typeof (sub.raw as any)?.priceExternalId === "string"
+        ? ((sub.raw as any).priceExternalId as string)
+        : null;
+    const current = planPeriodForPrice(priceExt);
+    const currentPlan: OrgPlan = current?.plan ?? org?.plan ?? "core";
+    const currentPeriod: BillingPeriod =
+      current?.period ?? (sub.billing_interval === "year" ? "annual" : "monthly");
+
+    const kind = planChangeKind(currentPlan, currentPeriod, data.plan, data.period);
+    if (kind === "same") return { kind };
+
+    const { resolvePaddlePriceId, updateSubscriptionItems } = await import("@/lib/paddle.server");
+    const keepAddon = !!(sub.raw as any)?.hasAddon && data.period === "monthly";
+
+    if (kind === "upgrade-now") {
+      const priceIds = [
+        await resolvePaddlePriceId(data.environment, PLAN_PRICE_IDS[data.plan][data.period]),
+      ];
+      if (keepAddon) priceIds.push(await resolvePaddlePriceId(data.environment, ADDON_PRICE_ID));
+      await updateSubscriptionItems(
+        data.environment,
+        sub.provider_subscription_id,
+        priceIds,
+        "prorated_immediately",
+      );
+      if (member?.org_id) {
+        await supabaseAdmin
+          .from("organisations")
+          .update({ plan: data.plan, pending_plan: null, pending_plan_effective_at: null })
+          .eq("id", member.org_id);
+      }
+      return { kind };
+    }
+
+    if (member?.org_id) {
+      await supabaseAdmin
+        .from("organisations")
+        .update({
+          pending_plan: data.plan,
+          pending_plan_effective_at: sub.current_period_end ?? null,
+        })
+        .eq("id", member.org_id);
+    }
+    return { kind, effectiveAt: sub.current_period_end ?? undefined };
   });
