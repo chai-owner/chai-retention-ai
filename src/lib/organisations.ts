@@ -109,10 +109,11 @@ export function customerLimitMessage(plan: OrgPlan, current: number, incoming: n
 
 
 export const PLAN_LABELS: Record<OrgPlan, string> = {
-  starter: "Starter",
-  growth: "Growth",
-  pro: "Pro",
+  core: "Core",
+  standard: "Standard",
+  enterprise: "Enterprise",
 };
+
 
 export const ROLE_LABELS: Record<OrgRole, string> = {
   owner: "Owner",
