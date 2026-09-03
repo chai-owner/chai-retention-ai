@@ -16,16 +16,16 @@ import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — ChAi | Simple pricing, powerful retention" },
+      { title: "Pricing — ChAi | Core, Standard & Enterprise plans" },
       {
         name: "description",
         content:
-          "One simple ChAi plan: $99/month or $999/year. AI churn prediction, health scores, insights and native integrations — with an ROI calculator to size your savings.",
+          "ChAi pricing: Core $99/mo, Standard $249/mo and Enterprise $599/mo — save 10% with annual billing. AI churn prediction, health scores and native integrations.",
       },
-      { property: "og:title", content: "ChAi Pricing — Simple pricing. Powerful customer retention." },
+      { property: "og:title", content: "ChAi Pricing — Core, Standard and Enterprise" },
       {
         property: "og:description",
-        content: "One plan, everything included. $99/month or $999/year (save 16%).",
+        content: "Three plans from $99/month. Save 10% when you pay annually.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -42,20 +42,54 @@ const navItems = [
   { label: "Integrations", href: "/#integrations" },
 ];
 
-const featureList = [
+const sharedFeatures = [
   "Personalized Customer Health Scores",
-  "AI Insights that update as your data changes",
-  "AI-powered churn prediction",
+  "AI churn prediction & insights",
   "ChAi AI assistant included",
-  "Recommended Actions",
-  "Customer Timeline",
-  "Reports & Analytics",
+  "Recommended actions & customer timeline",
   "Native integrations + CSV uploads",
-  "Email support",
-  "Secure cloud infrastructure",
-  "Automatic feature updates",
-  "Forget-a-customer anonymization",
+  "Guided onboarding and email support",
 ];
+
+const tiers: Array<{
+  plan: OrgPlan;
+  tagline: string;
+  highlight?: boolean;
+  features: string[];
+}> = [
+  {
+    plan: "core",
+    tagline: "For small teams getting their retention basics in place.",
+    features: [
+      "Up to 250 customers",
+      "1 user seat",
+      "ChAi Data Drop as a $39/mo add-on",
+      ...sharedFeatures,
+    ],
+  },
+  {
+    plan: "standard",
+    tagline: "For growing teams that need more customers and more seats.",
+    highlight: true,
+    features: [
+      "Up to 1,500 customers",
+      "5 user seats",
+      "ChAi Data Drop included",
+      ...sharedFeatures,
+    ],
+  },
+  {
+    plan: "enterprise",
+    tagline: "For established teams with no limits on scale.",
+    features: [
+      "Unlimited customers",
+      "Unlimited user seats",
+      "ChAi Data Drop included",
+      ...sharedFeatures,
+    ],
+  },
+];
+
 
 const builtFor = [
   "SaaS companies",
