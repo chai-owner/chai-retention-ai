@@ -24,9 +24,13 @@ import {
   canManageMembers,
   shouldWarnCustomerLimit,
   type OrgPlan,
+  type BillingPeriod,
 } from "@/lib/organisations";
 import { usePlanUsage, useRefreshPlan } from "@/lib/use-plan-usage";
-import { upgradeOrganisationPlan } from "@/lib/organisations.functions";
+import { requestPlanChange } from "@/utils/payments.functions";
+import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
+import { useAuthUserId } from "@/lib/use-auth-state";
+import { supabase } from "@/integrations/supabase/client";
 import { clearPlanLimitNotice, usePlanLimitNotice } from "@/lib/plan-limit-store";
 
 function limitText(value: number | null) {
