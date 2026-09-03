@@ -7,6 +7,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { INGEST_COLUMNS, normalizeIngestRow } from "@/lib/ingest-row-normalize";
 import { rangeFor } from "@/lib/pagination";
+import type { ChurnMetaEntry, ScoreBreakdownEntry } from "@/lib/customer-scoring";
 
 export const CUSTOMER_PAGE_SIZE = 50;
 export const TRANSACTION_PAGE_SIZE = 100;
@@ -212,7 +213,7 @@ export interface CustomerScoreSnapshot {
   score: number;
   riskLevel: string;
   scoredAt: string;
-  breakdown: unknown;
+  breakdown: Array<ScoreBreakdownEntry | ChurnMetaEntry>;
 }
 
 /**
@@ -239,6 +240,8 @@ export const getCustomerScore = createServerFn({ method: "POST" })
       score: Math.round(Number(row.score) || 0),
       riskLevel: row.risk_level,
       scoredAt: row.scored_at,
-      breakdown: row.score_breakdown,
+      breakdown: (Array.isArray(row.score_breakdown)
+        ? row.score_breakdown
+        : []) as Array<ScoreBreakdownEntry | ChurnMetaEntry>,
     };
   });
