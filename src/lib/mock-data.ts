@@ -143,6 +143,13 @@ function seededRandom(seed: number) {
   return next;
 }
 
+/** ISO date `n` days before today — keeps the demo dataset looking current. */
+export function daysAgoISO(n: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
 function buildTimeline(
   rand: () => number,
   name: string,
@@ -153,14 +160,15 @@ function buildTimeline(
 ): TimelineEvent[] {
   const contract = 12000 + Math.round(rand() * 60) * 1000;
   const events: TimelineEvent[] = [
-    { date: "2025-10-06", type: "signup", title: "Became a customer", detail: `${name} signed up for the Growth plan.` },
-    { date: "2025-10-20", type: "purchase", title: "First purchase", detail: `Initial annual contract — $${contract.toLocaleString()}.` },
-    { date: "2025-12-29", type: "usage", title: "Strong early adoption", detail: "Activated 4 of 5 core features. Health score peaked at 88." },
-    { date: "2026-04-06", type: "survey", title: "Survey response", detail: "NPS of 9 — promoter. 'Great product, easy to use.'" },
+    { date: daysAgoISO(332), type: "signup", title: "Became a customer", detail: `${name} signed up for the Growth plan.` },
+    { date: daysAgoISO(318), type: "purchase", title: "First purchase", detail: `Initial annual contract — $${contract.toLocaleString()}.` },
+    { date: daysAgoISO(248), type: "usage", title: "Strong early adoption", detail: "Activated 4 of 5 core features. Health score peaked at 88." },
+    { date: daysAgoISO(150), type: "survey", title: "Survey response", detail: "NPS of 9 — promoter. 'Great product, easy to use.'" },
   ];
 
   // Weave each detected risk factor into the history as a concrete event.
-  const factorEventDates = ["2026-06-09", "2026-07-13", "2026-07-30", "2026-08-01", "2026-08-05"];
+  const factorEventDates = [86, 52, 35, 33, 29].map(daysAgoISO);
+
   factors.forEach((f, idx) => {
     const date = factorEventDates[idx % factorEventDates.length];
     const map: Record<string, TimelineEvent> = {
