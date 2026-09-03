@@ -76,10 +76,10 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
     },
   });
   const hasAccess =
-    planUsage?.plan === "growth" ||
-    planUsage?.plan === "pro" ||
-    (planUsage?.plan === "starter" && planUsage?.smartIngestAddon === true);
-  const isAddon = planUsage?.plan === "starter" && planUsage?.smartIngestAddon === true;
+    planUsage?.plan === "standard" ||
+    planUsage?.plan === "enterprise" ||
+    (planUsage?.plan === "core" && planUsage?.smartIngestAddon === true);
+  const isAddon = planUsage?.plan === "core" && planUsage?.smartIngestAddon === true;
   const profile = useProfile();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);

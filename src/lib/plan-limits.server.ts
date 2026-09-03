@@ -2,9 +2,9 @@
 // user-facing import path (RLS client) and the automated sync path (service
 // role client), so both refuse to exceed a plan in exactly the same way.
 import {
+  coercePlan,
   customerLimitMessage,
   customersAllowed,
-  isOrgPlan,
   type OrgPlan,
 } from "@/lib/organisations";
 
@@ -29,8 +29,7 @@ export async function loadPlanForUser(client: AnyClient, userId: string): Promis
     .select("organisations(plan)")
     .eq("user_id", userId)
     .maybeSingle();
-  const plan = (data as any)?.organisations?.plan;
-  return isOrgPlan(plan) ? plan : "starter";
+  return coercePlan((data as any)?.organisations?.plan);
 }
 
 export async function countCustomers(client: AnyClient, userId: string): Promise<number> {

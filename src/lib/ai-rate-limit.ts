@@ -8,7 +8,9 @@ export const DEFAULT_AI_HOURLY_LIMIT = 60;
 export const AI_HOURLY_LIMITS: Record<string, number> = {
   free: 20,
   starter: 60,
+  core: 60,
   growth: 200,
+  standard: 200,
   pro: 200,
   scale: 500,
   enterprise: 2000,

@@ -12,20 +12,21 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
+import { PLAN_LABELS, PLAN_PRICING, annualSaving, type OrgPlan } from "@/lib/organisations";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — ChAi | Simple pricing, powerful retention" },
+      { title: "Pricing — ChAi | Core, Standard & Enterprise plans" },
       {
         name: "description",
         content:
-          "One simple ChAi plan: $99/month or $999/year. AI churn prediction, health scores, insights and native integrations — with an ROI calculator to size your savings.",
+          "ChAi pricing: Core $99/mo, Standard $249/mo and Enterprise $599/mo — save 10% with annual billing. AI churn prediction, health scores and native integrations.",
       },
-      { property: "og:title", content: "ChAi Pricing — Simple pricing. Powerful customer retention." },
+      { property: "og:title", content: "ChAi Pricing — Core, Standard and Enterprise" },
       {
         property: "og:description",
-        content: "One plan, everything included. $99/month or $999/year (save 16%).",
+        content: "Three plans from $99/month. Save 10% when you pay annually.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -42,20 +43,54 @@ const navItems = [
   { label: "Integrations", href: "/#integrations" },
 ];
 
-const featureList = [
+const sharedFeatures = [
   "Personalized Customer Health Scores",
-  "AI Insights that update as your data changes",
-  "AI-powered churn prediction",
+  "AI churn prediction & insights",
   "ChAi AI assistant included",
-  "Recommended Actions",
-  "Customer Timeline",
-  "Reports & Analytics",
+  "Recommended actions & customer timeline",
   "Native integrations + CSV uploads",
-  "Email support",
-  "Secure cloud infrastructure",
-  "Automatic feature updates",
-  "Forget-a-customer anonymization",
+  "Guided onboarding and email support",
 ];
+
+const tiers: Array<{
+  plan: OrgPlan;
+  tagline: string;
+  highlight?: boolean;
+  features: string[];
+}> = [
+  {
+    plan: "core",
+    tagline: "For small teams getting their retention basics in place.",
+    features: [
+      "Up to 250 customers",
+      "1 user seat",
+      "ChAi Data Drop as a $39/mo add-on",
+      ...sharedFeatures,
+    ],
+  },
+  {
+    plan: "standard",
+    tagline: "For growing teams that need more customers and more seats.",
+    highlight: true,
+    features: [
+      "Up to 1,500 customers",
+      "5 user seats",
+      "ChAi Data Drop included",
+      ...sharedFeatures,
+    ],
+  },
+  {
+    plan: "enterprise",
+    tagline: "For established teams with no limits on scale.",
+    features: [
+      "Unlimited customers",
+      "Unlimited user seats",
+      "ChAi Data Drop included",
+      ...sharedFeatures,
+    ],
+  },
+];
+
 
 const builtFor = [
   "SaaS companies",
@@ -94,7 +129,7 @@ const faqs = [
   },
   {
     q: "Can I switch to annual later?",
-    a: "Absolutely. You can move from monthly to annual at any time and we'll prorate what you've already paid toward the annual price.",
+    a: "Absolutely. You can move from monthly to annual at any time and save 10%. We'll prorate what you've already paid toward the annual price.",
   },
   {
     q: "Will ChAi work with my existing tools?",
@@ -133,7 +168,7 @@ const money = (n: number) =>
 
 function PricingPage() {
   const [scrolled, setScrolled] = useState(false);
-  const [annual, setAnnual] = useState(true);
+  const [annual, setAnnual] = useState(false);
   const { open: demoOpen, openGate, closeGate } = useDemoGate();
 
   useEffect(() => {
@@ -211,7 +246,7 @@ function PricingPage() {
           <Reveal className="mx-auto max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur">
               <Sparkles className="h-3.5 w-3.5 text-gold" />
-              One plan. Everything included.
+              Three plans. Everything included.
             </span>
             <h1 className="mt-7 text-[2.5rem] font-semibold leading-[1.05] tracking-[-0.03em] text-white sm:text-6xl lg:text-[4rem]">
               Simple pricing.
@@ -248,7 +283,7 @@ function PricingPage() {
                     annual ? "bg-gold/20 text-[color:var(--gold)]" : "bg-white/10 text-white/70"
                   }`}
                 >
-                  Save 16%
+                  Save 10%
                 </span>
               </button>
             </div>
@@ -256,67 +291,90 @@ function PricingPage() {
         </div>
       </section>
 
-      {/* ── Section 2: Pricing card ─────────────────────── */}
+      {/* ── Section 2: Pricing tiers ────────────────────── */}
       <section id="pricing" className="relative -mt-28 pb-24 lg:-mt-32 lg:pb-[7.5rem]">
         <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
-          <Reveal className="mx-auto max-w-[42rem]">
-            <div className="group relative rounded-[20px] bg-card p-8 shadow-card ring-1 ring-border/70 transition-all duration-300 hover:-translate-y-2 hover:shadow-lift sm:p-10">
-              {annual && (
-                <div className="flex justify-center">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[color:var(--accent-foreground)]">
-                    <Sparkles className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-                    Most Popular
-                  </span>
-                </div>
-              )}
-
-              <div className="mt-6 text-center">
-                <h2 className="text-2xl font-semibold tracking-tight">ChAi</h2>
-
-                <div key={annual ? "y" : "m"} className="mt-6 animate-[fade-in_0.35s_ease-out]">
-                  <div className="flex items-end justify-center gap-2">
-                    <span className="text-6xl font-semibold tracking-[-0.04em] sm:text-7xl">
-                      {annual ? "$999" : "$99"}
-                    </span>
-                    <span className="pb-2 text-lg font-medium text-muted-foreground">
-                      {annual ? "/year" : "/month"}
-                    </span>
-                  </div>
-                  {annual && (
-                    <>
-                      <p className="mt-4 text-sm font-semibold text-primary">Save 16%</p>
-                      <p className="mt-1 text-sm text-muted-foreground">(Equivalent to 2 months free)</p>
-                    </>
-                  )}
-                </div>
-
-                <div className="mt-8 flex flex-col items-center gap-3">
-                  <Link
-                    to="/auth"
-                    search={signup}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
+          <div className="grid gap-6 lg:grid-cols-3">
+            {tiers.map((tier, i) => {
+              const price = PLAN_PRICING[tier.plan];
+              return (
+                <Reveal key={tier.plan} delay={i * 90}>
+                  <div
+                    className={`group relative flex h-full flex-col rounded-[20px] bg-card p-8 shadow-card transition-all duration-300 hover:-translate-y-2 hover:shadow-lift ${
+                      tier.highlight ? "ring-2 ring-primary" : "ring-1 ring-border/70"
+                    }`}
                   >
-                    Start your 2-week free trial now <ArrowRight className="h-4.5 w-4.5" />
-                  </Link>
-                </div>
-              </div>
+                    {tier.highlight && (
+                      <div className="flex justify-center">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[color:var(--accent-foreground)]">
+                          <Sparkles className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+                          Most Popular
+                        </span>
+                      </div>
+                    )}
 
-              <div className="mt-10 border-t border-border pt-8">
-                <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-                  {featureList.map((f) => (
-                    <li key={f} className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <Check className="h-3 w-3" strokeWidth={3} />
-                      </span>
-                      <span className="text-sm leading-relaxed">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </Reveal>
+                    <div className="mt-4 text-center">
+                      <h2 className="text-2xl font-semibold tracking-tight">
+                        {PLAN_LABELS[tier.plan]}
+                      </h2>
+                      <p className="mt-2 text-sm text-muted-foreground">{tier.tagline}</p>
+
+                      <div key={annual ? "y" : "m"} className="mt-6 animate-[fade-in_0.35s_ease-out]">
+                        <div className="flex items-end justify-center gap-2">
+                          <span className="text-5xl font-semibold tracking-[-0.04em]">
+                            {money(annual ? price.annualMonthly : price.monthly)}
+                          </span>
+                          <span className="pb-2 text-base font-medium text-muted-foreground">/mo</span>
+                        </div>
+                        {annual ? (
+                          <>
+                            <p className="mt-2 text-sm text-muted-foreground">billed annually</p>
+                            <p className="mt-1 text-sm font-semibold text-primary">
+                              {money(price.annualTotal)} per year · save{" "}
+                              {money(annualSaving(tier.plan))}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="mt-2 text-sm text-muted-foreground">billed monthly</p>
+                        )}
+                      </div>
+
+                      <Link
+                        to="/auth"
+                        search={signup}
+                        className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
+                          tier.highlight
+                            ? "bg-primary text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] hover:bg-[color:var(--primary-hover)]"
+                            : "border border-border bg-background hover:border-primary/40"
+                        }`}
+                      >
+                        Start your 2-week free trial <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+
+                    <div className="mt-8 border-t border-border pt-6">
+                      <ul className="grid gap-3">
+                        {tier.features.map((f) => (
+                          <li key={f} className="flex items-start gap-3">
+                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                              <Check className="h-3 w-3" strokeWidth={3} />
+                            </span>
+                            <span className="text-sm leading-relaxed">{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            Annual billing saves 10% and is charged as a single yearly payment.
+          </p>
         </div>
       </section>
+
 
       {/* ── Section 3: ROI calculator ───────────────────── */}
       <RoiCalculator annual={annual} />
@@ -440,7 +498,7 @@ function RoiCalculator({ annual }: { annual: boolean }) {
   const { atRisk, protectedRev, roi } = useMemo(() => {
     const atRisk = customers * value * (churn / 100);
     const protectedRev = atRisk * 0.3; // conservative 30% of at-risk revenue saved
-    const cost = annual ? 999 / 12 : 99;
+    const cost = annual ? PLAN_PRICING.core.annualMonthly : PLAN_PRICING.core.monthly;
     const roi = cost > 0 ? ((protectedRev - cost) / cost) * 100 : 0;
     return { atRisk, protectedRev, roi };
   }, [customers, value, churn, annual]);
