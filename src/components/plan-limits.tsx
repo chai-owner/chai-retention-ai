@@ -15,23 +15,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  ORG_PLANS,
   PLAN_CUSTOMERS,
   PLAN_LABELS,
   PLAN_PRICING,
   PLAN_SEATS,
   annualSaving,
   canManageMembers,
-  nextPlan,
   shouldWarnCustomerLimit,
-  type BillingPeriod,
   type OrgPlan,
 } from "@/lib/organisations";
 import { usePlanUsage, useRefreshPlan } from "@/lib/use-plan-usage";
-import { getPaddleEnvironment } from "@/lib/paddle";
-import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
-import { getMySubscription, requestPlanChange } from "@/utils/payments.functions";
-import { useAuthUserId } from "@/lib/use-auth-state";
-import { supabase } from "@/integrations/supabase/client";
+import { upgradeOrganisationPlan } from "@/lib/organisations.functions";
 import { clearPlanLimitNotice, usePlanLimitNotice } from "@/lib/plan-limit-store";
 
 function limitText(value: number | null) {
@@ -43,6 +38,26 @@ function money(n: number) {
 }
 
 
+/** Short, plain-English highlights shown on each upgrade card. */
+const PLAN_FEATURES: Record<OrgPlan, string[]> = {
+  core: ["Daily risk scoring", "CSV Data Drop add-on", "Email support"],
+  standard: [
+    "Everything in Core",
+    "All integrations (CRM, support, accounting)",
+    "Team seats and shared workspace",
+  ],
+  enterprise: [
+    "Everything in Standard",
+    "Unlimited customers and seats",
+    "Priority support and onboarding help",
+  ],
+};
+
+/** Every tier above the current plan, so the user can pick where to land. */
+function higherPlans(plan: OrgPlan): OrgPlan[] {
+  return ORG_PLANS.slice(ORG_PLANS.indexOf(plan) + 1);
+}
+
 export function UpgradePlanDialog({
   plan,
   open,
@@ -52,51 +67,21 @@ export function UpgradePlanDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const getSubscription = useServerFn(getMySubscription);
-  const changePlan = useServerFn(requestPlanChange);
+  const upgrade = useServerFn(upgradeOrganisationPlan);
   const refresh = useRefreshPlan();
-  const target = nextPlan(plan);
-  const [period, setPeriod] = useState<BillingPeriod>("monthly");
-  const userId = useAuthUserId();
-  const { openCheckout } = usePaddleCheckout();
-  const environment = getPaddleEnvironment();
+  const options = higherPlans(plan);
+  const [selected, setSelected] = useState<OrgPlan | null>(options[0] ?? null);
+
+  useEffect(() => {
+    if (open) setSelected(higherPlans(plan)[0] ?? null);
+  }, [open, plan]);
 
   const mutation = useMutation({
-    mutationFn: async () => {
-      if (!target) throw new Error("You're already on our highest plan.");
-      const sub = await getSubscription({ data: { environment } });
-      if (!sub || sub.status === "none" || !["active", "trialing", "past_due"].includes(sub.status)) {
-        // No subscription yet — collect payment through checkout.
-        if (!userId) throw new Error("Please sign in again to continue.");
-        const { data } = await supabase.auth.getSession();
-        await openCheckout({
-          plan: target,
-          period,
-          userId,
-          customerEmail: data.session?.user.email ?? undefined,
-        });
-        return { kind: "checkout" as const };
-      }
-      return changePlan({ data: { environment, plan: target, period } });
-    },
+    mutationFn: async (target: OrgPlan) => upgrade({ data: { plan: target } }),
     onSuccess: (result) => {
-      if (result.kind === "checkout") {
-        // The Paddle overlay is open; close the dialog and let checkout finish.
-        onOpenChange(false);
-        return;
-      }
-      if (!target) return;
-      if (result.kind === "downgrade-renewal") {
-        toast.success(
-          `${PLAN_LABELS[target]} will start at your next renewal. You keep your current plan until then.`,
-        );
-      } else {
-        toast.success(
-          `You're now on ${PLAN_LABELS[target]} (${
-            period === "annual" ? "billed annually" : "billed monthly"
-          }). Your new limits are active.`,
-        );
-      }
+      toast.success(
+        `You've been upgraded to ${PLAN_LABELS[result.plan]}. Our team will be in touch to arrange billing.`,
+      );
       onOpenChange(false);
       clearPlanLimitNotice();
       refresh();
@@ -105,84 +90,55 @@ export function UpgradePlanDialog({
       toast.error(e instanceof Error ? e.message : "We couldn't change your plan just now."),
   });
 
-  const pricing = target ? PLAN_PRICING[target] : null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Upgrade your plan</DialogTitle>
           <DialogDescription>
-            {target
-              ? `Move from ${PLAN_LABELS[plan]} to ${PLAN_LABELS[target]} to lift your limits.`
+            {options.length
+              ? `You're on ${PLAN_LABELS[plan]}. Choose the plan you'd like to move to.`
               : "You're already on our highest plan."}
           </DialogDescription>
         </DialogHeader>
 
-        {target && pricing && (
-          <>
-            <div className="flex items-center justify-center">
-              <div className="inline-flex rounded-full border border-border bg-muted/50 p-1 text-sm">
+        {options.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {options.map((option) => {
+              const pricing = PLAN_PRICING[option];
+              const active = selected === option;
+              return (
                 <button
+                  key={option}
                   type="button"
-                  aria-pressed={period === "monthly"}
-                  onClick={() => setPeriod("monthly")}
-                  className={`rounded-full px-4 py-1.5 font-medium transition-colors ${
-                    period === "monthly" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+                  aria-pressed={active}
+                  onClick={() => setSelected(option)}
+                  className={`rounded-[14px] border p-4 text-left transition-colors ${
+                    active
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50 hover:bg-muted/40"
                   }`}
                 >
-                  Monthly
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={period === "annual"}
-                  onClick={() => setPeriod("annual")}
-                  className={`flex items-center gap-2 rounded-full px-4 py-1.5 font-medium transition-colors ${
-                    period === "annual" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  Annual
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[0.7rem] font-semibold text-primary">
-                    Save 10%
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg border border-border p-3">
-                <p className="text-xs uppercase text-muted-foreground">Current</p>
-                <p className="font-medium text-foreground">{PLAN_LABELS[plan]}</p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {limitText(PLAN_CUSTOMERS[plan])} customers
-                </p>
-                <p className="text-xs text-muted-foreground">{limitText(PLAN_SEATS[plan])} seats</p>
-              </div>
-              <div className="rounded-lg border border-primary bg-primary/5 p-3">
-                <p className="text-xs uppercase text-primary">New</p>
-                <p className="font-medium text-foreground">{PLAN_LABELS[target]}</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">
-                  {money(period === "annual" ? pricing.annualMonthly : pricing.monthly)}
-                  <span className="text-xs font-normal text-muted-foreground">/mo</span>
-                </p>
-                {period === "annual" && (
-                  <p className="text-xs text-muted-foreground">
-                    billed annually — {money(pricing.annualTotal)}/year
+                  <p className="text-sm font-semibold text-foreground">{PLAN_LABELS[option]}</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">
+                    {money(pricing.monthly)}
+                    <span className="text-xs font-normal text-muted-foreground">/mo</span>
                   </p>
-                )}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {limitText(PLAN_CUSTOMERS[target])} customers
-                </p>
-                <p className="text-xs text-muted-foreground">{limitText(PLAN_SEATS[target])} seats</p>
-              </div>
-            </div>
-
-            <p className="text-center text-xs text-muted-foreground">
-              {period === "annual"
-                ? `Save ${money(annualSaving(target))}/year with annual billing.`
-                : `Switch to annual and save ${money(annualSaving(target))}/year.`}
-            </p>
-          </>
+                  <p className="text-xs text-muted-foreground">
+                    or {money(pricing.annualMonthly)}/mo billed annually (
+                    {money(pricing.annualTotal)}/year — save {money(annualSaving(option))})
+                  </p>
+                  <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+                    <li>{limitText(PLAN_CUSTOMERS[option])} customers</li>
+                    <li>{limitText(PLAN_SEATS[option])} seats</li>
+                    {PLAN_FEATURES[option].map((feature) => (
+                      <li key={feature}>{feature}</li>
+                    ))}
+                  </ul>
+                </button>
+              );
+            })}
+          </div>
         )}
 
         <DialogFooter>
@@ -190,13 +146,18 @@ export function UpgradePlanDialog({
             Cancel
           </Button>
           <Button
-            onClick={() => mutation.mutate()}
-            disabled={!target || mutation.isPending}
+            onClick={() => selected && mutation.mutate(selected)}
+            disabled={!selected || mutation.isPending}
           >
-            {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm upgrade"}
+            {mutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : selected ? (
+              `Confirm upgrade to ${PLAN_LABELS[selected]}`
+            ) : (
+              "Confirm upgrade"
+            )}
           </Button>
         </DialogFooter>
-
       </DialogContent>
     </Dialog>
   );
