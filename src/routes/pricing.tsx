@@ -12,6 +12,7 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
+import { PLAN_LABELS, PLAN_PRICING, annualSaving, type OrgPlan } from "@/lib/organisations";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -128,7 +129,7 @@ const faqs = [
   },
   {
     q: "Can I switch to annual later?",
-    a: "Absolutely. You can move from monthly to annual at any time and we'll prorate what you've already paid toward the annual price.",
+    a: "Absolutely. You can move from monthly to annual at any time and save 10%. We'll prorate what you've already paid toward the annual price.",
   },
   {
     q: "Will ChAi work with my existing tools?",
@@ -167,7 +168,7 @@ const money = (n: number) =>
 
 function PricingPage() {
   const [scrolled, setScrolled] = useState(false);
-  const [annual, setAnnual] = useState(true);
+  const [annual, setAnnual] = useState(false);
   const { open: demoOpen, openGate, closeGate } = useDemoGate();
 
   useEffect(() => {
@@ -497,7 +498,7 @@ function RoiCalculator({ annual }: { annual: boolean }) {
   const { atRisk, protectedRev, roi } = useMemo(() => {
     const atRisk = customers * value * (churn / 100);
     const protectedRev = atRisk * 0.3; // conservative 30% of at-risk revenue saved
-    const cost = annual ? 999 / 12 : 99;
+    const cost = annual ? PLAN_PRICING.core.annualMonthly : PLAN_PRICING.core.monthly;
     const roi = cost > 0 ? ((protectedRev - cost) / cost) * 100 : 0;
     return { atRisk, protectedRev, roi };
   }, [customers, value, churn, annual]);
