@@ -30,6 +30,15 @@ interface NormalisedItems {
   currency: string | null;
 }
 
+/** Plan for a normalised item set: product external ID first, then price ID. */
+function planForItems(n: NormalisedItems) {
+  return (
+    (n.planProductId ? planForProduct(n.planProductId) : null) ??
+    planPeriodForPrice(n.priceExternalId)?.plan ??
+    null
+  );
+}
+
 function normaliseItems(items: any[] | undefined): NormalisedItems {
   const out: NormalisedItems = {
     planProductId: null,
@@ -178,7 +187,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   // Business rule: activate the plan instantly, unlock the account and flag
   // the add-on whether it was a bundled line item or a standalone purchase.
   const orgId = await resolveOrgId(userId);
-  const plan = n.planProductId ? planForProduct(n.planProductId) : null;
+  const plan = planForItems(n);
   if (orgId) {
     const update: Record<string, unknown> = {};
     if (plan) {
@@ -223,8 +232,8 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
 
   // Keep the workspace plan in step with whatever the subscription now bills
   // for (covers in-app upgrades, portal changes and applied downgrades).
-  if (row?.user_id && n.planProductId) {
-    const plan = planForProduct(n.planProductId);
+  if (row?.user_id && (n.planProductId || n.priceExternalId)) {
+    const plan = planForItems(n);
     const orgId = await resolveOrgId(row.user_id);
     if (orgId && plan) {
       const orgUpdate: Record<string, unknown> = { plan, smart_ingest_addon: n.hasAddon };
