@@ -241,7 +241,7 @@ export function CustomerLimitBanner({ enabled = true }: { enabled?: boolean }) {
 export function PlanLimitNoticeDialog({ enabled = true }: { enabled?: boolean }) {
   const notice = usePlanLimitNotice();
   const { data } = usePlanUsage(enabled);
-  const plan = data?.plan ?? "starter";
+  const plan = data?.plan ?? "core";
 
   return (
     <Dialog open={!!notice} onOpenChange={(o) => !o && clearPlanLimitNotice()}>
