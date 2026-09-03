@@ -145,7 +145,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     return;
   }
   const n = normaliseItems(items);
-  if (!n.planProductId || !n.priceExternalId) {
+  if (!n.planProductId && !n.hasAddon) {
     // Products created outside the payments tools carry no external ID — skip
     // rather than store an unmappable row.
     console.warn("Skipping subscription: missing importMeta.externalId", { subscription: id });
@@ -173,18 +173,27 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   );
 
   // Business rule: activate the plan instantly, unlock the account and flag
-  // the add-on when it was bought as a second line item.
+  // the add-on whether it was a bundled line item or a standalone purchase.
   const orgId = await resolveOrgId(userId);
-  const plan = planForProduct(n.planProductId);
-  if (orgId && plan) {
-    const update: Record<string, unknown> = { plan, pending_plan: null, pending_plan_effective_at: null };
+  const plan = n.planProductId ? planForProduct(n.planProductId) : null;
+  if (orgId) {
+    const update: Record<string, unknown> = {};
+    if (plan) {
+      update.plan = plan;
+      update.pending_plan = null;
+      update.pending_plan_effective_at = null;
+    }
     if (n.hasAddon) update.smart_ingest_addon = true;
-    await getSupabase().from("organisations").update(update).eq("id", orgId);
+    if (Object.keys(update).length) {
+      await getSupabase().from("organisations").update(update).eq("id", orgId);
+    }
   }
   await getSupabase().from("profiles").update({ unlocked: true }).eq("id", userId);
 
-  const { PLAN_LABELS } = await import("@/lib/organisations");
-  await sendWelcomeAndNotify(userId, plan ? PLAN_LABELS[plan] : "plan");
+  if (plan) {
+    const { PLAN_LABELS } = await import("@/lib/organisations");
+    await sendWelcomeAndNotify(userId, PLAN_LABELS[plan]);
+  }
 }
 
 async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
