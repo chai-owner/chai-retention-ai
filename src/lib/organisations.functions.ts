@@ -8,7 +8,7 @@ import {
   hasSeatAvailable,
   inviteExpiryFrom,
   isInviteExpired,
-  isOrgPlan,
+  coercePlan,
   isOrgRole,
   isValidEmail,
   normaliseEmail,
