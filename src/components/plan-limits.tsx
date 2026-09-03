@@ -80,7 +80,7 @@ export function UpgradePlanDialog({
     mutationFn: async (target: OrgPlan) => upgrade({ data: { plan: target } }),
     onSuccess: (result) => {
       toast.success(
-        `You've been upgraded to ${PLAN_LABELS[result.plan]}. Our team will be in touch to arrange billing.`,
+        `You've been upgraded to ${PLAN_LABELS[result.plan]}. Billing is handled automatically through Paddle.`,
       );
       onOpenChange(false);
       clearPlanLimitNotice();
