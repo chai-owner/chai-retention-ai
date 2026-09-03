@@ -1,9 +1,20 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   churnConfidenceFor,
   churnConfidenceLabel,
+  churnProbabilityFromHealth,
   churnProbabilityPhrase,
 } from "@/lib/churn-probability";
+import { churnMetaOf } from "@/lib/customer-scoring";
+import { getCustomerScore } from "@/lib/data-tables.functions";
+import {
+  breakdownEntries,
+  factorsFromBreakdown,
+  formatScoredAt,
+  recommendationsFromBreakdown,
+} from "@/lib/customer-score-snapshot";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
