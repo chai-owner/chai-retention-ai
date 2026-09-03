@@ -51,12 +51,15 @@ export function UpgradePlanDialog({
   const upgrade = useServerFn(upgradeOrganisationPlan);
   const refresh = useRefreshPlan();
   const target = nextPlan(plan);
+  const [period, setPeriod] = useState<BillingPeriod>("monthly");
 
   const mutation = useMutation({
     mutationFn: () => upgrade(),
     onSuccess: (result: { plan: OrgPlan }) => {
       toast.success(
-        `You've been upgraded to ${PLAN_LABELS[result.plan]}. Our team will be in touch to arrange billing.`,
+        `You've been upgraded to ${PLAN_LABELS[result.plan]} (${
+          period === "annual" ? "billed annually" : "billed monthly"
+        }). Our team will be in touch to arrange billing.`,
       );
       onOpenChange(false);
       clearPlanLimitNotice();
@@ -65,6 +68,8 @@ export function UpgradePlanDialog({
     onError: (e: unknown) =>
       toast.error(e instanceof Error ? e.message : "We couldn't change your plan just now."),
   });
+
+  const pricing = target ? PLAN_PRICING[target] : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -78,25 +83,70 @@ export function UpgradePlanDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {target && (
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-lg border border-border p-3">
-              <p className="text-xs uppercase text-muted-foreground">Current</p>
-              <p className="font-medium text-foreground">{PLAN_LABELS[plan]}</p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {limitText(PLAN_CUSTOMERS[plan])} customers
-              </p>
-              <p className="text-xs text-muted-foreground">{limitText(PLAN_SEATS[plan])} seats</p>
+        {target && pricing && (
+          <>
+            <div className="flex items-center justify-center">
+              <div className="inline-flex rounded-full border border-border bg-muted/50 p-1 text-sm">
+                <button
+                  type="button"
+                  aria-pressed={period === "monthly"}
+                  onClick={() => setPeriod("monthly")}
+                  className={`rounded-full px-4 py-1.5 font-medium transition-colors ${
+                    period === "monthly" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={period === "annual"}
+                  onClick={() => setPeriod("annual")}
+                  className={`flex items-center gap-2 rounded-full px-4 py-1.5 font-medium transition-colors ${
+                    period === "annual" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  Annual
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[0.7rem] font-semibold text-primary">
+                    Save 10%
+                  </span>
+                </button>
+              </div>
             </div>
-            <div className="rounded-lg border border-primary bg-primary/5 p-3">
-              <p className="text-xs uppercase text-primary">New</p>
-              <p className="font-medium text-foreground">{PLAN_LABELS[target]}</p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {limitText(PLAN_CUSTOMERS[target])} customers
-              </p>
-              <p className="text-xs text-muted-foreground">{limitText(PLAN_SEATS[target])} seats</p>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-xs uppercase text-muted-foreground">Current</p>
+                <p className="font-medium text-foreground">{PLAN_LABELS[plan]}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {limitText(PLAN_CUSTOMERS[plan])} customers
+                </p>
+                <p className="text-xs text-muted-foreground">{limitText(PLAN_SEATS[plan])} seats</p>
+              </div>
+              <div className="rounded-lg border border-primary bg-primary/5 p-3">
+                <p className="text-xs uppercase text-primary">New</p>
+                <p className="font-medium text-foreground">{PLAN_LABELS[target]}</p>
+                <p className="mt-1 text-lg font-semibold text-foreground">
+                  {money(period === "annual" ? pricing.annualMonthly : pricing.monthly)}
+                  <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                </p>
+                {period === "annual" && (
+                  <p className="text-xs text-muted-foreground">
+                    billed annually — {money(pricing.annualTotal)}/year
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {limitText(PLAN_CUSTOMERS[target])} customers
+                </p>
+                <p className="text-xs text-muted-foreground">{limitText(PLAN_SEATS[target])} seats</p>
+              </div>
             </div>
-          </div>
+
+            <p className="text-center text-xs text-muted-foreground">
+              {period === "annual"
+                ? `Save ${money(annualSaving(target))}/year with annual billing.`
+                : `Switch to annual and save ${money(annualSaving(target))}/year.`}
+            </p>
+          </>
         )}
 
         <DialogFooter>
@@ -110,6 +160,7 @@ export function UpgradePlanDialog({
             {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm upgrade"}
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
