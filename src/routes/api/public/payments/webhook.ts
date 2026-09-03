@@ -41,8 +41,9 @@ function normaliseItems(items: any[] | undefined): NormalisedItems {
   };
   for (const item of items ?? []) {
     const productExt = item?.product?.importMeta?.externalId ?? null;
-    const priceExt = item?.price?.importMeta?.externalId ?? null;
-    if (productExt === ADDON_PRODUCT_ID || priceExt === "smart_ingest_monthly") {
+    // External IDs aren't set on the catalog, so fall back to the Paddle price ID.
+    const priceExt = item?.price?.importMeta?.externalId ?? item?.price?.id ?? null;
+    if (productExt === ADDON_PRODUCT_ID || priceExt === "smart_ingest_monthly" || priceExt === ADDON_PRICE_ID) {
       out.hasAddon = true;
       continue;
     }
