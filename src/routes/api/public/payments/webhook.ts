@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { EventName, verifyWebhook, type PaddleEnv } from "@/lib/paddle.server";
-import { planForProduct, ADDON_PRODUCT_ID } from "@/lib/paddle-shared";
+import { planForProduct, planPeriodForPrice, ADDON_PRODUCT_ID, ADDON_PRICE_ID } from "@/lib/paddle-shared";
 
 // Defer client construction until first use so env var availability is not
 // assumed at module load time.
@@ -47,7 +47,7 @@ function normaliseItems(items: any[] | undefined): NormalisedItems {
       out.hasAddon = true;
       continue;
     }
-    if (productExt && planForProduct(productExt)) {
+    if ((productExt && planForProduct(productExt)) || planPeriodForPrice(priceExt)) {
       out.planProductId = productExt;
       out.priceExternalId = priceExt;
       out.billingInterval = item?.price?.billingCycle?.interval ?? null;
