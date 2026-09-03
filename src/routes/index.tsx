@@ -105,11 +105,8 @@ function Landing() {
       {/* ── Header + hero (dark rounded island) ─────────── */}
       <section id="top" className="rounded-b-[36px] bg-[#152238] pb-20 lg:pb-28">
         <nav className="mx-auto flex h-20 max-w-[1240px] items-center gap-6 px-6 lg:px-8">
-          <a href="#top" className={`flex items-center gap-2.5 rounded-[10px] ${focusRing}`}>
-            <span className="relative flex h-8 w-8 items-center justify-center rounded-[9px] bg-white/10">
-              <span className="h-2 w-2 rounded-full bg-[#E0A93A]" />
-            </span>
-            <span className="text-lg font-extrabold tracking-[-0.02em] text-white">ChAi</span>
+          <a href="#top" className={`flex items-center rounded-[10px] ${focusRing}`}>
+            <img src="/logo-light.png" alt="ChAi" className="h-8 w-auto" />
           </a>
 
           <div className="ml-auto hidden items-center gap-1 md:flex">
@@ -340,7 +337,7 @@ function Landing() {
       {/* ── Footer ──────────────────────────────────────── */}
       <footer className="mx-auto max-w-[1240px] px-6 pb-12 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-4 border-t border-[#D8E7EF] pt-8 text-sm text-[#4A5A6B] sm:flex-row">
-          <span className="text-lg font-extrabold tracking-[-0.02em] text-[#152238]">ChAi</span>
+          <img src="/logo-dark.png" alt="ChAi" className="h-8 w-auto" />
           <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             <li>
               <button className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} onClick={openGate}>
