@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 4px);
@@ -69,7 +69,7 @@
   --radius: 0.875rem; /* 14px */
 
   /* Ch.ai brand — calm, empowering */
-  --background: #F5F0E6; /* Soft Sand */
+  --background: #EEF7FB; /* Icy blue page tint */
   --foreground: #152238; /* Product Navy */
 
   --card: #FFFFFF;
@@ -82,9 +82,9 @@
   --primary-foreground: #F7F9E1;
   --primary-hover: #152238;
 
-  --secondary: #EAF2F5;
+  --secondary: #E3F1F8;
   --secondary-foreground: #152238;
-  --muted: #EEF3E4;
+  --muted: #E3F1F8;
   --muted-foreground: #4A5A6B;
   /* Sand accent — sparingly */
   --accent: #E0A93A;
@@ -102,8 +102,8 @@
   --destructive: #B6423F;
   --destructive-foreground: #FFFFFF;
 
-  --border: #DDE6D9;
-  --input: #DDE6D9;
+  --border: #D8E7EF;
+  --input: #D8E7EF;
   --ring: #204654;
 
   /* Indicator colors — navy-sand harmony */
@@ -204,6 +204,7 @@
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3 {
+    font-weight: 800;
     letter-spacing: -0.02em;
   }
 }
@@ -236,16 +237,16 @@
 /* ── Landing page scope ───────────────────────────────────────────────
    Premium marketing palette, isolated from the product app tokens. */
 .landing {
-  --background: #F5F0E6;
+  --background: #EEF7FB;
   --foreground: #152238;
   --card: #FFFFFF;
   --card-foreground: #152238;
   --primary: #204654;
   --primary-foreground: #F7F9E1;
   --primary-hover: #152238;
-  --secondary: #EAF2F5;
+  --secondary: #E3F1F8;
   --secondary-foreground: #152238;
-  --muted: #EEF3E4;
+  --muted: #E3F1F8;
   --muted-foreground: #4A5A6B;
   --accent: #E0A93A;
   --accent-foreground: #152238;
