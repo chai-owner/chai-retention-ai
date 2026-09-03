@@ -44,5 +44,25 @@ export function usePaddleCheckout() {
     }
   };
 
-  return { openCheckout, loading, environment: getPaddleEnvironment() };
+  const openAddonCheckout = async (options: { userId: string; customerEmail?: string }) => {
+    setLoading(true);
+    try {
+      await initializePaddle();
+      window.Paddle.Checkout.open({
+        items: [{ priceId: await getPaddlePriceId(ADDON_PRICE_ID), quantity: 1 }],
+        customer: options.customerEmail ? { email: options.customerEmail } : undefined,
+        customData: { userId: options.userId },
+        settings: {
+          displayMode: "overlay",
+          successUrl: `${window.location.origin}/app/today?checkout=success`,
+          allowLogout: false,
+          variant: "one-page",
+        },
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { openCheckout, openAddonCheckout, loading, environment: getPaddleEnvironment() };
 }
