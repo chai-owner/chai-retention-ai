@@ -31,12 +31,17 @@ export async function paddleFetch(env: PaddleEnv, path: string, init?: RequestIn
   return res;
 }
 
-/** Resolve a human-readable price ID (external_id) to Paddle's internal pri_ ID. */
-export async function resolvePaddlePriceId(env: PaddleEnv, externalId: string): Promise<string> {
-  const res = await paddleFetch(env, `/prices?external_id=${encodeURIComponent(externalId)}`);
+/**
+ * Resolve a price reference to Paddle's internal pri_ ID. Our catalog is
+ * referenced by pri_ ID directly, so this is a pass-through; legacy
+ * human-readable external IDs still fall back to a lookup.
+ */
+export async function resolvePaddlePriceId(env: PaddleEnv, priceId: string): Promise<string> {
+  if (priceId.startsWith("pri_")) return priceId;
+  const res = await paddleFetch(env, `/prices?external_id=${encodeURIComponent(priceId)}`);
   const json = (await res.json()) as { data?: Array<{ id: string }> };
   const id = json.data?.[0]?.id;
-  if (!res.ok || !id) throw new Error(`Paddle price not found: ${externalId}`);
+  if (!res.ok || !id) throw new Error(`Paddle price not found: ${priceId}`);
   return id;
 }
 

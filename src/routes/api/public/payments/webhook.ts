@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { EventName, verifyWebhook, type PaddleEnv } from "@/lib/paddle.server";
-import { planForProduct, ADDON_PRODUCT_ID } from "@/lib/paddle-shared";
+import { planForProduct, planPeriodForPrice, ADDON_PRODUCT_ID, ADDON_PRICE_ID } from "@/lib/paddle-shared";
 
 // Defer client construction until first use so env var availability is not
 // assumed at module load time.
@@ -30,6 +30,15 @@ interface NormalisedItems {
   currency: string | null;
 }
 
+/** Plan for a normalised item set: product external ID first, then price ID. */
+function planForItems(n: NormalisedItems) {
+  return (
+    (n.planProductId ? planForProduct(n.planProductId) : null) ??
+    planPeriodForPrice(n.priceExternalId)?.plan ??
+    null
+  );
+}
+
 function normaliseItems(items: any[] | undefined): NormalisedItems {
   const out: NormalisedItems = {
     planProductId: null,
@@ -41,12 +50,13 @@ function normaliseItems(items: any[] | undefined): NormalisedItems {
   };
   for (const item of items ?? []) {
     const productExt = item?.product?.importMeta?.externalId ?? null;
-    const priceExt = item?.price?.importMeta?.externalId ?? null;
-    if (productExt === ADDON_PRODUCT_ID || priceExt === "smart_ingest_monthly") {
+    // External IDs aren't set on the catalog, so fall back to the Paddle price ID.
+    const priceExt = item?.price?.importMeta?.externalId ?? item?.price?.id ?? null;
+    if (productExt === ADDON_PRODUCT_ID || priceExt === "smart_ingest_monthly" || priceExt === ADDON_PRICE_ID) {
       out.hasAddon = true;
       continue;
     }
-    if (productExt && planForProduct(productExt)) {
+    if ((productExt && planForProduct(productExt)) || planPeriodForPrice(priceExt)) {
       out.planProductId = productExt;
       out.priceExternalId = priceExt;
       out.billingInterval = item?.price?.billingCycle?.interval ?? null;
@@ -177,7 +187,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   // Business rule: activate the plan instantly, unlock the account and flag
   // the add-on whether it was a bundled line item or a standalone purchase.
   const orgId = await resolveOrgId(userId);
-  const plan = n.planProductId ? planForProduct(n.planProductId) : null;
+  const plan = planForItems(n);
   if (orgId) {
     const update: Record<string, unknown> = {};
     if (plan) {
@@ -222,8 +232,8 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
 
   // Keep the workspace plan in step with whatever the subscription now bills
   // for (covers in-app upgrades, portal changes and applied downgrades).
-  if (row?.user_id && n.planProductId) {
-    const plan = planForProduct(n.planProductId);
+  if (row?.user_id && (n.planProductId || n.priceExternalId)) {
+    const plan = planForItems(n);
     const orgId = await resolveOrgId(row.user_id);
     if (orgId && plan) {
       const orgUpdate: Record<string, unknown> = { plan, smart_ingest_addon: n.hasAddon };

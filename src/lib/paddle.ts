@@ -38,7 +38,12 @@ export async function initializePaddle(): Promise<void> {
   });
 }
 
-/** Resolve a human-readable price ID (e.g. "core_monthly") to Paddle's internal ID. */
+/**
+ * Resolve a price reference to Paddle's internal ID. Prices are referenced by
+ * their pri_ ID directly, so no round-trip is needed; legacy external IDs
+ * still fall back to the server lookup.
+ */
 export async function getPaddlePriceId(priceId: string): Promise<string> {
+  if (priceId.startsWith("pri_")) return priceId;
   return resolvePaddlePrice({ data: { priceId, environment: getPaddleEnvironment() } });
 }
