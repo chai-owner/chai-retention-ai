@@ -1,9 +1,20 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   churnConfidenceFor,
   churnConfidenceLabel,
+  churnProbabilityFromHealth,
   churnProbabilityPhrase,
 } from "@/lib/churn-probability";
+import { churnMetaOf } from "@/lib/customer-scoring";
+import { getCustomerScore } from "@/lib/data-tables.functions";
+import {
+  breakdownEntries,
+  factorsFromBreakdown,
+  formatScoredAt,
+  recommendationsFromBreakdown,
+} from "@/lib/customer-score-snapshot";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -89,6 +100,18 @@ function CustomerDetail() {
   const ingested = useIngested();
   const [dismissed, setDismissed] = useState(false);
   const [askChurn, setAskChurn] = useState(false);
+
+  // The nightly snapshot is the single source of truth for health, risk level
+  // and churn probability, so this page agrees with Today and the risk table.
+  const fetchScore = useServerFn(getCustomerScore);
+  const snapshotQuery = useQuery({
+    queryKey: ["customer-score", id],
+    queryFn: () => fetchScore({ data: { customerId: id } }),
+    enabled: signedIn === true,
+    staleTime: 60_000,
+  });
+  const snapshot = snapshotQuery.data ?? null;
+
   // Resolve strictly from the live dataset. Signed-out (demo) visitors can also
   // reach seeded churned/won-back accounts, which live outside the scored set.
   const found =
@@ -101,7 +124,34 @@ function CustomerDetail() {
     }
     return <CustomerMissing />;
   }
-  const c = found as Customer;
+  const live = found as Customer;
+  // Snapshot present → override the scored fields (and the explanation/actions
+  // derived from them). Absent → keep the real-time client-side calculation.
+  const meta = snapshot ? churnMetaOf(snapshot.breakdown) : null;
+  const c: Customer = snapshot
+    ? {
+        ...live,
+        health: snapshot.score,
+        risk: Math.max(0, Math.min(100, 100 - snapshot.score)),
+        churnProbability: meta?.churn_probability ?? churnProbabilityFromHealth(snapshot.score),
+        churnConfidence:
+          meta?.confidence ??
+          churnConfidenceFor(
+            new Set(breakdownEntries(snapshot.breakdown).map((e) => e.metric)).size,
+          ),
+        dataCategories:
+          meta?.data_categories ??
+          new Set(breakdownEntries(snapshot.breakdown).map((e) => e.metric)).size,
+        factors: factorsFromBreakdown(snapshot.breakdown, metrics),
+        recommendations: recommendationsFromBreakdown(snapshot.breakdown, {
+          customerName: live.name,
+          revenue: live.revenue,
+          churnProbability:
+            meta?.churn_probability ?? churnProbabilityFromHealth(snapshot.score),
+          metrics,
+        }),
+      }
+    : live;
   const cat = categoryFromHealth(c.health);
   const sentimentLabel = c.sentiment >= 60 ? "Positive" : c.sentiment >= 40 ? "Neutral" : "Negative";
 
@@ -238,6 +288,17 @@ function CustomerDetail() {
       <PageHeader title={c.name} description={`${c.segment} · ${c.contact} · last active ${c.lastActivity}`}>
         <HealthBadge category={cat} />
       </PageHeader>
+
+      {snapshot ? (
+        <p className="-mt-2 mb-4 text-xs text-muted-foreground">
+          Last scored: {formatScoredAt(snapshot.scoredAt)}
+        </p>
+      ) : signedIn ? (
+        <p className="-mt-2 mb-4 text-xs text-muted-foreground">
+          Score calculated in real-time — updates nightly.
+        </p>
+      ) : null}
+
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Health score" value={c.health} icon={HeartPulse} tone={cat === "healthy" ? "success" : cat === "watch" ? "warning" : cat === "at-risk" ? "caution" : "danger"} />

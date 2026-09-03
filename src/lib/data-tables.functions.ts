@@ -7,6 +7,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { INGEST_COLUMNS, normalizeIngestRow } from "@/lib/ingest-row-normalize";
 import { rangeFor } from "@/lib/pagination";
+import type { ChurnMetaEntry, ScoreBreakdownEntry } from "@/lib/customer-scoring";
 
 export const CUSTOMER_PAGE_SIZE = 50;
 export const TRANSACTION_PAGE_SIZE = 100;
@@ -202,5 +203,45 @@ export const listSupportPage = createServerFn({ method: "POST" })
         };
       }),
       total: count ?? 0,
+    };
+  });
+
+// ---- Single customer score snapshot ---------------------------------------
+
+export interface CustomerScoreSnapshot {
+  customerId: string;
+  score: number;
+  riskLevel: string;
+  scoredAt: string;
+  breakdown: Array<ScoreBreakdownEntry | ChurnMetaEntry>;
+}
+
+/**
+ * Latest stored score for one customer. Returns null when the nightly scoring
+ * job has not produced a snapshot for this customer yet, so the caller can fall
+ * back to real-time client-side scoring.
+ */
+export const getCustomerScore = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => z.object({ customerId: z.string().min(1) }).parse(v))
+  .handler(async ({ data, context }): Promise<CustomerScoreSnapshot | null> => {
+    const { supabase, userId } = context;
+    const { data: row, error } = await supabase
+      .from("customer_scores")
+      .select("customer_id, score, risk_level, score_breakdown, scored_at")
+      .eq("user_id", userId)
+      .eq("customer_id", data.customerId)
+      .eq("is_latest", true)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) return null;
+    return {
+      customerId: row.customer_id,
+      score: Math.round(Number(row.score) || 0),
+      riskLevel: row.risk_level,
+      scoredAt: row.scored_at,
+      breakdown: (Array.isArray(row.score_breakdown)
+        ? row.score_breakdown
+        : []) as unknown as Array<ScoreBreakdownEntry | ChurnMetaEntry>,
     };
   });
