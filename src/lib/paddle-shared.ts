@@ -4,26 +4,26 @@
 import { ORG_PLANS, type BillingPeriod, type OrgPlan } from "@/lib/organisations";
 
 /**
- * Paddle internal price IDs. External IDs aren't set on the Paddle catalog, so
- * we reference prices by their `pri_` IDs directly — no lookup call needed.
+ * Human-readable Paddle price external IDs. These are stable across the test
+ * and live environments; server code resolves them to `pri_` IDs at call time.
  */
 export const PLAN_PRICE_IDS: Record<OrgPlan, Record<BillingPeriod, string>> = {
   core: {
-    monthly: "pri_01m1kkp04evv5zkfrz0p133wy0",
-    annual: "pri_01m1kknzzxyf9jn5zr64kqhhpg",
+    monthly: "core_monthly",
+    annual: "core_annual",
   },
   standard: {
-    monthly: "pri_01m1kknzss28aeac46zqdvnssz",
-    annual: "pri_01m1kknzk5124g3xh08qzfkarh",
+    monthly: "standard_monthly",
+    annual: "standard_annual",
   },
   enterprise: {
-    monthly: "pri_01m1kknze8afm32618s2a2jhpc",
-    annual: "pri_01m1kknz25p2m5sv3g5acag9qc",
+    monthly: "enterprise_monthly",
+    annual: "enterprise_annual",
   },
 };
 
 /** Smart Ingest ("Data Drop") add-on price. Monthly billing only. */
-export const ADDON_PRICE_ID = "pri_01m1kknyxg5bcppjp7k1vsm9d6";
+export const ADDON_PRICE_ID = "smart_ingest_monthly";
 export const ADDON_PRODUCT_ID = "smart_ingest_addon";
 
 /** Product external ID -> ChAi plan slug. */
