@@ -25,7 +25,7 @@ import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/pricing")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): PricingSearch => ({
     ...(search.plan === "core" || search.plan === "standard" || search.plan === "enterprise"
       ? { plan: search.plan as OrgPlan }
       : {}),

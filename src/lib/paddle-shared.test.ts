@@ -43,20 +43,25 @@ describe("plan/product mappings", () => {
 
 describe("planChangeKind", () => {
   it("treats moving up a tier as an immediate upgrade", () => {
-    expect(planChangeKind("core", "standard")).toBe("upgrade-now");
-    expect(planChangeKind("standard", "enterprise")).toBe("upgrade-now");
-    expect(planChangeKind("core", "enterprise")).toBe("upgrade-now");
+    expect(planChangeKind("core", "monthly", "standard", "monthly")).toBe("upgrade-now");
+    expect(planChangeKind("standard", "annual", "enterprise", "annual")).toBe("upgrade-now");
+    expect(planChangeKind("core", "monthly", "enterprise", "annual")).toBe("upgrade-now");
   });
 
   it("treats moving down a tier as a downgrade at renewal", () => {
-    expect(planChangeKind("enterprise", "standard")).toBe("downgrade-renewal");
-    expect(planChangeKind("standard", "core")).toBe("downgrade-renewal");
-    expect(planChangeKind("enterprise", "core")).toBe("downgrade-renewal");
+    expect(planChangeKind("enterprise", "annual", "standard", "annual")).toBe("downgrade-renewal");
+    expect(planChangeKind("standard", "monthly", "core", "monthly")).toBe("downgrade-renewal");
+    expect(planChangeKind("enterprise", "monthly", "core", "monthly")).toBe("downgrade-renewal");
   });
 
-  it("treats same-tier billing-period switches as no plan change", () => {
-    expect(planChangeKind("core", "core")).toBe("same");
-    expect(planChangeKind("standard", "standard")).toBe("same");
+  it("treats identical plan and period as no change", () => {
+    expect(planChangeKind("core", "monthly", "core", "monthly")).toBe("same");
+    expect(planChangeKind("standard", "annual", "standard", "annual")).toBe("same");
+  });
+
+  it("treats same-tier period switches by commitment direction", () => {
+    expect(planChangeKind("core", "monthly", "core", "annual")).toBe("upgrade-now");
+    expect(planChangeKind("core", "annual", "core", "monthly")).toBe("downgrade-renewal");
   });
 });
 
