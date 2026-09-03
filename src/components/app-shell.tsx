@@ -16,6 +16,8 @@ import {
   X,
   BadgeCheck,
   Link2,
+  Receipt,
+  LifeBuoy,
 
   Settings,
   UserCircle,
