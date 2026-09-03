@@ -1,19 +1,15 @@
-import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Sparkles,
   ArrowRight,
-  PlayCircle,
-  HeartPulse,
-  AlertTriangle,
-  Lightbulb,
+  Target,
+  Gauge,
+  TrendingUp,
   ShieldCheck,
-  BarChart3,
-  History,
+  Share2,
+  ShieldOff,
   Plug,
   Brain,
   Rocket,
-  Check,
 } from "lucide-react";
 
 import { Reveal } from "@/components/landing/reveal";
@@ -26,10 +22,6 @@ import {
   QuickBooksIcon, QuickBooksColor, FreshBooksIcon, FreshBooksColor,
   XeroIcon, XeroColor,
 } from "@/components/landing/brand-icons";
-
-const customersShot = "/screenshots/customers.png";
-const insightsShot = "/screenshots/insights.png";
-const plannerShot = "/screenshots/planner.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -57,29 +49,25 @@ const login = { mode: undefined, demo: false, redirect: undefined };
 
 const navItems = [
   { label: "Features", href: "#features" },
-  { label: "Integrations", href: "#integrations" },
+  { label: "How scoring works", href: "#scoring" },
   { label: "Pricing", href: "/pricing" },
 ];
 
-const trust = [
-  { icon: Brain, title: "AI-powered insights", desc: "Root causes and next steps written in plain English, not dashboards to decode." },
-  { icon: ShieldCheck, title: "Secure integrations", desc: "Encrypted, per-workspace connections with careful data handling." },
-  { icon: Rocket, title: "Built for modern teams", desc: "Live in minutes — no analytics team, no data warehouse required." },
-  { icon: Lightbulb, title: "Actionable recommendations", desc: "Every insight is ranked by the revenue it can realistically save." },
+const features = [
+  { icon: Target, title: "Industry-specific metrics", desc: "ChAi helps you pick the metrics that actually matter for your industry and business model — no generic templates." },
+  { icon: Gauge, title: "Weighted health scores", desc: "You control how much each metric contributes to a customer's 0–100 health score." },
+  { icon: TrendingUp, title: "Predict churn & revenue at risk", desc: "See who's likely to leave, how much revenue is exposed, and what's realistically recoverable." },
+  { icon: ShieldCheck, title: "AI insights & actions", desc: "Plain-English root causes and prioritised next steps ranked by the revenue they can save." },
+  { icon: Share2, title: "Cross-platform identity resolution", desc: "Automatically link the same customer across CRM, billing and support tools — and fix duplicates." },
+  { icon: ShieldOff, title: "Forget-a-customer anonymization", desc: "Honour data-erasure requests in seconds while keeping your aggregate retention intelligence intact." },
 ];
 
-const integrations = [
-  { name: "Zendesk", Icon: ZendeskIcon, color: ZendeskColor },
-  { name: "Intercom", Icon: IntercomIcon, color: IntercomColor },
-  { name: "Freshdesk", Icon: FreshdeskIcon, color: FreshdeskColor },
-  { name: "HubSpot", Icon: HubSpotIcon, color: HubSpotColor },
-  { name: "Salesforce", Icon: SalesforceIcon, color: SalesforceColor },
-  { name: "Zoho CRM", Icon: ZohoIcon, color: ZohoColor },
-  { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor },
-  { name: "FreshBooks", Icon: FreshBooksIcon, color: FreshBooksColor },
-  { name: "Xero", Icon: XeroIcon, color: XeroColor },
+const scoreBands = [
+  { label: "Healthy", color: "var(--success)", desc: "Engaged, paying on time and trending steady." },
+  { label: "Watch", color: "var(--warning)", desc: "Early softening in usage or support signals." },
+  { label: "At risk", color: "var(--caution)", desc: "Clear decline — worth a conversation this week." },
+  { label: "Critical", color: "var(--danger)", desc: "Likely to leave soon without direct intervention." },
 ];
-
 
 const steps = [
   { n: "01", icon: Plug, title: "Connect your tools", desc: "Bring in CRM, billing, support and spreadsheets. ChAi maps the fields and checks quality for you." },
@@ -87,137 +75,104 @@ const steps = [
   { n: "03", icon: Rocket, title: "Act before customers churn", desc: "Get a prioritised list of who to contact today and exactly what to say." },
 ];
 
-const features = [
-  { icon: Brain, title: "Industry-specific metrics", desc: "ChAi helps you pick the metrics that actually matter for your industry and business model — no generic templates." },
-  { icon: HeartPulse, title: "Weighted health scores", desc: "You control how much each metric contributes to a customer's 0–100 health score." },
-  { icon: AlertTriangle, title: "Predict churn & revenue at risk", desc: "See who's likely to leave, how much revenue is exposed, and what's realistically recoverable." },
-  { icon: Sparkles, title: "AI insights & actions", desc: "Plain-English root causes and prioritised next steps ranked by the revenue they can save." },
-  { icon: Plug, title: "Cross-platform identity resolution", desc: "Automatically link the same customer across CRM, billing and support tools — and fix duplicates." },
-  { icon: ShieldCheck, title: "Forget-a-customer anonymization", desc: "Honour data-erasure requests in seconds while keeping your aggregate retention intelligence intact." },
+const integrations = [
+  { name: "Zendesk", Icon: ZendeskIcon, color: ZendeskColor, category: "Support" },
+  { name: "Intercom", Icon: IntercomIcon, color: IntercomColor, category: "Support" },
+  { name: "Freshdesk", Icon: FreshdeskIcon, color: FreshdeskColor, category: "Support" },
+  { name: "HubSpot", Icon: HubSpotIcon, color: HubSpotColor, category: "CRM" },
+  { name: "Salesforce", Icon: SalesforceIcon, color: SalesforceColor, category: "CRM" },
+  { name: "Zoho CRM", Icon: ZohoIcon, color: ZohoColor, category: "CRM" },
+  { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor, category: "Billing" },
+  { name: "FreshBooks", Icon: FreshBooksIcon, color: FreshBooksColor, category: "Billing" },
+  { name: "Xero", Icon: XeroIcon, color: XeroColor, category: "Billing" },
 ];
 
-const showcase = [
-  {
-    img: customersShot,
-    w: 1888,
-    h: 1908,
-    eyebrow: "Customer health dashboard",
-    title: "See exactly why a customer is leaving",
-    desc: "Open any account for its churn probability, the precise drivers behind the risk and the actions worth taking first.",
-    points: ["Root-cause risk breakdown", "Per-customer health & churn scores", "Actions ranked by $ saved"],
-  },
-  {
-    img: insightsShot,
-    w: 1888,
-    h: 2488,
-    eyebrow: "AI recommendations",
-    title: "Recommendations ranked by revenue saved",
-    desc: "ChAi turns raw data into prioritised actions and shows how your retention compares to similar businesses.",
-    points: ["Actions ranked by $ impact", "Plain-English root causes", "Industry benchmarking"],
-  },
-  {
-    img: plannerShot,
-    w: 1888,
-    h: 2128,
-    eyebrow: "Reports & risk timeline",
-    title: "Learn what to measure — and why",
-    desc: "For every metric, see why it matters, how it predicts churn and where you stand. Accuracy improves as you track more.",
-    points: ["Guided metric coaching", "Healthy benchmarks per metric", "Accuracy that grows with you"],
-  },
-];
+const focusRing =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E0A93A] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-[8px] bg-[#A9E0F1]/50 px-3 py-1 text-xs font-semibold text-[#204654]">
+      {children}
+    </span>
+  );
+}
 
 function Landing() {
-  const [scrolled, setScrolled] = useState(false);
   const { open: demoOpen, openGate, closeGate } = useDemoGate();
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   return (
     <div className="landing min-h-screen scroll-smooth font-sans antialiased">
-      {/* ── Nav ─────────────────────────────────────────── */}
-      <header
-        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-          scrolled ? "border-b border-white/10 bg-navy/70 backdrop-blur-xl" : "border-b border-transparent"
-        }`}
-      >
-        <nav className="mx-auto flex h-20 max-w-[1280px] items-center justify-start px-6 lg:px-8">
-          <a href="#top" className="flex items-center gap-2.5">
-            <img src="/logo-light.png" alt="ChAi" className="h-[2.925rem] w-auto" />
+      {/* ── Header + hero (dark rounded island) ─────────── */}
+      <section id="top" className="rounded-b-[36px] bg-[#152238] pb-20 lg:pb-28">
+        <nav className="mx-auto flex h-20 max-w-[1240px] items-center gap-6 px-6 lg:px-8">
+          <a href="#top" className={`flex items-center gap-2.5 rounded-[10px] ${focusRing}`}>
+            <span className="relative flex h-8 w-8 items-center justify-center rounded-[9px] bg-white/10">
+              <span className="h-2 w-2 rounded-full bg-[#E0A93A]" />
+            </span>
+            <span className="text-lg font-extrabold tracking-[-0.02em] text-white">ChAi</span>
           </a>
 
-          <div className="hidden items-center gap-1 md:flex ml-8">
+          <div className="ml-auto hidden items-center gap-1 md:flex">
             {navItems.map((n) => (
               <a
                 key={n.label}
                 href={n.href}
-                className="rounded-full px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                className={`rounded-[10px] px-3.5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white ${focusRing}`}
               >
                 {n.label}
               </a>
             ))}
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3 ml-auto">
-            <button
-              onClick={openGate}
-              className="hidden rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
-            >
-              View Demo
-            </button>
             <Link
               to="/auth"
               search={login}
-              className="hidden rounded-full px-4 py-2 text-sm font-medium text-white/75 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
+              className={`rounded-[10px] px-3.5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white ${focusRing}`}
             >
               Log in
             </Link>
-            <Link
-              to="/auth"
-              search={signup}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(32,70,84,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
-            >
-              Sign Up
-            </Link>
           </div>
-        </nav>
-      </header>
 
-      {/* ── Hero ────────────────────────────────────────── */}
-      <section id="top" className="relative overflow-hidden bg-hero-charcoal pt-36 pb-28 lg:pt-44 lg:pb-36">
-        <div className="relative mx-auto grid max-w-[1280px] items-center gap-16 px-6 lg:grid-cols-[1fr_1.05fr] lg:px-8">
+          <Link
+            to="/auth"
+            search={signup}
+            className={`group ml-auto inline-flex items-center gap-2 rounded-[10px] bg-[#E0A93A] px-4 py-2.5 text-sm font-bold text-[#152238] transition-colors hover:bg-[#d09c31] md:ml-3 ${focusRing}`}
+          >
+            Get started
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </nav>
+
+        <div className="mx-auto mt-10 grid max-w-[1240px] items-center gap-16 px-6 lg:mt-16 lg:grid-cols-[1fr_0.95fr] lg:px-8">
           <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5 text-gold" />
-              No analytics degree required
+            <span className="inline-flex items-center gap-2 rounded-[10px] bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white/85">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#E0A93A]" />
+              Customer retention intelligence
             </span>
-            <h1 className="mt-7 text-[2.75rem] font-semibold leading-[1.05] tracking-[-0.03em] text-white sm:text-6xl lg:text-[4.25rem]">
-              See who's about to leave — and what to say to keep them.
+            <h1 className="mt-6 text-[2.6rem] font-extrabold leading-[1.05] tracking-[-0.02em] text-white sm:text-5xl lg:text-[4rem]">
+              See who's about to leave — and what to say to{" "}
+              <span className="text-[#E0A93A]">keep them</span>.
             </h1>
-            <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/65">
-              ChAi reads your customer data and explains it in plain English. No dashboards to decode, no jargon to learn.
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/65">
+              ChAi reads your CRM, billing and support data, scores every customer's health and
+              explains what to do next in plain English.
             </p>
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/auth"
                 search={signup}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
+                className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#E0A93A] px-6 py-3.5 text-base font-bold text-[#152238] transition-colors hover:bg-[#d09c31] ${focusRing}`}
               >
-                Try it for free <ArrowRight className="h-4.5 w-4.5" />
+                Try it for free <ArrowRight className="h-4 w-4" />
               </Link>
               <button
                 onClick={openGate}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-7 py-4 text-base font-semibold text-white backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10"
+                className={`inline-flex items-center justify-center gap-2 rounded-[10px] border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-white/10 ${focusRing}`}
               >
-                <PlayCircle className="h-5 w-5" /> View Demo
+                Book a demo
               </button>
             </div>
             <p className="mt-5 text-sm text-white/45">
-              Set up your retention engine in minutes — no analytics team required.
+              No credit card required · 14-day free trial · Cancel anytime
             </p>
           </Reveal>
 
@@ -228,134 +183,93 @@ function Landing() {
       </section>
 
       {/* ── Features ────────────────────────────────────── */}
-      <section id="features" className="bg-card py-24 lg:py-[7.5rem]">
-        <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Everything you need to stop churn</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Industry-specific metrics, weighted health scores, AI insights, identity resolution and privacy-safe anonymization — in one place.
-            </p>
-          </Reveal>
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f, i) => (
-              <Reveal key={f.title} delay={(i % 3) * 80}>
-                <div className="group h-full rounded-[20px] bg-card p-10 shadow-soft ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1.5 hover:ring-primary/25 hover:shadow-card">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
-                    <f.icon className="h-5 w-5" strokeWidth={1.75} />
-                  </span>
-                  <h3 className="mt-5 text-lg font-semibold">{f.title}</h3>
-                  <p className="mt-2 leading-relaxed text-muted-foreground">{f.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Trust ───────────────────────────────────────── */}
-      <section className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8 lg:py-[7.5rem]">
+      <section id="features" className="mx-auto max-w-[1240px] px-6 py-24 lg:px-8">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Enterprise-grade retention intelligence
+          <Eyebrow>Features</Eyebrow>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+            Everything you need to stop churn
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Built to be trusted with your customer data from day one.
+          <p className="mt-4 text-lg text-[#4A5A6B]">
+            Industry-specific metrics, weighted health scores, AI insights, identity resolution and
+            privacy-safe anonymization — in one place.
           </p>
         </Reveal>
-        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {trust.map((t, i) => (
-            <Reveal key={t.title} delay={i * 80}>
-              <div className="group h-full rounded-[20px] bg-card p-8 shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
-                  <t.icon className="h-5 w-5" strokeWidth={1.75} />
+
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((f, i) => (
+            <Reveal key={f.title} delay={(i % 3) * 80}>
+              <div className="h-full rounded-[18px] bg-white p-8">
+                <span className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#204654] text-white">
+                  <f.icon className="h-5 w-5" strokeWidth={1.75} />
                 </span>
-                <h3 className="mt-5 font-semibold">{t.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t.desc}</p>
+                <h3 className="mt-5 text-lg font-extrabold tracking-[-0.02em]">{f.title}</h3>
+                <p className="mt-2 leading-relaxed text-[#4A5A6B]">{f.desc}</p>
+                <a
+                  href="#scoring"
+                  className={`mt-5 inline-flex items-center gap-1.5 rounded-[8px] text-sm font-bold text-[#152238] ${focusRing}`}
+                >
+                  Learn more <ArrowRight className="h-3.5 w-3.5" />
+                </a>
               </div>
             </Reveal>
           ))}
         </div>
+      </section>
 
-        {/* Customer detail screenshot */}
-        <Reveal delay={200} className="mt-16 lg:mt-24">
-          <div className="mx-auto max-w-5xl">
-            <div className="overflow-hidden rounded-[22px] ring-1 ring-navy/20 shadow-[0_12px_40px_-12px_rgba(21,34,56,0.45)]">
-              <img
-                src="/screenshots/customer-detail.png"
-                alt="ChAi customer detail view showing health score, churn probability, risk drivers and recommended actions"
-                width={1587}
-                height={896}
-                className="block w-full"
-              />
-            </div>
-          </div>
+      {/* ── How scoring works ───────────────────────────── */}
+      <section id="scoring" className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <Eyebrow>How scoring works</Eyebrow>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+            One consistent signal, everywhere
+          </h2>
+          <p className="mt-4 text-lg text-[#4A5A6B]">
+            Every customer gets a 0–100 health score on the same four-stage scale — identical on this
+            page and inside the app, so the colour always means the same thing.
+          </p>
         </Reveal>
+
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {scoreBands.map((b, i) => (
+            <Reveal key={b.label} delay={i * 70}>
+              <div className="h-full rounded-[16px] bg-white p-6">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className="h-3 w-3 rounded-[4px]"
+                    style={{ backgroundColor: b.color }}
+                  />
+                  <p className="font-extrabold tracking-[-0.02em]">{b.label}</p>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-[#4A5A6B]">{b.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
       </section>
 
       {/* ── How it works ────────────────────────────────── */}
-      <section className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8 lg:py-[7.5rem]">
+      <section className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">How it works</h2>
-          <p className="mt-4 text-lg text-muted-foreground">Three steps from raw data to retained revenue.</p>
+          <Eyebrow>Onboarding</Eyebrow>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+            How it works
+          </h2>
         </Reveal>
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
+
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
           {steps.map((s, i) => (
             <Reveal key={s.n} delay={i * 100}>
-              <div className="group h-full rounded-[20px] bg-card p-10 shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card">
-                <div className="flex items-center justify-between">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
-                    <s.icon className="h-5 w-5" strokeWidth={1.75} />
+              <div className="h-full rounded-[18px] bg-[#DFF0F7] p-8">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl font-extrabold tracking-[-0.02em] text-[#204654]">
+                    {s.n}
                   </span>
-                  <span className="text-3xl font-semibold tracking-tight text-border">{s.n}</span>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#204654] text-white">
+                    <s.icon className="h-4.5 w-4.5" strokeWidth={1.75} />
+                  </span>
                 </div>
-                <h3 className="mt-6 text-xl font-semibold">{s.title}</h3>
-                <p className="mt-3 leading-relaxed text-muted-foreground">{s.desc}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Product showcase ────────────────────────────── */}
-      <section id="product" className="mx-auto max-w-[1280px] px-6 py-24 lg:px-8 lg:py-[7.5rem]">
-        <Reveal className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">See it in action</h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            A calm, focused workspace that turns raw data into retention intelligence.
-          </p>
-        </Reveal>
-
-        <div className="mt-20 space-y-24 lg:space-y-32">
-          {showcase.map((s, i) => (
-            <Reveal key={s.title}>
-              <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-                <div className={i % 2 === 1 ? "lg:order-2" : ""}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{s.eyebrow}</p>
-                  <h3 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{s.title}</h3>
-                  <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{s.desc}</p>
-                  <ul className="mt-7 space-y-3">
-                    {s.points.map((p) => (
-                      <li key={p} className="flex items-center gap-3 text-[15px]">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          <Check className="h-3.5 w-3.5" />
-                        </span>
-                        {p}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className={i % 2 === 1 ? "lg:order-1" : ""}>
-                  <div className="overflow-hidden rounded-[22px] shadow-[0_20px_60px_-18px_rgba(21,34,56,0.55)] transition-transform duration-500 hover:-translate-y-2">
-                    <img
-                      src={s.img}
-                      alt={`${s.eyebrow} — ${s.title}`}
-                      width={s.w}
-                      height={s.h}
-                      className="block h-auto w-full"
-                      loading="lazy"
-                    />
-                  </div>
-                </div>
+                <h3 className="mt-5 text-xl font-extrabold tracking-[-0.02em]">{s.title}</h3>
+                <p className="mt-2 leading-relaxed text-[#4A5A6B]">{s.desc}</p>
               </div>
             </Reveal>
           ))}
@@ -363,113 +277,90 @@ function Landing() {
       </section>
 
       {/* ── Integrations ────────────────────────────────── */}
-      <section id="integrations" className="bg-card py-24 lg:py-[7.5rem]">
-        <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Connect your existing tools</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              ChAi works with the systems you already run on — CRM, billing, support and productivity.
-              No migration, no rebuild.
-            </p>
-          </Reveal>
-          <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
-            {integrations.map((it, i) => (
-              <Reveal key={it.name} delay={(i % 3) * 70}>
-                <div className="group flex h-full items-center gap-4 rounded-[20px] border border-border/70 bg-card p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-card">
-                  <span
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary transition-transform duration-300 group-hover:scale-110"
-                    style={{ color: it.color }}
-                  >
-                    <it.Icon className="h-6 w-6" />
-                  </span>
-                  <div>
-                    <p className="font-semibold">{it.name}</p>
-                  </div>
+      <section id="integrations" className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <Eyebrow>Integrations</Eyebrow>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+            Connect your existing tools
+          </h2>
+          <p className="mt-4 text-lg text-[#4A5A6B]">
+            ChAi works with the systems you already run on. No migration, no rebuild.
+          </p>
+        </Reveal>
+
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {integrations.map((it, i) => (
+            <Reveal key={it.name} delay={(i % 3) * 70}>
+              <div className="flex h-full items-center gap-4 rounded-[16px] bg-white p-5">
+                <span
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#EEF7FB]"
+                  style={{ color: it.color }}
+                >
+                  <it.Icon className="h-6 w-6" />
+                </span>
+                <div>
+                  <p className="font-extrabold tracking-[-0.02em]">{it.name}</p>
+                  <p className="text-sm text-[#4A5A6B]">{it.category}</p>
                 </div>
-              </Reveal>
-            ))}
-          </div>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </section>
 
-      {/* ── CTA ─────────────────────────────────────────── */}
-      <section id="pricing" className="mx-auto max-w-[1280px] px-6 pb-24 lg:px-8 lg:pb-[7.5rem]">
+      {/* ── Final CTA island ────────────────────────────── */}
+      <section className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
         <Reveal>
-          <div className="relative overflow-hidden rounded-[24px] bg-navy px-8 py-20 text-center shadow-lift lg:px-16">
-            <div aria-hidden className="pointer-events-none absolute inset-0">
-              <div className="mesh-drift absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary/35 blur-[110px]" />
-              <div className="absolute -bottom-28 -left-20 h-96 w-96 rounded-full bg-[#204654]/30 blur-[120px]" />
-            </div>
-            <div className="relative">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur">
-                <Sparkles className="h-3.5 w-3.5 text-gold" /> Start today
-              </span>
-              <h2 className="mx-auto mt-6 max-w-2xl text-4xl font-semibold tracking-[-0.03em] text-white sm:text-5xl">
-                Ready to reduce churn?
-              </h2>
-              <p className="mx-auto mt-5 max-w-xl text-lg text-white/65">
-                Bring your data and let ChAi surface who's at risk and what to do next — in plain English.
-              </p>
-              <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link
-                  to="/auth"
-                  search={signup}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
-                >
-                  Sign Up <ArrowRight className="h-4.5 w-4.5" />
-                </Link>
-                <button
-                  onClick={openGate}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-7 py-4 text-base font-semibold text-white backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10"
-                >
-                  View Demo
-                </button>
-              </div>
+          <div className="rounded-[36px] bg-[#152238] px-8 py-20 text-center lg:px-16">
+            <h2 className="mx-auto max-w-2xl text-4xl font-extrabold tracking-[-0.02em] text-white sm:text-5xl">
+              Ready to <span className="text-[#E0A93A]">reduce churn</span>?
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-lg text-white/65">
+              Bring your data and let ChAi surface who's at risk and what to do next — in plain
+              English.
+            </p>
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                to="/auth"
+                search={signup}
+                className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#E0A93A] px-6 py-3.5 text-base font-bold text-[#152238] transition-colors hover:bg-[#d09c31] ${focusRing}`}
+              >
+                Sign up free <ArrowRight className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={openGate}
+                className={`inline-flex items-center justify-center gap-2 rounded-[10px] border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-white/10 ${focusRing}`}
+              >
+                View demo
+              </button>
             </div>
           </div>
         </Reveal>
       </section>
 
       {/* ── Footer ──────────────────────────────────────── */}
-      <footer className="border-t border-border bg-card">
-        <div className="mx-auto max-w-[1280px] px-6 py-12 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-8 sm:flex-row">
-            <div className="flex items-center gap-2.5">
-              <img src="/logo-dark.png" alt="ChAi" className="h-9 w-auto dark:hidden" />
-              <img src="/logo-light.png" alt="ChAi" className="hidden h-9 w-auto dark:block" />
-            </div>
-
-            <div className="flex flex-col items-center sm:items-end">
-              <p className="text-sm font-semibold">Resources</p>
-              <ul className="mt-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground sm:justify-end">
-                <li>
-                  <button className="transition-colors hover:text-primary" onClick={openGate}>
-                    Live Demo
-                  </button>
-                </li>
-                <li>
-                  <Link className="transition-colors hover:text-primary" to="/terms">
-                    Terms
-                  </Link>
-                </li>
-                <li>
-                  <Link className="transition-colors hover:text-primary" to="/privacy">
-                    Privacy
-                  </Link>
-                </li>
-                <li>
-                  <Link className="transition-colors hover:text-primary" to="/auth" search={login}>
-                    Log in
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 text-sm text-muted-foreground sm:flex-row">
-            <p>© {new Date().getFullYear()} ChAi. All rights reserved.</p>
-            <p className="hidden sm:block">Built for businesses that run on recurring revenue.</p>
-          </div>
+      <footer className="mx-auto max-w-[1240px] px-6 pb-12 lg:px-8">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-[#D8E7EF] pt-8 text-sm text-[#4A5A6B] sm:flex-row">
+          <span className="text-lg font-extrabold tracking-[-0.02em] text-[#152238]">ChAi</span>
+          <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            <li>
+              <button className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} onClick={openGate}>
+                Live demo
+              </button>
+            </li>
+            <li>
+              <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/terms">Terms</Link>
+            </li>
+            <li>
+              <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/privacy">Privacy</Link>
+            </li>
+            <li>
+              <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/auth" search={login}>
+                Log in
+              </Link>
+            </li>
+          </ul>
+          <p>© {new Date().getFullYear()} ChAi. All rights reserved.</p>
         </div>
       </footer>
 
