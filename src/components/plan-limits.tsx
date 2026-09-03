@@ -26,8 +26,12 @@ import {
   type BillingPeriod,
   type OrgPlan,
 } from "@/lib/organisations";
-import { upgradeOrganisationPlan } from "@/lib/organisations.functions";
 import { usePlanUsage, useRefreshPlan } from "@/lib/use-plan-usage";
+import { getPaddleEnvironment } from "@/lib/paddle";
+import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
+import { getMySubscription, requestPlanChange } from "@/utils/payments.functions";
+import { useAuthUserId } from "@/lib/use-auth-state";
+import { supabase } from "@/integrations/supabase/client";
 import { clearPlanLimitNotice, usePlanLimitNotice } from "@/lib/plan-limit-store";
 
 function limitText(value: number | null) {
@@ -48,19 +52,51 @@ export function UpgradePlanDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const upgrade = useServerFn(upgradeOrganisationPlan);
+  const getSubscription = useServerFn(getMySubscription);
+  const changePlan = useServerFn(requestPlanChange);
   const refresh = useRefreshPlan();
   const target = nextPlan(plan);
   const [period, setPeriod] = useState<BillingPeriod>("monthly");
+  const userId = useAuthUserId();
+  const { openCheckout } = usePaddleCheckout();
+  const environment = getPaddleEnvironment();
 
   const mutation = useMutation({
-    mutationFn: () => upgrade(),
-    onSuccess: (result: { plan: OrgPlan }) => {
-      toast.success(
-        `You've been upgraded to ${PLAN_LABELS[result.plan]} (${
-          period === "annual" ? "billed annually" : "billed monthly"
-        }). Our team will be in touch to arrange billing.`,
-      );
+    mutationFn: async () => {
+      if (!target) throw new Error("You're already on our highest plan.");
+      const sub = await getSubscription({ data: { environment } });
+      if (!sub || sub.status === "none" || !["active", "trialing", "past_due"].includes(sub.status)) {
+        // No subscription yet — collect payment through checkout.
+        if (!userId) throw new Error("Please sign in again to continue.");
+        const { data } = await supabase.auth.getSession();
+        await openCheckout({
+          plan: target,
+          period,
+          userId,
+          customerEmail: data.session?.user.email ?? undefined,
+        });
+        return { kind: "checkout" as const };
+      }
+      return changePlan({ data: { environment, plan: target, period } });
+    },
+    onSuccess: (result) => {
+      if (result.kind === "checkout") {
+        // The Paddle overlay is open; close the dialog and let checkout finish.
+        onOpenChange(false);
+        return;
+      }
+      if (!target) return;
+      if (result.kind === "downgrade-renewal") {
+        toast.success(
+          `${PLAN_LABELS[target]} will start at your next renewal. You keep your current plan until then.`,
+        );
+      } else {
+        toast.success(
+          `You're now on ${PLAN_LABELS[target]} (${
+            period === "annual" ? "billed annually" : "billed monthly"
+          }). Your new limits are active.`,
+        );
+      }
       onOpenChange(false);
       clearPlanLimitNotice();
       refresh();

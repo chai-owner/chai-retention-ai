@@ -865,6 +865,8 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          pending_plan: string | null
+          pending_plan_effective_at: string | null
           plan: string
           smart_ingest_addon: boolean
           updated_at: string
@@ -874,6 +876,8 @@ export type Database = {
           id?: string
           name?: string
           owner_id: string
+          pending_plan?: string | null
+          pending_plan_effective_at?: string | null
           plan?: string
           smart_ingest_addon?: boolean
           updated_at?: string
@@ -883,6 +887,8 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          pending_plan?: string | null
+          pending_plan_effective_at?: string | null
           plan?: string
           smart_ingest_addon?: boolean
           updated_at?: string
@@ -983,10 +989,13 @@ export type Database = {
         Row: {
           amount: number | null
           billing_interval: string
+          cancel_at_period_end: boolean
           cancelled_at: string | null
           created_at: string
           currency: string | null
           current_period_end: string | null
+          current_period_start: string | null
+          environment: string
           id: string
           payer_email: string | null
           plan_id: string | null
@@ -1000,10 +1009,13 @@ export type Database = {
         Insert: {
           amount?: number | null
           billing_interval?: string
+          cancel_at_period_end?: boolean
           cancelled_at?: string | null
           created_at?: string
           currency?: string | null
           current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
           id?: string
           payer_email?: string | null
           plan_id?: string | null
@@ -1017,10 +1029,13 @@ export type Database = {
         Update: {
           amount?: number | null
           billing_interval?: string
+          cancel_at_period_end?: boolean
           cancelled_at?: string | null
           created_at?: string
           currency?: string | null
           current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
           id?: string
           payer_email?: string | null
           plan_id?: string | null
@@ -1316,6 +1331,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      has_active_subscription: {
+        Args: { check_env?: string; user_uuid: string }
+        Returns: boolean
       }
       has_role: {
         Args: {

@@ -12,9 +12,32 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
-import { PLAN_LABELS, PLAN_PRICING, annualSaving, type OrgPlan } from "@/lib/organisations";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import {
+  PLAN_LABELS,
+  PLAN_PRICING,
+  annualSaving,
+  type BillingPeriod,
+  type OrgPlan,
+} from "@/lib/organisations";
+import { useSignedIn, useAuthUserId } from "@/lib/use-auth-state";
+import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
+import { supabase } from "@/integrations/supabase/client";
+
+type PricingSearch = { plan?: OrgPlan; period?: "monthly" | "annual"; addon?: true };
 
 export const Route = createFileRoute("/pricing")({
+  validateSearch: (search: Record<string, unknown>): PricingSearch => ({
+    ...(search.plan === "core" || search.plan === "standard" || search.plan === "enterprise"
+      ? { plan: search.plan as OrgPlan }
+      : {}),
+    ...(search.period === "annual"
+      ? { period: "annual" as const }
+      : search.period === "monthly"
+        ? { period: "monthly" as const }
+        : {}),
+    ...(search.addon === "1" || search.addon === "true" ? { addon: true as const } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Pricing — ChAi | Core, Standard & Enterprise plans" },
@@ -170,6 +193,50 @@ function PricingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [annual, setAnnual] = useState(false);
   const { open: demoOpen, openGate, closeGate } = useDemoGate();
+  const [addonChecked, setAddonChecked] = useState(false);
+  const signedIn = useSignedIn();
+  const userId = useAuthUserId();
+  const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const autoOpenedRef = useRef(false);
+
+  const buy = async (plan: OrgPlan, period: BillingPeriod, includeAddon: boolean) => {
+    if (!signedIn || !userId) {
+      // Send them through sign-up/sign-in first; the query string below brings
+      // them straight back here and auto-opens checkout.
+      navigate({
+        to: "/auth",
+        search: {
+          mode: "signup",
+          demo: false,
+          redirect: `/pricing?plan=${plan}&period=${period}${includeAddon ? "&addon=1" : ""}`,
+        },
+      });
+      return;
+    }
+    const { data } = await supabase.auth.getSession();
+    await openCheckout({
+      plan,
+      period,
+      includeAddon,
+      userId,
+      customerEmail: data.session?.user.email ?? undefined,
+    });
+  };
+
+  // Returning from auth with a pending purchase: open checkout automatically.
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    if (!signedIn || !userId || !search.plan || !search.period) return;
+    autoOpenedRef.current = true;
+    const plan = search.plan;
+    const period = search.period;
+    const addon = !!search.addon;
+    navigate({ to: "/pricing", search: {}, replace: true });
+    void buy(plan, period, addon);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signedIn, userId, search.plan, search.period, search.addon]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -180,6 +247,7 @@ function PricingPage() {
 
   return (
     <div className="landing min-h-screen scroll-smooth font-sans antialiased">
+      <PaymentTestModeBanner />
       {/* ── Nav ─────────────────────────────────────────── */}
       <header
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
@@ -339,17 +407,29 @@ function PricingPage() {
                         )}
                       </div>
 
-                      <Link
-                        to="/auth"
-                        search={signup}
-                        className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
+                      <button
+                        type="button"
+                        disabled={checkoutLoading}
+                        onClick={() => void buy(tier.plan, annual ? "annual" : "monthly", addonChecked)}
+                        className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60 ${
                           tier.highlight
                             ? "bg-primary text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] hover:bg-[color:var(--primary-hover)]"
                             : "border border-border bg-background hover:border-primary/40"
                         }`}
                       >
-                        Start your 2-week free trial <ArrowRight className="h-4 w-4" />
-                      </Link>
+                        {checkoutLoading ? "Opening checkout…" : "Get started"} <ArrowRight className="h-4 w-4" />
+                      </button>
+                      {tier.plan === "core" && !annual && (
+                        <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 text-sm text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={addonChecked}
+                            onChange={(e) => setAddonChecked(e.target.checked)}
+                            className="h-4 w-4 rounded border-border accent-[color:var(--primary)]"
+                          />
+                          Add ChAi Data Drop (+$39/mo)
+                        </label>
+                      )}
                     </div>
 
                     <div className="mt-8 border-t border-border pt-6">

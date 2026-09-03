@@ -42,8 +42,10 @@ import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authe
 import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
 import { Route as ApiPublicHooksDailyScoreRouteImport } from './routes/api/public/hooks/daily-score'
 import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public/hooks/daily-sync'
+import { Route as ApiPublicHooksPlanChangesRouteImport } from './routes/api/public/hooks/plan-changes'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 import { Route as ApiPublicIntercomCallbackRouteImport } from './routes/api/public/intercom.callback'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicZendeskCallbackRouteImport } from './routes/api/public/zendesk.callback'
 import { Route as ApiPublicZohoCallbackRouteImport } from './routes/api/public/zoho.callback'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -226,6 +228,12 @@ const ApiPublicHooksDailySyncRoute = ApiPublicHooksDailySyncRouteImport.update({
   path: '/api/public/hooks/daily-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPlanChangesRoute =
+  ApiPublicHooksPlanChangesRouteImport.update({
+    id: '/api/public/hooks/plan-changes',
+    path: '/api/public/hooks/plan-changes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWeeklyDigestRoute =
   ApiPublicHooksWeeklyDigestRouteImport.update({
     id: '/api/public/hooks/weekly-digest',
@@ -236,6 +244,12 @@ const ApiPublicIntercomCallbackRoute =
   ApiPublicIntercomCallbackRouteImport.update({
     id: '/api/public/intercom/callback',
     path: '/api/public/intercom/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicZendeskCallbackRoute =
@@ -298,8 +312,10 @@ export interface FileRoutesByFullPath {
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -337,8 +353,10 @@ export interface FileRoutesByTo {
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -380,8 +398,10 @@ export interface FileRoutesById {
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -423,8 +443,10 @@ export interface FileRouteTypes {
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/plan-changes'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
+    | '/api/public/payments/webhook'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
     | '/lovable/email/auth/preview'
@@ -462,8 +484,10 @@ export interface FileRouteTypes {
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/plan-changes'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
+    | '/api/public/payments/webhook'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
     | '/lovable/email/auth/preview'
@@ -504,8 +528,10 @@ export interface FileRouteTypes {
     | '/api/public/accounting/callback'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/plan-changes'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
+    | '/api/public/payments/webhook'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
     | '/lovable/email/auth/preview'
@@ -527,8 +553,10 @@ export interface RootRouteChildren {
   ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
   ApiPublicHooksDailyScoreRoute: typeof ApiPublicHooksDailyScoreRoute
   ApiPublicHooksDailySyncRoute: typeof ApiPublicHooksDailySyncRoute
+  ApiPublicHooksPlanChangesRoute: typeof ApiPublicHooksPlanChangesRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
   ApiPublicIntercomCallbackRoute: typeof ApiPublicIntercomCallbackRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicZendeskCallbackRoute: typeof ApiPublicZendeskCallbackRoute
   ApiPublicZohoCallbackRoute: typeof ApiPublicZohoCallbackRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -769,6 +797,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailySyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/plan-changes': {
+      id: '/api/public/hooks/plan-changes'
+      path: '/api/public/hooks/plan-changes'
+      fullPath: '/api/public/hooks/plan-changes'
+      preLoaderRoute: typeof ApiPublicHooksPlanChangesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/weekly-digest': {
       id: '/api/public/hooks/weekly-digest'
       path: '/api/public/hooks/weekly-digest'
@@ -781,6 +816,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/intercom/callback'
       fullPath: '/api/public/intercom/callback'
       preLoaderRoute: typeof ApiPublicIntercomCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/zendesk/callback': {
@@ -907,8 +949,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
   ApiPublicHooksDailyScoreRoute: ApiPublicHooksDailyScoreRoute,
   ApiPublicHooksDailySyncRoute: ApiPublicHooksDailySyncRoute,
+  ApiPublicHooksPlanChangesRoute: ApiPublicHooksPlanChangesRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
   ApiPublicIntercomCallbackRoute: ApiPublicIntercomCallbackRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicZendeskCallbackRoute: ApiPublicZendeskCallbackRoute,
   ApiPublicZohoCallbackRoute: ApiPublicZohoCallbackRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,

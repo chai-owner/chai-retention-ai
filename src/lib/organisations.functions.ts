@@ -551,45 +551,6 @@ export const getPlanUsage = createServerFn({ method: "GET" })
     };
   });
 
-/**
- * Placeholder purchase of the ChAi Data Drop add-on. Flips the flag on the
- * organisation; billing is arranged manually by the team afterwards.
- */
-export const enableSmartIngestAddon = createServerFn({ method: "POST" })
-  .middleware([requireConnectedAuth])
-  .handler(async ({ context }) => {
-    const membership = await loadMembership(context as Ctx);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("organisations")
-      .update({ smart_ingest_addon: true })
-      .eq("id", membership.orgId);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
-  });
-
-
-
-/**
- * Placeholder upgrade: flips the organisation to the next tier immediately so
- * limits lift. Billing is arranged manually — no payment provider involved.
- */
-export const upgradeOrganisationPlan = createServerFn({ method: "POST" })
-  .middleware([requireConnectedAuth])
-  .handler(async ({ context }) => {
-    const membership = await loadMembership(context as Ctx);
-    if (!canManageMembers(membership.role)) {
-      throw new Error("Only the team owner or an admin can change the plan.");
-    }
-    const target = nextPlan(membership.organisation.plan);
-    if (!target) throw new Error("You're already on our highest plan.");
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("organisations")
-      .update({ plan: target })
-      .eq("id", membership.orgId);
-    if (error) throw new Error(error.message);
-
-    return { ok: true as const, plan: target };
-  });
+// Note: plan upgrades and the Data Drop add-on are sold through Paddle
+// checkout. The payments webhook (/api/public/payments/webhook) activates the
+// plan and sets `smart_ingest_addon` once payment clears.
