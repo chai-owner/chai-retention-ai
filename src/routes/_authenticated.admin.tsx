@@ -16,6 +16,7 @@ import {
   type AdminCustomer,
 } from "@/lib/admin.functions";
 import { impersonationStore } from "@/lib/impersonation";
+import { AdminBilling } from "@/components/admin-billing";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -305,6 +306,8 @@ function AdminPage() {
           </div>
         )}
       </Card>
+
+      <AdminBilling />
 
       <div className="mt-10">
         <PageHeader
