@@ -86,14 +86,14 @@
   --secondary-foreground: #152238;
   --muted: #E3F1F8;
   --muted-foreground: #4A5A6B;
-  /* Sand accent — sparingly */
-  --accent: #E0A93A;
+  /* Logo green accent — sparingly */
+  --accent: #C3FFA5;
   --accent-foreground: #152238;
 
   /* Product Navy — hero, nav, footer surfaces */
   --navy: #152238;
   --navy-foreground: #F7F9E1;
-  --gold: #E0A93A;
+  --gold: #C3FFA5;
 
   /* Flat hero charcoal — no gradient, no glow */
   --hero-charcoal: #0E141C;
@@ -118,14 +118,14 @@
 
   /* Chart palette from foundation */
   --chart-1: #204654; /* Teal Waters */
-  --chart-2: #E0A93A; /* Sand */
+  --chart-2: #C3FFA5; /* Spring Meadow */
   --chart-3: #A9E0F1; /* Glacial Sky */
   --chart-4: #CAFFA6; /* Spring Meadow */
   --chart-5: #152238; /* Product Navy */
 
   --sidebar: #152238;
   --sidebar-foreground: #F7F9E1;
-  --sidebar-primary: #E0A93A;
+  --sidebar-primary: #C3FFA5;
   --sidebar-primary-foreground: #152238;
   --sidebar-accent: #204654;
   --sidebar-accent-foreground: #F7F9E1;
@@ -154,11 +154,11 @@
   --secondary-foreground: #F7F9E1;
   --muted: #24384F;
   --muted-foreground: #A9B4C2;
-  --accent: #E0A93A;
+  --accent: #C3FFA5;
   --accent-foreground: #152238;
   --navy: #152238;
   --navy-foreground: #F7F9E1;
-  --gold: #E0A93A;
+  --gold: #C3FFA5;
   --destructive: #B6423F;
   --destructive-foreground: #FFFFFF;
   --border: rgba(247, 249, 225, 0.10);
@@ -173,13 +173,13 @@
   --danger: #B6423F;
   --danger-foreground: #FFFFFF;
   --chart-1: #A9E0F1;
-  --chart-2: #E0A93A;
+  --chart-2: #C3FFA5;
   --chart-3: #CAFFA6;
   --chart-4: #204654;
   --chart-5: #F7F9E1;
   --sidebar: #0F172A;
   --sidebar-foreground: #F7F9E1;
-  --sidebar-primary: #E0A93A;
+  --sidebar-primary: #C3FFA5;
   --sidebar-primary-foreground: #152238;
   --sidebar-accent: #204654;
   --sidebar-accent-foreground: #F7F9E1;
@@ -248,11 +248,11 @@
   --secondary-foreground: #152238;
   --muted: #E3F1F8;
   --muted-foreground: #4A5A6B;
-  --accent: #E0A93A;
+  --accent: #C3FFA5;
   --accent-foreground: #152238;
   --navy: #152238;
   --navy-foreground: #F7F9E1;
-  --gold: #E0A93A;
+  --gold: #C3FFA5;
   --border: #D8E7EF;
   --ring: #204654;
   --radius: 1.25rem;
