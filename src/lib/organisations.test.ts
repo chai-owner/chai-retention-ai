@@ -53,7 +53,8 @@ describe("plans and seats", () => {
 
   it("validates plan and role values", () => {
     expect(isOrgPlan("standard")).toBe(true);
-    expect(isOrgPlan("enterprise")).toBe(false);
+    expect(isOrgPlan("enterprise")).toBe(true);
+    expect(isOrgPlan("platinum")).toBe(false);
     expect(isOrgRole("member")).toBe(true);
     expect(isOrgRole("superuser")).toBe(false);
   });
