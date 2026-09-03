@@ -24,6 +24,8 @@ import { useSignedIn, useAuthUserId } from "@/lib/use-auth-state";
 import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
 import { supabase } from "@/integrations/supabase/client";
 
+type PricingSearch = { plan?: OrgPlan; period?: "monthly" | "annual"; addon?: true };
+
 export const Route = createFileRoute("/pricing")({
   validateSearch: (search: Record<string, unknown>): PricingSearch => ({
     ...(search.plan === "core" || search.plan === "standard" || search.plan === "enterprise"
