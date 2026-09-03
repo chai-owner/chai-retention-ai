@@ -2,32 +2,78 @@
 // invite expiry. Kept free of server/browser imports so it can be unit tested
 // and reused by both the UI and the server functions.
 
-export type OrgPlan = "starter" | "growth" | "pro";
+export type OrgPlan = "core" | "standard" | "enterprise";
 export type OrgRole = "owner" | "admin" | "member";
 export type InviteRole = Exclude<OrgRole, "owner">;
 
-export const ORG_PLANS: OrgPlan[] = ["starter", "growth", "pro"];
+export const ORG_PLANS: OrgPlan[] = ["core", "standard", "enterprise"];
 export const ORG_ROLES: OrgRole[] = ["owner", "admin", "member"];
+
+/** Legacy plan slugs stored before the Core/Standard/Enterprise rename. */
+const LEGACY_PLANS: Record<string, OrgPlan> = {
+  starter: "core",
+  growth: "standard",
+  pro: "enterprise",
+};
+
+/** Maps any stored value (including legacy slugs) onto a current plan. */
+export function coercePlan(value: unknown): OrgPlan {
+  if (isOrgPlan(value)) return value;
+  if (typeof value === "string" && LEGACY_PLANS[value]) return LEGACY_PLANS[value]!;
+  return "core";
+}
 
 /** Seats included with each plan. `null` means unlimited. */
 export const PLAN_SEATS: Record<OrgPlan, number | null> = {
-  starter: 1,
-  growth: 5,
-  pro: null,
+  core: 1,
+  standard: 5,
+  enterprise: null,
 };
 
 /** Customer records included with each plan. `null` means unlimited. */
 export const PLAN_CUSTOMERS: Record<OrgPlan, number | null> = {
-  starter: 250,
-  growth: 1500,
-  pro: null,
+  core: 250,
+  standard: 1500,
+  enterprise: null,
 };
+
+export type BillingPeriod = "monthly" | "annual";
+
+/** Annual billing is 10% off the monthly rate, charged as one payment. */
+export const ANNUAL_DISCOUNT = 0.1;
+
+export interface PlanPricing {
+  /** Price per month when billed monthly, in whole dollars. */
+  monthly: number;
+  /** Effective per-month price when billed annually. */
+  annualMonthly: number;
+  /** Single annual payment. */
+  annualTotal: number;
+}
+
+export const PLAN_PRICING: Record<OrgPlan, PlanPricing> = {
+  core: { monthly: 99, annualMonthly: 89, annualTotal: 1069 },
+  standard: { monthly: 249, annualMonthly: 224, annualTotal: 2689 },
+  enterprise: { monthly: 599, annualMonthly: 539, annualTotal: 6469 },
+};
+
+/** Dollars saved per year by paying annually instead of monthly. */
+export function annualSaving(plan: OrgPlan): number {
+  const p = PLAN_PRICING[plan];
+  return p.monthly * 12 - p.annualTotal;
+}
+
+export function planPriceLabel(plan: OrgPlan, period: BillingPeriod): string {
+  const p = PLAN_PRICING[plan];
+  return period === "annual" ? `$${p.annualMonthly}/mo` : `$${p.monthly}/mo`;
+}
 
 /** The tier a plan upgrades to, or `null` when already on the top tier. */
 export function nextPlan(plan: OrgPlan): OrgPlan | null {
   const i = ORG_PLANS.indexOf(plan);
   return i >= 0 && i < ORG_PLANS.length - 1 ? ORG_PLANS[i + 1]! : null;
 }
+
 
 export function customersAllowed(plan: OrgPlan): number | null {
   return PLAN_CUSTOMERS[plan];
