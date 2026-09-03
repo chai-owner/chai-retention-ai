@@ -17,10 +17,13 @@ import {
 import {
   PLAN_CUSTOMERS,
   PLAN_LABELS,
+  PLAN_PRICING,
   PLAN_SEATS,
+  annualSaving,
   canManageMembers,
   nextPlan,
   shouldWarnCustomerLimit,
+  type BillingPeriod,
   type OrgPlan,
 } from "@/lib/organisations";
 import { upgradeOrganisationPlan } from "@/lib/organisations.functions";
@@ -30,6 +33,11 @@ import { clearPlanLimitNotice, usePlanLimitNotice } from "@/lib/plan-limit-store
 function limitText(value: number | null) {
   return value === null ? "Unlimited" : value.toLocaleString();
 }
+
+function money(n: number) {
+  return `$${n.toLocaleString("en-US")}`;
+}
+
 
 export function UpgradePlanDialog({
   plan,
