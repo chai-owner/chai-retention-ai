@@ -23,8 +23,8 @@ import type { PlannerMetric } from "@/lib/mock-data";
 
 import { useAllDatasets } from "@/lib/all-datasets";
 import { useUploads } from "@/lib/uploads-store";
-import { usePlanUsage, PLAN_USAGE_QUERY_KEY } from "@/lib/use-plan-usage";
-import { enableSmartIngestAddon } from "@/lib/organisations.functions";
+import { usePlanUsage } from "@/lib/use-plan-usage";
+import { useEnableDataDropAddon } from "@/lib/use-smart-ingest";
 import {
   Dialog,
   DialogContent,
@@ -67,14 +67,7 @@ function rawDataHint(metric: PlannerMetric): string | null {
 
 export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {}) {
   const { data: planUsage } = usePlanUsage();
-  const queryClient = useQueryClient();
-  const enable = useServerFn(enableSmartIngestAddon);
-  const enableAddon = useMutation({
-    mutationFn: () => enable(),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: PLAN_USAGE_QUERY_KEY });
-    },
-  });
+  const enableAddon = useEnableDataDropAddon();
   const hasAccess =
     planUsage?.plan === "standard" ||
     planUsage?.plan === "enterprise" ||
@@ -139,7 +132,8 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
             <DialogHeader>
               <DialogTitle>Add ChAi Data Drop</DialogTitle>
               <DialogDescription>
-                You're adding ChAi Data Drop for $39/mo. Our team will be in touch to arrange billing.
+                You're adding ChAi Data Drop for $39/mo, billed with your ChAi subscription. You'll
+                complete payment securely at checkout.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -153,19 +147,12 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
                 disabled={enableAddon.isPending}
                 onClick={() => {
                   enableAddon.mutate(undefined, {
-                    onSuccess: () => {
-                      setConfirmOpen(false);
-                      toast.success("Data Drop enabled. Our team will be in touch about billing.");
-                    },
-                    onError: (error: unknown) =>
-                      toast.error(
-                        error instanceof Error ? error.message : "Couldn't enable Data Drop.",
-                      ),
+                    onSuccess: () => setConfirmOpen(false),
                   });
                 }}
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
               >
-                {enableAddon.isPending ? "Adding…" : "Confirm"}
+                {enableAddon.isPending ? "Opening checkout…" : "Continue to payment"}
               </button>
             </DialogFooter>
           </DialogContent>
