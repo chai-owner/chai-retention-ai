@@ -1,8 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Search, ArrowUpDown } from "lucide-react";
 import { PageHeader, HealthBadge, ScoreBar } from "@/components/ui/chai";
 import { DataCoverageBanner } from "@/components/data-coverage-banner";
+import { TablePagination } from "@/components/ui/table-pagination";
 import {
   categoryFromHealth,
   formatCurrency,
@@ -14,10 +17,18 @@ import {
 } from "@/lib/mock-data";
 import { useScoredData } from "@/lib/use-scored-data";
 import { useChurnOverrides } from "@/lib/churn-store";
+import { useEffectiveSignedIn } from "@/lib/use-auth-state";
+import { churnProbabilityFromHealth } from "@/lib/churn-probability";
+import { listCustomerRiskPage, CUSTOMER_PAGE_SIZE } from "@/lib/data-tables.functions";
+import { pageSlice } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/customers/")({
   head: () => ({ meta: [{ title: "Customer Risk Center — ChAi" }] }),
+  validateSearch: (search: Record<string, unknown>): { page?: number } => {
+    const n = Number(search["page"]);
+    return Number.isFinite(n) && n > 1 ? { page: Math.floor(n) } : {};
+  },
   component: Customers,
 });
 
@@ -37,13 +48,51 @@ const filters: { key: RiskCategory | "all"; label: string }[] = [
   { key: "healthy", label: "Healthy" },
 ];
 
+// Row shape rendered by the table, from either the server page or live scoring.
+interface RiskRow {
+  id: string;
+  name: string;
+  segment: string;
+  health: number;
+  risk: number;
+  revenue: number;
+  churnProbability: number;
+}
+
+function fromCustomer(c: Customer): RiskRow {
+  return {
+    id: c.id,
+    name: c.name,
+    segment: c.segment,
+    health: c.health,
+    risk: c.risk,
+    revenue: c.revenue,
+    churnProbability: c.churnProbability,
+  };
+}
+
 function Customers() {
   const navigate = useNavigate();
+  const { page = 1 } = Route.useSearch();
   const { sortedByRisk } = useScoredData();
   const overrides = useChurnOverrides();
+  const signedIn = useEffectiveSignedIn();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RiskCategory | "all">("all");
   const [lifecycle, setLifecycle] = useState<Lifecycle>("active");
+
+  function setPage(next: number) {
+    navigate({
+      to: "/app/customers",
+      search: next > 1 ? { page: next } : {},
+      replace: false,
+    });
+  }
+
+  // Changing a filter, tab or search resets to the first page.
+  function resetToFirstPage() {
+    if (page !== 1) navigate({ to: "/app/customers", search: {}, replace: true });
+  }
 
   // Active list excludes anything manually flagged as churned/won-back.
   const activeRows = useMemo(
@@ -67,7 +116,7 @@ function Customers() {
     return activeRows;
   }, [lifecycle, activeRows, overriddenChurned, overriddenWonBack]);
 
-  const rows = useMemo(() => {
+  const filtered = useMemo(() => {
     return dataset.filter((c) => {
       const cat = categoryFromHealth(c.health);
       const matchesFilter = lifecycle !== "active" || filter === "all" || cat === filter;
@@ -76,6 +125,45 @@ function Customers() {
     });
   }, [query, filter, lifecycle, dataset]);
 
+  // Server-side paging applies to the plain "active, no search" view, which is
+  // what the nightly scoring snapshot can answer directly from the database.
+  const serverEligible = signedIn === true && lifecycle === "active" && query.trim() === "";
+  const fetchPage = useServerFn(listCustomerRiskPage);
+  const serverPage = useQuery({
+    queryKey: ["customer-risk-page", page, filter],
+    enabled: serverEligible,
+    queryFn: () =>
+      fetchPage({
+        data: { page, pageSize: CUSTOMER_PAGE_SIZE, risk: filter === "all" ? undefined : filter },
+      }),
+  });
+
+  const useServerRows = serverEligible && serverPage.data?.hasSnapshot === true;
+
+  const rows: RiskRow[] = useMemo(() => {
+    if (useServerRows) {
+      return (serverPage.data?.rows ?? []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        segment: r.segment,
+        health: r.health,
+        risk: Math.max(0, 100 - r.health),
+        revenue: r.revenue,
+        churnProbability: churnProbabilityFromHealth(r.health),
+      }));
+    }
+    return pageSlice(filtered.map(fromCustomer), page, CUSTOMER_PAGE_SIZE);
+  }, [useServerRows, serverPage.data, filtered, page]);
+
+  const total = useServerRows ? (serverPage.data?.total ?? 0) : filtered.length;
+
+  // A stale ?page= (e.g. after deleting data) shouldn't strand the user on an
+  // empty page.
+  useEffect(() => {
+    if (page > 1 && total > 0 && (page - 1) * CUSTOMER_PAGE_SIZE >= total) {
+      navigate({ to: "/app/customers", search: {}, replace: true });
+    }
+  }, [page, total, navigate]);
 
   return (
     <div>
@@ -92,7 +180,10 @@ function Customers() {
         {lifecycleTabs.map((t) => (
           <button
             key={t.key}
-            onClick={() => setLifecycle(t.key)}
+            onClick={() => {
+              setLifecycle(t.key);
+              resetToFirstPage();
+            }}
             className={cn(
               "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
               lifecycle === t.key
@@ -110,7 +201,10 @@ function Customers() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              resetToFirstPage();
+            }}
             placeholder="Search customers…"
             className="w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
@@ -120,7 +214,10 @@ function Customers() {
             {filters.map((f) => (
               <button
                 key={f.key}
-                onClick={() => setFilter(f.key)}
+                onClick={() => {
+                  setFilter(f.key);
+                  resetToFirstPage();
+                }}
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                   filter === f.key
@@ -196,6 +293,13 @@ function Customers() {
         {rows.length === 0 && (
           <p className="py-10 text-center text-sm text-muted-foreground">No customers match your filters.</p>
         )}
+        <TablePagination
+          page={page}
+          pageSize={CUSTOMER_PAGE_SIZE}
+          total={total}
+          noun="customers"
+          onPageChange={setPage}
+        />
       </div>
     </div>
   );
