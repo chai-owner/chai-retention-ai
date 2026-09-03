@@ -87,7 +87,7 @@ const integrations = [
 ];
 
 const focusRing =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E0A93A] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C3FFA5] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -131,7 +131,7 @@ function Landing() {
           <Link
             to="/auth"
             search={signup}
-            className={`group ml-auto inline-flex items-center gap-2 rounded-[10px] bg-[#E0A93A] px-4 py-2.5 text-sm font-bold text-[#152238] transition-colors hover:bg-[#d09c31] md:ml-3 ${focusRing}`}
+            className={`group ml-auto inline-flex items-center gap-2 rounded-[10px] bg-[#C3FFA5] px-4 py-2.5 text-sm font-bold text-[#152238] transition-colors hover:bg-[#A8E080] md:ml-3 ${focusRing}`}
           >
             Get started
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -141,12 +141,12 @@ function Landing() {
         <div className="mx-auto mt-10 grid max-w-[1240px] items-center gap-16 px-6 lg:mt-16 lg:grid-cols-[1fr_0.95fr] lg:px-8">
           <Reveal>
             <span className="inline-flex items-center gap-2 rounded-[10px] bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white/85">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#E0A93A]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#C3FFA5]" />
               Customer retention intelligence
             </span>
             <h1 className="mt-6 text-[2.6rem] font-extrabold leading-[1.05] tracking-[-0.02em] text-white sm:text-5xl lg:text-[4rem]">
               See who's about to leave — and what to say to{" "}
-              <span className="text-[#E0A93A]">keep them</span>.
+              <span className="text-[#C3FFA5]">keep them</span>.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/65">
               ChAi reads your CRM, billing and support data, scores every customer's health and
@@ -156,7 +156,7 @@ function Landing() {
               <Link
                 to="/auth"
                 search={signup}
-                className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#E0A93A] px-6 py-3.5 text-base font-bold text-[#152238] transition-colors hover:bg-[#d09c31] ${focusRing}`}
+                className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#C3FFA5] px-6 py-3.5 text-base font-bold text-[#152238] transition-colors hover:bg-[#A8E080] ${focusRing}`}
               >
                 Try it for free <ArrowRight className="h-4 w-4" />
               </Link>
@@ -309,7 +309,7 @@ function Landing() {
         <Reveal>
           <div className="rounded-[36px] bg-[#152238] px-8 py-20 text-center lg:px-16">
             <h2 className="mx-auto max-w-2xl text-4xl font-extrabold tracking-[-0.02em] text-white sm:text-5xl">
-              Ready to <span className="text-[#E0A93A]">reduce churn</span>?
+              Ready to <span className="text-[#C3FFA5]">reduce churn</span>?
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg text-white/65">
               Bring your data and let ChAi surface who's at risk and what to do next — in plain
@@ -319,7 +319,7 @@ function Landing() {
               <Link
                 to="/auth"
                 search={signup}
-                className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#E0A93A] px-6 py-3.5 text-base font-bold text-[#152238] transition-colors hover:bg-[#d09c31] ${focusRing}`}
+                className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#C3FFA5] px-6 py-3.5 text-base font-bold text-[#152238] transition-colors hover:bg-[#A8E080] ${focusRing}`}
               >
                 Sign up free <ArrowRight className="h-4 w-4" />
               </Link>

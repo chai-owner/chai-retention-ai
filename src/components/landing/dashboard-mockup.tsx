@@ -77,7 +77,7 @@ export function DashboardMockup() {
 
         {/* AI insight */}
         <div className="rounded-2xl bg-[#152238] p-4 text-white sm:col-span-2">
-          <p className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#E0A93A]">
+          <p className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#C3FFA5]">
             <Sparkles className="h-3.5 w-3.5" /> AI insight
           </p>
           <p className="mt-2 text-[13px] leading-relaxed text-white/85">
