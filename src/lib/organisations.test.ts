@@ -28,9 +28,9 @@ import {
 
 describe("plans and seats", () => {
   it("maps plans to seat limits", () => {
-    expect(seatsAllowed("starter")).toBe(1);
-    expect(seatsAllowed("growth")).toBe(5);
-    expect(seatsAllowed("pro")).toBeNull();
+    expect(seatsAllowed("core")).toBe(1);
+    expect(seatsAllowed("standard")).toBe(5);
+    expect(seatsAllowed("enterprise")).toBeNull();
   });
 
   it("counts accepted members plus pending invites", () => {
@@ -39,20 +39,20 @@ describe("plans and seats", () => {
   });
 
   it("blocks invites once the plan seats are full", () => {
-    expect(hasSeatAvailable("starter", 0)).toBe(true);
-    expect(hasSeatAvailable("starter", 1)).toBe(false);
-    expect(hasSeatAvailable("growth", 4)).toBe(true);
-    expect(hasSeatAvailable("growth", 5)).toBe(false);
-    expect(hasSeatAvailable("pro", 5000)).toBe(true);
+    expect(hasSeatAvailable("core", 0)).toBe(true);
+    expect(hasSeatAvailable("core", 1)).toBe(false);
+    expect(hasSeatAvailable("standard", 4)).toBe(true);
+    expect(hasSeatAvailable("standard", 5)).toBe(false);
+    expect(hasSeatAvailable("enterprise", 5000)).toBe(true);
   });
 
   it("labels seat usage", () => {
-    expect(seatsLabel("growth", 3)).toBe("3 / 5 seats used");
-    expect(seatsLabel("pro", 3)).toBe("3 seats used (unlimited)");
+    expect(seatsLabel("standard", 3)).toBe("3 / 5 seats used");
+    expect(seatsLabel("enterprise", 3)).toBe("3 seats used (unlimited)");
   });
 
   it("validates plan and role values", () => {
-    expect(isOrgPlan("growth")).toBe(true);
+    expect(isOrgPlan("standard")).toBe(true);
     expect(isOrgPlan("enterprise")).toBe(false);
     expect(isOrgRole("member")).toBe(true);
     expect(isOrgRole("superuser")).toBe(false);
@@ -108,33 +108,33 @@ describe("invites", () => {
 
 describe("customer limits", () => {
   it("uses the documented per-plan allowances", () => {
-    expect(customersAllowed("starter")).toBe(250);
-    expect(customersAllowed("growth")).toBe(1500);
-    expect(customersAllowed("pro")).toBeNull();
+    expect(customersAllowed("core")).toBe(250);
+    expect(customersAllowed("standard")).toBe(1500);
+    expect(customersAllowed("enterprise")).toBeNull();
   });
 
   it("blocks imports that would exceed the plan", () => {
-    expect(hasCustomerCapacity("starter", 240, 10)).toBe(true);
-    expect(hasCustomerCapacity("starter", 240, 11)).toBe(false);
-    expect(hasCustomerCapacity("pro", 1_000_000, 5000)).toBe(true);
-    expect(customerHeadroom("growth", 1400)).toBe(100);
-    expect(customerHeadroom("pro", 10)).toBeNull();
+    expect(hasCustomerCapacity("core", 240, 10)).toBe(true);
+    expect(hasCustomerCapacity("core", 240, 11)).toBe(false);
+    expect(hasCustomerCapacity("enterprise", 1_000_000, 5000)).toBe(true);
+    expect(customerHeadroom("standard", 1400)).toBe(100);
+    expect(customerHeadroom("enterprise", 10)).toBeNull();
   });
 
   it("warns from 80% of a finite limit only", () => {
-    expect(shouldWarnCustomerLimit("starter", 199)).toBe(false);
-    expect(shouldWarnCustomerLimit("starter", 200)).toBe(true);
-    expect(shouldWarnCustomerLimit("pro", 999_999)).toBe(false);
+    expect(shouldWarnCustomerLimit("core", 199)).toBe(false);
+    expect(shouldWarnCustomerLimit("core", 200)).toBe(true);
+    expect(shouldWarnCustomerLimit("enterprise", 999_999)).toBe(false);
   });
 
   it("upgrades to the next tier", () => {
-    expect(nextPlan("starter")).toBe("growth");
-    expect(nextPlan("growth")).toBe("pro");
-    expect(nextPlan("pro")).toBeNull();
+    expect(nextPlan("core")).toBe("standard");
+    expect(nextPlan("standard")).toBe("enterprise");
+    expect(nextPlan("enterprise")).toBeNull();
   });
 
   it("explains a rejected import", () => {
-    const msg = customerLimitMessage("starter", 240, 30);
+    const msg = customerLimitMessage("core", 240, 30);
     expect(msg).toContain("240");
     expect(msg).toContain("250");
     expect(msg).toContain("upgrade your plan to continue");
