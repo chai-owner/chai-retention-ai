@@ -554,3 +554,33 @@ export const getPlanUsage = createServerFn({ method: "GET" })
 // Note: plan upgrades and the Data Drop add-on are sold through Paddle
 // checkout. The payments webhook (/api/public/payments/webhook) activates the
 // plan and sets `smart_ingest_addon` once payment clears.
+
+/**
+ * Applies a chosen upgrade immediately so limits lift straight away; billing is
+ * arranged by the team afterwards. Only higher tiers are accepted — downgrades
+ * and plan cancellations go through the billing flow.
+ */
+export const upgradeOrganisationPlan = createServerFn({ method: "POST" })
+  .inputValidator((raw: unknown) => {
+    const plan = (raw as { plan?: unknown } | null)?.plan;
+    if (!isOrgPlan(plan)) throw new Error("Pick a plan to upgrade to.");
+    return { plan };
+  })
+  .middleware([requireConnectedAuth])
+  .handler(async ({ data, context }): Promise<{ plan: OrgPlan }> => {
+    const membership = await loadMembership(context as Ctx);
+    if (!canManageMembers(membership.role)) {
+      throw new Error("Only owners and admins can change the plan.");
+    }
+    const current = membership.organisation.plan;
+    if (ORG_PLANS.indexOf(data.plan) <= ORG_PLANS.indexOf(current)) {
+      throw new Error("Pick a plan above your current one.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("organisations")
+      .update({ plan: data.plan, pending_plan: null, pending_plan_effective_at: null })
+      .eq("id", membership.orgId);
+    if (error) throw new Error(error.message);
+    return { plan: data.plan };
+  });
