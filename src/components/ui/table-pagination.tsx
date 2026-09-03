@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { showingRange } from "@/lib/data-tables.functions";
+import { showingRange } from "@/lib/pagination";
 
 interface Props {
   page: number;

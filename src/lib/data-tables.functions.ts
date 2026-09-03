@@ -6,6 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { INGEST_COLUMNS, normalizeIngestRow } from "@/lib/ingest-row-normalize";
+import { rangeFor } from "@/lib/pagination";
 
 export const CUSTOMER_PAGE_SIZE = 50;
 export const TRANSACTION_PAGE_SIZE = 100;
@@ -20,23 +21,6 @@ const CustomerPageInput = PageInput.extend({
   // Optional risk filter, matching the risk levels written by the daily job.
   risk: z.string().optional(),
 });
-
-/** Convert a 1-based page number into an inclusive Supabase range. */
-export function rangeFor(page: number, pageSize: number): [number, number] {
-  const safePage = Math.max(1, Math.floor(page) || 1);
-  const from = (safePage - 1) * pageSize;
-  return [from, from + pageSize - 1];
-}
-
-/** "Showing X–Y of Z" numbers for a page of results. */
-export function showingRange(page: number, pageSize: number, total: number) {
-  if (total === 0) return { start: 0, end: 0, total, pageCount: 0 };
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const safePage = Math.min(Math.max(1, Math.floor(page) || 1), pageCount);
-  const start = (safePage - 1) * pageSize + 1;
-  const end = Math.min(total, safePage * pageSize);
-  return { start, end, total, pageCount };
-}
 
 export interface CustomerRiskRow {
   id: string;
@@ -93,12 +77,12 @@ export const listCustomerRiskPage = createServerFn({ method: "POST" })
     const rows = scores ?? [];
     if (rows.length === 0) {
       // Distinguish "no snapshot at all" from "this page is past the end".
-      const { count: any } = await supabase
+      const { count: anySnapshot } = await supabase
         .from("customer_scores")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("is_latest", true);
-      return { rows: [], total: count ?? 0, hasSnapshot: (any ?? 0) > 0 };
+      return { rows: [], total: count ?? 0, hasSnapshot: (anySnapshot ?? 0) > 0 };
     }
 
     const ids = rows.map((r) => r.customer_id);
