@@ -289,6 +289,17 @@ function CustomerDetail() {
         <HealthBadge category={cat} />
       </PageHeader>
 
+      {snapshot ? (
+        <p className="-mt-2 mb-4 text-xs text-muted-foreground">
+          Last scored: {formatScoredAt(snapshot.scoredAt)}
+        </p>
+      ) : signedIn ? (
+        <p className="-mt-2 mb-4 text-xs text-muted-foreground">
+          Score calculated in real-time — updates nightly.
+        </p>
+      ) : null}
+
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Health score" value={c.health} icon={HeartPulse} tone={cat === "healthy" ? "success" : cat === "watch" ? "warning" : cat === "at-risk" ? "caution" : "danger"} />
         <StatCard
