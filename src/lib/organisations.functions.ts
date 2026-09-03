@@ -551,7 +551,6 @@ export const getPlanUsage = createServerFn({ method: "GET" })
     };
   });
 
-/**
-  * @deprecated The Data Drop add-on is now sold through Paddle checkout; the
-  * payments webhook sets `smart_ingest_addon` once payment clears.
-  */
+// Note: plan upgrades and the Data Drop add-on are sold through Paddle
+// checkout. The payments webhook (/api/public/payments/webhook) activates the
+// plan and sets `smart_ingest_addon` once payment clears.
