@@ -49,7 +49,6 @@ const login = { mode: undefined, demo: false, redirect: undefined };
 
 const navItems = [
   { label: "Features", href: "#features" },
-  { label: "How scoring works", href: "#scoring" },
   { label: "Pricing", href: "/pricing" },
 ];
 
