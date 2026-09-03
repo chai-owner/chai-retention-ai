@@ -340,6 +340,107 @@ function AccountSettingsPage() {
   );
 }
 
+function BillingSection({ plan, role }: { plan: keyof typeof PLAN_LABELS; role: string }) {
+  const environment = getPaddleEnvironment();
+  const getSub = useServerFn(getMySubscription);
+  const portalLink = useServerFn(createBillingPortalLink);
+
+  const { data: sub } = useQuery({
+    queryKey: ["billing-subscription", environment],
+    queryFn: () => getSub({ data: { environment } }),
+    staleTime: 60_000,
+  });
+
+  const portal = useMutation({
+    mutationFn: () => portalLink({ data: { environment } }),
+    onSuccess: ({ url }) => window.open(url, "_blank", "noopener"),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "We couldn't open the billing portal."),
+  });
+
+  const active = sub && ["active", "trialing", "past_due"].includes(sub.status);
+  const canManage = canViewBilling(role as never);
+  const renewsAt = sub?.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toLocaleDateString() : null;
+
+  return (
+    <section className="rounded-xl border border-border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <CreditCard className="h-4 w-4 text-primary" /> Billing
+        </h2>
+        {active && (
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium capitalize text-secondary-foreground">
+            {sub?.status === "past_due" ? "Payment issue" : sub?.status}
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-3 px-5 py-4 text-sm">
+        <p className="text-foreground">
+          You're on the <strong>{PLAN_LABELS[plan]}</strong> plan
+          {sub?.period ? ` (${sub.period === "annual" ? "annual" : "monthly"} billing)` : ""}.
+        </p>
+
+        {active && renewsAt && !sub?.cancelAtPeriodEnd && (
+          <p className="text-muted-foreground">Renews on {renewsAt}.</p>
+        )}
+        {sub?.cancelAtPeriodEnd && renewsAt && (
+          <p className="text-warning">
+            Cancellation scheduled — you keep access until {renewsAt}.
+          </p>
+        )}
+        {sub?.pendingPlan && (
+          <p className="text-muted-foreground">
+            Your plan changes to <strong>{PLAN_LABELS[sub.pendingPlan]}</strong>
+            {sub.pendingPlanEffectiveAt
+              ? ` on ${new Date(sub.pendingPlanEffectiveAt).toLocaleDateString()}`
+              : " at your next renewal"}
+            .
+          </p>
+        )}
+        {sub?.status === "past_due" && (
+          <p className="text-warning">
+            Your last payment didn't go through. Update your payment method to keep your plan.
+          </p>
+        )}
+        {!active && (
+          <p className="text-muted-foreground">
+            No active subscription on this account. Choose a plan to unlock your full limits.
+          </p>
+        )}
+      </div>
+
+      {canManage && (
+        <div className="flex flex-wrap items-center gap-3 border-t border-border px-5 py-4">
+          <UpgradePlanButton plan={plan} />
+          {active ? (
+            <Button variant="outline" size="sm" onClick={() => portal.mutate()} disabled={portal.isPending}>
+              {portal.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ExternalLink className="h-4 w-4" />
+              )}
+              Manage billing
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/pricing">See plans</Link>
+            </Button>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Update your card, download invoices or cancel in the billing portal.
+          </p>
+        </div>
+      )}
+      {!canManage && (
+        <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
+          Only your workspace owner can change billing.
+        </p>
+      )}
+    </section>
+  );
+}
+
 function ResetPasswordSection() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
