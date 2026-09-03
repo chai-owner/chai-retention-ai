@@ -13,9 +13,9 @@ import {
 
 describe("plan/product mappings", () => {
   it("maps every plan product to its plan", () => {
-    expect(planForProduct("chai_core")).toBe("core");
-    expect(planForProduct("chai_standard")).toBe("standard");
-    expect(planForProduct("chai_enterprise")).toBe("enterprise");
+    expect(planForProduct("core_plan")).toBe("core");
+    expect(planForProduct("standard_plan")).toBe("standard");
+    expect(planForProduct("enterprise_plan")).toBe("enterprise");
     expect(planForProduct(ADDON_PRODUCT_ID)).toBeNull();
     expect(planForProduct("unknown_product")).toBeNull();
   });
