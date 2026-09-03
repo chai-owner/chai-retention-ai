@@ -49,6 +49,8 @@ const nav = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/customers", label: "Customer Risk Center", icon: Users },
   { to: "/app/churned", label: "Churned & Win-back", icon: UserMinus },
+  { to: "/app/transactions", label: "Transactions", icon: Receipt },
+  { to: "/app/support", label: "Support Tickets", icon: LifeBuoy },
   { to: "/app/data-quality", label: "Data Quality", icon: BadgeCheck },
   { to: "/app/identity", label: "Identity Resolution", icon: Link2 },
 
