@@ -143,6 +143,13 @@ function seededRandom(seed: number) {
   return next;
 }
 
+/** ISO date `n` days before today — keeps the demo dataset looking current. */
+export function daysAgoISO(n: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
 function buildTimeline(
   rand: () => number,
   name: string,
@@ -153,14 +160,15 @@ function buildTimeline(
 ): TimelineEvent[] {
   const contract = 12000 + Math.round(rand() * 60) * 1000;
   const events: TimelineEvent[] = [
-    { date: "2025-10-06", type: "signup", title: "Became a customer", detail: `${name} signed up for the Growth plan.` },
-    { date: "2025-10-20", type: "purchase", title: "First purchase", detail: `Initial annual contract — $${contract.toLocaleString()}.` },
-    { date: "2025-12-29", type: "usage", title: "Strong early adoption", detail: "Activated 4 of 5 core features. Health score peaked at 88." },
-    { date: "2026-04-06", type: "survey", title: "Survey response", detail: "NPS of 9 — promoter. 'Great product, easy to use.'" },
+    { date: daysAgoISO(332), type: "signup", title: "Became a customer", detail: `${name} signed up for the Growth plan.` },
+    { date: daysAgoISO(318), type: "purchase", title: "First purchase", detail: `Initial annual contract — $${contract.toLocaleString()}.` },
+    { date: daysAgoISO(248), type: "usage", title: "Strong early adoption", detail: "Activated 4 of 5 core features. Health score peaked at 88." },
+    { date: daysAgoISO(150), type: "survey", title: "Survey response", detail: "NPS of 9 — promoter. 'Great product, easy to use.'" },
   ];
 
   // Weave each detected risk factor into the history as a concrete event.
-  const factorEventDates = ["2026-06-09", "2026-07-13", "2026-07-30", "2026-08-01", "2026-08-05"];
+  const factorEventDates = [86, 52, 35, 33, 29].map(daysAgoISO);
+
   factors.forEach((f, idx) => {
     const date = factorEventDates[idx % factorEventDates.length];
     const map: Record<string, TimelineEvent> = {
@@ -177,9 +185,9 @@ function buildTimeline(
   });
 
   if (cat === "healthy") {
-    events.push({ date: "2026-08-06", type: "score", title: "Account is healthy", detail: `Health score steady at ${health}. Low churn risk (${churnProbability}%).` });
+    events.push({ date: daysAgoISO(1), type: "score", title: "Account is healthy", detail: `Health score steady at ${health}. Low churn risk (${churnProbability}%).` });
   } else {
-    events.push({ date: "2026-08-06", type: "score", title: "Risk escalated", detail: `Churn probability rose to ${churnProbability}% — health score now ${health}.` });
+    events.push({ date: daysAgoISO(1), type: "score", title: "Risk escalated", detail: `Churn probability rose to ${churnProbability}% — health score now ${health}.` });
   }
 
 
@@ -463,14 +471,14 @@ interface ChurnedSeed {
 }
 
 const churnedSeeds: ChurnedSeed[] = [
-  { name: "Vandelay Industries", segment: "Enterprise", revenue: 84000, sentiment: 34, churnedDate: "2026-07-30", tenureMonths: 33, reason: "No recent purchases", winBackScore: 78 },
-  { name: "Gekko Partners", segment: "Mid-Market", revenue: 46000, sentiment: 28, churnedDate: "2026-07-18", tenureMonths: 20, reason: "Unresolved support tickets", winBackScore: 64 },
-  { name: "Bluth Co", segment: "SMB", revenue: 19000, sentiment: 22, churnedDate: "2026-06-25", tenureMonths: 11, reason: "Negative sentiment detected", winBackScore: 31 },
-  { name: "Soylent Group", segment: "Enterprise", revenue: 72000, sentiment: 41, churnedDate: "2026-08-03", tenureMonths: 28, reason: "Competitor mentioned", winBackScore: 58 },
-  { name: "Oscorp Digital", segment: "Startup", revenue: 12000, sentiment: 19, churnedDate: "2026-05-28", tenureMonths: 8, reason: "Usage declining", winBackScore: 24 },
-  { name: "Wonka Studio", segment: "Mid-Market", revenue: 38000, sentiment: 47, churnedDate: "2026-07-26", tenureMonths: 24, reason: "Declining satisfaction", winBackScore: 71 },
+  { name: "Vandelay Industries", segment: "Enterprise", revenue: 84000, sentiment: 34, churnedDate: daysAgoISO(35), tenureMonths: 33, reason: "No recent purchases", winBackScore: 78 },
+  { name: "Gekko Partners", segment: "Mid-Market", revenue: 46000, sentiment: 28, churnedDate: daysAgoISO(47), tenureMonths: 20, reason: "Unresolved support tickets", winBackScore: 64 },
+  { name: "Bluth Co", segment: "SMB", revenue: 19000, sentiment: 22, churnedDate: daysAgoISO(70), tenureMonths: 11, reason: "Negative sentiment detected", winBackScore: 31 },
+  { name: "Soylent Group", segment: "Enterprise", revenue: 72000, sentiment: 41, churnedDate: daysAgoISO(31), tenureMonths: 28, reason: "Competitor mentioned", winBackScore: 58 },
+  { name: "Oscorp Digital", segment: "Startup", revenue: 12000, sentiment: 19, churnedDate: daysAgoISO(98), tenureMonths: 8, reason: "Usage declining", winBackScore: 24 },
+  { name: "Wonka Studio", segment: "Mid-Market", revenue: 38000, sentiment: 47, churnedDate: daysAgoISO(39), tenureMonths: 24, reason: "Declining satisfaction", winBackScore: 71 },
   // A success story — a churned account that was re-won.
-  { name: "Massive Dynamic Labs", segment: "Enterprise", revenue: 68000, sentiment: 66, churnedDate: "2026-06-04", tenureMonths: 31, reason: "No recent purchases", winBackScore: 88, status: "won-back" },
+  { name: "Massive Dynamic Labs", segment: "Enterprise", revenue: 68000, sentiment: 66, churnedDate: daysAgoISO(91), tenureMonths: 31, reason: "No recent purchases", winBackScore: 88, status: "won-back" },
 ];
 
 
