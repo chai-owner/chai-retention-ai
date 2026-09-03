@@ -242,6 +242,6 @@ export const getCustomerScore = createServerFn({ method: "POST" })
       scoredAt: row.scored_at,
       breakdown: (Array.isArray(row.score_breakdown)
         ? row.score_breakdown
-        : []) as Array<ScoreBreakdownEntry | ChurnMetaEntry>,
+        : []) as unknown as Array<ScoreBreakdownEntry | ChurnMetaEntry>,
     };
   });
