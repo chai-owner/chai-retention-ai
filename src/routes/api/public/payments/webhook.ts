@@ -202,17 +202,18 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
   const { id, status, currentBillingPeriod, scheduledChange, items } = data;
   const n = normaliseItems(items);
 
+  const update: Record<string, unknown> = {
+    status,
+    current_period_start: currentBillingPeriod?.startsAt ?? null,
+    current_period_end: currentBillingPeriod?.endsAt ?? null,
+    cancel_at_period_end: scheduledChange?.action === "cancel",
+    updated_at: new Date().toISOString(),
+  };
+  if (n.billingInterval) update.billing_interval = n.billingInterval;
+
   const { data: row } = await getSupabase()
     .from("subscriptions")
-    .update({
-      status,
-      current_period_start: currentBillingPeriod?.startsAt ?? null,
-      current_period_end: currentBillingPeriod?.endsAt ?? null,
-      cancel_at_period_end: scheduledChange?.action === "cancel",
-      billing_interval: n.billingInterval ?? undefined,
-      raw: undefined,
-      updated_at: new Date().toISOString(),
-    })
+    .update(update)
     .eq("provider_subscription_id", id)
     .eq("provider", "paddle")
     .eq("environment", env)
@@ -225,15 +226,19 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
     const plan = planForProduct(n.planProductId);
     const orgId = await resolveOrgId(row.user_id);
     if (orgId && plan) {
-      await getSupabase()
+      const orgUpdate: Record<string, unknown> = { plan, smart_ingest_addon: n.hasAddon };
+      // Only clear a pending change once it has actually been applied — an
+      // unrelated update event must not wipe a scheduled downgrade.
+      const { data: org } = await getSupabase()
         .from("organisations")
-        .update({
-          plan,
-          smart_ingest_addon: n.hasAddon,
-          pending_plan: null,
-          pending_plan_effective_at: null,
-        })
-        .eq("id", orgId);
+        .select("pending_plan")
+        .eq("id", orgId)
+        .maybeSingle();
+      if (org?.pending_plan && org.pending_plan === plan) {
+        orgUpdate.pending_plan = null;
+        orgUpdate.pending_plan_effective_at = null;
+      }
+      await getSupabase().from("organisations").update(orgUpdate).eq("id", orgId);
     }
   }
 }
