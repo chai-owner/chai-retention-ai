@@ -24,9 +24,13 @@ import {
   canManageMembers,
   shouldWarnCustomerLimit,
   type OrgPlan,
+  type BillingPeriod,
 } from "@/lib/organisations";
 import { usePlanUsage, useRefreshPlan } from "@/lib/use-plan-usage";
-import { upgradeOrganisationPlan } from "@/lib/organisations.functions";
+import { requestPlanChange } from "@/utils/payments.functions";
+import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
+import { useAuthUserId } from "@/lib/use-auth-state";
+import { supabase } from "@/integrations/supabase/client";
 import { clearPlanLimitNotice, usePlanLimitNotice } from "@/lib/plan-limit-store";
 
 function limitText(value: number | null) {
@@ -67,21 +71,64 @@ export function UpgradePlanDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const upgrade = useServerFn(upgradeOrganisationPlan);
+  const changePlan = useServerFn(requestPlanChange);
   const refresh = useRefreshPlan();
+  const userId = useAuthUserId();
+  const { openCheckout, environment } = usePaddleCheckout();
   const options = higherPlans(plan);
   const [selected, setSelected] = useState<OrgPlan | null>(options[0] ?? null);
+  const [period, setPeriod] = useState<BillingPeriod>("monthly");
 
   useEffect(() => {
-    if (open) setSelected(higherPlans(plan)[0] ?? null);
+    if (open) {
+      setSelected(higherPlans(plan)[0] ?? null);
+      setPeriod("monthly");
+    }
   }, [open, plan]);
 
+  // No Paddle subscription yet: send them through the full checkout overlay so
+  // the subscription gets created before any plan change is possible.
+  const startCheckout = async (target: OrgPlan) => {
+    if (!userId) throw new Error("Please sign in again to change your plan.");
+    const { data } = await supabase.auth.getSession();
+    await openCheckout({
+      plan: target,
+      period,
+      userId,
+      customerEmail: data.session?.user.email ?? undefined,
+    });
+    onOpenChange(false);
+  };
+
   const mutation = useMutation({
-    mutationFn: async (target: OrgPlan) => upgrade({ data: { plan: target } }),
+    mutationFn: async (target: OrgPlan) => {
+      try {
+        const result = await changePlan({ data: { plan: target, period, environment } });
+        return { ...result, plan: target } as const;
+      } catch (e) {
+        if (e instanceof Error && /no active subscription/i.test(e.message)) {
+          await startCheckout(target);
+          return null;
+        }
+        throw e;
+      }
+    },
     onSuccess: (result) => {
-      toast.success(
-        `You've been upgraded to ${PLAN_LABELS[result.plan]}. Billing is handled automatically through Paddle.`,
-      );
+      if (!result) return;
+      if (result.kind === "downgrade-renewal") {
+        const when = result.effectiveAt
+          ? new Date(result.effectiveAt).toLocaleDateString()
+          : "your next renewal";
+        toast.info(
+          `Your plan will change to ${PLAN_LABELS[result.plan]} on ${when}. You'll keep your current plan until then.`,
+        );
+      } else if (result.kind === "same") {
+        toast.info(`You're already on ${PLAN_LABELS[result.plan]}.`);
+      } else {
+        toast.success(
+          `You've been upgraded to ${PLAN_LABELS[result.plan]}. Your card has been charged on a prorated basis.`,
+        );
+      }
       onOpenChange(false);
       clearPlanLimitNotice();
       refresh();
@@ -101,6 +148,23 @@ export function UpgradePlanDialog({
               : "You're already on our highest plan."}
           </DialogDescription>
         </DialogHeader>
+
+        {options.length > 0 && (
+          <div className="flex items-center gap-2">
+            {(["monthly", "annual"] as BillingPeriod[]).map((option) => (
+              <Button
+                key={option}
+                type="button"
+                size="sm"
+                variant={period === option ? "default" : "outline"}
+                aria-pressed={period === option}
+                onClick={() => setPeriod(option)}
+              >
+                {option === "monthly" ? "Monthly" : "Annual (save 10%)"}
+              </Button>
+            ))}
+          </div>
+        )}
 
         {options.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -162,6 +226,7 @@ export function UpgradePlanDialog({
     </Dialog>
   );
 }
+
 
 /** Button + modal pair usable anywhere a limit is mentioned. */
 export function UpgradePlanButton({
