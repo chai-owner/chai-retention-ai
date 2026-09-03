@@ -75,7 +75,7 @@ async function loadMembership(context: Ctx) {
     organisation: {
       id: org?.id ?? data.org_id,
       name: org?.name ?? "My organisation",
-      plan: (isOrgPlan(org?.plan) ? org.plan : "starter") as OrgPlan,
+      plan: coercePlan(org?.plan),
       smartIngestAddon: Boolean(org?.smart_ingest_addon),
     },
   };
@@ -408,9 +408,7 @@ export const acceptTeamInvite = createServerFn({ method: "POST" })
       if (dropError) throw new Error(dropError.message);
     }
 
-    const plan = (isOrgPlan((invite as any).organisations?.plan)
-      ? (invite as any).organisations.plan
-      : "starter") as OrgPlan;
+    const plan = coercePlan((invite as any).organisations?.plan);
     const { count: memberCount } = await supabaseAdmin
       .from("organisation_members")
       .select("id", { count: "exact", head: true })
@@ -529,7 +527,7 @@ export interface PlanUsage {
   customers: number;
   customersAllowed: number | null;
   nextPlan: OrgPlan | null;
-  /** Starter-only paid add-on flag stored on the organisation. */
+  /** Core-only paid add-on flag stored on the organisation. */
   smartIngestAddon: boolean;
 }
 
