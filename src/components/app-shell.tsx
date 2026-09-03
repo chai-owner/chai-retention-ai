@@ -140,7 +140,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className="flex h-16 items-center gap-2 px-5">
           <Link to="/" className="flex items-center gap-2">
-            <img src="/logo-light.png" alt="ChAi" className="h-8 w-auto" />
+            <img src="/logo-light.png" alt="ChAi" className="h-12 w-auto" />
           </Link>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-2">

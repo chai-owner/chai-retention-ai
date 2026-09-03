@@ -106,7 +106,7 @@ function Landing() {
       <section id="top" className="rounded-b-[36px] bg-[#152238] pb-20 lg:pb-28">
         <nav className="mx-auto flex h-20 max-w-[1240px] items-center gap-6 px-6 lg:px-8">
           <a href="#top" className={`flex items-center rounded-[10px] ${focusRing}`}>
-            <img src="/logo-light.png" alt="ChAi" className="h-8 w-auto" />
+            <img src="/logo-light.png" alt="ChAi" className="h-12 w-auto" />
           </a>
 
           <div className="ml-auto hidden items-center gap-1 md:flex">
@@ -337,7 +337,7 @@ function Landing() {
       {/* ── Footer ──────────────────────────────────────── */}
       <footer className="mx-auto max-w-[1240px] px-6 pb-12 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-4 border-t border-[#D8E7EF] pt-8 text-sm text-[#4A5A6B] sm:flex-row">
-          <img src="/logo-dark.png" alt="ChAi" className="h-8 w-auto" />
+          <img src="/logo-dark.png" alt="ChAi" className="h-12 w-auto" />
           <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             <li>
               <button className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} onClick={openGate}>
