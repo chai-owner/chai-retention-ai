@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   CheckCircle2,
+  CreditCard,
+  ExternalLink,
   KeyRound,
   Loader2,
   Mail,
@@ -23,10 +25,13 @@ import {
   PLAN_LABELS,
   ROLE_LABELS,
   canManageMembers,
+  canViewBilling,
   hasSeatAvailable,
   seatsLabel,
   type InviteRole,
 } from "@/lib/organisations";
+import { getPaddleEnvironment } from "@/lib/paddle";
+import { createBillingPortalLink, getMySubscription } from "@/utils/payments.functions";
 import {
   cancelTeamInvite,
   inviteTeamMember,
