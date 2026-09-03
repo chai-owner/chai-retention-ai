@@ -17,15 +17,8 @@ import type { PaddleEnv } from "@/lib/paddle-server.types";
 export const resolvePaddlePrice = createServerFn({ method: "GET" })
   .inputValidator((data: { priceId: string; environment: PaddleEnv }) => data)
   .handler(async ({ data }) => {
-    const { paddleFetch } = await import("@/lib/paddle.server");
-    const res = await paddleFetch(
-      data.environment,
-      `/prices?external_id=${encodeURIComponent(data.priceId)}`,
-    );
-    const json = (await res.json()) as { data?: Array<{ id: string }> };
-    const id = json.data?.[0]?.id;
-    if (!res.ok || !id) throw new Error("Price not found");
-    return id;
+    const { resolvePaddlePriceId } = await import("@/lib/paddle.server");
+    return resolvePaddlePriceId(data.environment, data.priceId);
   });
 
 export interface SubscriptionSnapshot {
