@@ -2,14 +2,16 @@
 // ?env=sandbox / ?env=live. Public by design — security is the verified
 // Paddle-Signature HMAC on every request.
 import { createFileRoute } from "@tanstack/react-router";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { EventName, verifyWebhook, type PaddleEnv } from "@/lib/paddle.server";
-import { planForProduct, planPeriodForPrice, ADDON_PRODUCT_ID } from "@/lib/paddle-shared";
+import { planForProduct, ADDON_PRODUCT_ID } from "@/lib/paddle-shared";
 
-let _supabase: any = null;
-async function getSupabase() {
+// Defer client construction until first use so env var availability is not
+// assumed at module load time.
+let _supabase: SupabaseClient | null = null;
+function getSupabase(): SupabaseClient {
   if (!_supabase) {
-    const { createClient } = await import("@supabase/supabase-js");
     _supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
   }
   return _supabase;

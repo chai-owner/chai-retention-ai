@@ -86,7 +86,7 @@ export function UpgradePlanDialog({
         return;
       }
       if (!target) return;
-      if (result.kind === "downgrade-at-renewal") {
+      if (result.kind === "downgrade-renewal") {
         toast.success(
           `${PLAN_LABELS[target]} will start at your next renewal. You keep your current plan until then.`,
         );

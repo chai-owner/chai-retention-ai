@@ -26,12 +26,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/pricing")({
   validateSearch: (search: Record<string, unknown>) => ({
-    plan:
-      search.plan === "core" || search.plan === "standard" || search.plan === "enterprise"
-        ? (search.plan as OrgPlan)
-        : undefined,
-    period: search.period === "annual" ? ("annual" as const) : search.period === "monthly" ? ("monthly" as const) : undefined,
-    addon: search.addon === "1" || search.addon === "true" ? true : undefined,
+    ...(search.plan === "core" || search.plan === "standard" || search.plan === "enterprise"
+      ? { plan: search.plan as OrgPlan }
+      : {}),
+    ...(search.period === "annual"
+      ? { period: "annual" as const }
+      : search.period === "monthly"
+        ? { period: "monthly" as const }
+        : {}),
+    ...(search.addon === "1" || search.addon === "true" ? { addon: true as const } : {}),
   }),
   head: () => ({
     meta: [
