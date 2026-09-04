@@ -111,23 +111,9 @@ export function AccessGate({
   }
 
   if (enabled && data?.paywalled) {
-    return (
-      <FullScreenNotice
-        title="Your free trial has ended"
-        action={
-          <Link
-            to="/pricing"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Choose a plan
-          </Link>
-        }
-      >
-        Nothing has been deleted. Every customer, import and score is waiting for
-        you — choose a plan to unlock your workspace again.
-      </FullScreenNotice>
-    );
+    return <TrialExpiredPaywall />;
   }
+
 
   return <>{children}</>;
 }
