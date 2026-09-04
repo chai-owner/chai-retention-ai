@@ -16,6 +16,18 @@ export const AI_HOURLY_LIMITS: Record<string, number> = {
   enterprise: 2000,
 };
 
+// Operations that must never be rate limited. These run once per account
+// during onboarding and are critical to the core product experience — a brand
+// new user has no usage history and must never be blocked on their first call.
+export const RATE_LIMIT_EXEMPT_OPERATIONS = new Set([
+  "recommendMetrics",
+  "recommendMetricWeights",
+]);
+
+export function isRateLimitExempt(operation: string): boolean {
+  return RATE_LIMIT_EXEMPT_OPERATIONS.has(operation.trim());
+}
+
 export function aiHourlyLimitForPlan(planId?: string | null): number {
   const key = (planId ?? "").trim().toLowerCase();
   if (!key) return DEFAULT_AI_HOURLY_LIMIT;
