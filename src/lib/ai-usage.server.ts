@@ -26,8 +26,9 @@ export async function resolveAiCaller(): Promise<AiCaller | null> {
     const token = authHeader.slice("Bearer ".length);
     if (!token) return null;
 
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+    const url = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
+    const key =
+      process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     if (!url || !key) return null;
 
     const supabase = createClient<Database>(url, key, {

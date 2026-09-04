@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getAiProvider, DEFAULT_AI_MODEL } from "./ai-provider.server";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireConnectedAuth } from "@/lib/connected-auth-middleware";
 
 const MODEL = DEFAULT_AI_MODEL;
 
@@ -26,7 +26,7 @@ const AskChAiInput = z.object({
 export type AskChAiInput = z.infer<typeof AskChAiInput>;
 
 export const askChai = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => AskChAiInput.parse(input))
   .handler(async ({ data }): Promise<{ reply: string }> => {
     const system = `You are ChAi, an AI customer-retention analyst inside a churn-intelligence app.
@@ -75,7 +75,7 @@ const RiskSummaryInput = z.object({
 export type RiskSummaryInput = z.infer<typeof RiskSummaryInput>;
 
 export const summarizeRiskReasons = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => RiskSummaryInput.parse(input))
   .handler(async ({ data }): Promise<Record<string, string>> => {
     const lines = data.customers
@@ -122,7 +122,7 @@ const CollectiveInsightsInput = z.object({
 export type CollectiveInsightsInput = z.infer<typeof CollectiveInsightsInput>;
 
 export const generateCollectiveInsights = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => CollectiveInsightsInput.parse(input))
   .handler(async ({ data }): Promise<{ insights: string[] }> => {
     const prompt = `You are ChAi, a customer-retention analyst. Based on the workspace analysis below, write the TOP 5 most interesting, high-level collective insights a business owner would most want to know about their customer base and retention. Each insight is ONE punchy plain-language sentence (max ~18 words), specific and useful. Do not invent precise numbers that aren't given.
@@ -181,7 +181,7 @@ export type RecommendMetricWeightsInput = z.infer<typeof RecommendMetricWeightsI
 export type MetricRecommendation = { name: string; weight: number; reason: string };
 
 export const recommendMetricWeights = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => RecommendMetricWeightsInput.parse(input))
   .handler(async ({ data }): Promise<{ recommendations: MetricRecommendation[] }> => {
     const p = data.profile;
@@ -287,9 +287,9 @@ export type GeneratedMetric = {
 };
 
 export const recommendMetrics = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => RecommendMetricsInput.parse(input))
-  .handler(async ({ data }): Promise<{ metrics: GeneratedMetric[] }> => {
+  .handler(async ({ data }): Promise<{ metrics: GeneratedMetric[]; error?: string }> => {
     const p = data.profile;
     const profileLines = [
       p.company && `Company: ${p.company}`,
@@ -408,7 +408,7 @@ Return ONLY a JSON array (no prose, no markdown, no code fences) of 6-8 objects 
       console.error(
         `[recommendMetrics] provider call failed (industry="${industry}", model="${model}"): ${first.message ?? "no message"}`,
       );
-      return { metrics: [] };
+      return { metrics: [], error: first.message ?? "The AI service did not respond." };
     }
     let metrics = extractMetrics(first.text);
     if (metrics.length === 0) {
@@ -431,7 +431,7 @@ Your previous answer could not be parsed. Reply with the raw JSON array only —
         console.error(
           `[recommendMetrics] retry call failed (industry="${industry}"): ${retry.message ?? "no message"}`,
         );
-        return { metrics: [] };
+        return { metrics: [], error: retry.message ?? "The AI service did not respond." };
       }
       metrics = extractMetrics(retry.text);
       if (metrics.length === 0) {
@@ -444,6 +444,12 @@ Your previous answer could not be parsed. Reply with the raw JSON array only —
     console.info(
       `[recommendMetrics] generated ${metrics.length} metrics (industry="${industry}", businessModel="${model}")`,
     );
+    if (metrics.length === 0) {
+      return {
+        metrics: [],
+        error: "The AI service replied, but its answer couldn't be read as a metric list.",
+      };
+    }
     return { metrics };
   });
 
