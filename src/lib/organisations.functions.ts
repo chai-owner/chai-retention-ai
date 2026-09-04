@@ -87,10 +87,13 @@ async function loadMembership(context: Ctx) {
 export const getMyTeam = createServerFn({ method: "GET" })
   .middleware([requireConnectedAuth])
   .handler(async ({ context }): Promise<TeamSnapshot> => {
-    const membership = await loadMembership(context as Ctx);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const ctx = context as Ctx;
+    const membership = await loadMembership(ctx);
 
-    const { data: memberRows, error: memberError } = await supabaseAdmin
+    // Reads go through the signed-in user's client (RLS lets a member see
+    // their own team). Service-role access is only used to enrich teammate
+    // names/emails, and never blocks the page when it isn't available.
+    const { data: memberRows, error: memberError } = await ctx.supabase
       .from("organisation_members")
       .select("id, user_id, role, invited_at, accepted_at")
       .eq("org_id", membership.orgId)
@@ -98,9 +101,17 @@ export const getMyTeam = createServerFn({ method: "GET" })
     if (memberError) throw new Error(memberError.message);
 
     const ids = (memberRows ?? []).map((m: any) => m.user_id);
-    const { data: profiles } = ids.length
-      ? await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", ids)
-      : { data: [] as any[] };
+    let profiles: any[] = [];
+    if (ids.length) {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data } = await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", ids);
+        profiles = data ?? [];
+      } catch {
+        const { data } = await ctx.supabase.from("profiles").select("id, full_name, email").in("id", ids);
+        profiles = data ?? [];
+      }
+    }
     const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
 
     const members: TeamMember[] = (memberRows ?? []).map((m: any) => ({
@@ -115,7 +126,7 @@ export const getMyTeam = createServerFn({ method: "GET" })
 
     let invites: TeamInvite[] = [];
     if (canManageMembers(membership.role)) {
-      const { data: inviteRows, error: inviteError } = await supabaseAdmin
+      const { data: inviteRows, error: inviteError } = await ctx.supabase
         .from("organisation_invites")
         .select("id, email, role, expires_at, created_at, accepted_at")
         .eq("org_id", membership.orgId)
@@ -131,6 +142,7 @@ export const getMyTeam = createServerFn({ method: "GET" })
         expired: isInviteExpired(i.expires_at),
       }));
     }
+
 
     const pending = invites.filter((i) => !i.expired).length;
     return {
