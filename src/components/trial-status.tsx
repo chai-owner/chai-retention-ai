@@ -197,6 +197,11 @@ export function TrialExpiredPaywall() {
   return (
     <div className="flex min-h-[80vh] items-center justify-center p-6">
       <div className="w-full max-w-5xl">
+        {initialPromo ? (
+          <div className="mx-auto mb-6 max-w-2xl rounded-[12px] border border-success/30 bg-success/10 px-4 py-3 text-center text-sm font-medium text-success">
+            {FOUNDER_BANNER_MESSAGE}
+          </div>
+        ) : null}
         <div className="text-center">
           <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-secondary">
             <Lock className="h-5 w-5 text-muted-foreground" />
@@ -232,6 +237,7 @@ export function TrialExpiredPaywall() {
           {ORG_PLANS.map((plan) => {
             const pricing = PLAN_PRICING[plan];
             const highlighted = plan === "standard";
+            const founder = !!promoCode && plan === FOUNDER_PLAN && period === "monthly";
             return (
               <div
                 key={plan}
@@ -240,7 +246,11 @@ export function TrialExpiredPaywall() {
                   highlighted ? "border-primary ring-1 ring-primary" : "border-border",
                 )}
               >
-                {highlighted ? (
+                {founder ? (
+                  <span className="absolute -top-3 left-6 rounded-full bg-success px-3 py-1 text-xs font-medium text-success-foreground">
+                    Founder Plan
+                  </span>
+                ) : highlighted ? (
                   <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
                     Most popular
                   </span>
@@ -249,7 +259,16 @@ export function TrialExpiredPaywall() {
                   {PLAN_LABELS[plan]}
                 </h2>
                 <p className="mt-2 text-2xl font-semibold text-foreground">
-                  ${period === "annual" ? pricing.annualMonthly : pricing.monthly}
+                  {founder ? (
+                    <span className="mr-2 text-base font-normal text-muted-foreground line-through">
+                      ${pricing.monthly}
+                    </span>
+                  ) : null}
+                  ${founder
+                    ? FOUNDER_MONTHLY_PRICE
+                    : period === "annual"
+                      ? pricing.annualMonthly
+                      : pricing.monthly}
                   <span className="text-sm font-normal text-muted-foreground">/mo</span>
                 </p>
                 {period === "annual" ? (
@@ -257,6 +276,7 @@ export function TrialExpiredPaywall() {
                     ${pricing.annualTotal.toLocaleString("en-US")} billed yearly
                   </p>
                 ) : null}
+
 
                 <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
