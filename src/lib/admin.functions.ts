@@ -55,7 +55,14 @@ export interface AdminCustomer {
   bookedAt: string | null;
   createdAt: string;
   totalCostUsd: number;
+  /** Plan of the organisation this user owns, when they have one. */
+  plan: OrgPlan | null;
+  /** Trial end date of the owned organisation, when still on trial. */
+  trialEndsAt: string | null;
+  /** How many customer records they have ingested. */
+  customerCount: number;
 }
+
 
 // USD per 1M tokens. Extend as we add models; unknown models fall back to DEFAULT.
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
