@@ -194,12 +194,19 @@ function PricingPage() {
   const [annual, setAnnual] = useState(false);
   const { open: demoOpen, openGate, closeGate } = useDemoGate();
   const [addonChecked, setAddonChecked] = useState(false);
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [initialPromo, setInitialPromo] = useState<string | null>(null);
   const signedIn = useSignedIn();
   const userId = useAuthUserId();
   const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const autoOpenedRef = useRef(false);
+
+  // A Founder invite stored a code before sign-up: pre-fill and apply it.
+  useEffect(() => {
+    setInitialPromo(readStoredPromoCode());
+  }, []);
 
   const buy = async (plan: OrgPlan, period: BillingPeriod, includeAddon: boolean) => {
     if (!signedIn || !userId) {
@@ -222,8 +229,10 @@ function PricingPage() {
       includeAddon,
       userId,
       customerEmail: data.session?.user.email ?? undefined,
+      discountCode: plan === FOUNDER_PLAN ? promoCode : null,
     });
   };
+
 
   // Returning from auth with a pending purchase: open checkout automatically.
   useEffect(() => {
