@@ -13,6 +13,7 @@ import { logAiCall, resolveAiCaller, type AiCaller, type AiUsage } from "./ai-us
 import {
   aiHourlyLimitForPlan,
   evaluateRateLimit,
+  isRateLimitExempt,
   rateLimitMessage,
   type RateLimitDecision,
 } from "./ai-rate-limit";
@@ -105,7 +106,8 @@ class LovableAiProvider implements AiProvider {
     const model = req.model ?? DEFAULT_AI_MODEL;
     const caller = await resolveAiCaller();
 
-    const decision = await checkRateLimit(caller);
+    const exempt = isRateLimitExempt(req.operation);
+    const decision = exempt ? null : await checkRateLimit(caller);
     if (decision && !decision.allowed) {
       const message = rateLimitMessage(decision);
       await logAiCall({
@@ -121,6 +123,9 @@ class LovableAiProvider implements AiProvider {
 
     const key = process.env.LOVABLE_API_KEY;
     if (!key) {
+      console.error(
+        `[ai] ${req.operation} failed: LOVABLE_API_KEY is not set (model ${model}, user ${caller?.userId ?? "anonymous"})`,
+      );
       await logAiCall({
         operation: req.operation,
         model,
@@ -150,6 +155,13 @@ class LovableAiProvider implements AiProvider {
       });
       return { text: result.text, usage: result.usage, ok: true };
     } catch (error) {
+      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      const status = (error as { statusCode?: number; status?: number } | null)?.statusCode ??
+        (error as { status?: number } | null)?.status;
+      console.error(
+        `[ai] ${req.operation} failed (model ${model}, user ${caller?.userId ?? "anonymous"}, status ${status ?? "n/a"}): ${detail}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       await logAiCall({
         operation: req.operation,
         model,
