@@ -51,8 +51,9 @@ export const Route = createFileRoute("/_authenticated")({
           throw redirect({ to: "/onboarding" });
         }
         // Access is governed by the 14-day trial and the plan, not by a manual
-        // unlock: once onboarding is done the app opens on Today.
-        if (location.pathname === "/app/welcome") {
+        // unlock, so an onboarded account is never trapped on the welcome
+        // screen — it simply opens on Today.
+        if (profile.unlocked && location.pathname === "/app/welcome") {
           throw redirect({ to: "/app/today" });
         }
       } catch (err) {
