@@ -9,7 +9,7 @@
 //   * wrapped in a graceful fallback so failures never throw at the user
 import { generateText } from "ai";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import { inspectServerEnv } from "./server-env";
+import { inspectServerEnvAsync, type ServerEnvLookup } from "./server-env";
 import { logAiCall, resolveAiCaller, type AiCaller, type AiUsage } from "./ai-usage.server";
 import {
   aiHourlyLimitForPlan,
@@ -100,6 +100,90 @@ async function checkRateLimit(caller: AiCaller | null): Promise<RateLimitDecisio
 // Lovable AI Gateway implementation
 // ---------------------------------------------------------------------------
 
+export const ANTHROPIC_FALLBACK_MODEL = "claude-sonnet-4-5-20250929";
+
+type AiVendor = "lovable" | "anthropic";
+
+interface AiCredentials {
+  vendor: AiVendor;
+  key: string | undefined;
+  lookup: ServerEnvLookup;
+}
+
+/**
+ * Resolve the credentials for AI calls.
+ *
+ * Preferred: the built-in Lovable AI key. If the runtime doesn't expose it
+ * (some published environments don't), fall back to a manually configured
+ * ANTHROPIC_API_KEY so the live site keeps working.
+ */
+export async function resolveAiCredentials(): Promise<AiCredentials> {
+  const lovable = await inspectServerEnvAsync("LOVABLE_API_KEY");
+  if (lovable.value) return { vendor: "lovable", key: lovable.value, lookup: lovable };
+
+  const anthropic = await inspectServerEnvAsync("ANTHROPIC_API_KEY");
+  if (anthropic.value) return { vendor: "anthropic", key: anthropic.value, lookup: anthropic };
+
+  return { vendor: "lovable", key: undefined, lookup: lovable };
+}
+
+/** Direct Anthropic Messages API call — used only when the built-in key is absent. */
+async function generateWithAnthropic(
+  key: string,
+  req: AiTextRequest,
+): Promise<{ text: string; usage?: AiUsage }> {
+  const source = req.messages ?? [{ role: "user" as const, content: req.prompt ?? "" }];
+  const system = source
+    .filter((m) => m.role === "system")
+    .map((m) => (typeof m.content === "string" ? m.content : ""))
+    .join("\n\n");
+  const messages = source
+    .filter((m) => m.role !== "system")
+    .map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+    }));
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_FALLBACK_MODEL,
+      max_tokens: 2048,
+      ...(system ? { system } : {}),
+      messages: messages.length ? messages : [{ role: "user", content: req.prompt ?? "" }],
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Anthropic request failed (${response.status}): ${detail.slice(0, 300)}`);
+  }
+
+  const payload = (await response.json()) as {
+    content?: Array<{ type?: string; text?: string }>;
+    usage?: { input_tokens?: number; output_tokens?: number };
+  };
+  const text = (payload.content ?? [])
+    .filter((part) => part.type === "text")
+    .map((part) => part.text ?? "")
+    .join("");
+
+  return {
+    text,
+    usage: {
+      inputTokens: payload.usage?.input_tokens,
+      outputTokens: payload.usage?.output_tokens,
+      totalTokens:
+        (payload.usage?.input_tokens ?? 0) + (payload.usage?.output_tokens ?? 0) || undefined,
+    } as AiUsage,
+  };
+}
+
 class LovableAiProvider implements AiProvider {
   readonly name = "lovable";
 
@@ -122,11 +206,11 @@ class LovableAiProvider implements AiProvider {
       return { text: "", ok: false, message };
     }
 
-    const keyLookup = inspectServerEnv("LOVABLE_API_KEY");
-    const key = keyLookup.value;
+    const credentials = await resolveAiCredentials();
+    const key = credentials.key;
     if (!key) {
       console.error(
-        `[ai-config] variable=LOVABLE_API_KEY present=false source=${keyLookup.source} checked=${keyLookup.checkedSources.join(",")}`,
+        `[ai-config] variable=LOVABLE_API_KEY present=false source=${credentials.lookup.source} checked=${credentials.lookup.checkedSources.join(",")}; ANTHROPIC_API_KEY also absent`,
       );
       console.error(
         `[ai] ${req.operation} failed: LOVABLE_API_KEY is not set (model ${model}, user ${caller?.userId ?? "anonymous"})`,
@@ -143,13 +227,15 @@ class LovableAiProvider implements AiProvider {
     }
 
     try {
-      const gateway = createLovableAiGatewayProvider(key);
-      const result = await generateText({
-        model: gateway(model),
-        ...(req.messages
-          ? { messages: req.messages as never }
-          : { prompt: req.prompt ?? "" }),
-      });
+      const result =
+        credentials.vendor === "anthropic"
+          ? await generateWithAnthropic(key, req)
+          : await generateText({
+              model: createLovableAiGatewayProvider(key)(model),
+              ...(req.messages
+                ? { messages: req.messages as never }
+                : { prompt: req.prompt ?? "" }),
+            });
       await logAiCall({
         operation: req.operation,
         model,
