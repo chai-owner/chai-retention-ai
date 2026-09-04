@@ -55,13 +55,21 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
           }
         };
 
-        const readAll = async (table: string, select: string, userId: string) => {
+        const readAll = async (
+          table: string,
+          select: string,
+          userId: string,
+          activeOnly = false,
+        ) => {
           const out: Array<Record<string, unknown>> = [];
           for (let from = 0; ; from += INGEST_PAGE) {
-            const { data, error } = await supabaseAdmin
+            let query = supabaseAdmin
               .from(table as "ingested_customers")
               .select(select)
-              .eq("user_id", userId)
+              .eq("user_id", userId);
+            // Paused customers are excluded from nightly scoring entirely.
+            if (activeOnly) query = query.eq("paused", false);
+            const { data, error } = await query
               .order("id", { ascending: true })
               .range(from, from + INGEST_PAGE - 1);
             if (error) throw new Error(`${table}: ${error.message}`);
@@ -92,7 +100,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
 
           try {
             const [customers, transactions, support, usage, surveys, batchRows] = await Promise.all([
-              readAll("ingested_customers", "id, data, customer_id, batch_id", userId),
+              readAll("ingested_customers", "id, data, customer_id, batch_id", userId, true),
               readAll("ingested_transactions", "id, data, transaction_id, customer_id, amount, occurred_at, batch_id", userId),
               readAll("ingested_support", "id, data, ticket_id, customer_id, batch_id", userId),
               readAll("ingested_usage", "id, data, customer_id, occurred_at, batch_id", userId),

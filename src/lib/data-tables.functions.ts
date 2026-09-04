@@ -91,6 +91,7 @@ export const listCustomerRiskPage = createServerFn({ method: "POST" })
       .from("ingested_customers")
       .select("customer_id, data")
       .eq("user_id", userId)
+      .eq("paused", false)
       .in("customer_id", ids);
 
     const byId = new Map<string, Record<string, string>>();
