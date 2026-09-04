@@ -1,6 +1,6 @@
 // Trial countdown badge, grace-period banner, expired paywall and the
 // locked-seat notice. All read one shared access snapshot.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -24,6 +24,13 @@ import { useAuthUserId } from "@/lib/use-auth-state";
 import { supabase } from "@/integrations/supabase/client";
 import { useRefreshPlan } from "@/lib/use-plan-usage";
 import { cn } from "@/lib/utils";
+import { PromoCodeField } from "@/components/promo-code-field";
+import {
+  FOUNDER_BANNER_MESSAGE,
+  FOUNDER_MONTHLY_PRICE,
+  FOUNDER_PLAN,
+  readStoredPromoCode,
+} from "@/lib/promo-codes";
 
 
 /** Small countdown chip for the sidebar / header. */
