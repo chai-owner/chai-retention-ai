@@ -155,6 +155,13 @@ class LovableAiProvider implements AiProvider {
       });
       return { text: result.text, usage: result.usage, ok: true };
     } catch (error) {
+      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      const status = (error as { statusCode?: number; status?: number } | null)?.statusCode ??
+        (error as { status?: number } | null)?.status;
+      console.error(
+        `[ai] ${req.operation} failed (model ${model}, user ${caller?.userId ?? "anonymous"}, status ${status ?? "n/a"}): ${detail}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       await logAiCall({
         operation: req.operation,
         model,
