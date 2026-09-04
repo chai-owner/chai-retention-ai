@@ -43,6 +43,7 @@ import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksDailyScoreRouteImport } from './routes/api/public/hooks/daily-score'
 import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public/hooks/daily-sync'
 import { Route as ApiPublicHooksPlanChangesRouteImport } from './routes/api/public/hooks/plan-changes'
+import { Route as ApiPublicHooksTrialLifecycleRouteImport } from './routes/api/public/hooks/trial-lifecycle'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 import { Route as ApiPublicIntercomCallbackRouteImport } from './routes/api/public/intercom.callback'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -234,6 +235,12 @@ const ApiPublicHooksPlanChangesRoute =
     path: '/api/public/hooks/plan-changes',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksTrialLifecycleRoute =
+  ApiPublicHooksTrialLifecycleRouteImport.update({
+    id: '/api/public/hooks/trial-lifecycle',
+    path: '/api/public/hooks/trial-lifecycle',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWeeklyDigestRoute =
   ApiPublicHooksWeeklyDigestRouteImport.update({
     id: '/api/public/hooks/weekly-digest',
@@ -313,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
   '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
+  '/api/public/hooks/trial-lifecycle': typeof ApiPublicHooksTrialLifecycleRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -354,6 +362,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
   '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
+  '/api/public/hooks/trial-lifecycle': typeof ApiPublicHooksTrialLifecycleRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -399,6 +408,7 @@ export interface FileRoutesById {
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
   '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
+  '/api/public/hooks/trial-lifecycle': typeof ApiPublicHooksTrialLifecycleRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -444,6 +454,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
     | '/api/public/hooks/plan-changes'
+    | '/api/public/hooks/trial-lifecycle'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
     | '/api/public/payments/webhook'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
     | '/api/public/hooks/plan-changes'
+    | '/api/public/hooks/trial-lifecycle'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
     | '/api/public/payments/webhook'
@@ -529,6 +541,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
     | '/api/public/hooks/plan-changes'
+    | '/api/public/hooks/trial-lifecycle'
     | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
     | '/api/public/payments/webhook'
@@ -554,6 +567,7 @@ export interface RootRouteChildren {
   ApiPublicHooksDailyScoreRoute: typeof ApiPublicHooksDailyScoreRoute
   ApiPublicHooksDailySyncRoute: typeof ApiPublicHooksDailySyncRoute
   ApiPublicHooksPlanChangesRoute: typeof ApiPublicHooksPlanChangesRoute
+  ApiPublicHooksTrialLifecycleRoute: typeof ApiPublicHooksTrialLifecycleRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
   ApiPublicIntercomCallbackRoute: typeof ApiPublicIntercomCallbackRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -804,6 +818,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPlanChangesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/trial-lifecycle': {
+      id: '/api/public/hooks/trial-lifecycle'
+      path: '/api/public/hooks/trial-lifecycle'
+      fullPath: '/api/public/hooks/trial-lifecycle'
+      preLoaderRoute: typeof ApiPublicHooksTrialLifecycleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/weekly-digest': {
       id: '/api/public/hooks/weekly-digest'
       path: '/api/public/hooks/weekly-digest'
@@ -950,6 +971,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksDailyScoreRoute: ApiPublicHooksDailyScoreRoute,
   ApiPublicHooksDailySyncRoute: ApiPublicHooksDailySyncRoute,
   ApiPublicHooksPlanChangesRoute: ApiPublicHooksPlanChangesRoute,
+  ApiPublicHooksTrialLifecycleRoute: ApiPublicHooksTrialLifecycleRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
   ApiPublicIntercomCallbackRoute: ApiPublicIntercomCallbackRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,

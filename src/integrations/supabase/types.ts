@@ -498,6 +498,7 @@ export type Database = {
           customer_id: string
           data: Json
           id: string
+          paused: boolean
           updated_at: string
           user_id: string
         }
@@ -507,6 +508,7 @@ export type Database = {
           customer_id: string
           data?: Json
           id?: string
+          paused?: boolean
           updated_at?: string
           user_id: string
         }
@@ -516,6 +518,7 @@ export type Database = {
           customer_id?: string
           data?: Json
           id?: string
+          paused?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -824,6 +827,8 @@ export type Database = {
           created_at: string
           id: string
           invited_at: string
+          locked: boolean
+          locked_at: string | null
           org_id: string
           role: string
           updated_at: string
@@ -834,6 +839,8 @@ export type Database = {
           created_at?: string
           id?: string
           invited_at?: string
+          locked?: boolean
+          locked_at?: string | null
           org_id: string
           role?: string
           updated_at?: string
@@ -844,6 +851,8 @@ export type Database = {
           created_at?: string
           id?: string
           invited_at?: string
+          locked?: boolean
+          locked_at?: string | null
           org_id?: string
           role?: string
           updated_at?: string
@@ -862,6 +871,7 @@ export type Database = {
       organisations: {
         Row: {
           created_at: string
+          downgrade_warning_sent_at: string | null
           id: string
           name: string
           owner_id: string
@@ -869,10 +879,13 @@ export type Database = {
           pending_plan_effective_at: string | null
           plan: string
           smart_ingest_addon: boolean
+          trial_emails_sent: string[]
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          downgrade_warning_sent_at?: string | null
           id?: string
           name?: string
           owner_id: string
@@ -880,10 +893,13 @@ export type Database = {
           pending_plan_effective_at?: string | null
           plan?: string
           smart_ingest_addon?: boolean
+          trial_emails_sent?: string[]
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          downgrade_warning_sent_at?: string | null
           id?: string
           name?: string
           owner_id?: string
@@ -891,6 +907,8 @@ export type Database = {
           pending_plan_effective_at?: string | null
           plan?: string
           smart_ingest_addon?: boolean
+          trial_emails_sent?: string[]
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: []

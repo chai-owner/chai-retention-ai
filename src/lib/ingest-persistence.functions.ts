@@ -218,20 +218,23 @@ export const listAllIngested = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<IngestedSnapshot> => {
     const { supabase, userId } = context;
-    const read = (table: string, select: string) =>
+    const read = (table: string, select: string, activeOnly = false) =>
       fetchAllPages(
-        (from, to) =>
-          supabase
+        (from, to) => {
+          // Customers paused by a plan downgrade stay in the database but are
+          // left out of every assessment until the workspace upgrades again.
+          let q = supabase
             .from(table as "ingested_customers")
             .select(select)
-            .eq("user_id", userId)
-            .order("id", { ascending: true })
-            .range(from, to) as never,
+            .eq("user_id", userId);
+          if (activeOnly) q = q.eq("paused", false);
+          return q.order("id", { ascending: true }).range(from, to) as never;
+        },
         table,
       );
 
     const [c, t, s, u, sv, batches] = await Promise.all([
-      read("ingested_customers", "data, customer_id, batch_id"),
+      read("ingested_customers", "data, customer_id, batch_id", true),
       read(
         "ingested_transactions",
         "data, transaction_id, customer_id, amount, occurred_at, due_date, amount_due, paid_date, days_overdue, batch_id",

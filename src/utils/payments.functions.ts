@@ -176,8 +176,17 @@ export const requestPlanChange = createServerFn({ method: "POST" })
       // limits lift even if the webhook is delayed.
       await supabaseAdmin
         .from("organisations")
-        .update({ plan: data.plan, pending_plan: null, pending_plan_effective_at: null })
+        .update({
+          plan: data.plan,
+          pending_plan: null,
+          pending_plan_effective_at: null,
+          downgrade_warning_sent_at: null,
+          trial_ends_at: null,
+        })
         .eq("id", orgId);
+      // Lift any pause/lock the smaller plan had imposed.
+      const { applyPlanEnforcement } = await import("@/lib/plan-enforcement.server");
+      await applyPlanEnforcement(supabaseAdmin, orgId);
       return { kind };
     }
 
@@ -188,6 +197,7 @@ export const requestPlanChange = createServerFn({ method: "POST" })
       .update({
         pending_plan: data.plan,
         pending_plan_effective_at: sub.current_period_end ?? null,
+        downgrade_warning_sent_at: null,
       })
       .eq("id", orgId);
     return { kind, effectiveAt: sub.current_period_end ?? undefined };

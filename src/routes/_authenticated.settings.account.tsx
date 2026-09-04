@@ -32,6 +32,7 @@ import {
 } from "@/lib/organisations";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { createBillingPortalLink, getMySubscription } from "@/utils/payments.functions";
+import { useAccessState } from "@/lib/use-access-state";
 import {
   cancelTeamInvite,
   inviteTeamMember,
@@ -340,6 +341,34 @@ function AccountSettingsPage() {
   );
 }
 
+/** Trial countdown for accounts that haven't subscribed yet. */
+function TrialSummary() {
+  const { data } = useAccessState(true);
+  if (!data || data.trial.status === "none") return null;
+  const endsAt = data.trial.endsAt ? new Date(data.trial.endsAt).toLocaleDateString() : null;
+  if (data.trial.status === "trialing") {
+    return (
+      <p className="rounded-lg bg-primary/10 px-3 py-2 text-primary">
+        Free trial: {data.trial.daysLeft} {data.trial.daysLeft === 1 ? "day" : "days"} left
+        {endsAt ? ` — ends ${endsAt}` : ""}. You have full Standard access until then.
+      </p>
+    );
+  }
+  if (data.trial.status === "grace") {
+    return (
+      <p className="rounded-lg bg-warning/10 px-3 py-2 text-warning">
+        Your trial ended{endsAt ? ` on ${endsAt}` : ""}. {data.trial.daysLeft}{" "}
+        {data.trial.daysLeft === 1 ? "day" : "days"} of access left before your workspace locks.
+      </p>
+    );
+  }
+  return (
+    <p className="rounded-lg bg-destructive/10 px-3 py-2 text-destructive">
+      Your free trial has ended and your workspace is locked. Choose a plan to unlock it.
+    </p>
+  );
+}
+
 function BillingSection({ plan, role }: { plan: keyof typeof PLAN_LABELS; role: string }) {
   const environment = getPaddleEnvironment();
   const getSub = useServerFn(getMySubscription);
@@ -376,6 +405,7 @@ function BillingSection({ plan, role }: { plan: keyof typeof PLAN_LABELS; role: 
       </div>
 
       <div className="space-y-3 px-5 py-4 text-sm">
+        <TrialSummary />
         <p className="text-foreground">
           You're on the <strong>{PLAN_LABELS[plan]}</strong> plan
           {sub?.period ? ` (${sub.period === "annual" ? "annual" : "monthly"} billing)` : ""}.

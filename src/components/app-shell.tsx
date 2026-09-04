@@ -41,6 +41,7 @@ import { hydrateCustomerAliases } from "@/lib/customer-aliases";
 import { useOrgRole } from "@/lib/use-team";
 import { canManageMembers } from "@/lib/organisations";
 import { CustomerLimitBanner, PlanLimitNoticeDialog } from "@/components/plan-limits";
+import { AccessGate, TrialBadge, TrialGraceBanner } from "@/components/trial-status";
 
 
 const nav = [
@@ -233,10 +234,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <div className="flex-1" />
+          <TrialBadge enabled={!demo && signedIn === true} />
         </header>
         <ImpersonationBanner />
+        <TrialGraceBanner enabled={!demo && signedIn === true} />
         <CustomerLimitBanner enabled={!demo && signedIn === true} />
-        <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">
+          <AccessGate enabled={!demo && signedIn === true}>{children}</AccessGate>
+        </main>
       </div>
 
       <PlanLimitNoticeDialog enabled={!demo && signedIn === true} />
