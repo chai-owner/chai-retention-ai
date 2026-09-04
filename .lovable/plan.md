@@ -1,32 +1,27 @@
-# Shared UI design-system pass
+# Diagnose live AI configuration and onboarding auth
 
 ## Goal
-Unify app controls, cards, tables, and settings forms around the agreed flat, border-led visual system while preserving existing behavior and semantic status colors.
+Add a safe live-runtime diagnostic for the AI provider and confirm that a newly verified user can reach metric generation during onboarding.
 
 ## Implementation
-1. **Shared primitives**
-   - Set all button sizes to the 10px radius family and remove shadows from solid, destructive, outline, and secondary variants.
-   - Update shared `Card` and `StatCard` shells to a 14px radius, border-only treatment with no top accent border or shadow.
-   - Add optional `title` and `subtitle` rendering to shared `Card` without changing existing child-only usage.
-   - Render `StatCard` icons in compact semantic tinted chips using existing teal/gold/danger/warning/success tokens only.
-   - Reduce `ScoreBar` to a 4px, fully rounded track.
+1. **Safe AI diagnostic**
+   - Add an authenticated `checkAiConfig` server function next to the existing AI functions.
+   - Report whether `LOVABLE_API_KEY` exists, which supported runtime source supplied it, an irreversible eight-character SHA-256 fingerprint, and whether a minimal real AI request succeeds.
+   - Do not return or log any characters from the secret itself.
+   - Expose a small browser-console helper on onboarding so the check can be run against the published site without manually invoking TanStack's internal RPC endpoint.
 
-2. **Affected pages**
-   - Update the Risk Center table shell to 14px and remove its shadow.
-   - Update Insights recommendation and benchmark row radii to 10px.
-   - Replace Settings’ local Card with the shared Card, retain its section spacing, set form controls to a 10px radius and a muted sand-tinted fill, and remove the duplicate implementation.
-   - Keep Dashboard and customer-detail structure unchanged; verify shared-component changes render cleanly and health distribution keeps its existing semantic palette.
+2. **Environment visibility**
+   - Extend the server environment helper to identify the successful lookup source without exposing values.
+   - Log the exact variable name, lookup source, and presence status for diagnostic and failed AI calls.
+   - Keep ordinary AI behavior unchanged.
 
-3. **Palette guardrail**
-   - Audit `--chart-3` and `--chart-4` usage across app UI.
-   - Preserve blue only for line/trend chart strokes and green only for the healthy segment of health-distribution visuals; do not introduce either into chips, badges, or buttons.
+3. **Fresh-signup authentication**
+   - Verify the global bearer-token attachment and `requireConnectedAuth` path used by `recommendMetrics`.
+   - Add focused tests covering authenticated middleware/config diagnostics and the metric-generation call path where practical.
 
 4. **Verification**
-   - Run TypeScript typecheck, production build, and the full test suite.
-   - Inspect Dashboard, Risk Center, customer detail, Insights, and Settings at desktop and mobile widths for layout regressions.
+   - Run the new live diagnostic, targeted tests, the full test suite, and the production build.
+   - Recheck published server and AI Gateway logs for the diagnostic request and report whether publishing is required before the live domain can use it.
 
-## Final values
-- Buttons and inputs: 10px radius.
-- Shared cards and Risk Center table shell: 14px radius.
-- Stat icon chips: 30px square with an 8px radius.
-- Score bars: 4px height, fully pill-shaped.
+## Security note
+The requested first eight secret characters will be replaced by an eight-character one-way fingerprint. This distinguishes keys without exposing reusable credential material to browser code.
