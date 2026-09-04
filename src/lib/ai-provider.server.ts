@@ -102,7 +102,7 @@ async function checkRateLimit(caller: AiCaller | null): Promise<RateLimitDecisio
 
 export const ANTHROPIC_FALLBACK_MODEL = "claude-sonnet-4-5-20250929";
 
-type AiVendor = "lovable" | "anthropic";
+export type AiVendor = "lovable" | "anthropic";
 
 interface AiCredentials {
   vendor: AiVendor;
@@ -225,6 +225,12 @@ class LovableAiProvider implements AiProvider {
       });
       return { text: "", ok: false, message: "The AI service isn't configured right now." };
     }
+
+    console.info(
+      `[ai-config] activeProvider=${credentials.vendor} variable=${
+        credentials.vendor === "lovable" ? "LOVABLE_API_KEY" : "ANTHROPIC_API_KEY"
+      } source=${credentials.lookup.source}`,
+    );
 
     try {
       const result =
