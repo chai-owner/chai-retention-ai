@@ -25,6 +25,7 @@ export const Route = createFileRoute("/api/public/hooks/plan-changes")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { applyPlanEnforcement } = await import("@/lib/plan-enforcement.server");
         const { resolvePaddlePriceId, updateSubscriptionItems } = await import(
           "@/lib/paddle.server"
         );
@@ -60,6 +61,7 @@ export const Route = createFileRoute("/api/public/hooks/plan-changes")({
                   pending_plan_effective_at: null,
                 })
                 .eq("id", org.id);
+              await applyPlanEnforcement(supabaseAdmin, org.id);
               results.downgradesApplied++;
               continue;
             }
@@ -84,6 +86,7 @@ export const Route = createFileRoute("/api/public/hooks/plan-changes")({
                 pending_plan_effective_at: null,
               })
               .eq("id", org.id);
+            await applyPlanEnforcement(supabaseAdmin, org.id);
             results.downgradesApplied++;
           } catch (error) {
             console.error("plan-changes: downgrade failed for org", org.id, error);
@@ -125,6 +128,7 @@ export const Route = createFileRoute("/api/public/hooks/plan-changes")({
               .from("organisations")
               .update({ plan: "core", smart_ingest_addon: false })
               .eq("id", member.org_id);
+            await applyPlanEnforcement(supabaseAdmin, member.org_id);
             results.cancellationsFinalised++;
           } catch (error) {
             console.error("plan-changes: cancellation finalise failed", sub.user_id, error);

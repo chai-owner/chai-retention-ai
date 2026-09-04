@@ -196,8 +196,16 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
       update.pending_plan_effective_at = null;
     }
     if (n.hasAddon) update.smart_ingest_addon = true;
-    if (Object.keys(update).length) {
-      await getSupabase().from("organisations").update(update).eq("id", orgId);
+    // Paying ends the free trial: limits now come from the purchased plan.
+    update.trial_ends_at = null;
+    await getSupabase().from("organisations").update(update).eq("id", orgId);
+    // Re-apply limits so anything paused or locked under a smaller plan is
+    // restored straight away.
+    try {
+      const { applyPlanEnforcement } = await import("@/lib/plan-enforcement.server");
+      await applyPlanEnforcement(getSupabase(), orgId);
+    } catch (error) {
+      console.error("plan enforcement after subscription failed", error);
     }
   }
   await getSupabase().from("profiles").update({ unlocked: true }).eq("id", userId);
