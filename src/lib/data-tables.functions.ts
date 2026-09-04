@@ -246,3 +246,39 @@ export const getCustomerScore = createServerFn({ method: "POST" })
         : []) as unknown as Array<ScoreBreakdownEntry | ChurnMetaEntry>,
     };
   });
+
+export interface PausedCustomerRow {
+  customerId: string;
+  name: string;
+  email: string;
+}
+
+/**
+ * Customers held back by the plan's customer limit. Their data is intact —
+ * they're simply excluded from scoring and the app until an upgrade.
+ */
+export const listPausedCustomers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ rows: PausedCustomerRow[]; total: number }> => {
+    const { supabase, userId } = context;
+    const { data, count } = await supabase
+      .from("ingested_customers")
+      .select("customer_id, data", { count: "exact" })
+      .eq("user_id", userId)
+      .eq("paused", true)
+      .order("customer_id", { ascending: true })
+      .range(0, 199);
+
+    const rows = (data ?? []).map((row) => {
+      const normalized = normalizeIngestRow(
+        row as Record<string, unknown>,
+        INGEST_COLUMNS.customers!,
+      );
+      return {
+        customerId: row.customer_id as string,
+        name: normalized["name"] ?? (row.customer_id as string),
+        email: normalized["email"] ?? "",
+      };
+    });
+    return { rows, total: count ?? rows.length };
+  });
