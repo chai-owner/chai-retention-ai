@@ -380,6 +380,60 @@ export const resetAccount = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Permanently removes an empty account: their data, organisation, profile and
+// the auth login itself. Only allowed for accounts that never finished
+// onboarding and hold no customer records — enforced here, not just in the UI.
+export const deleteAccount = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ userId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.userId === context.userId) {
+      throw new Error("You cannot delete your own account");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("onboarded")
+      .eq("id", data.userId)
+      .maybeSingle();
+    if (profile?.onboarded) {
+      throw new Error("Only empty accounts that never finished onboarding can be deleted");
+    }
+    const { count } = await supabaseAdmin
+      .from("ingested_customers")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", data.userId);
+    if ((count ?? 0) > 0) {
+      throw new Error("This account holds customer data and cannot be deleted");
+    }
+
+    for (const table of USER_DATA_TABLES) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabaseAdmin.from(table as any) as any)
+        .delete()
+        .eq("user_id", data.userId);
+      if (error) throw new Error(`${table}: ${error.message}`);
+    }
+
+    await supabaseAdmin.from("customer_scores").delete().eq("user_id", data.userId);
+    await supabaseAdmin.from("subscriptions").delete().eq("user_id", data.userId);
+    await supabaseAdmin.from("ai_usage_log").delete().eq("user_id", data.userId);
+    await supabaseAdmin.from("organisation_members").delete().eq("user_id", data.userId);
+    await supabaseAdmin.from("organisations").delete().eq("owner_id", data.userId);
+    await supabaseAdmin.from("profiles").delete().eq("id", data.userId);
+
+    const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (authErr) throw authErr;
+
+    return { ok: true };
+  });
+
+
+
 // ---------------------------------------------------------------------------
 // Billing admin: overview of every customer's Paddle subscription plus the
 // admin-only actions (refund, cancel, plan change, portal link).
