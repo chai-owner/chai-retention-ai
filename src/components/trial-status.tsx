@@ -318,6 +318,13 @@ export function TrialExpiredPaywall() {
           })}
         </div>
 
+        <PromoCodeField
+          className="mt-6"
+          appliedCode={promoCode}
+          onApply={setPromoCode}
+          initialCode={initialPromo}
+        />
+
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Your data is safe — all 14 days of insights are waiting for you.
         </p>
