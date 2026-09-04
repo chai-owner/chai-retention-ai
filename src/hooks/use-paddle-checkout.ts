@@ -15,6 +15,8 @@ export function usePaddleCheckout() {
     includeAddon?: boolean;
     userId: string;
     customerEmail?: string;
+    /** Promo code (e.g. the Founder Plan code) applied at checkout. */
+    discountCode?: string | null;
   }) => {
     setLoading(true);
     try {
@@ -29,9 +31,13 @@ export function usePaddleCheckout() {
 
       window.Paddle.Checkout.open({
         items,
+        ...(options.discountCode ? { discountCode: options.discountCode } : {}),
         customer: options.customerEmail ? { email: options.customerEmail } : undefined,
         // The webhook attributes the purchase to this user and their workspace.
-        customData: { userId: options.userId },
+        customData: {
+          userId: options.userId,
+          ...(options.discountCode ? { promoCode: options.discountCode } : {}),
+        },
         settings: {
           displayMode: "overlay",
           successUrl: `${window.location.origin}/app/today?checkout=success`,
