@@ -39,6 +39,7 @@ import {
   type AdminBillingRow,
 } from "@/lib/admin.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
+import { isFounderCode } from "@/lib/promo-codes";
 import {
   ORG_PLANS,
   PLAN_LABELS,
@@ -251,7 +252,14 @@ export function AdminBilling() {
                         {r.email}
                       </a>
                     </td>
-                    <td className="px-4 py-3">{r.plan ? PLAN_LABELS[r.plan] : "—"}</td>
+                    <td className="px-4 py-3">
+                      {r.plan ? PLAN_LABELS[r.plan] : "—"}
+                      {isFounderCode(r.promoCode) && (
+                        <span className="ml-2 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
+                          Founder Plan
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 capitalize">{r.period ?? "—"}</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={r.status} />

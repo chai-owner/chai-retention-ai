@@ -178,7 +178,14 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
       current_period_end: currentBillingPeriod?.endsAt ?? null,
       cancel_at_period_end: false,
       environment: env,
-      raw: { customerId, priceExternalId: n.priceExternalId, hasAddon: n.hasAddon },
+      raw: {
+        customerId,
+        priceExternalId: n.priceExternalId,
+        hasAddon: n.hasAddon,
+        // Promo code the buyer applied at checkout (e.g. the Founder Plan code).
+        promoCode: typeof customData?.promoCode === "string" ? customData.promoCode : null,
+        discountId: (data as any)?.discount?.id ?? null,
+      },
       updated_at: new Date().toISOString(),
     },
     { onConflict: "provider,provider_subscription_id" },

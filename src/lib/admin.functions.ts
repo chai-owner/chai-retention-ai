@@ -360,6 +360,8 @@ export interface AdminBillingRow {
   pendingPlanEffectiveAt: string | null;
   subscriptionId: string | null;
   monthlyValueUsd: number;
+  /** Promo code applied at checkout, if any. */
+  promoCode: string | null;
 }
 
 const envInput = z.object({ environment: z.enum(["sandbox", "live"]) });
@@ -432,6 +434,8 @@ export const listBilling = createServerFn({ method: "POST" })
         pendingPlanEffectiveAt: org?.pending_plan_effective_at ?? null,
         subscriptionId: sub?.provider_subscription_id ?? null,
         monthlyValueUsd: ACTIVE_STATUSES.includes(status) ? monthlyValue(plan, period) : 0,
+        promoCode:
+          sub && typeof (sub.raw as any)?.promoCode === "string" ? ((sub.raw as any).promoCode as string) : null,
       });
     }
     rows.sort((a, b) => b.monthlyValueUsd - a.monthlyValueUsd);

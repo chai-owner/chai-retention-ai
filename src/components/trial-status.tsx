@@ -1,6 +1,6 @@
 // Trial countdown badge, grace-period banner, expired paywall and the
 // locked-seat notice. All read one shared access snapshot.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -24,6 +24,13 @@ import { useAuthUserId } from "@/lib/use-auth-state";
 import { supabase } from "@/integrations/supabase/client";
 import { useRefreshPlan } from "@/lib/use-plan-usage";
 import { cn } from "@/lib/utils";
+import { PromoCodeField } from "@/components/promo-code-field";
+import {
+  FOUNDER_BANNER_MESSAGE,
+  FOUNDER_MONTHLY_PRICE,
+  FOUNDER_PLAN,
+  readStoredPromoCode,
+} from "@/lib/promo-codes";
 
 
 /** Small countdown chip for the sidebar / header. */
@@ -138,10 +145,17 @@ function limitLabel(value: number | null) {
 export function TrialExpiredPaywall() {
   const [period, setPeriod] = useState<BillingPeriod>("monthly");
   const [pending, setPending] = useState<OrgPlan | null>(null);
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [initialPromo, setInitialPromo] = useState<string | null>(null);
   const changePlan = useServerFn(requestPlanChange);
   const { openCheckout, environment } = usePaddleCheckout();
   const userId = useAuthUserId();
   const refresh = useRefreshPlan();
+
+  // A Founder invite link stored the code before sign-up.
+  useEffect(() => {
+    setInitialPromo(readStoredPromoCode());
+  }, []);
 
   const startCheckout = async (plan: OrgPlan) => {
     if (!userId) throw new Error("Please sign in again to choose a plan.");
@@ -151,6 +165,7 @@ export function TrialExpiredPaywall() {
       period,
       userId,
       customerEmail: data.session?.user.email ?? undefined,
+      discountCode: plan === FOUNDER_PLAN ? promoCode : null,
     });
   };
 
@@ -182,6 +197,11 @@ export function TrialExpiredPaywall() {
   return (
     <div className="flex min-h-[80vh] items-center justify-center p-6">
       <div className="w-full max-w-5xl">
+        {initialPromo ? (
+          <div className="mx-auto mb-6 max-w-2xl rounded-[12px] border border-success/30 bg-success/10 px-4 py-3 text-center text-sm font-medium text-success">
+            {FOUNDER_BANNER_MESSAGE}
+          </div>
+        ) : null}
         <div className="text-center">
           <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-secondary">
             <Lock className="h-5 w-5 text-muted-foreground" />
@@ -217,6 +237,7 @@ export function TrialExpiredPaywall() {
           {ORG_PLANS.map((plan) => {
             const pricing = PLAN_PRICING[plan];
             const highlighted = plan === "standard";
+            const founder = !!promoCode && plan === FOUNDER_PLAN && period === "monthly";
             return (
               <div
                 key={plan}
@@ -225,7 +246,11 @@ export function TrialExpiredPaywall() {
                   highlighted ? "border-primary ring-1 ring-primary" : "border-border",
                 )}
               >
-                {highlighted ? (
+                {founder ? (
+                  <span className="absolute -top-3 left-6 rounded-full bg-success px-3 py-1 text-xs font-medium text-success-foreground">
+                    Founder Plan
+                  </span>
+                ) : highlighted ? (
                   <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
                     Most popular
                   </span>
@@ -234,7 +259,16 @@ export function TrialExpiredPaywall() {
                   {PLAN_LABELS[plan]}
                 </h2>
                 <p className="mt-2 text-2xl font-semibold text-foreground">
-                  ${period === "annual" ? pricing.annualMonthly : pricing.monthly}
+                  {founder ? (
+                    <span className="mr-2 text-base font-normal text-muted-foreground line-through">
+                      ${pricing.monthly}
+                    </span>
+                  ) : null}
+                  ${founder
+                    ? FOUNDER_MONTHLY_PRICE
+                    : period === "annual"
+                      ? pricing.annualMonthly
+                      : pricing.monthly}
                   <span className="text-sm font-normal text-muted-foreground">/mo</span>
                 </p>
                 {period === "annual" ? (
@@ -242,6 +276,7 @@ export function TrialExpiredPaywall() {
                     ${pricing.annualTotal.toLocaleString("en-US")} billed yearly
                   </p>
                 ) : null}
+
 
                 <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
@@ -282,6 +317,13 @@ export function TrialExpiredPaywall() {
             );
           })}
         </div>
+
+        <PromoCodeField
+          className="mt-6"
+          appliedCode={promoCode}
+          onApply={setPromoCode}
+          initialCode={initialPromo}
+        />
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Your data is safe — all 14 days of insights are waiting for you.
