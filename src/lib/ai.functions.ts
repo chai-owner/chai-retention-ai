@@ -7,6 +7,8 @@ import { inspectServerEnvAsync } from "@/lib/server-env";
 const MODEL = DEFAULT_AI_MODEL;
 
 export interface AiConfigCheckResult {
+  /** Provider selected by the same precedence rules as every real AI call. */
+  activeProvider: "lovable" | "anthropic" | "missing";
   /** The variable the AI provider will actually use, if any. */
   variableName: "LOVABLE_API_KEY" | "ANTHROPIC_API_KEY" | null;
   keyExists: boolean;
@@ -17,6 +19,7 @@ export interface AiConfigCheckResult {
   lovableKeySource: string;
   anthropicKeyExists: boolean;
   anthropicKeySource: string;
+  checkedVariables: readonly ["LOVABLE_API_KEY", "ANTHROPIC_API_KEY"];
   authenticated: true;
   testCallSucceeded: boolean;
   testCallMessage: string;
@@ -60,6 +63,7 @@ export const checkAiConfig = createServerFn({ method: "POST" })
       : null;
 
     return {
+      activeProvider: credentials.key ? credentials.vendor : "missing",
       variableName: active,
       keyExists: Boolean(credentials.key),
       keyFingerprint: credentials.key ? await fingerprintSecret(credentials.key) : null,
@@ -69,6 +73,7 @@ export const checkAiConfig = createServerFn({ method: "POST" })
       lovableKeySource: lovable.source,
       anthropicKeyExists: Boolean(anthropic.value),
       anthropicKeySource: anthropic.source,
+      checkedVariables: ["LOVABLE_API_KEY", "ANTHROPIC_API_KEY"],
       authenticated: true,
       testCallSucceeded: test.ok,
       testCallMessage: test.ok ? "AI test call succeeded." : (test.message ?? "AI test call failed."),
