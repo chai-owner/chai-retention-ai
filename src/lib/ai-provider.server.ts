@@ -106,7 +106,8 @@ class LovableAiProvider implements AiProvider {
     const model = req.model ?? DEFAULT_AI_MODEL;
     const caller = await resolveAiCaller();
 
-    const decision = await checkRateLimit(caller);
+    const exempt = isRateLimitExempt(req.operation);
+    const decision = exempt ? null : await checkRateLimit(caller);
     if (decision && !decision.allowed) {
       const message = rateLimitMessage(decision);
       await logAiCall({
