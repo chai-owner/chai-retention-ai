@@ -1,17 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getAiProvider, DEFAULT_AI_MODEL } from "./ai-provider.server";
+import { getAiProvider, DEFAULT_AI_MODEL, resolveAiCredentials } from "./ai-provider.server";
 import { requireConnectedAuth } from "@/lib/connected-auth-middleware";
-import { inspectServerEnv } from "@/lib/server-env";
+import { inspectServerEnvAsync } from "@/lib/server-env";
 
 const MODEL = DEFAULT_AI_MODEL;
 
 export interface AiConfigCheckResult {
-  variableName: "LOVABLE_API_KEY";
+  /** The variable the AI provider will actually use, if any. */
+  variableName: "LOVABLE_API_KEY" | "ANTHROPIC_API_KEY" | null;
   keyExists: boolean;
   keyFingerprint: string | null;
   source: string;
   checkedSources: readonly string[];
+  lovableKeyExists: boolean;
+  lovableKeySource: string;
+  anthropicKeyExists: boolean;
+  anthropicKeySource: string;
   authenticated: true;
   testCallSucceeded: boolean;
   testCallMessage: string;
@@ -33,9 +38,13 @@ async function fingerprintSecret(value: string): Promise<string> {
 export const checkAiConfig = createServerFn({ method: "POST" })
   .middleware([requireConnectedAuth])
   .handler(async (): Promise<AiConfigCheckResult> => {
-    const lookup = inspectServerEnv("LOVABLE_API_KEY");
+    const lovable = await inspectServerEnvAsync("LOVABLE_API_KEY");
+    const anthropic = await inspectServerEnvAsync("ANTHROPIC_API_KEY");
+    const credentials = await resolveAiCredentials();
     console.info(
-      `[ai-config] variable=LOVABLE_API_KEY present=${Boolean(lookup.value)} source=${lookup.source} checked=${lookup.checkedSources.join(",")}`,
+      `[ai-config] LOVABLE_API_KEY present=${Boolean(lovable.value)} source=${lovable.source}; ` +
+        `ANTHROPIC_API_KEY present=${Boolean(anthropic.value)} source=${anthropic.source}; ` +
+        `checked=${lovable.checkedSources.join(",")}`,
     );
 
     const test = await getAiProvider().generateText({
@@ -44,12 +53,22 @@ export const checkAiConfig = createServerFn({ method: "POST" })
       prompt: 'Reply with exactly: "ok"',
     });
 
+    const active = credentials.key
+      ? credentials.vendor === "anthropic"
+        ? ("ANTHROPIC_API_KEY" as const)
+        : ("LOVABLE_API_KEY" as const)
+      : null;
+
     return {
-      variableName: "LOVABLE_API_KEY",
-      keyExists: Boolean(lookup.value),
-      keyFingerprint: lookup.value ? await fingerprintSecret(lookup.value) : null,
-      source: lookup.source,
-      checkedSources: lookup.checkedSources,
+      variableName: active,
+      keyExists: Boolean(credentials.key),
+      keyFingerprint: credentials.key ? await fingerprintSecret(credentials.key) : null,
+      source: credentials.lookup.source,
+      checkedSources: lovable.checkedSources,
+      lovableKeyExists: Boolean(lovable.value),
+      lovableKeySource: lovable.source,
+      anthropicKeyExists: Boolean(anthropic.value),
+      anthropicKeySource: anthropic.source,
       authenticated: true,
       testCallSucceeded: test.ok,
       testCallMessage: test.ok ? "AI test call succeeded." : (test.message ?? "AI test call failed."),
