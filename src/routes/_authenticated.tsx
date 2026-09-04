@@ -22,6 +22,18 @@ export const Route = createFileRoute("/_authenticated")({
       user = null;
     }
 
+    // Right after sign-up/confirmation the session can still be hydrating from
+    // the URL; without this fallback the visitor is mistaken for a demo guest
+    // and drops into the sample-data app instead of onboarding.
+    if (!user) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        user = data.session?.user ?? null;
+      } catch {
+        user = null;
+      }
+    }
+
     if (!user) {
       if (isDemo) return { user: null };
       throw redirect({ to: "/auth", search: { redirect: location.href, mode: undefined, demo: false } });
