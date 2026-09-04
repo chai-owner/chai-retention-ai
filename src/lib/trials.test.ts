@@ -47,7 +47,9 @@ describe("dueTrialEmails", () => {
   });
 
   it("fires the expiry notice when the trial ends", () => {
-    expect(dueTrialEmails(at(0), [], now).map((e) => e.key)).toEqual(["expired"]);
+    // The day-before reminder is still inside its 2-day catch-up window, so a
+    // brand new workspace that has had nothing sent yet gets both.
+    expect(dueTrialEmails(at(0), ["day13"], now).map((e) => e.key)).toEqual(["expired"]);
   });
 
   it("fires the grace reminders on days 17 and 20", () => {
