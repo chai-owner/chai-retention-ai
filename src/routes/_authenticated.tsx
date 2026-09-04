@@ -50,23 +50,9 @@ export const Route = createFileRoute("/_authenticated")({
         if (!profile?.onboarded) {
           throw redirect({ to: "/onboarding" });
         }
-        // Onboarded but not yet unlocked by an admin: keep them on the
-        // insights/booking screen. They may still revisit Business Profile
-        // and Data to improve their inputs.
-        const lockedAllowed = new Set([
-          "/app/welcome",
-          "/app/settings",
-          "/app/data",
-        ]);
-        if (
-          !profile.unlocked &&
-          location.pathname.startsWith("/app") &&
-          !lockedAllowed.has(location.pathname)
-        ) {
-          throw redirect({ to: "/app/welcome" });
-        }
-        // Unlocked accounts no longer need the welcome/booking screen.
-        if (profile.unlocked && location.pathname === "/app/welcome") {
+        // Access is governed by the 14-day trial and the plan, not by a manual
+        // unlock: once onboarding is done the app opens on Today.
+        if (location.pathname === "/app/welcome") {
           throw redirect({ to: "/app/today" });
         }
       } catch (err) {
