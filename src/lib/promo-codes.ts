@@ -31,25 +31,46 @@ export function validatePromoCode(input: string | null | undefined): string | nu
   return isFounderCode(input) ? FOUNDER_CODE : null;
 }
 
+// The code is written to BOTH session and local storage: sign-up often
+// continues in a new tab (email confirmation link), which starts a fresh
+// session storage. localStorage keeps the offer alive until it is redeemed.
 export function storePromoCode(code: string) {
+  const value = normalisePromoCode(code);
   try {
-    sessionStorage.setItem(PROMO_STORAGE_KEY, normalisePromoCode(code));
+    sessionStorage.setItem(PROMO_STORAGE_KEY, value);
   } catch {
     /* storage unavailable — the code can still be typed manually */
+  }
+  try {
+    localStorage.setItem(PROMO_STORAGE_KEY, value);
+  } catch {
+    /* noop */
   }
 }
 
 export function readStoredPromoCode(): string | null {
-  try {
-    return validatePromoCode(sessionStorage.getItem(PROMO_STORAGE_KEY));
-  } catch {
-    return null;
+  for (const read of [
+    () => sessionStorage.getItem(PROMO_STORAGE_KEY),
+    () => localStorage.getItem(PROMO_STORAGE_KEY),
+  ]) {
+    try {
+      const valid = validatePromoCode(read());
+      if (valid) return valid;
+    } catch {
+      /* storage unavailable */
+    }
   }
+  return null;
 }
 
 export function clearStoredPromoCode() {
   try {
     sessionStorage.removeItem(PROMO_STORAGE_KEY);
+  } catch {
+    /* noop */
+  }
+  try {
+    localStorage.removeItem(PROMO_STORAGE_KEY);
   } catch {
     /* noop */
   }

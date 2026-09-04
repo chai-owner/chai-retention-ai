@@ -8,7 +8,10 @@
 // so the user never sees someone else's numbers.
 
 const OWNER_KEY = "chai.cache.owner";
-const PRESERVED_KEYS = new Set([OWNER_KEY]);
+// The Founder promo code is an offer made to the person, not cached account
+// data — it must survive sign-up, onboarding and account switches.
+const PROMO_KEY = "chai.promo-code";
+const PRESERVED_KEYS = new Set([OWNER_KEY, PROMO_KEY]);
 
 type ClearFn = () => void;
 const scopedStores = new Set<ClearFn>();

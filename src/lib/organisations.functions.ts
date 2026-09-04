@@ -63,6 +63,12 @@ export interface TeamSnapshot {
 type Ctx = { supabase: any; userId: string };
 
 async function loadMembership(context: Ctx) {
+  try {
+    const { ensureOrganisationForUser } = await import("@/lib/organisation-provision.server");
+    await ensureOrganisationForUser(context.userId);
+  } catch {
+    // Best-effort: an existing member never needs this.
+  }
   const { data, error } = await context.supabase
     .from("organisation_members")
     .select("org_id, role, organisations(id, name, plan, smart_ingest_addon)")
