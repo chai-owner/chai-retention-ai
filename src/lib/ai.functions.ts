@@ -427,10 +427,23 @@ Return ONLY a JSON array (no prose, no markdown, no code fences) of 6-8 objects 
 Your previous answer could not be parsed. Reply with the raw JSON array only — start with "[" and end with "]".`,
         context: "",
       });
-      if (!retry.ok) return { metrics: [] };
+      if (!retry.ok) {
+        console.error(
+          `[recommendMetrics] retry call failed (industry="${industry}"): ${retry.message ?? "no message"}`,
+        );
+        return { metrics: [] };
+      }
       metrics = extractMetrics(retry.text);
+      if (metrics.length === 0) {
+        console.error(
+          `[recommendMetrics] retry response also unparseable (industry="${industry}"). Raw text (first 800 chars): ${retry.text.slice(0, 800)}`,
+        );
+      }
     }
 
+    console.info(
+      `[recommendMetrics] generated ${metrics.length} metrics (industry="${industry}", businessModel="${model}")`,
+    );
     return { metrics };
   });
 
