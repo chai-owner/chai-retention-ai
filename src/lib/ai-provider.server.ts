@@ -238,12 +238,13 @@ class LovableAiProvider implements AiProvider {
             });
       await logAiCall({
         operation: req.operation,
-        model,
-        provider: this.name,
+        model: credentials.vendor === "anthropic" ? ANTHROPIC_FALLBACK_MODEL : model,
+        provider: credentials.vendor,
         usage: result.usage,
         success: true,
         caller,
       });
+
       return { text: result.text, usage: result.usage, ok: true };
     } catch (error) {
       const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
