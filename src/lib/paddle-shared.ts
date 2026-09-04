@@ -9,21 +9,21 @@ import { ORG_PLANS, type BillingPeriod, type OrgPlan } from "@/lib/organisations
  */
 export const PLAN_PRICE_IDS: Record<OrgPlan, Record<BillingPeriod, string>> = {
   core: {
-    monthly: "pri_01m1mfyzkywd2m6mnyf2fwxqak",
-    annual: "pri_01m1mfyzxt145xekz65aq52jz",
+    monthly: "pri_01m1mfs0jpqzctfeejjb2qbsmy",
+    annual: "pri_01m1mfs0vz3n2spp99n0825j0r",
   },
   standard: {
-    monthly: "pri_01m1mfyzbwj5njqsjkjdrjgcbm",
-    annual: "pri_01m1mfyz7n6kwmad4zd7yztjpf",
+    monthly: "pri_01m1mfs1b0rpm8s5eprn0sggcf",
+    annual: "pri_01m1mfs1vz4fjt2cg5j4nb6mkw",
   },
   enterprise: {
-    monthly: "pri_01m1mfyz3et140f8zkpnrvd89p",
-    annual: "pri_01m1mfyzwbdvr2m8rnxayghnbt",
+    monthly: "pri_01m1mfs2cavrew542dscww9396",
+    annual: "pri_01m1mfs2mmq3sj64ykbbhxca3x",
   },
 };
 
 /** Smart Ingest ("Data Drop") add-on price. Monthly billing only. */
-export const ADDON_PRICE_ID = "pri_01m1mfyzr6j1jy8bxw21d83s3r";
+export const ADDON_PRICE_ID = "pri_01m1mfs32g8k29pf1q2scjtyh0";
 export const ADDON_PRODUCT_ID = "smart_ingest_addon";
 
 /** Product external ID -> ChAi plan slug. */
