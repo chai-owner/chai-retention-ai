@@ -12,6 +12,8 @@ import {
 } from "@/lib/impersonation-policy";
 import {
   PLAN_PRICING,
+  coercePlan,
+
   type BillingPeriod,
   type OrgPlan,
 } from "@/lib/organisations";
