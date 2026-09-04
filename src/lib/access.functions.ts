@@ -27,6 +27,14 @@ export const getAccessState = createServerFn({ method: "GET" })
   .middleware([requireConnectedAuth])
   .handler(async ({ context }): Promise<AccessState> => {
     const ctx = context as unknown as Ctx;
+    // A brand-new account may not have an organisation yet; create it (with its
+    // trial window) so trial state and limits are always defined.
+    try {
+      const { ensureOrganisationForUser } = await import("@/lib/organisation-provision.server");
+      await ensureOrganisationForUser(ctx.userId);
+    } catch {
+      // Provisioning is best-effort — never block the access check.
+    }
     const { data } = await ctx.supabase
       .from("organisation_members")
       .select("role, locked, organisations(name, plan, trial_ends_at)")
