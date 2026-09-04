@@ -20,6 +20,8 @@ export function usePlanUsage(enabled = true) {
 export function useRefreshPlan() {
   const queryClient = useQueryClient();
   return () => {
+    // Covers plan usage, team and the trial/access snapshot the paywall reads.
+    void queryClient.invalidateQueries({ queryKey: ["organisation"] });
     void queryClient.invalidateQueries({ queryKey: PLAN_USAGE_QUERY_KEY });
     void queryClient.invalidateQueries({ queryKey: TEAM_QUERY_KEY });
   };
