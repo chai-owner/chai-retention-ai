@@ -96,18 +96,47 @@ export const listCustomers = createServerFn({ method: "GET" })
       costs.set(row.user_id, (costs.get(row.user_id) ?? 0) + cost);
     }
 
-    return (profiles ?? []).map((p) => ({
-      id: p.id,
-      fullName: p.full_name ?? "",
-      email: p.email ?? "",
-      company: p.company ?? "",
-      onboarded: p.onboarded ?? false,
-      unlocked: p.unlocked ?? false,
-      bookedAt: p.booked_at ?? null,
-      createdAt: p.created_at,
-      totalCostUsd: costs.get(p.id) ?? 0,
-    }));
+    const { data: orgs } = await supabaseAdmin
+      .from("organisations")
+      .select("owner_id, plan, trial_ends_at");
+    const orgByOwner = new Map<string, { plan: string; trialEndsAt: string | null }>();
+    for (const o of orgs ?? []) {
+      if (!orgByOwner.has(o.owner_id)) {
+        orgByOwner.set(o.owner_id, { plan: o.plan, trialEndsAt: o.trial_ends_at ?? null });
+      }
+    }
+
+    const rows = profiles ?? [];
+    const counts = new Map<string, number>();
+    await Promise.all(
+      rows.map(async (p) => {
+        const { count } = await supabaseAdmin
+          .from("ingested_customers")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", p.id);
+        counts.set(p.id, count ?? 0);
+      }),
+    );
+
+    return rows.map((p) => {
+      const org = orgByOwner.get(p.id);
+      return {
+        id: p.id,
+        fullName: p.full_name ?? "",
+        email: p.email ?? "",
+        company: p.company ?? "",
+        onboarded: p.onboarded ?? false,
+        unlocked: p.unlocked ?? false,
+        bookedAt: p.booked_at ?? null,
+        createdAt: p.created_at,
+        totalCostUsd: costs.get(p.id) ?? 0,
+        plan: org ? coercePlan(org.plan) : null,
+        trialEndsAt: org?.trialEndsAt ?? null,
+        customerCount: counts.get(p.id) ?? 0,
+      };
+    });
   });
+
 
 export interface DemoLead {
   id: string;
