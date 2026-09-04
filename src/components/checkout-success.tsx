@@ -3,7 +3,7 @@
 // success modal that auto-dismisses.
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
 
 import { PLAN_LABELS } from "@/lib/organisations";
@@ -13,9 +13,7 @@ const AUTO_DISMISS_MS = 8000;
 
 export function CheckoutSuccessModal({ enabled = true }: { enabled?: boolean }) {
   const search = useRouterState({ select: (s) => s.location.search as Record<string, unknown> });
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { data } = usePlanUsage(enabled && open);
 
@@ -37,7 +35,9 @@ export function CheckoutSuccessModal({ enabled = true }: { enabled?: boolean }) 
   const dismiss = () => {
     setOpen(false);
     void queryClient.invalidateQueries({ queryKey: ["organisation"] });
-    void navigate({ to: pathname === "/app/today" ? "/app/today" : pathname, search: {} as never, replace: true });
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
   };
 
   useEffect(() => {
