@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, isRedirect } from "@tanstack/react-router";
 import { getProfile } from "@/lib/profile.functions";
 
 export const Route = createFileRoute("/_authenticated/app/")({
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/app/")({
         throw redirect({ to: "/app/welcome" });
       }
     } catch (err) {
-      if (err && typeof err === "object" && "to" in err) throw err;
+      if (isRedirect(err)) throw err;
       // Profile unavailable (demo visitor, offline): fall through to Today.
     }
     throw redirect({ to: "/app/today" });

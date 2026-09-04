@@ -5,6 +5,8 @@ import { Sun, AlertTriangle, ActivityIcon, ArrowRight, RefreshCw, Sparkles } fro
 import { churnConfidenceLabel, churnProbabilityPhrase } from "@/lib/churn-probability";
 import { getTodayBrief } from "@/lib/daily-brief.functions";
 import { useAuthUserId } from "@/lib/use-auth-state";
+import { useProfile } from "@/lib/profile-store";
+import { useDemoMode } from "@/lib/use-demo-mode";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -50,11 +52,14 @@ const riskLabels: Record<string, string> = {
 
 function TodayPage() {
   const userId = useAuthUserId();
+  const demo = useDemoMode();
+  const profile = useProfile();
+  const lockedOut = !demo && profile != null && profile.unlocked !== true;
   const fetchBrief = useServerFn(getTodayBrief);
   const { data, isLoading, isFetching, refetch, error } = useQuery({
     queryKey: ["today-brief", userId],
     queryFn: () => fetchBrief({ data: undefined }),
-    enabled: !!userId,
+    enabled: !!userId && !lockedOut,
     staleTime: 5 * 60 * 1000,
   });
 
