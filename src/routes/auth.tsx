@@ -41,6 +41,9 @@ function AuthPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
   const dest = stripDemo(redirectTo ?? "/app/today");
+  // A brand-new account must always land in onboarding first; the app pages
+  // are only meaningful once the business profile exists.
+  const signupDest = "/onboarding";
   const [mode, setMode] = useState<"login" | "register" | "forgot">(
     initialMode === "signup" ? "register" : "login",
   );
@@ -67,7 +70,7 @@ function AuthPage() {
     setLoading(true);
 
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + dest,
+      redirect_uri: window.location.origin + (mode === "register" ? signupDest : dest),
     });
     if (result.error) {
       toast.error("Couldn't sign in with Google. Please try again.");
@@ -104,7 +107,7 @@ function AuthPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}${dest}`,
+          emailRedirectTo: `${window.location.origin}${signupDest}`,
           data: {
             full_name: name.trim(),
             terms_accepted_at: new Date().toISOString(),
