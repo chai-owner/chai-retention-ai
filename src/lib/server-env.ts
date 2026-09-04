@@ -9,6 +9,7 @@ export type ServerEnvSource =
   | "globalThis.__env__"
   | "globalThis.env"
   | "Deno.env"
+  | "cloudflare:workers"
   | "missing";
 
 export interface ServerEnvLookup {
@@ -22,7 +23,9 @@ const CHECKED_SOURCES = [
   "globalThis.__env__",
   "globalThis.env",
   "Deno.env",
+  "cloudflare:workers",
 ] as const;
+
 
 export function inspectServerEnv(name: string): ServerEnvLookup {
   const g = globalThis as unknown as Record<string, unknown>;
