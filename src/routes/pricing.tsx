@@ -365,6 +365,7 @@ function PricingPage() {
           <div className="grid gap-6 lg:grid-cols-3">
             {tiers.map((tier, i) => {
               const price = PLAN_PRICING[tier.plan];
+              const founder = !!promoCode && tier.plan === FOUNDER_PLAN && !annual;
               return (
                 <Reveal key={tier.plan} delay={i * 90}>
                   <div
@@ -372,14 +373,21 @@ function PricingPage() {
                       tier.highlight ? "ring-2 ring-primary" : "ring-1 ring-border/70"
                     }`}
                   >
-                    {tier.highlight && (
+                    {founder ? (
+                      <div className="flex justify-center">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-success">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Founder Plan
+                        </span>
+                      </div>
+                    ) : tier.highlight ? (
                       <div className="flex justify-center">
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[color:var(--accent-foreground)]">
                           <Sparkles className="h-3.5 w-3.5 text-[color:var(--gold)]" />
                           Most Popular
                         </span>
                       </div>
-                    )}
+                    ) : null}
 
                     <div className="mt-4 text-center">
                       <h2 className="text-2xl font-semibold tracking-tight">
@@ -449,7 +457,13 @@ function PricingPage() {
               );
             })}
           </div>
-          <p className="mt-8 text-center text-sm text-muted-foreground">
+          <PromoCodeField
+            className="mt-8"
+            appliedCode={promoCode}
+            onApply={setPromoCode}
+            initialCode={initialPromo}
+          />
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Annual billing saves 10% and is charged as a single yearly payment.
           </p>
         </div>
