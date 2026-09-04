@@ -13,6 +13,7 @@ import { logAiCall, resolveAiCaller, type AiCaller, type AiUsage } from "./ai-us
 import {
   aiHourlyLimitForPlan,
   evaluateRateLimit,
+  isRateLimitExempt,
   rateLimitMessage,
   type RateLimitDecision,
 } from "./ai-rate-limit";
