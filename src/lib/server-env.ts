@@ -89,7 +89,9 @@ let cloudflareEnv: Record<string, string | undefined> | null = null;
 export async function loadCloudflareEnv(): Promise<Record<string, string | undefined> | null> {
   if (cloudflareEnv) return cloudflareEnv;
   try {
-    const mod = (await import(/* @vite-ignore */ "cloudflare:workers")) as {
+    // Built from a variable so bundlers don't try to resolve it at build time.
+    const specifier = ["cloudflare", "workers"].join(":");
+    const mod = (await import(/* @vite-ignore */ specifier)) as {
       env?: Record<string, string | undefined>;
     };
     cloudflareEnv = mod?.env ?? null;
