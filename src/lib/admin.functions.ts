@@ -12,6 +12,8 @@ import {
 } from "@/lib/impersonation-policy";
 import {
   PLAN_PRICING,
+  coercePlan,
+
   type BillingPeriod,
   type OrgPlan,
 } from "@/lib/organisations";
@@ -55,7 +57,14 @@ export interface AdminCustomer {
   bookedAt: string | null;
   createdAt: string;
   totalCostUsd: number;
+  /** Plan of the organisation this user owns, when they have one. */
+  plan: OrgPlan | null;
+  /** Trial end date of the owned organisation, when still on trial. */
+  trialEndsAt: string | null;
+  /** How many customer records they have ingested. */
+  customerCount: number;
 }
+
 
 // USD per 1M tokens. Extend as we add models; unknown models fall back to DEFAULT.
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
@@ -89,18 +98,47 @@ export const listCustomers = createServerFn({ method: "GET" })
       costs.set(row.user_id, (costs.get(row.user_id) ?? 0) + cost);
     }
 
-    return (profiles ?? []).map((p) => ({
-      id: p.id,
-      fullName: p.full_name ?? "",
-      email: p.email ?? "",
-      company: p.company ?? "",
-      onboarded: p.onboarded ?? false,
-      unlocked: p.unlocked ?? false,
-      bookedAt: p.booked_at ?? null,
-      createdAt: p.created_at,
-      totalCostUsd: costs.get(p.id) ?? 0,
-    }));
+    const { data: orgs } = await supabaseAdmin
+      .from("organisations")
+      .select("owner_id, plan, trial_ends_at");
+    const orgByOwner = new Map<string, { plan: string; trialEndsAt: string | null }>();
+    for (const o of orgs ?? []) {
+      if (!orgByOwner.has(o.owner_id)) {
+        orgByOwner.set(o.owner_id, { plan: o.plan, trialEndsAt: o.trial_ends_at ?? null });
+      }
+    }
+
+    const rows = profiles ?? [];
+    const counts = new Map<string, number>();
+    await Promise.all(
+      rows.map(async (p) => {
+        const { count } = await supabaseAdmin
+          .from("ingested_customers")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", p.id);
+        counts.set(p.id, count ?? 0);
+      }),
+    );
+
+    return rows.map((p) => {
+      const org = orgByOwner.get(p.id);
+      return {
+        id: p.id,
+        fullName: p.full_name ?? "",
+        email: p.email ?? "",
+        company: p.company ?? "",
+        onboarded: p.onboarded ?? false,
+        unlocked: p.unlocked ?? false,
+        bookedAt: p.booked_at ?? null,
+        createdAt: p.created_at,
+        totalCostUsd: costs.get(p.id) ?? 0,
+        plan: org ? coercePlan(org.plan) : null,
+        trialEndsAt: org?.trialEndsAt ?? null,
+        customerCount: counts.get(p.id) ?? 0,
+      };
+    });
   });
+
 
 export interface DemoLead {
   id: string;
@@ -341,6 +379,62 @@ export const resetAccount = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+// Permanently removes an empty account: their data, organisation, profile and
+// the auth login itself. Only allowed for accounts that never finished
+// onboarding and hold no customer records — enforced here, not just in the UI.
+export const deleteAccount = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ userId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.userId === context.userId) {
+      throw new Error("You cannot delete your own account");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("onboarded")
+      .eq("id", data.userId)
+      .maybeSingle();
+    if (profile?.onboarded) {
+      throw new Error("Only empty accounts that never finished onboarding can be deleted");
+    }
+    const { count } = await supabaseAdmin
+      .from("ingested_customers")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", data.userId);
+    if ((count ?? 0) > 0) {
+      throw new Error("This account holds customer data and cannot be deleted");
+    }
+
+    for (const table of USER_DATA_TABLES) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabaseAdmin.from(table as any) as any)
+        .delete()
+        .eq("user_id", data.userId);
+      if (error) throw new Error(`${table}: ${error.message}`);
+    }
+
+    await supabaseAdmin.from("customer_scores").delete().eq("user_id", data.userId);
+    await supabaseAdmin.from("subscriptions").delete().eq("user_id", data.userId);
+    await supabaseAdmin.from("ai_usage_log").delete().eq("user_id", data.userId);
+    // Organisations first: the owner-protection trigger only allows the owner's
+    // membership row to go once the parent organisation is gone.
+    await supabaseAdmin.from("organisations").delete().eq("owner_id", data.userId);
+    await supabaseAdmin.from("organisation_members").delete().eq("user_id", data.userId);
+    await supabaseAdmin.from("profiles").delete().eq("id", data.userId);
+
+    const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (authErr) throw authErr;
+
+    return { ok: true };
+  });
+
+
 
 // ---------------------------------------------------------------------------
 // Billing admin: overview of every customer's Paddle subscription plus the
