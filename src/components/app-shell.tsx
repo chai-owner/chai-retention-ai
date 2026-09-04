@@ -42,6 +42,7 @@ import { useOrgRole } from "@/lib/use-team";
 import { canManageMembers } from "@/lib/organisations";
 import { CustomerLimitBanner, PlanLimitNoticeDialog } from "@/components/plan-limits";
 import { AccessGate, TrialBadge, TrialGraceBanner } from "@/components/trial-status";
+import { CheckoutSuccessModal } from "@/components/checkout-success";
 
 
 const nav = [
@@ -244,6 +245,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
+      <CheckoutSuccessModal enabled={!demo && signedIn === true} />
       <PlanLimitNoticeDialog enabled={!demo && signedIn === true} />
       <AskChAi />
     </div>
