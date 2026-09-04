@@ -9,3 +9,6 @@
 - [x] Apply shared UI radius, flat-card, and semantic icon-chip system
 - [x] Align Risk Center, Insights, and Settings with shared primitives
 - [x] Verify palette discipline, typecheck, build, tests, and responsive pages
+- [x] Add a safe authenticated live AI configuration diagnostic
+- [x] Verify fresh-signup onboarding auth and metric-generation wiring
+- [x] Run diagnostic tests, full tests, and the production build

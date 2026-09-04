@@ -1,7 +1,29 @@
+import { useEffect } from "react";
 import { createFileRoute, Outlet, redirect, isRedirect } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfile } from "@/lib/profile.functions";
 import { isDemoValue } from "@/lib/use-demo-mode";
+import { checkAiConfig, type AiConfigCheckResult } from "@/lib/ai.functions";
+
+declare global {
+  interface Window {
+    checkAiConfig?: () => Promise<AiConfigCheckResult>;
+  }
+}
+
+function AuthenticatedLayout() {
+  const runAiConfigCheck = useServerFn(checkAiConfig);
+
+  useEffect(() => {
+    window.checkAiConfig = () => runAiConfigCheck();
+    return () => {
+      delete window.checkAiConfig;
+    };
+  }, [runAiConfigCheck]);
+
+  return <Outlet />;
+}
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -64,5 +86,5 @@ export const Route = createFileRoute("/_authenticated")({
 
     return { user };
   },
-  component: () => <Outlet />,
+  component: AuthenticatedLayout,
 });

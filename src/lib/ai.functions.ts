@@ -2,8 +2,59 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getAiProvider, DEFAULT_AI_MODEL } from "./ai-provider.server";
 import { requireConnectedAuth } from "@/lib/connected-auth-middleware";
+import { inspectServerEnv } from "@/lib/server-env";
 
 const MODEL = DEFAULT_AI_MODEL;
+
+export interface AiConfigCheckResult {
+  variableName: "LOVABLE_API_KEY";
+  keyExists: boolean;
+  keyFingerprint: string | null;
+  source: string;
+  checkedSources: readonly string[];
+  authenticated: true;
+  testCallSucceeded: boolean;
+  testCallMessage: string;
+}
+
+async function fingerprintSecret(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .slice(0, 4)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Authenticated production diagnostic. It deliberately returns a one-way
+ * fingerprint rather than any reusable characters from the secret.
+ */
+export const checkAiConfig = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .handler(async (): Promise<AiConfigCheckResult> => {
+    const lookup = inspectServerEnv("LOVABLE_API_KEY");
+    console.info(
+      `[ai-config] variable=LOVABLE_API_KEY present=${Boolean(lookup.value)} source=${lookup.source} checked=${lookup.checkedSources.join(",")}`,
+    );
+
+    const test = await getAiProvider().generateText({
+      operation: "checkAiConfig",
+      model: MODEL,
+      prompt: 'Reply with exactly: "ok"',
+    });
+
+    return {
+      variableName: "LOVABLE_API_KEY",
+      keyExists: Boolean(lookup.value),
+      keyFingerprint: lookup.value ? await fingerprintSecret(lookup.value) : null,
+      source: lookup.source,
+      checkedSources: lookup.checkedSources,
+      authenticated: true,
+      testCallSucceeded: test.ok,
+      testCallMessage: test.ok ? "AI test call succeeded." : (test.message ?? "AI test call failed."),
+    };
+  });
 
 const FALLBACK_REPLY =
   "I couldn't reach the analysis service just now. In the meantime, check the Risk Center for your highest-risk accounts and the Data Quality page for gaps worth filling.";
