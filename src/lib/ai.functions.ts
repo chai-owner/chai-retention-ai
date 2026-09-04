@@ -404,8 +404,18 @@ Return ONLY a JSON array (no prose, no markdown, no code fences) of 6-8 objects 
       instructions: prompt,
       context: "",
     });
-    if (!first.ok) return { metrics: [] };
+    if (!first.ok) {
+      console.error(
+        `[recommendMetrics] provider call failed (industry="${industry}", model="${model}"): ${first.message ?? "no message"}`,
+      );
+      return { metrics: [] };
+    }
     let metrics = extractMetrics(first.text);
+    if (metrics.length === 0) {
+      console.error(
+        `[recommendMetrics] could not parse metrics from first response (industry="${industry}"). Raw text (first 800 chars): ${first.text.slice(0, 800)}`,
+      );
+    }
 
     // One strict retry before we give up and show the generic fallback set.
     if (metrics.length === 0) {
