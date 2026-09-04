@@ -138,10 +138,17 @@ function limitLabel(value: number | null) {
 export function TrialExpiredPaywall() {
   const [period, setPeriod] = useState<BillingPeriod>("monthly");
   const [pending, setPending] = useState<OrgPlan | null>(null);
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [initialPromo, setInitialPromo] = useState<string | null>(null);
   const changePlan = useServerFn(requestPlanChange);
   const { openCheckout, environment } = usePaddleCheckout();
   const userId = useAuthUserId();
   const refresh = useRefreshPlan();
+
+  // A Founder invite link stored the code before sign-up.
+  useEffect(() => {
+    setInitialPromo(readStoredPromoCode());
+  }, []);
 
   const startCheckout = async (plan: OrgPlan) => {
     if (!userId) throw new Error("Please sign in again to choose a plan.");
@@ -151,6 +158,7 @@ export function TrialExpiredPaywall() {
       period,
       userId,
       customerEmail: data.session?.user.email ?? undefined,
+      discountCode: plan === FOUNDER_PLAN ? promoCode : null,
     });
   };
 
