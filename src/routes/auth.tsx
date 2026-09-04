@@ -40,7 +40,7 @@ const inputCls =
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
-  const dest = stripDemo(redirectTo ?? "/app/today");
+  const dest = stripDemo(redirectTo ?? "/app");
   // A brand-new account must always land in onboarding first; the app pages
   // are only meaningful once the business profile exists.
   const signupDest = "/onboarding";
@@ -59,7 +59,7 @@ function AuthPage() {
 
   function goToDest() {
     if (redirectTo) navigate({ href: stripDemo(redirectTo) });
-    else navigate({ to: "/app/today", search: { demo: false } });
+    else navigate({ to: "/app", search: { demo: false } });
   }
 
   async function handleGoogle() {
