@@ -71,7 +71,32 @@ function TodayPage() {
       })
     : null;
 
+  if (lockedOut) {
+    return (
+      <div className="mx-auto max-w-2xl p-6">
+        <div className="rounded-2xl border border-border bg-card p-8 text-center">
+          <p className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+            <Sun className="h-4 w-4" />
+            {greeting()}
+          </p>
+          <h1 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+            Your full dashboard will be ready after your onboarding call.
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">Book yours below.</p>
+          <Link
+            to="/app/welcome"
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Book your onboarding session
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
+
     <div className="mx-auto max-w-4xl space-y-6 p-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
