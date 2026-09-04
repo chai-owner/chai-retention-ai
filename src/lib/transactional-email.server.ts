@@ -6,10 +6,9 @@ const SITE_NAME = "chai-retention-ai";
 const SENDER_DOMAIN = "notify.askchai.tech";
 const FROM_DOMAIN = "askchai.tech";
 
-type AdminClient = {
-  from: (table: string) => any;
-  rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: unknown }>;
-};
+// Loosely typed on purpose: this helper is shared by cron routes and server
+// functions, which hold differently-typed Supabase clients.
+type AdminClient = any;
 
 export interface QueueEmailInput {
   to: string;
