@@ -75,6 +75,7 @@ function Onboarding() {
   const [recommendedWeights, setRecommendedWeights] = useState<Record<string, number>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState(false);
+  const [metricsErrorDetail, setMetricsErrorDetail] = useState<string>("");
   const metricsGenerated = useRef(false);
   const [segments, setSegments] = useState<Segment[]>([
     { name: "", min: "", max: "" },
@@ -90,8 +91,9 @@ function Onboarding() {
   async function generateMetricRecommendations() {
     setMetricsLoading(true);
     setMetricsError(false);
+    setMetricsErrorDetail("");
     try {
-      const { metrics } = await getRecommendedMetrics({
+      const { metrics, error } = await getRecommendedMetrics({
         data: {
           profile: {
             company: form.company,
@@ -111,7 +113,9 @@ function Onboarding() {
         },
       });
       if (metrics.length === 0) {
+        console.error("[onboarding] metric generation returned no metrics:", error);
         setMetricsError(true);
+        setMetricsErrorDetail(error ?? "No metrics were returned.");
         return;
       }
       const weights: Record<string, number> = {};
@@ -120,8 +124,12 @@ function Onboarding() {
       setRecommendedWeights(weights);
       setMetricWeights(weights);
       metricsGenerated.current = true;
-    } catch {
+    } catch (err) {
+      console.error("[onboarding] metric generation threw:", err);
       setMetricsError(true);
+      setMetricsErrorDetail(
+        err instanceof Error ? err.message : typeof err === "string" ? err : "Unknown error",
+      );
     } finally {
       setMetricsLoading(false);
     }
@@ -606,9 +614,16 @@ function Onboarding() {
                     <>
                       {metricsError && (
                         <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-2">
-                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                            Couldn't generate tailored metrics — showing a sensible default set you can adjust.
+                          <span className="flex items-start gap-2">
+                            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                              Couldn't generate tailored metrics — showing a sensible default set you can adjust.
+                              {metricsErrorDetail && (
+                                <span className="mt-1 block break-words font-mono text-[11px] text-destructive">
+                                  {metricsErrorDetail}
+                                </span>
+                              )}
+                            </span>
                           </span>
                           <button
                             type="button"
