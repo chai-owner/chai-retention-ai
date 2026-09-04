@@ -9,7 +9,7 @@
 //   * wrapped in a graceful fallback so failures never throw at the user
 import { generateText } from "ai";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import { readServerEnv } from "./server-env";
+import { inspectServerEnv } from "./server-env";
 import { logAiCall, resolveAiCaller, type AiCaller, type AiUsage } from "./ai-usage.server";
 import {
   aiHourlyLimitForPlan,
@@ -122,8 +122,12 @@ class LovableAiProvider implements AiProvider {
       return { text: "", ok: false, message };
     }
 
-    const key = readServerEnv("LOVABLE_API_KEY");
+    const keyLookup = inspectServerEnv("LOVABLE_API_KEY");
+    const key = keyLookup.value;
     if (!key) {
+      console.error(
+        `[ai-config] variable=LOVABLE_API_KEY present=false source=${keyLookup.source} checked=${keyLookup.checkedSources.join(",")}`,
+      );
       console.error(
         `[ai] ${req.operation} failed: LOVABLE_API_KEY is not set (model ${model}, user ${caller?.userId ?? "anonymous"})`,
       );

@@ -36,6 +36,7 @@ describe("ai hourly rate limits", () => {
 describe("rate limit exemptions", () => {
   it("exempts the onboarding metric operations", () => {
     expect(isRateLimitExempt("recommendMetrics")).toBe(true);
+    expect(isRateLimitExempt("checkAiConfig")).toBe(true);
     expect(isRateLimitExempt("recommendMetricWeights")).toBe(true);
   });
 

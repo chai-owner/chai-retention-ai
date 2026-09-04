@@ -22,6 +22,7 @@ export const AI_HOURLY_LIMITS: Record<string, number> = {
 export const RATE_LIMIT_EXEMPT_OPERATIONS = new Set([
   "recommendMetrics",
   "recommendMetricWeights",
+  "checkAiConfig",
 ]);
 
 export function isRateLimitExempt(operation: string): boolean {
