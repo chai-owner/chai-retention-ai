@@ -397,8 +397,19 @@ function PricingPage() {
 
                       <div key={annual ? "y" : "m"} className="mt-6 animate-[fade-in_0.35s_ease-out]">
                         <div className="flex items-end justify-center gap-2">
+                          {founder ? (
+                            <span className="pb-2 text-2xl font-medium text-muted-foreground line-through">
+                              {money(price.monthly)}
+                            </span>
+                          ) : null}
                           <span className="text-5xl font-semibold tracking-[-0.04em]">
-                            {money(annual ? price.annualMonthly : price.monthly)}
+                            {money(
+                              founder
+                                ? FOUNDER_MONTHLY_PRICE
+                                : annual
+                                  ? price.annualMonthly
+                                  : price.monthly,
+                            )}
                           </span>
                           <span className="pb-2 text-base font-medium text-muted-foreground">/mo</span>
                         </div>
@@ -414,6 +425,7 @@ function PricingPage() {
                           <p className="mt-2 text-sm text-muted-foreground">billed monthly</p>
                         )}
                       </div>
+
 
                       <button
                         type="button"
