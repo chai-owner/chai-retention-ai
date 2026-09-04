@@ -422,8 +422,10 @@ export const deleteAccount = createServerFn({ method: "POST" })
     await supabaseAdmin.from("customer_scores").delete().eq("user_id", data.userId);
     await supabaseAdmin.from("subscriptions").delete().eq("user_id", data.userId);
     await supabaseAdmin.from("ai_usage_log").delete().eq("user_id", data.userId);
-    await supabaseAdmin.from("organisation_members").delete().eq("user_id", data.userId);
+    // Organisations first: the owner-protection trigger only allows the owner's
+    // membership row to go once the parent organisation is gone.
     await supabaseAdmin.from("organisations").delete().eq("owner_id", data.userId);
+    await supabaseAdmin.from("organisation_members").delete().eq("user_id", data.userId);
     await supabaseAdmin.from("profiles").delete().eq("id", data.userId);
 
     const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
