@@ -1,10 +1,30 @@
 // Trial countdown badge, grace-period banner, expired paywall and the
 // locked-seat notice. All read one shared access snapshot.
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Lock, Clock, AlertTriangle } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { Lock, Clock, AlertTriangle, Check, Loader2 } from "lucide-react";
 
 import { useAccessState } from "@/lib/use-access-state";
 import { trialBadgeLabel } from "@/lib/trials";
+import {
+  ORG_PLANS,
+  PLAN_CUSTOMERS,
+  PLAN_LABELS,
+  PLAN_PRICING,
+  PLAN_SEATS,
+  type BillingPeriod,
+  type OrgPlan,
+} from "@/lib/organisations";
+import { requestPlanChange } from "@/utils/payments.functions";
+import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
+import { useAuthUserId } from "@/lib/use-auth-state";
+import { supabase } from "@/integrations/supabase/client";
+import { useRefreshPlan } from "@/lib/use-plan-usage";
+import { cn } from "@/lib/utils";
+
 
 /** Small countdown chip for the sidebar / header. */
 export function TrialBadge({ enabled = true }: { enabled?: boolean }) {
