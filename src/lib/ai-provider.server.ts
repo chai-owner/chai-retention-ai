@@ -123,6 +123,9 @@ class LovableAiProvider implements AiProvider {
 
     const key = process.env.LOVABLE_API_KEY;
     if (!key) {
+      console.error(
+        `[ai] ${req.operation} failed: LOVABLE_API_KEY is not set (model ${model}, user ${caller?.userId ?? "anonymous"})`,
+      );
       await logAiCall({
         operation: req.operation,
         model,
