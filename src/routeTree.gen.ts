@@ -38,6 +38,7 @@ import { Route as AuthenticatedAppTodayRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppTransactionsRouteImport } from './routes/_authenticated.app.transactions'
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated.settings.account'
+import { Route as OauthSalesforceReturnRouteImport } from './routes/oauth/salesforce/return'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
 import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
@@ -206,6 +207,11 @@ const AuthenticatedSettingsAccountRoute =
     path: '/settings/account',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const OauthSalesforceReturnRoute = OauthSalesforceReturnRouteImport.update({
+  id: '/oauth/salesforce/return',
+  path: '/oauth/salesforce/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppCustomersIndexRoute =
   AuthenticatedAppCustomersIndexRouteImport.update({
     id: '/',
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
@@ -364,6 +371,7 @@ export interface FileRoutesByTo {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
@@ -411,6 +419,7 @@ export interface FileRoutesById {
   '/_authenticated/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
@@ -458,6 +467,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/app/welcome'
     | '/settings/account'
+    | '/oauth/salesforce/return'
     | '/app/'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
@@ -501,6 +511,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/app/welcome'
     | '/settings/account'
+    | '/oauth/salesforce/return'
     | '/app'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
@@ -547,6 +558,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/transactions'
     | '/_authenticated/app/welcome'
     | '/_authenticated/settings/account'
+    | '/oauth/salesforce/return'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
     | '/api/public/accounting/callback'
@@ -576,6 +588,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  OauthSalesforceReturnRoute: typeof OauthSalesforceReturnRoute
   ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
   ApiPublicHooksDailyScoreRoute: typeof ApiPublicHooksDailyScoreRoute
   ApiPublicHooksDailySyncRoute: typeof ApiPublicHooksDailySyncRoute
@@ -796,6 +809,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/oauth/salesforce/return': {
+      id: '/oauth/salesforce/return'
+      path: '/oauth/salesforce/return'
+      fullPath: '/oauth/salesforce/return'
+      preLoaderRoute: typeof OauthSalesforceReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/customers/': {
       id: '/_authenticated/app/customers/'
       path: '/'
@@ -988,6 +1008,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   InviteTokenRoute: InviteTokenRoute,
+  OauthSalesforceReturnRoute: OauthSalesforceReturnRoute,
   ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
   ApiPublicHooksDailyScoreRoute: ApiPublicHooksDailyScoreRoute,
   ApiPublicHooksDailySyncRoute: ApiPublicHooksDailySyncRoute,

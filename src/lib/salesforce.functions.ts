@@ -89,7 +89,7 @@ export const saveSalesforceConnection = createServerFn({ method: "POST" })
       );
     }
 
-    await saveConnectionKeyForUser(context.userId, CONNECTOR_ID, data.connectionAPIKey, {
+    await saveConnectionKeyForUser(context.userId, CONNECTOR_ID, connectionAPIKey, {
       org_name: orgName,
     });
     await ensureCrmSyncState(context.userId, "salesforce");
