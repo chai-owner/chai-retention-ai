@@ -182,7 +182,7 @@ function GenericCrmCard({ name, category, desc }: { name: string; category: stri
 
 type SfStatus =
   | { connected: false }
-  | { connected: true; orgName: string | null; connectedAt: string };
+  | { connected: true; orgName: string | null; instanceUrl?: string | null; connectedAt: string };
 
 /** Resolves with the one-time OAuth code posted by the /oauth/salesforce/return popup. */
 function waitForSalesforceOAuth(popup: Window): Promise<string | null> {
@@ -222,6 +222,7 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
   const [wizardOpen, setWizardOpen] = useState(false);
   const [status, setStatus] = useState<SfStatus | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [instanceUrl, setInstanceUrl] = useState("https://login.salesforce.com");
   const uploads = useUploads();
 
   const fetchStatus = useServerFn(getSalesforceStatus);
@@ -265,7 +266,7 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
     }
     try {
       const { authorizationUrl } = (await startConnect({
-        data: { targetOrigin: window.location.origin },
+        data: { targetOrigin: window.location.origin, instanceUrl },
       })) as { authorizationUrl: string };
       const completion = waitForSalesforceOAuth(popup);
       popup.location.href = authorizationUrl;
@@ -273,7 +274,9 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
       // Exchange the one-time code here (the popup has no app session in the
       // embedded preview). The connection key never reaches the browser.
       if (code) {
-        const saved = (await saveConnection({ data: { code } })) as { orgName: string | null };
+        const saved = (await saveConnection({ data: { code, instanceUrl } })) as {
+          orgName: string | null;
+        };
         toast.success("Salesforce connected", {
           description: saved.orgName ? `Linked to ${saved.orgName}.` : "You can now sync your data.",
         });
@@ -351,14 +354,36 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
           )}
         </>
       ) : (
-        <button
-          onClick={handleConnect}
-          disabled={connecting}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
-        >
-          {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
-          {connecting ? "Connecting…" : "Connect with OAuth"}
-        </button>
+        <>
+          <div className="mt-3 space-y-1">
+            <label
+              htmlFor="salesforce-instance-url"
+              className="text-[11px] font-medium text-foreground"
+            >
+              Instance URL
+            </label>
+            <input
+              id="salesforce-instance-url"
+              type="url"
+              value={instanceUrl}
+              onChange={(e) => setInstanceUrl(e.target.value)}
+              placeholder="https://login.salesforce.com"
+              className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-ring"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Find this in your Salesforce URL when logged in. Example:
+              https://yourorg.my.salesforce.com
+            </p>
+          </div>
+          <button
+            onClick={handleConnect}
+            disabled={connecting}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+          >
+            {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+            {connecting ? "Connecting…" : "Connect with OAuth"}
+          </button>
+        </>
       )}
 
       <CrmSyncWizard

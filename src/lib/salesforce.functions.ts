@@ -7,16 +7,40 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
 const CONNECTOR_ID = "salesforce";
 
+export const DEFAULT_SALESFORCE_INSTANCE_URL = "https://login.salesforce.com";
+
+/** Normalises a user-entered Salesforce instance/login URL to an https origin. */
+export function normaliseInstanceUrl(raw: string | undefined | null): string {
+  const trimmed = (raw ?? "").trim();
+  if (!trimmed) return DEFAULT_SALESFORCE_INSTANCE_URL;
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  const url = new URL(withScheme);
+  return `https://${url.hostname}`;
+}
+
 export const startSalesforceConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ targetOrigin: z.string().url() }).parse(input),
+    z
+      .object({
+        targetOrigin: z.string().url(),
+        instanceUrl: z.string().trim().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const clientAPIKey = process.env.SALESFORCE_APP_USER_CONNECTOR_CLIENT_API_KEY;
     if (!clientAPIKey) {
       throw new Error(
         "Salesforce App User Connector client isn't configured. A workspace admin needs to add it.",
+      );
+    }
+    let accountUrl: string;
+    try {
+      accountUrl = normaliseInstanceUrl(data.instanceUrl);
+    } catch {
+      throw new Error(
+        "That Salesforce instance URL doesn't look right. Example: https://yourorg.my.salesforce.com",
       );
     }
     const { authorizeAppUserOAuth } = await import(
@@ -33,14 +57,18 @@ export const startSalesforceConnect = createServerFn({ method: "POST" })
       clientAPIKey,
       returnUrl: new URL("/oauth/salesforce/return", data.targetOrigin).toString(),
       connectionAPIKey: connectionAPIKey ?? undefined,
+      credentialsConfiguration: { account_url: accountUrl },
     });
-    return { authorizationUrl };
+    return { authorizationUrl, instanceUrl: accountUrl };
   });
+
 
 export const saveSalesforceConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ code: z.string().min(1) }).parse(input),
+    z
+      .object({ code: z.string().min(1), instanceUrl: z.string().trim().optional() })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { saveConnectionKeyForUser } = await import("./app-user-connections.server");
@@ -89,11 +117,13 @@ export const saveSalesforceConnection = createServerFn({ method: "POST" })
       );
     }
 
+    const instanceUrl = normaliseInstanceUrl(data.instanceUrl);
     await saveConnectionKeyForUser(context.userId, CONNECTOR_ID, connectionAPIKey, {
       org_name: orgName,
+      instance_url: instanceUrl,
     });
     await ensureCrmSyncState(context.userId, "salesforce");
-    return { ok: true, orgName };
+    return { ok: true, orgName, instanceUrl };
   });
 
 
@@ -106,6 +136,8 @@ export const getSalesforceStatus = createServerFn({ method: "GET" })
     return {
       connected: true as const,
       orgName: (meta.metadata.org_name as string | null) ?? null,
+      instanceUrl:
+        (meta.metadata.instance_url as string | null) ?? DEFAULT_SALESFORCE_INSTANCE_URL,
       connectedAt: meta.connectedAt,
     };
   });
