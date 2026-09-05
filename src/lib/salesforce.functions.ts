@@ -66,7 +66,9 @@ export const startSalesforceConnect = createServerFn({ method: "POST" })
 export const saveSalesforceConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ code: z.string().min(1) }).parse(input),
+    z
+      .object({ code: z.string().min(1), instanceUrl: z.string().trim().optional() })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { saveConnectionKeyForUser } = await import("./app-user-connections.server");
