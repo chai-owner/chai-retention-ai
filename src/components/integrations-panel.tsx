@@ -222,6 +222,7 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
   const [wizardOpen, setWizardOpen] = useState(false);
   const [status, setStatus] = useState<SfStatus | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [instanceUrl, setInstanceUrl] = useState("https://login.salesforce.com");
   const uploads = useUploads();
 
   const fetchStatus = useServerFn(getSalesforceStatus);
