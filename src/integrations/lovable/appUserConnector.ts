@@ -24,6 +24,8 @@ export interface AppUserOAuthAuthorizeParams {
   appUserId: string;
   clientAPIKey: string;
   returnUrl: string;
+  /** Stored lovack_* key — pass on reconnect so the gateway can confirm ownership. Omit on first connect. */
+  connectionAPIKey?: string;
   credentialsConfiguration?: Record<string, unknown>;
   responseMode?: "redirect" | "web_message";
   webMessageTargetOrigin?: string;
