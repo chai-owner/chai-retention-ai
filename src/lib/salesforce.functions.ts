@@ -136,6 +136,8 @@ export const getSalesforceStatus = createServerFn({ method: "GET" })
     return {
       connected: true as const,
       orgName: (meta.metadata.org_name as string | null) ?? null,
+      instanceUrl:
+        (meta.metadata.instance_url as string | null) ?? DEFAULT_SALESFORCE_INSTANCE_URL,
       connectedAt: meta.connectedAt,
     };
   });
