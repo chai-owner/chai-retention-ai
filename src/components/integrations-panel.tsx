@@ -184,6 +184,40 @@ type SfStatus =
   | { connected: false }
   | { connected: true; orgName: string | null; connectedAt: string };
 
+/** Resolves with the one-time OAuth code posted by the /oauth/salesforce/return popup. */
+function waitForSalesforceOAuth(popup: Window): Promise<string | null> {
+  return new Promise<string | null>((resolve, reject) => {
+    let poll: number | undefined;
+    const cleanup = () => {
+      window.removeEventListener("message", onMessage);
+      if (poll !== undefined) window.clearInterval(poll);
+    };
+    const onMessage = (event: MessageEvent) => {
+      const type = event.data?.type;
+      if (
+        event.origin !== window.location.origin ||
+        event.source !== popup ||
+        event.data?.connectorId !== "salesforce" ||
+        (type !== "appUserConnectorOAuthComplete" && type !== "appUserConnectorOAuthFailed")
+      )
+        return;
+      cleanup();
+      if (type === "appUserConnectorOAuthComplete") {
+        resolve(typeof event.data?.code === "string" ? event.data.code : null);
+        return;
+      }
+      popup.close();
+      reject(new Error("Salesforce sign-in failed."));
+    };
+    window.addEventListener("message", onMessage);
+    poll = window.setInterval(() => {
+      if (!popup.closed) return;
+      cleanup();
+      reject(new Error("Sign-in window was closed before completion."));
+    }, 500);
+  });
+}
+
 function SalesforceCard({ name, category, desc }: { name: string; category: string; desc: string }) {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [status, setStatus] = useState<SfStatus | null>(null);
@@ -221,35 +255,34 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
 
   async function handleConnect() {
     setConnecting(true);
+    // Open the popup during the user gesture, then point it at Lovable's
+    // Salesforce OAuth URL once the server fn returns it.
+    const popup = window.open("", "lovable-oauth", "width=600,height=720");
+    if (!popup) {
+      setConnecting(false);
+      toast.error("Popup blocked", { description: "Allow popups and try again." });
+      return;
+    }
     try {
-      const result = await connectAppUser({
-        connectorId: "salesforce",
-        gatewayBaseUrl: GATEWAY_BASE_URL,
-        start: async (targetOrigin) => {
-          const r = (await startConnect({ data: { targetOrigin } })) as {
-            authorizationUrl: string;
-          };
-          return { authorizationUrl: r.authorizationUrl };
-        },
-      });
-      if (!result.success) {
-        if (result.error) toast.error("Couldn’t connect Salesforce", { description: result.error });
-        return;
-      }
-      if (!result.connectionAPIKey) {
-        toast.error("Salesforce offline access disabled", {
-          description: "Ask a workspace admin to enable offline access on the connector client.",
+      const { authorizationUrl } = (await startConnect({
+        data: { targetOrigin: window.location.origin },
+      })) as { authorizationUrl: string };
+      const completion = waitForSalesforceOAuth(popup);
+      popup.location.href = authorizationUrl;
+      const code = await completion;
+      // Exchange the one-time code here (the popup has no app session in the
+      // embedded preview). The connection key never reaches the browser.
+      if (code) {
+        const saved = (await saveConnection({ data: { code } })) as { orgName: string | null };
+        toast.success("Salesforce connected", {
+          description: saved.orgName ? `Linked to ${saved.orgName}.` : "You can now sync your data.",
         });
-        return;
+      } else {
+        toast.success("Salesforce connected", { description: "You can now sync your data." });
       }
-      const saved = (await saveConnection({
-        data: { connectionAPIKey: result.connectionAPIKey },
-      })) as { orgName: string | null };
-      toast.success("Salesforce connected", {
-        description: saved.orgName ? `Linked to ${saved.orgName}.` : "You can now sync your data.",
-      });
       await refresh();
     } catch (e) {
+      if (!popup.closed) popup.close();
       toast.error("Couldn’t connect Salesforce", {
         description: e instanceof Error ? e.message : "Please try again.",
       });

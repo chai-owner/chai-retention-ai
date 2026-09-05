@@ -22,14 +22,17 @@ export const startSalesforceConnect = createServerFn({ method: "POST" })
     const { authorizeAppUserOAuth } = await import(
       "@/integrations/lovable/appUserConnector"
     );
+    const { getConnectionKeyForUser } = await import("./app-user-connections.server");
+    // Reconnect: pass the stored lovack_* so the gateway can confirm ownership.
+    // First connect: null — omit the header.
+    const connectionAPIKey = await getConnectionKeyForUser(context.userId, CONNECTOR_ID);
     const { authorizationUrl } = await authorizeAppUserOAuth({
       gatewayBaseUrl: GATEWAY_BASE_URL,
       connectorId: CONNECTOR_ID,
       appUserId: context.userId,
       clientAPIKey,
-      returnUrl: data.targetOrigin,
-      responseMode: "web_message",
-      webMessageTargetOrigin: data.targetOrigin,
+      returnUrl: new URL("/oauth/salesforce/return", data.targetOrigin).toString(),
+      connectionAPIKey: connectionAPIKey ?? undefined,
     });
     return { authorizationUrl };
   });
@@ -37,12 +40,24 @@ export const startSalesforceConnect = createServerFn({ method: "POST" })
 export const saveSalesforceConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ connectionAPIKey: z.string().min(1) }).parse(input),
+    z.object({ code: z.string().min(1) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { saveConnectionKeyForUser } = await import("./app-user-connections.server");
-    const { callAsAppUser } = await import("@/integrations/lovable/appUserConnector");
+    const { callAsAppUser, exchangeAppUserOAuthCode } = await import(
+      "@/integrations/lovable/appUserConnector"
+    );
     const { ensureCrmSyncState } = await import("./crm.server");
+
+    // Exchange the one-time redirect code for the per-user connection key.
+    // The key never touches the browser.
+    const { connectionAPIKey, connectorId } = await exchangeAppUserOAuthCode(
+      GATEWAY_BASE_URL,
+      data.code,
+    );
+    if (connectorId !== CONNECTOR_ID) {
+      throw new Error("OAuth completion returned the wrong connector");
+    }
 
     // Identity check is REQUIRED: if we can't reach Salesforce as this user we
     // must not persist the key, otherwise the UI would claim "Connected" for a
@@ -51,7 +66,7 @@ export const saveSalesforceConnection = createServerFn({ method: "POST" })
     try {
       const res = await callAsAppUser({
         gatewayBaseUrl: GATEWAY_BASE_URL,
-        connectionAPIKey: data.connectionAPIKey,
+        connectionAPIKey,
         connectorId: CONNECTOR_ID,
         path: "/query?q=" + encodeURIComponent("SELECT Name FROM Organization LIMIT 1"),
       });
@@ -74,7 +89,7 @@ export const saveSalesforceConnection = createServerFn({ method: "POST" })
       );
     }
 
-    await saveConnectionKeyForUser(context.userId, CONNECTOR_ID, data.connectionAPIKey, {
+    await saveConnectionKeyForUser(context.userId, CONNECTOR_ID, connectionAPIKey, {
       org_name: orgName,
     });
     await ensureCrmSyncState(context.userId, "salesforce");
