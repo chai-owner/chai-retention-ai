@@ -184,6 +184,40 @@ type SfStatus =
   | { connected: false }
   | { connected: true; orgName: string | null; connectedAt: string };
 
+/** Resolves with the one-time OAuth code posted by the /oauth/salesforce/return popup. */
+function waitForSalesforceOAuth(popup: Window): Promise<string | null> {
+  return new Promise<string | null>((resolve, reject) => {
+    let poll: number | undefined;
+    const cleanup = () => {
+      window.removeEventListener("message", onMessage);
+      if (poll !== undefined) window.clearInterval(poll);
+    };
+    const onMessage = (event: MessageEvent) => {
+      const type = event.data?.type;
+      if (
+        event.origin !== window.location.origin ||
+        event.source !== popup ||
+        event.data?.connectorId !== "salesforce" ||
+        (type !== "appUserConnectorOAuthComplete" && type !== "appUserConnectorOAuthFailed")
+      )
+        return;
+      cleanup();
+      if (type === "appUserConnectorOAuthComplete") {
+        resolve(typeof event.data?.code === "string" ? event.data.code : null);
+        return;
+      }
+      popup.close();
+      reject(new Error("Salesforce sign-in failed."));
+    };
+    window.addEventListener("message", onMessage);
+    poll = window.setInterval(() => {
+      if (!popup.closed) return;
+      cleanup();
+      reject(new Error("Sign-in window was closed before completion."));
+    }, 500);
+  });
+}
+
 function SalesforceCard({ name, category, desc }: { name: string; category: string; desc: string }) {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [status, setStatus] = useState<SfStatus | null>(null);
