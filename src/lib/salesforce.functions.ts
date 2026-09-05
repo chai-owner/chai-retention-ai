@@ -66,7 +66,7 @@ export const saveSalesforceConnection = createServerFn({ method: "POST" })
     try {
       const res = await callAsAppUser({
         gatewayBaseUrl: GATEWAY_BASE_URL,
-        connectionAPIKey: data.connectionAPIKey,
+        connectionAPIKey,
         connectorId: CONNECTOR_ID,
         path: "/query?q=" + encodeURIComponent("SELECT Name FROM Organization LIMIT 1"),
       });
