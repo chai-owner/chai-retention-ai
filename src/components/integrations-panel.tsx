@@ -182,7 +182,7 @@ function GenericCrmCard({ name, category, desc }: { name: string; category: stri
 
 type SfStatus =
   | { connected: false }
-  | { connected: true; orgName: string | null; connectedAt: string };
+  | { connected: true; orgName: string | null; instanceUrl?: string | null; connectedAt: string };
 
 /** Resolves with the one-time OAuth code posted by the /oauth/salesforce/return popup. */
 function waitForSalesforceOAuth(popup: Window): Promise<string | null> {
