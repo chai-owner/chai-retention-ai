@@ -222,7 +222,7 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
   const [wizardOpen, setWizardOpen] = useState(false);
   const [status, setStatus] = useState<SfStatus | null>(null);
   const [connecting, setConnecting] = useState(false);
-  const [instanceUrl, setInstanceUrl] = useState("https://login.salesforce.com");
+  const [instanceUrl, setInstanceUrl] = useState("");
   const uploads = useUploads();
 
   const fetchStatus = useServerFn(getSalesforceStatus);
@@ -360,7 +360,7 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
               htmlFor="salesforce-instance-url"
               className="text-[11px] font-medium text-foreground"
             >
-              Instance URL
+              Instance URL (optional)
             </label>
             <input
               id="salesforce-instance-url"
@@ -371,8 +371,8 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
               className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-ring"
             />
             <p className="text-[10px] text-muted-foreground">
-              Find this in your Salesforce URL when logged in. Example:
-              https://yourorg.my.salesforce.com
+              Leave blank to use your organisation&apos;s usual Salesforce sign-in page. Only fill
+              this in to sign in somewhere else, e.g. https://test.salesforce.com for a sandbox.
             </p>
           </div>
           <button
