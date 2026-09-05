@@ -62,7 +62,7 @@ export const startSalesforceConnect = createServerFn({ method: "POST" })
       clientAPIKey,
       returnUrl: new URL("/oauth/salesforce/return", data.targetOrigin).toString(),
       connectionAPIKey: connectionAPIKey ?? undefined,
-      credentialsConfiguration: { account_url: accountUrl },
+      ...(accountUrl ? { credentialsConfiguration: { account_url: accountUrl } } : {}),
     });
     return { authorizationUrl, instanceUrl: accountUrl };
   });
