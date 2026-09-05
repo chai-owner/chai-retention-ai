@@ -117,11 +117,13 @@ export const saveSalesforceConnection = createServerFn({ method: "POST" })
       );
     }
 
+    const instanceUrl = normaliseInstanceUrl(data.instanceUrl);
     await saveConnectionKeyForUser(context.userId, CONNECTOR_ID, connectionAPIKey, {
       org_name: orgName,
+      instance_url: instanceUrl,
     });
     await ensureCrmSyncState(context.userId, "salesforce");
-    return { ok: true, orgName };
+    return { ok: true, orgName, instanceUrl };
   });
 
 
