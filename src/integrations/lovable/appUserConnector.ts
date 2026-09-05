@@ -45,6 +45,9 @@ export async function authorizeAppUserOAuth(
     "Content-Type": "application/json",
     "X-Client-Api-Key": params.clientAPIKey,
   };
+  if (params.connectionAPIKey) {
+    headers["X-Connection-Api-Key"] = params.connectionAPIKey;
+  }
   const res = await fetch(`${params.gatewayBaseUrl}/api/v1/app-users/oauth2/authorize`, {
     method: "POST",
     headers,
@@ -128,4 +131,48 @@ export async function disconnectAppUser({
   if (!res.ok) {
     throw new Error(`App User disconnect failed (${res.status}): ${text || res.statusText}`);
   }
+}
+
+export interface ExchangeAppUserOAuthCodeResult {
+  connectionAPIKey: string;
+  connectorId: string;
+}
+
+/**
+ * Swap the one-time `code` from a redirect landing page for the per-user
+ * connection key (`lovack_*`). Server-only. The code is single-use and
+ * short-lived, so exchange it as soon as the redirect lands.
+ */
+export async function exchangeAppUserOAuthCode(
+  gatewayBaseUrl: string,
+  code: string,
+): Promise<ExchangeAppUserOAuthCodeResult> {
+  const bearer = requireApiKey();
+  const res = await fetch(`${gatewayBaseUrl}/api/v1/app-users/oauth2/exchange`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${bearer}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ code }),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`App User OAuth exchange failed (${res.status}): ${text || res.statusText}`);
+  }
+
+  let body: { api_key?: string; connector_id?: string };
+  try {
+    body = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(`App User OAuth exchange returned invalid JSON: ${text.slice(0, 200)}`);
+  }
+  if (!body.api_key) {
+    throw new Error("App User OAuth exchange response missing api_key");
+  }
+  if (!body.connector_id) {
+    throw new Error("App User OAuth exchange response missing connector_id");
+  }
+  return { connectionAPIKey: body.api_key, connectorId: body.connector_id };
 }
