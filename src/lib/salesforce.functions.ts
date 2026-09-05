@@ -35,13 +35,18 @@ export const startSalesforceConnect = createServerFn({ method: "POST" })
         "Salesforce App User Connector client isn't configured. A workspace admin needs to add it.",
       );
     }
-    let accountUrl: string;
-    try {
-      accountUrl = normaliseInstanceUrl(data.instanceUrl);
-    } catch {
-      throw new Error(
-        "That Salesforce instance URL doesn't look right. Example: https://yourorg.my.salesforce.com",
-      );
+    // Empty field = use the login address stored on the connector client
+    // (a dev/sandbox org must sign in at its own My Domain, not login.salesforce.com).
+    const rawInstanceUrl = (data.instanceUrl ?? "").trim();
+    let accountUrl: string | null = null;
+    if (rawInstanceUrl) {
+      try {
+        accountUrl = normaliseInstanceUrl(rawInstanceUrl);
+      } catch {
+        throw new Error(
+          "That Salesforce instance URL doesn't look right. Example: https://yourorg.my.salesforce.com",
+        );
+      }
     }
     const { authorizeAppUserOAuth } = await import(
       "@/integrations/lovable/appUserConnector"
