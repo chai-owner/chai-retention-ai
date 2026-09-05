@@ -266,7 +266,7 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
     }
     try {
       const { authorizationUrl } = (await startConnect({
-        data: { targetOrigin: window.location.origin },
+        data: { targetOrigin: window.location.origin, instanceUrl },
       })) as { authorizationUrl: string };
       const completion = waitForSalesforceOAuth(popup);
       popup.location.href = authorizationUrl;
@@ -274,7 +274,9 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
       // Exchange the one-time code here (the popup has no app session in the
       // embedded preview). The connection key never reaches the browser.
       if (code) {
-        const saved = (await saveConnection({ data: { code } })) as { orgName: string | null };
+        const saved = (await saveConnection({ data: { code, instanceUrl } })) as {
+          orgName: string | null;
+        };
         toast.success("Salesforce connected", {
           description: saved.orgName ? `Linked to ${saved.orgName}.` : "You can now sync your data.",
         });
