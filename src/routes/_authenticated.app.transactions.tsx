@@ -7,6 +7,8 @@ import { TablePagination } from "@/components/ui/table-pagination";
 import { formatCurrency } from "@/lib/mock-data";
 import { listTransactionsPage, TRANSACTION_PAGE_SIZE } from "@/lib/data-tables.functions";
 import { useEffectiveSignedIn } from "@/lib/use-auth-state";
+import { useDemoMode } from "@/lib/use-demo-mode";
+import { demoTransactions } from "@/lib/demo-tables";
 
 export const Route = createFileRoute("/_authenticated/app/transactions")({
   head: () => ({
@@ -38,6 +40,7 @@ function TransactionsPage() {
   const { page = 1 } = Route.useSearch();
   const navigate = useNavigate();
   const signedIn = useEffectiveSignedIn();
+  const demo = useDemoMode();
   const fetchPage = useServerFn(listTransactionsPage);
 
   const q = useQuery({
@@ -46,8 +49,12 @@ function TransactionsPage() {
     queryFn: () => fetchPage({ data: { page, pageSize: TRANSACTION_PAGE_SIZE } }),
   });
 
-  const rows = q.data?.rows ?? [];
-  const total = q.data?.total ?? 0;
+  // The public, no-login demo shows the illustrative sample ledger.
+  const all = demo ? demoTransactions() : null;
+  const rows = all
+    ? all.slice((page - 1) * TRANSACTION_PAGE_SIZE, page * TRANSACTION_PAGE_SIZE)
+    : q.data?.rows ?? [];
+  const total = all ? all.length : q.data?.total ?? 0;
 
   useEffect(() => {
     if (page > 1 && total > 0 && (page - 1) * TRANSACTION_PAGE_SIZE >= total) {

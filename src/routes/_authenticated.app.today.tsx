@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,6 +8,7 @@ import { getTodayBrief } from "@/lib/daily-brief.functions";
 import { useAuthUserId } from "@/lib/use-auth-state";
 import { useProfile } from "@/lib/profile-store";
 import { useDemoMode } from "@/lib/use-demo-mode";
+import { demoTodayBrief } from "@/lib/demo-tables";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -56,12 +58,20 @@ function TodayPage() {
   const profile = useProfile();
   const lockedOut = !demo && profile != null && profile.unlocked !== true;
   const fetchBrief = useServerFn(getTodayBrief);
-  const { data, isLoading, isFetching, refetch, error } = useQuery({
+  const query = useQuery({
     queryKey: ["today-brief", userId],
     queryFn: () => fetchBrief({ data: undefined }),
-    enabled: !!userId && !lockedOut,
+    enabled: !!userId && !lockedOut && !demo,
     staleTime: 5 * 60 * 1000,
   });
+  // The public, no-login demo builds the same brief from the sample dataset so
+  // visitors can see what a real morning in ChAi looks like.
+  const demoBrief = useMemo(() => (demo ? demoTodayBrief() : null), [demo]);
+  const data = demoBrief ?? query.data;
+  const isLoading = demo ? false : query.isLoading;
+  const isFetching = demo ? false : query.isFetching;
+  const error = demo ? null : query.error;
+  const refetch = query.refetch;
 
   const scoredLabel = data?.scoredAt
     ? new Date(data.scoredAt).toLocaleString(undefined, {
