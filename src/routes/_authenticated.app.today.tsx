@@ -56,12 +56,20 @@ function TodayPage() {
   const profile = useProfile();
   const lockedOut = !demo && profile != null && profile.unlocked !== true;
   const fetchBrief = useServerFn(getTodayBrief);
-  const { data, isLoading, isFetching, refetch, error } = useQuery({
+  const query = useQuery({
     queryKey: ["today-brief", userId],
     queryFn: () => fetchBrief({ data: undefined }),
-    enabled: !!userId && !lockedOut,
+    enabled: !!userId && !lockedOut && !demo,
     staleTime: 5 * 60 * 1000,
   });
+  // The public, no-login demo builds the same brief from the sample dataset so
+  // visitors can see what a real morning in ChAi looks like.
+  const demoBrief = useMemo(() => (demo ? demoTodayBrief() : null), [demo]);
+  const data = demoBrief ?? query.data;
+  const isLoading = demo ? false : query.isLoading;
+  const isFetching = demo ? false : query.isFetching;
+  const error = demo ? null : query.error;
+  const refetch = query.refetch;
 
   const scoredLabel = data?.scoredAt
     ? new Date(data.scoredAt).toLocaleString(undefined, {
