@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,6 +8,7 @@ import { getTodayBrief } from "@/lib/daily-brief.functions";
 import { useAuthUserId } from "@/lib/use-auth-state";
 import { useProfile } from "@/lib/profile-store";
 import { useDemoMode } from "@/lib/use-demo-mode";
+import { demoTodayBrief } from "@/lib/demo-tables";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
