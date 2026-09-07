@@ -234,11 +234,11 @@ function Landing() {
             ))}
           </div>
           <div className="relative lg:h-full">
-            <div className="overflow-hidden rounded-[18px] bg-white shadow-sm lg:absolute lg:inset-0">
+            <div className="flex items-center justify-center overflow-hidden rounded-[18px] bg-white shadow-sm lg:absolute lg:inset-0">
               <img
                 src={recommendationsPanelImage}
                 alt="ChAi top retention recommendations ranked by estimated revenue saved"
-                className="h-full w-full object-cover object-top"
+                className="max-h-full max-w-full object-contain"
               />
             </div>
           </div>
