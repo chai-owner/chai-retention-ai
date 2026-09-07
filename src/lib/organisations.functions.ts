@@ -28,7 +28,7 @@ import {
 // Emails always point at the stable production site; never at a caller-supplied
 // origin, which would make the invite link forgeable.
 const SITE_ORIGIN = "https://askchai.tech";
-const SITE_NAME = "chai-retention-ai";
+const SITE_NAME = "ChAi";
 const SENDER_DOMAIN = "notify.askchai.tech";
 const FROM_DOMAIN = "askchai.tech";
 
