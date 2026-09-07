@@ -16,7 +16,7 @@ import {
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 import heroDashboardAsset from "@/assets/hero-dashboard.png.asset.json";
-import recommendationsPanelAsset from "@/assets/recommendations-panel.png.asset.json";
+import recommendationsPanelAsset from "@/assets/retention-recommendations.png.asset.json";
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
   FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
