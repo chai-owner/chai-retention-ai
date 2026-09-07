@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
+  Check,
   Target,
   Gauge,
   TrendingUp,
@@ -53,25 +54,25 @@ const navItems = [
 ];
 
 const features = [
-  { icon: Target, title: "Industry-specific metrics", desc: "ChAi helps you pick the metrics that actually matter for your industry and business model — no generic templates." },
-  { icon: Gauge, title: "Weighted health scores", desc: "You control how much each metric contributes to a customer's 0–100 health score." },
-  { icon: TrendingUp, title: "Predict churn & revenue at risk", desc: "See who's likely to leave, how much revenue is exposed, and what's realistically recoverable." },
-  { icon: ShieldCheck, title: "AI insights & actions", desc: "Plain-English root causes and prioritised next steps ranked by the revenue they can save." },
-  { icon: Share2, title: "Cross-platform identity resolution", desc: "Automatically link the same customer across CRM, billing and support tools — and fix duplicates." },
-  { icon: ShieldOff, title: "Forget-a-customer anonymization", desc: "Honour data-erasure requests in seconds while keeping your aggregate retention intelligence intact." },
+  { icon: Target, title: "Stop guessing which numbers matter", desc: "ChAi learns how your business works and generates custom metrics that you should be measuring — no generic templates, no vanity numbers." },
+  { icon: Gauge, title: "A health score you can actually trust", desc: "You decide what matters most. ChAi builds your health score around your judgment, not a predetermined black-box formula." },
+  { icon: Share2, title: "One customer, one true picture", desc: "Data from different sources? No problem. ChAi figures out how to merge them — so you're never acting on only part of the story." },
+  { icon: TrendingUp, title: "See the dollar value, not just the risk", desc: "Every at-risk customer comes with a number attached — how much revenue is exposed, and how much is realistically recoverable. Prioritize by impact, not instinct." },
+  { icon: ShieldCheck, title: "Skip the digging. Go straight to the fix.", desc: "No more trying to figure out \"why\" from scattered tickets and call notes. ChAi consolidates your intel, explains root causes in plain English and ranks next steps by the revenue they'll save." },
+  { icon: ShieldOff, title: "Delete data without losing insight", desc: "Honour a customer's erasure request in seconds, without punching a hole in your historical retention intelligence." },
 ];
 
 const scoreBands = [
-  { label: "Healthy", color: "var(--success)", desc: "Engaged, paying on time and trending steady." },
-  { label: "Watch", color: "var(--warning)", desc: "Early softening in usage or support signals." },
-  { label: "At risk", color: "var(--caution)", desc: "Clear decline — worth a conversation this week." },
+  { label: "Healthy", color: "var(--success)", desc: "Engaged, paying on time, trending steady. Nothing to do here." },
+  { label: "Watch", color: "var(--warning)", desc: "Early softening in usage or support signals. Worth keeping an eye on." },
+  { label: "At risk", color: "var(--caution)", desc: "Clear decline. Worth a conversation this week." },
   { label: "Critical", color: "var(--danger)", desc: "Likely to leave soon without direct intervention." },
 ];
 
 const steps = [
-  { n: "01", icon: Plug, title: "Connect your tools", desc: "Bring in CRM, billing, support and spreadsheets. ChAi maps the fields and checks quality for you." },
-  { n: "02", icon: Brain, title: "ChAi analyses behaviour", desc: "It learns your industry, picks the metrics that matter and scores every customer continuously." },
-  { n: "03", icon: Rocket, title: "Act before customers churn", desc: "Get a prioritised list of who to contact today and exactly what to say." },
+  { n: "01", icon: Plug, title: "Connect your tools", desc: "Bring in CRM, billing, support and spreadsheets — clean or messy, doesn't matter." },
+  { n: "02", icon: Brain, title: "ChAi learns your business", desc: "It studies your industry, picks the metrics that matter, and scores every customer continuously." },
+  { n: "03", icon: Rocket, title: "Act before customers churn", desc: "Wake up to a prioritised list of who to talk to today, and exactly what to say when you do." },
 ];
 
 const integrations = [
@@ -151,12 +152,12 @@ function Landing() {
               Customer retention intelligence
             </span>
             <h1 className="mt-6 text-[2.6rem] font-extrabold leading-[1.05] tracking-[-0.02em] text-white sm:text-5xl lg:text-[4rem]">
-              See who's about to leave — and what to say to{" "}
-              <span className="text-[#C3FFA5]">keep them</span>.
+              Know who's about to leave — and exactly what to do about it.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/65">
-              ChAi reads your CRM, billing and support data, scores every customer's health and
-              explains what to do next in plain English.
+              Messy CRM? Data scattered across different platforms or spreadsheets? Doesn't matter.
+              ChAi turns whatever data you've got into a clear picture of who's slipping — and what
+              to do about it, before it's too late.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -170,7 +171,7 @@ function Landing() {
                 onClick={openGate}
                 className={`inline-flex items-center justify-center gap-2 rounded-[10px] border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-white/10 ${focusRing}`}
               >
-                View Demo
+                Book a demo
               </button>
             </div>
             <p className="mt-5 text-sm text-white/45">
@@ -189,11 +190,10 @@ function Landing() {
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>Features</Eyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-            Everything you need to stop churn
+            Everything you need to stop guessing and start saving customers
           </h2>
           <p className="mt-4 text-lg text-[#4A5A6B]">
-            Industry-specific metrics, weighted health scores, AI insights, identity resolution and
-            privacy-safe anonymization — in one place.
+            Built for how your own business actually works — not a generic dashboard bolted onto your data.
           </p>
         </Reveal>
 
@@ -212,16 +212,49 @@ function Landing() {
         </div>
       </section>
 
+      {/* ── Data Drop ───────────────────────────────────── */}
+      <section id="data-drop" className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <Eyebrow>No clean-up required</Eyebrow>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+            Just drop your data in. We'll handle the rest.
+          </h2>
+          <p className="mt-4 text-lg text-[#4A5A6B]">
+            You don't need a data team to get started. Export whatever you've got — from your CRM,
+            billing tool, support platform, or a spreadsheet nobody's touched in a year — and drop it
+            into ChAi. It automatically sorts, formats and maps everything into the metrics your health
+            scores are built on.
+          </p>
+        </Reveal>
+
+        <div className="mx-auto mt-12 max-w-2xl space-y-4">
+          {[
+            "No templates to fill in.",
+            "No fields to match manually.",
+            "No \"come back once your data's clean.\"",
+          ].map((item, i) => (
+            <Reveal key={item} delay={i * 80}>
+              <div className="flex items-center gap-4 rounded-[16px] bg-white p-5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#C3FFA5] text-[#152238]">
+                  <Check className="h-5 w-5" strokeWidth={2.5} />
+                </span>
+                <p className="text-lg font-semibold text-[#152238]">{item}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
       {/* ── How scoring works ───────────────────────────── */}
       <section id="scoring" className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>How scoring works</Eyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-            One consistent signal, everywhere
+            One score. One meaning. Everywhere.
           </h2>
           <p className="mt-4 text-lg text-[#4A5A6B]">
-            Every customer gets a 0–100 health score on the same four-stage scale — identical on this
-            page and inside the app, so the colour always means the same thing.
+            Every customer gets a 0–100 health score on the same four-stage scale — on this page and
+            inside the app — so a colour always tells you the same thing.
           </p>
         </Reveal>
 
@@ -248,7 +281,7 @@ function Landing() {
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>Onboarding</Eyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-            How it works
+            From connected to in control, in three steps
           </h2>
         </Reveal>
 
@@ -277,10 +310,11 @@ function Landing() {
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>Integrations</Eyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-            Connect your existing tools
+            Works with the tools you already run on
           </h2>
           <p className="mt-4 text-lg text-[#4A5A6B]">
-            ChAi works with the systems you already run on. No migration, no rebuild.
+            No migration. No rebuild. No "rip and replace." ChAi plugs into your existing stack and
+            starts scoring from day one.
           </p>
         </Reveal>
 
@@ -309,11 +343,11 @@ function Landing() {
         <Reveal>
           <div className="rounded-[36px] bg-[#152238] px-8 py-20 text-center lg:px-16">
             <h2 className="mx-auto max-w-2xl text-4xl font-extrabold tracking-[-0.02em] text-white sm:text-5xl">
-              Ready to <span className="text-[#C3FFA5]">reduce churn</span>?
+              Stop losing customers you could have saved.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg text-white/65">
-              Bring your data and let ChAi surface who's at risk and what to do next — in plain
-              English.
+              Bring your data — messy or not. Let ChAi tell you who's at risk and exactly what to do
+              next, in plain English.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
