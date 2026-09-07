@@ -233,15 +233,16 @@ function Landing() {
               </Reveal>
             ))}
           </div>
-          <div className="h-full">
-            <div className="h-full overflow-hidden rounded-[18px] bg-white shadow-sm">
+          <div className="relative lg:h-full">
+            <div className="overflow-hidden rounded-[18px] bg-white shadow-sm lg:absolute lg:inset-0">
               <img
                 src={recommendationsPanelImage}
                 alt="ChAi top retention recommendations ranked by estimated revenue saved"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-top"
               />
             </div>
           </div>
+
         </div>
       </section>
 
