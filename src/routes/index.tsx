@@ -234,11 +234,11 @@ function Landing() {
             ))}
           </div>
           <Reveal delay={150}>
-            <div className="h-full overflow-hidden rounded-[18px] bg-white shadow-sm">
+            <div className="flex h-full items-center justify-center overflow-hidden rounded-[18px] bg-white shadow-sm">
               <img
                 src={recommendationsPanelAsset.url}
                 alt="ChAi top retention recommendations ranked by estimated revenue saved"
-                className="h-full w-full object-cover"
+                className="h-full w-auto max-w-none object-contain"
               />
             </div>
           </Reveal>
