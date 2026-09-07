@@ -234,11 +234,11 @@ function Landing() {
             ))}
           </div>
           <Reveal delay={150}>
-            <div className="h-full overflow-hidden rounded-[18px] bg-white p-5 shadow-sm">
+            <div className="h-full overflow-hidden rounded-[18px] bg-white shadow-sm">
               <img
                 src={recommendationsPanelAsset.url}
                 alt="ChAi top retention recommendations ranked by estimated revenue saved"
-                className="w-full rounded-[12px] border border-[#D8E7EF]"
+                className="h-full w-full object-cover"
               />
             </div>
           </Reveal>
