@@ -206,12 +206,6 @@ function Landing() {
                 </span>
                 <h3 className="mt-5 text-lg font-extrabold tracking-[-0.02em]">{f.title}</h3>
                 <p className="mt-2 leading-relaxed text-[#4A5A6B]">{f.desc}</p>
-                <a
-                  href="#scoring"
-                  className={`mt-5 inline-flex items-center gap-1.5 rounded-[8px] text-sm font-bold text-[#152238] ${focusRing}`}
-                >
-                  Learn more <ArrowRight className="h-3.5 w-3.5" />
-                </a>
               </div>
             </Reveal>
           ))}
