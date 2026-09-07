@@ -16,7 +16,7 @@ import {
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 import heroDashboardAsset from "@/assets/hero-dashboard.png.asset.json";
-import recommendationsPanelAsset from "@/assets/retention-recommendations.png.asset.json";
+import recommendationsPanelImage from "@/assets/retention-recommendations-2320.png";
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
   FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
@@ -236,7 +236,7 @@ function Landing() {
           <div className="h-full">
             <div className="h-full overflow-hidden rounded-[18px] bg-white shadow-sm">
               <img
-                src={recommendationsPanelAsset.url}
+                src={recommendationsPanelImage}
                 alt="ChAi top retention recommendations ranked by estimated revenue saved"
                 className="h-full w-full object-cover"
               />
