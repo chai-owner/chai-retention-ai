@@ -150,7 +150,7 @@ function TermsPage() {
           <Reveal delay={80}>
             <h2 className="mt-14 text-2xl font-semibold tracking-tight">1. Acceptance of these Terms</h2>
             <p className="leading-relaxed text-muted-foreground">
-              These Terms of Service constitute a legally binding agreement between you and <strong>Dominion Agency (Pty) Ltd</strong>, trading as <strong>ChAi</strong> (“ChAi,” “we,” “our,” or “us”).
+              These Terms of Service constitute a legally binding agreement between you and <strong>ChAi</strong> (“ChAi,” “we,” “our,” or “us”).
             </p>
             <p className="leading-relaxed text-muted-foreground">
               By creating an account, starting a free trial, purchasing a subscription, accessing the Services, or using any part of the Services, you agree to be bound by these Terms and all policies incorporated by reference.
@@ -250,22 +250,30 @@ function TermsPage() {
               <li><strong>Annual Plan:</strong> $999 per year</li>
             </ul>
             <p className="leading-relaxed text-muted-foreground">
-              Subscription fees are billed in advance and automatically renew until cancelled.
+              Subscription fees are billed in advance and automatically renew until cancelled. Prices are listed in US dollars and may be subject to applicable taxes.
+            </p>
+
+            <h3 className="mt-6 text-lg font-semibold tracking-tight">Merchant of Record</h3>
+            <p className="leading-relaxed text-muted-foreground">
+              Payments for ChAi subscriptions are processed by <strong>Paddle.com</strong> (Paddle.com Market Limited and Paddle Payments Limited), who act as the Merchant of Record for all transactions. When you purchase a ChAi subscription, you are purchasing from Paddle, not directly from ChAi. Paddle handles payment processing, invoicing, and tax collection on our behalf.
+            </p>
+            <p className="leading-relaxed text-muted-foreground">
+              By subscribing, you authorize Paddle to charge your selected payment method for all applicable subscription fees and taxes. Paddle’s terms apply to the payment portion of your transaction.
             </p>
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Free Trial</h3>
             <p className="leading-relaxed text-muted-foreground">
-              New Customers are eligible for one fourteen (14) day free trial per organization. A valid credit card is required to begin the trial. If you do not cancel before the trial ends, your selected Subscription will automatically begin and your payment method will be charged.
+              New Customers are eligible for one fourteen (14) day free trial per organization. A valid payment method is required to begin the trial. If you do not cancel before the trial ends, your selected Subscription will automatically begin and your payment method will be charged by Paddle.
             </p>
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Billing</h3>
             <p className="leading-relaxed text-muted-foreground">
-              Subscriptions are billed on the date your paid Subscription begins and automatically renew on the corresponding monthly or annual anniversary date. You authorize ChAi to charge your selected payment method for all applicable Subscription fees and taxes.
+              Subscriptions are billed on the date your paid Subscription begins and automatically renew on the corresponding monthly or annual anniversary date. You authorize Paddle to charge your selected payment method for all applicable Subscription fees and taxes on behalf of ChAi.
             </p>
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Failed Payments</h3>
             <p className="leading-relaxed text-muted-foreground">
-              If a payment cannot be processed, ChAi will notify the Account Administrator. You will have seven (7) calendar days to update your payment information or resolve the payment issue. If payment is not received within the grace period, ChAi may suspend access to the Services until all outstanding amounts have been paid.
+              If a payment cannot be processed, ChAi or Paddle will notify the Account Administrator. You will have seven (7) calendar days to update your payment information or resolve the payment issue. If payment is not received within the grace period, ChAi may suspend access to the Services until all outstanding amounts have been paid.
             </p>
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Cancellation</h3>
@@ -275,7 +283,7 @@ function TermsPage() {
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Refunds</h3>
             <p className="leading-relaxed text-muted-foreground">
-              Except where required by applicable law, Subscription fees are non-refundable. This includes unused portions of a billing period, partial months, annual subscriptions, and automatic renewals. We encourage prospective Customers to use the free trial to evaluate whether ChAi is the right solution before purchasing a Subscription.
+              Refund requests are handled by Paddle in accordance with their refund policy. You may be eligible for a refund within 14 days of your initial purchase or renewal. To request a refund, contact us at <a href="mailto:support@askchai.tech" className="text-primary hover:underline">support@askchai.tech</a> or visit <a href="https://paddle.net" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">paddle.net</a>. Paddle’s decision on refund eligibility is final.
             </p>
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Data After Cancellation</h3>
@@ -385,7 +393,7 @@ function TermsPage() {
           <Reveal delay={80}>
             <h2 className="mt-14 text-2xl font-semibold tracking-tight">12. Intellectual Property</h2>
             <p className="leading-relaxed text-muted-foreground">
-              Except for Customer Data, all intellectual property rights in the Services remain the exclusive property of Dominion Agency (Pty) Ltd or its licensors. This includes, but is not limited to: software, source code, algorithms, AI models developed by ChAi, user interfaces, branding, logos, graphics, documentation, workflows, reports, designs, and platform functionality.
+              Except for Customer Data, all intellectual property rights in the Services remain the exclusive property of ChAi or its licensors. This includes, but is not limited to: software, source code, algorithms, AI models developed by ChAi, user interfaces, branding, logos, graphics, documentation, workflows, reports, designs, and platform functionality.
             </p>
             <p className="leading-relaxed text-muted-foreground">
               These Terms grant you a limited, non-exclusive, non-transferable, revocable right to use the Services during your active Subscription. No rights are granted except those expressly stated in these Terms.
@@ -569,7 +577,7 @@ function TermsPage() {
           <Reveal delay={80}>
             <h2 className="mt-14 text-2xl font-semibold tracking-tight">24. Indemnification</h2>
             <p className="leading-relaxed text-muted-foreground">
-              You agree to indemnify, defend, and hold harmless Dominion Agency (Pty) Ltd, its directors, officers, employees, contractors, and affiliates from and against claims, losses, liabilities, damages, costs, and reasonable legal expenses arising from:
+              You agree to indemnify, defend, and hold harmless ChAi, its directors, officers, employees, contractors, and affiliates from and against claims, losses, liabilities, damages, costs, and reasonable legal expenses arising from:
             </p>
             <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
               <li>your misuse of the Services;</li>
@@ -596,7 +604,7 @@ function TermsPage() {
               These Terms are governed by and construed in accordance with the laws of the Republic of South Africa. Any dispute arising out of or relating to these Terms or the Services shall be subject to the exclusive jurisdiction of the courts of South Africa.
             </p>
             <p className="leading-relaxed text-muted-foreground">
-              ChAi is operated by Dominion Agency (Pty) Ltd, a company incorporated in South Africa. If you access the Services from outside South Africa, you do so on your own initiative and are responsible for compliance with your local laws.
+              If you access the Services from outside South Africa, you do so on your own initiative and are responsible for compliance with your local laws.
             </p>
           </Reveal>
 
@@ -609,7 +617,7 @@ function TermsPage() {
               We may update these Terms from time to time. If we make material changes, we will notify you by email or by posting a notice on the platform before the changes become effective. Your continued use of the Services after any such changes constitutes your acceptance of the updated Terms.
             </p>
             <p className="leading-relaxed text-muted-foreground">
-              For any questions about these Terms, please contact us at the support channels published on our website.
+              For any questions about these Terms, please contact us at <a href="mailto:support@askchai.tech" className="text-primary hover:underline">support@askchai.tech</a> or visit <a href="https://askchai.tech" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">askchai.tech</a>.
             </p>
           </Reveal>
 
@@ -617,7 +625,7 @@ function TermsPage() {
             <div className="mt-16 rounded-[20px] border border-border bg-card p-8 text-center shadow-soft">
               <p className="text-base font-semibold text-foreground">Questions about these Terms?</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Reach out through our support channels and we’ll be happy to help.
+                Reach out at <a href="mailto:support@askchai.tech" className="text-primary hover:underline">support@askchai.tech</a> or visit <a href="https://askchai.tech" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">askchai.tech</a>.
               </p>
               <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link
