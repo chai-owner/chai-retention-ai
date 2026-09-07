@@ -11,6 +11,7 @@ import {
   Preview,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 interface TrialNoticeEmailProps {
   headline: string
@@ -44,6 +45,7 @@ export const TrialNoticeEmail = ({
         <Text style={footer}>
           Your data is safe either way — nothing is deleted when a trial ends.
         </Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>

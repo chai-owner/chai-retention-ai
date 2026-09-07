@@ -13,6 +13,7 @@ import {
   Section,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 export interface WeeklyDigestCustomer {
   name: string
@@ -106,6 +107,7 @@ export const WeeklyDigestEmail = ({
           You're receiving this because you own a ChAi workspace. Reply to this email if you'd
           rather not get the Monday brief.
         </Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>

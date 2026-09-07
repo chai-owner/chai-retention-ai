@@ -11,6 +11,7 @@ import {
   Preview,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 interface RecoveryEmailProps {
   siteName: string
@@ -41,6 +42,7 @@ export const RecoveryEmail = ({
           If you didn't request a password reset, you can safely ignore this
           email. Your password will not be changed.
         </Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>

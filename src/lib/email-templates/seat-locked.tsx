@@ -10,6 +10,7 @@ import {
   Preview,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 interface SeatLockedEmailProps {
   organisationName: string
@@ -35,6 +36,7 @@ export const SeatLockedEmail = ({ organisationName, ownerEmail }: SeatLockedEmai
           information or to have your access restored.
         </Text>
         <Text style={footer}>Nothing you added to the workspace has been deleted.</Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>
