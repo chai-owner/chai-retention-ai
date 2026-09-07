@@ -12,6 +12,7 @@ import {
   Preview,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 interface InviteEmailProps {
   siteName: string
@@ -48,6 +49,7 @@ export const InviteEmail = ({
           If you weren't expecting this invitation, you can safely ignore this
           email.
         </Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>

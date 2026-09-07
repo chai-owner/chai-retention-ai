@@ -95,7 +95,7 @@ async function enqueueEmail(to: string, subject: string, html: string, text: str
       payload: {
         message_id: messageId,
         to,
-        from: `ChAi <noreply@${FROM_DOMAIN}>`,
+        from: `ChAi <hello@${FROM_DOMAIN}>`,
         sender_domain: SENDER_DOMAIN,
         subject,
         html,

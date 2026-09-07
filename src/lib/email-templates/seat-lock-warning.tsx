@@ -11,6 +11,7 @@ import {
   Preview,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 interface SeatLockWarningEmailProps {
   organisationName: string
@@ -52,6 +53,7 @@ export const SeatLockWarningEmail = ({
         <Button style={button} href={billingUrl}>
           Review your plan
         </Button>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>

@@ -11,6 +11,7 @@ import {
   Preview,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 interface OrgInviteEmailProps {
   organisationName: string
@@ -48,6 +49,7 @@ export const OrgInviteEmail = ({
           This invitation expires in {expiresInDays} days. If you weren't expecting
           it, you can safely ignore this email.
         </Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>

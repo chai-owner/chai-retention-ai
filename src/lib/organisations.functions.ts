@@ -28,7 +28,7 @@ import {
 // Emails always point at the stable production site; never at a caller-supplied
 // origin, which would make the invite link forgeable.
 const SITE_ORIGIN = "https://askchai.tech";
-const SITE_NAME = "chai-retention-ai";
+const SITE_NAME = "ChAi";
 const SENDER_DOMAIN = "notify.askchai.tech";
 const FROM_DOMAIN = "askchai.tech";
 
@@ -259,7 +259,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
         payload: {
           message_id: messageId,
           to: data.email,
-          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+          from: `ChAi <hello@${FROM_DOMAIN}>`,
           sender_domain: SENDER_DOMAIN,
           subject: `You've been invited to join ${membership.organisation.name || "a team"} on ChAi`,
           html,
@@ -521,7 +521,7 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
         payload: {
           message_id: messageId,
           to: invite.email,
-          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+          from: `ChAi <hello@${FROM_DOMAIN}>`,
           sender_domain: SENDER_DOMAIN,
           subject: `Reminder: you've been invited to join ${membership.organisation.name || "a team"} on ChAi`,
           html,
