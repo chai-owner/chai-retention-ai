@@ -183,7 +183,7 @@ function Landing() {
             <img
               src={heroDashboardAsset.url}
               alt="ChAi customer risk dashboard showing health score, churn probability, revenue value, and recommended actions"
-              className="w-full rounded-[24px] border border-white/10 shadow-2xl shadow-black/25"
+              className="w-full scale-[1.15] border border-white/10 shadow-2xl shadow-black/25"
             />
           </Reveal>
         </div>
