@@ -16,6 +16,7 @@ import {
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 import heroDashboardAsset from "@/assets/hero-dashboard.png.asset.json";
+import recommendationsPanelAsset from "@/assets/recommendations-panel.png.asset.json";
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
   FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
@@ -53,13 +54,16 @@ const navItems = [
   { label: "Pricing", href: "/pricing" },
 ];
 
-const features = [
+const standardFeatures = [
   { icon: Target, title: "Stop guessing which numbers matter", desc: "ChAi learns how your business works and generates custom metrics that you should be measuring — no generic templates, no vanity numbers." },
   { icon: Gauge, title: "A health score you can actually trust", desc: "You decide what matters most. ChAi builds your health score around your judgment, not a predetermined black-box formula." },
   { icon: Share2, title: "One customer, one true picture", desc: "Data from different sources? No problem. ChAi figures out how to merge them — so you're never acting on only part of the story." },
+  { icon: ShieldOff, title: "Delete data without losing insight", desc: "Honour a customer's erasure request in seconds, without punching a hole in your historical retention intelligence." },
+];
+
+const pairedFeatures = [
   { icon: TrendingUp, title: "See the dollar value, not just the risk", desc: "Every at-risk customer comes with a number attached — how much revenue is exposed, and how much is realistically recoverable. Prioritize by impact, not instinct." },
   { icon: ShieldCheck, title: "Skip the digging. Go straight to the fix.", desc: "No more trying to figure out \"why\" from scattered tickets and call notes. ChAi consolidates your intel, explains root causes in plain English and ranks next steps by the revenue they'll save." },
-  { icon: ShieldOff, title: "Delete data without losing insight", desc: "Honour a customer's erasure request in seconds, without punching a hole in your historical retention intelligence." },
 ];
 
 const scoreBands = [
@@ -202,7 +206,7 @@ function Landing() {
         </Reveal>
 
         <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f, i) => (
+          {standardFeatures.map((f, i) => (
             <Reveal key={f.title} delay={(i % 3) * 80}>
               <div className="h-full rounded-[18px] bg-white p-8">
                 <span className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#204654] text-white">
@@ -213,6 +217,31 @@ function Landing() {
               </div>
             </Reveal>
           ))}
+        </div>
+
+        <div className="mt-14 grid gap-8 lg:grid-cols-2">
+          <div className="flex flex-col gap-6">
+            {pairedFeatures.map((f, i) => (
+              <Reveal key={f.title} delay={i * 100}>
+                <div className="h-full rounded-[18px] bg-white p-8">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#204654] text-white">
+                    <f.icon className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
+                  <h3 className="mt-5 text-lg font-extrabold tracking-[-0.02em]">{f.title}</h3>
+                  <p className="mt-2 leading-relaxed text-[#4A5A6B]">{f.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal delay={150}>
+            <div className="h-full overflow-hidden rounded-[18px] bg-white p-5 shadow-sm">
+              <img
+                src={recommendationsPanelAsset.url}
+                alt="ChAi top retention recommendations ranked by estimated revenue saved"
+                className="w-full rounded-[12px] border border-[#D8E7EF]"
+              />
+            </div>
+          </Reveal>
         </div>
       </section>
 
