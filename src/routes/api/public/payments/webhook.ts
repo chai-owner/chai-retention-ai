@@ -17,7 +17,7 @@ function getSupabase(): SupabaseClient {
   return _supabase;
 }
 
-const SITE_ORIGIN = "https://chai-retention-ai.lovable.app";
+const SITE_ORIGIN = "https://askchai.tech";
 const SENDER_DOMAIN = "notify.askchai.tech";
 const FROM_DOMAIN = "askchai.tech";
 
