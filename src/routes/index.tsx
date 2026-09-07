@@ -119,6 +119,12 @@ function Landing() {
                 {n.label}
               </a>
             ))}
+            <button
+              onClick={openGate}
+              className={`rounded-[10px] border border-white/25 px-3.5 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white ${focusRing}`}
+            >
+              View Demo
+            </button>
             <Link
               to="/auth"
               search={login}
