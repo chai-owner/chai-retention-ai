@@ -233,7 +233,7 @@ function Landing() {
               </Reveal>
             ))}
           </div>
-          <Reveal delay={150}>
+          <div className="h-full">
             <div className="h-full overflow-hidden rounded-[18px] bg-white shadow-sm">
               <img
                 src={recommendationsPanelAsset.url}
@@ -241,7 +241,7 @@ function Landing() {
                 className="h-full w-full object-cover"
               />
             </div>
-          </Reveal>
+          </div>
         </div>
       </section>
 
