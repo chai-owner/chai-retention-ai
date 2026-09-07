@@ -170,7 +170,7 @@ function Landing() {
                 onClick={openGate}
                 className={`inline-flex items-center justify-center gap-2 rounded-[10px] border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-white/10 ${focusRing}`}
               >
-                Book a demo
+                View Demo
               </button>
             </div>
             <p className="mt-5 text-sm text-white/45">
