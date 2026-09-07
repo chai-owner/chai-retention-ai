@@ -2,7 +2,7 @@
 // downgrade and seat-locking notices are sent exactly like invites are.
 import * as React from "react";
 
-const SITE_NAME = "chai-retention-ai";
+const SITE_NAME = "ChAi";
 const SENDER_DOMAIN = "notify.askchai.tech";
 const FROM_DOMAIN = "askchai.tech";
 
@@ -41,7 +41,7 @@ export async function queueTransactionalEmail(
       payload: {
         message_id: messageId,
         to,
-        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+        from: `${SITE_NAME} <hello@${FROM_DOMAIN}>`,
         sender_domain: SENDER_DOMAIN,
         subject,
         html,

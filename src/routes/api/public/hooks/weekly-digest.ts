@@ -10,7 +10,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 
 const SITE_ORIGIN = "https://chai-retention-ai.lovable.app";
-const SITE_NAME = "chai-retention-ai";
+const SITE_NAME = "ChAi";
 const SENDER_DOMAIN = "notify.askchai.tech";
 const FROM_DOMAIN = "askchai.tech";
 const TODAY_URL = `${SITE_ORIGIN}/app/today`;
@@ -149,7 +149,7 @@ export const Route = createFileRoute("/api/public/hooks/weekly-digest")({
               payload: {
                 message_id: messageId,
                 to: email,
-                from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+                from: `${SITE_NAME} <hello@${FROM_DOMAIN}>`,
                 sender_domain: SENDER_DOMAIN,
                 subject: `Your Monday brief: ${brief.needsAttention} customers need attention`,
                 html,
