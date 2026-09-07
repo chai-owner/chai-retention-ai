@@ -12,7 +12,7 @@ import { coercePlan, seatsAllowed } from "@/lib/organisations";
 import { selectMembersToLock } from "@/lib/seat-locking";
 import { dueTrialEmails, trialState } from "@/lib/trials";
 
-const UPGRADE_URL = "https://chai-retention-ai.lovable.app/pricing";
+const UPGRADE_URL = "https://askchai.tech/pricing";
 const WARN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const Route = createFileRoute("/api/public/hooks/trial-lifecycle")({

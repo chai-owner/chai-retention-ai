@@ -9,7 +9,7 @@ import { churnConfidenceLabel } from "@/lib/churn-probability";
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 
-const SITE_ORIGIN = "https://chai-retention-ai.lovable.app";
+const SITE_ORIGIN = "https://askchai.tech";
 const SITE_NAME = "ChAi";
 const SENDER_DOMAIN = "notify.askchai.tech";
 const FROM_DOMAIN = "askchai.tech";

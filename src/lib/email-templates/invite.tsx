@@ -19,7 +19,7 @@ interface InviteEmailProps {
   confirmationUrl: string
 }
 
-const LOGO_URL = 'https://chai-retention-ai.lovable.app/logo-dark.png'
+const LOGO_URL = 'https://askchai.tech/logo-dark.png'
 
 export const InviteEmail = ({
   siteName,
