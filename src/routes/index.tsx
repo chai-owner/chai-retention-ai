@@ -16,9 +16,7 @@ import {
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 import heroDashboardAsset from "@/assets/hero-dashboard.png.asset.json";
-import plannerMetricsAsset from "@/assets/customer-intelligence-planner.png.asset.json";
-import identityMatchingAsset from "@/assets/identity-matching.png.asset.json";
-import recommendationsPanelImage from "@/assets/retention-recommendations-2320.png";
+import recommendationsPanelAsset from "@/assets/top-retention-recommendations.png.asset.json";
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
   FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
@@ -207,57 +205,21 @@ function Landing() {
           </p>
         </Reveal>
 
-        <div className="mt-14 grid gap-8 lg:grid-cols-2">
-          <div className="flex flex-col gap-6">
-            {standardFeatures.slice(0, 2).map((f, i) => (
-              <Reveal key={f.title} delay={i * 100}>
-                <div className="h-full rounded-[18px] bg-white p-8">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#204654] text-white">
-                    <f.icon className="h-5 w-5" strokeWidth={1.75} />
-                  </span>
-                  <h3 className="mt-5 text-lg font-extrabold tracking-[-0.02em]">{f.title}</h3>
-                  <p className="mt-2 leading-relaxed text-[#4A5A6B]">{f.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-          <div className="relative lg:h-full">
-            <div className="flex items-center justify-center overflow-hidden rounded-[18px] bg-white shadow-sm lg:absolute lg:inset-0">
-              <img
-                src={plannerMetricsAsset.url}
-                alt="Customer Intelligence Planner showing recommended metrics and segment benchmarks"
-                className="max-h-full max-w-full object-contain"
-              />
-            </div>
-          </div>
+        <div className="mt-14 grid gap-6 sm:grid-cols-2">
+          {standardFeatures.map((f, i) => (
+            <Reveal key={f.title} delay={i * 80}>
+              <div className="h-full rounded-[18px] bg-white p-8">
+                <span className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#204654] text-white">
+                  <f.icon className="h-5 w-5" strokeWidth={1.75} />
+                </span>
+                <h3 className="mt-5 text-lg font-extrabold tracking-[-0.02em]">{f.title}</h3>
+                <p className="mt-2 leading-relaxed text-[#4A5A6B]">{f.desc}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-2">
-          <div className="relative order-2 lg:order-1 lg:h-full">
-            <div className="flex items-center justify-center overflow-hidden rounded-[18px] bg-white shadow-sm lg:absolute lg:inset-0">
-              <img
-                src={identityMatchingAsset.url}
-                alt="ChAi identity matching showing possible duplicate customers and saved links across connected platforms"
-                className="max-h-full max-w-full object-contain"
-              />
-            </div>
-          </div>
-          <div className="order-1 flex flex-col gap-6 lg:order-2">
-            {standardFeatures.slice(2).map((f, i) => (
-              <Reveal key={f.title} delay={i * 100}>
-                <div className="h-full rounded-[18px] bg-white p-8">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#204654] text-white">
-                    <f.icon className="h-5 w-5" strokeWidth={1.75} />
-                  </span>
-                  <h3 className="mt-5 text-lg font-extrabold tracking-[-0.02em]">{f.title}</h3>
-                  <p className="mt-2 leading-relaxed text-[#4A5A6B]">{f.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-14 grid gap-8 lg:grid-cols-2">
+        <div className="mt-24 grid items-stretch gap-8 lg:mt-32 lg:grid-cols-2">
           <div className="flex flex-col gap-6">
             {pairedFeatures.map((f, i) => (
               <Reveal key={f.title} delay={i * 100}>
@@ -271,16 +233,13 @@ function Landing() {
               </Reveal>
             ))}
           </div>
-          <div className="relative lg:h-full">
-            <div className="flex items-center justify-center overflow-hidden rounded-[18px] bg-white shadow-sm lg:absolute lg:inset-0">
+          <div className="flex min-h-0 items-center justify-center overflow-hidden rounded-[18px] bg-white p-3 shadow-sm lg:h-full">
               <img
-                src={recommendationsPanelImage}
+                src={recommendationsPanelAsset.url}
                 alt="ChAi top retention recommendations ranked by estimated revenue saved"
-                className="max-h-full max-w-full object-contain"
+                className="h-auto max-h-full w-full object-contain"
               />
-            </div>
           </div>
-
         </div>
       </section>
 
