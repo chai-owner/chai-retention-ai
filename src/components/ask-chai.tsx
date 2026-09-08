@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Sparkles, X, Send, Loader2 } from "lucide-react";
+import { Sparkles, X, Send, Loader2, AlertTriangle } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { askChai } from "@/lib/ai.functions";
