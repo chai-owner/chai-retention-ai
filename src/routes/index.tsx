@@ -15,10 +15,10 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
-import heroDashboardAsset from "@/assets/hero-dashboard.png.asset.json";
-import recommendationsPanelAsset from "@/assets/top-retention-recommendations.png.asset.json";
-// Reduced to 50% (240 x 322) for tighter homepage layout
-// import askChaiWidgetAsset from "@/assets/askchai-widget.png.asset.json";
+// Homepage imagery is served from /public so it resolves on any domain.
+const heroDashboardSrc = "/screenshots/hero-dashboard.png";
+const recommendationsPanelSrc = "/screenshots/top-retention-recommendations.png";
+
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
   FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
@@ -187,7 +187,7 @@ function Landing() {
 
           <Reveal delay={120}>
             <img
-              src={heroDashboardAsset.url}
+              src={heroDashboardSrc}
               alt="ChAi customer risk dashboard showing health score, churn probability, revenue value, and recommended actions"
               className="w-full scale-[1.15] translate-x-[5%] rounded-[8px] border border-white/10 shadow-2xl shadow-black/25"
             />
@@ -235,7 +235,7 @@ function Landing() {
           </div>
           <div className="flex min-h-0 items-center justify-center overflow-hidden rounded-[18px] bg-white p-3 shadow-sm lg:h-full">
               <img
-                src={recommendationsPanelAsset.url}
+                src={recommendationsPanelSrc}
                 alt="ChAi top retention recommendations ranked by estimated revenue saved"
                 className="h-auto max-h-full w-full object-contain"
               />
