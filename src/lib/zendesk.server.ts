@@ -51,8 +51,6 @@ export function hasZendeskCreds(): boolean {
  * authorization code to an attacker-controlled host.
  */
 export function getZendeskRedirectUri(originFallback: string): string {
-  // Lazy require keeps this module's import graph unchanged for tests.
-  const { resolveRedirectUri } = require("./oauth-state.server") as typeof import("./oauth-state.server");
   return resolveRedirectUri(
     "ZENDESK_REDIRECT_URI",
     "/api/public/zendesk/callback",
