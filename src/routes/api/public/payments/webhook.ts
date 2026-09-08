@@ -18,6 +18,16 @@ function getSupabase(): SupabaseClient {
 }
 
 const SITE_ORIGIN = "https://askchai.tech";
+
+/** Escapes user-supplied values before they are placed into HTML email bodies. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 const SENDER_DOMAIN = "notify.askchai.tech";
 const FROM_DOMAIN = "askchai.tech";
 
