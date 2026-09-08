@@ -16,6 +16,7 @@ import {
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 import heroDashboardAsset from "@/assets/hero-dashboard.png.asset.json";
+import plannerMetricsAsset from "@/assets/customer-intelligence-planner.png.asset.json";
 import recommendationsPanelImage from "@/assets/retention-recommendations-2320.png";
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
@@ -205,9 +206,34 @@ function Landing() {
           </p>
         </Reveal>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {standardFeatures.map((f, i) => (
-            <Reveal key={f.title} delay={(i % 3) * 80}>
+        <div className="mt-14 grid gap-8 lg:grid-cols-2">
+          <div className="flex flex-col gap-6">
+            {standardFeatures.slice(0, 2).map((f, i) => (
+              <Reveal key={f.title} delay={i * 100}>
+                <div className="h-full rounded-[18px] bg-white p-8">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#204654] text-white">
+                    <f.icon className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
+                  <h3 className="mt-5 text-lg font-extrabold tracking-[-0.02em]">{f.title}</h3>
+                  <p className="mt-2 leading-relaxed text-[#4A5A6B]">{f.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <div className="relative lg:h-full">
+            <div className="flex items-center justify-center overflow-hidden rounded-[18px] bg-white shadow-sm lg:absolute lg:inset-0">
+              <img
+                src={plannerMetricsAsset.url}
+                alt="Customer Intelligence Planner showing recommended metrics and segment benchmarks"
+                className="max-h-full max-w-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-6 sm:grid-cols-2">
+          {standardFeatures.slice(2).map((f, i) => (
+            <Reveal key={f.title} delay={i * 80}>
               <div className="h-full rounded-[18px] bg-white p-8">
                 <span className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#204654] text-white">
                   <f.icon className="h-5 w-5" strokeWidth={1.75} />
