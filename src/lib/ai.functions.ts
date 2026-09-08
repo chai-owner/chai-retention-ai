@@ -96,6 +96,22 @@ const ChatMessage = z.object({
 const AskChAiInput = z.object({
   messages: z.array(ChatMessage).min(1),
   context: z.string().optional(),
+  coverage: z
+    .object({
+      confidence: z.enum(["low", "partial", "good"]),
+      headline: z.string().optional(),
+      notes: z.array(z.string()).default([]),
+      basis: z.string().optional(),
+    })
+    .optional(),
+  profile: z
+    .object({
+      industry: z.string().optional(),
+      model: z.string().optional(),
+      whatBuy: z.string().optional(),
+      cadence: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type AskChAiInput = z.infer<typeof AskChAiInput>;
@@ -104,28 +120,47 @@ export const askChai = createServerFn({ method: "POST" })
   .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => AskChAiInput.parse(input))
   .handler(async ({ data }): Promise<{ reply: string }> => {
+    const p = data.profile;
+    const businessLines = [
+      p?.industry && `Industry: ${p.industry}`,
+      p?.model && `Business model: ${p.model}`,
+      p?.whatBuy && `What customers buy: ${p.whatBuy}`,
+      p?.cadence && `Purchase/usage cadence: ${p.cadence}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const cov = data.coverage;
+    const coverageBlock = cov
+      ? [
+          `Data confidence: ${cov.confidence}`,
+          cov.headline && `Coverage headline: ${cov.headline}`,
+          cov.basis && cov.basis,
+          cov.notes.length ? `Gaps:\n${cov.notes.map((n) => `- ${n}`).join("\n")}` : "Gaps: none recorded",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "(no coverage assessment provided)";
+
     const system = `You are ChAi, an AI customer-retention analyst inside a churn-intelligence app.
 Answer in plain, friendly language for a non-technical business owner. Be concise (2-4 sentences).
 Focus on customer health, churn risk, what data to track, and concrete next steps.
 When relevant, point users to the Risk Center, Insights, or Data Quality pages.
 Use the workspace context below if helpful; never invent specific numbers that aren't given.
 
+TAILOR EVERY ANSWER TO THIS BUSINESS. Use the industry's own vocabulary (a dental practice hears about recall appointments and missed visits; a B2B SaaS company hears about seats, adoption and renewals; a gym hears about weekly check-ins). Never give generic "increase engagement" advice when the business profile below tells you what they actually sell and how often customers buy.
+
+DATA SUFFICIENCY: if data confidence is "low" or "partial", start by saying plainly that your answer may be limited by data gaps, name the specific gaps listed below (e.g. which dataset is missing or how many days old it is), and suggest uploading more recent data on the Data Quality page. If confidence is "good", answer normally with no data caveat.
+
+Business profile:
+${businessLines || "(no business profile provided)"}
+
+Data coverage:
+${coverageBlock}
+
 Workspace context:
 ${data.context?.trim() || "(no live workspace data provided)"}`;
 
-    const convo = data.messages
-      .map((m) => `${m.role === "user" ? "User" : "ChAi"}: ${m.text}`)
-      .join("\n");
-
-    const result = await getAiProvider().generateText({
-      operation: "askChai",
-      model: MODEL,
-      prompt: `${system}\n\nConversation so far:\n${convo}\n\nChAi:`,
-    });
-    if (!result.ok) return { reply: result.message ?? FALLBACK_REPLY };
-
-    return { reply: result.text.trim() || FALLBACK_REPLY };
-  });
 
 // ---------------------------------------------------------------------------
 // Risk reason summaries — one-liners for the dashboard "Needs attention" list
