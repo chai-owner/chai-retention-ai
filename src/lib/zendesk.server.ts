@@ -12,6 +12,7 @@ import {
   decryptSecret,
   decryptSecretOrNull,
 } from "./connection-key-crypto.server";
+import { resolveRedirectUri } from "./oauth-state.server";
 
 export const ZENDESK_SCOPE = "read offline_access";
 /** State older than this is rejected on callback. */
@@ -45,13 +46,18 @@ export function hasZendeskCreds(): boolean {
 
 /**
  * The single stable HTTPS callback URL registered with Zendesk for the global
- * client. Falls back to the current origin (dev/preview) when unset.
+ * client. Falls back to the current origin only when that origin is on the
+ * shared allowlist, so a client-supplied origin can never redirect the OAuth
+ * authorization code to an attacker-controlled host.
  */
 export function getZendeskRedirectUri(originFallback: string): string {
-  const configured = process.env.ZENDESK_REDIRECT_URI?.trim();
-  if (configured) return configured.replace(/\/+$/, "");
-  return `${originFallback.replace(/\/+$/, "")}/api/public/zendesk/callback`;
+  return resolveRedirectUri(
+    "ZENDESK_REDIRECT_URI",
+    "/api/public/zendesk/callback",
+    originFallback,
+  );
 }
+
 
 /** Accepts "acme", "acme.zendesk.com", "https://acme.zendesk.com/agent" → "acme". */
 export function normalizeSubdomain(input: string): string {

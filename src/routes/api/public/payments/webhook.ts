@@ -18,6 +18,16 @@ function getSupabase(): SupabaseClient {
 }
 
 const SITE_ORIGIN = "https://askchai.tech";
+
+/** Escapes user-supplied values before they are placed into HTML email bodies. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 const SENDER_DOMAIN = "notify.askchai.tech";
 const FROM_DOMAIN = "askchai.tech";
 
@@ -119,11 +129,14 @@ async function sendWelcomeAndNotify(userId: string, planLabel: string) {
     .maybeSingle();
   const email = profile?.email as string | undefined;
   const name = (profile?.full_name as string | undefined) || "there";
+  const safeName = escapeHtml(name);
+  const identifier = email ?? userId;
+  const safeIdentifier = escapeHtml(identifier);
   if (email) {
     await enqueueEmail(
       email,
       `Welcome to ChAi ${planLabel}`,
-      `<p>Hi ${name},</p><p>Your <strong>ChAi ${planLabel}</strong> subscription is active. Your customer health scores, daily risk brief and weekly digest are ready.</p><p><a href="${SITE_ORIGIN}/app/today">Open your Today brief</a></p><p>— The ChAi team</p>`,
+      `<p>Hi ${safeName},</p><p>Your <strong>ChAi ${planLabel}</strong> subscription is active. Your customer health scores, daily risk brief and weekly digest are ready.</p><p><a href="${SITE_ORIGIN}/app/today">Open your Today brief</a></p><p>— The ChAi team</p>`,
       `Hi ${name},\n\nYour ChAi ${planLabel} subscription is active. Open your Today brief: ${SITE_ORIGIN}/app/today\n\n— The ChAi team`,
       "subscription_welcome",
     );
@@ -140,9 +153,9 @@ async function sendWelcomeAndNotify(userId: string, planLabel: string) {
       if (!p.email) continue;
       await enqueueEmail(
         p.email,
-        `New ChAi subscriber: ${email ?? userId} (${planLabel})`,
-        `<p><strong>${email ?? userId}</strong> just subscribed to <strong>ChAi ${planLabel}</strong>.</p>`,
-        `${email ?? userId} just subscribed to ChAi ${planLabel}.`,
+        `New ChAi subscriber: ${identifier} (${planLabel})`,
+        `<p><strong>${safeIdentifier}</strong> just subscribed to <strong>ChAi ${planLabel}</strong>.</p>`,
+        `${identifier} just subscribed to ChAi ${planLabel}.`,
         "admin_new_subscriber",
       );
     }
