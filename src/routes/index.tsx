@@ -15,10 +15,10 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
-import heroDashboardAsset from "@/assets/hero-dashboard.png.asset.json";
-import recommendationsPanelAsset from "@/assets/top-retention-recommendations.png.asset.json";
-// Reduced to 50% (240 x 322) for tighter homepage layout
-// import askChaiWidgetAsset from "@/assets/askchai-widget.png.asset.json";
+// Homepage imagery is served from /public so it resolves on any domain.
+const heroDashboardSrc = "/screenshots/hero-dashboard.png";
+const recommendationsPanelSrc = "/screenshots/top-retention-recommendations.png";
+
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
   FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
