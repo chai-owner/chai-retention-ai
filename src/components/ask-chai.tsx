@@ -124,6 +124,26 @@ export function AskChAi() {
             </button>
           </div>
 
+          {/* Persistent data-confidence strip — mirrors what ChAi says in its
+              caveats by using the same useDataCoverage() assessment. */}
+          {coverage.confidence !== "good" && (
+            <Link
+              to="/app/data-quality"
+              title="View data coverage details"
+              className={cn(
+                "flex items-center gap-1.5 border-b border-border px-4 py-1.5 text-[11px] font-medium transition-colors",
+                coverage.confidence === "low"
+                  ? "bg-danger/10 text-danger hover:bg-danger/15"
+                  : "bg-warning/10 text-warning-foreground hover:bg-warning/15",
+              )}
+            >
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              {coverage.confidence === "low"
+                ? "Limited data available — answers may be incomplete"
+                : "Some data may be outdated"}
+            </Link>
+          )}
+
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.map((m, i) => (
               <div
