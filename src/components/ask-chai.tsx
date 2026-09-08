@@ -3,8 +3,11 @@ import { Sparkles, X, Send, Loader2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { askChai } from "@/lib/ai.functions";
-import { useScoredData } from "@/lib/use-scored-data";
+import { useScoredData, useDataCoverage } from "@/lib/use-scored-data";
+import { coverageBasis } from "@/lib/data-coverage";
+import { useProfile } from "@/lib/profile-store";
 import { formatCurrency } from "@/lib/mock-data";
+
 
 interface Msg {
   role: "user" | "assistant";
@@ -29,6 +32,8 @@ export function AskChAi() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { executive, sortedByRisk } = useScoredData();
+  const coverage = useDataCoverage();
+  const profile = useProfile();
   const ask = useServerFn(askChai);
 
   function buildContext() {
@@ -68,8 +73,21 @@ export function AskChAi() {
         data: {
           messages: history.filter((m) => m.text !== GREETING).map((m) => ({ role: m.role, text: m.text })),
           context: buildContext(),
+          coverage: {
+            confidence: coverage.confidence,
+            headline: coverage.headline,
+            notes: coverage.notes,
+            basis: coverageBasis(coverage),
+          },
+          profile: {
+            industry: profile?.industry,
+            model: profile?.model,
+            whatBuy: profile?.whatBuy,
+            cadence: profile?.cadence,
+          },
         },
       });
+
       setMessages((m) => [...m, { role: "assistant", text: reply }]);
     } catch {
       setMessages((m) => [
