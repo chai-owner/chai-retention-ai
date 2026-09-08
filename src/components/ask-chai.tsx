@@ -3,8 +3,11 @@ import { Sparkles, X, Send, Loader2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { askChai } from "@/lib/ai.functions";
-import { useScoredData } from "@/lib/use-scored-data";
+import { useScoredData, useDataCoverage } from "@/lib/use-scored-data";
+import { coverageBasis } from "@/lib/data-coverage";
+import { useProfile } from "@/lib/profile-store";
 import { formatCurrency } from "@/lib/mock-data";
+
 
 interface Msg {
   role: "user" | "assistant";
