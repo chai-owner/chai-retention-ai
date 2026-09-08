@@ -161,6 +161,20 @@ ${coverageBlock}
 Workspace context:
 ${data.context?.trim() || "(no live workspace data provided)"}`;
 
+    const convo = data.messages
+      .map((m) => `${m.role === "user" ? "User" : "ChAi"}: ${m.text}`)
+      .join("\n");
+
+    const result = await getAiProvider().generateText({
+      operation: "askChai",
+      model: MODEL,
+      prompt: `${system}\n\nConversation so far:\n${convo}\n\nChAi:`,
+    });
+    if (!result.ok) return { reply: result.message ?? FALLBACK_REPLY };
+
+    return { reply: result.text.trim() || FALLBACK_REPLY };
+  });
+
 
 // ---------------------------------------------------------------------------
 // Risk reason summaries — one-liners for the dashboard "Needs attention" list
