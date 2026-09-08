@@ -17,6 +17,7 @@ import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 import heroDashboardAsset from "@/assets/hero-dashboard.png.asset.json";
 import recommendationsPanelAsset from "@/assets/top-retention-recommendations.png.asset.json";
+import askChaiWidgetAsset from "@/assets/askchai-widget.png.asset.json";
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
   FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
@@ -271,6 +272,31 @@ function Landing() {
               </div>
             </Reveal>
           ))}
+        </div>
+      </section>
+
+      {/* ── Ask ChAi ─────────────────────────────────────── */}
+      <section id="ask-chai" className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
+        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <Reveal className="order-1">
+            <Eyebrow>Your retention analyst, on call</Eyebrow>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+              Ask ChAi anything
+            </h2>
+            <p className="mt-4 text-lg text-[#4A5A6B]">
+              No dashboard-diving required. Ask a plain question — "how do I improve retention?" —
+              and get a specific, prioritised answer, grounded in your actual customer data.
+            </p>
+          </Reveal>
+          <Reveal delay={120} className="order-2">
+            <div className="overflow-hidden rounded-[18px] border border-[#D8E7EF] bg-white shadow-sm">
+              <img
+                src={askChaiWidgetAsset.url}
+                alt="Ask ChAi chat widget showing a retention question and a prioritised, data-grounded answer"
+                className="w-full"
+              />
+            </div>
+          </Reveal>
         </div>
       </section>
 
