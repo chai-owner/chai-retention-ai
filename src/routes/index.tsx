@@ -17,7 +17,8 @@ import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 import heroDashboardAsset from "@/assets/hero-dashboard.png.asset.json";
 import recommendationsPanelAsset from "@/assets/top-retention-recommendations.png.asset.json";
-import askChaiWidgetAsset from "@/assets/askchai-widget.png.asset.json";
+// Reduced to 50% (240 x 322) for tighter homepage layout
+// import askChaiWidgetAsset from "@/assets/askchai-widget.png.asset.json";
 import {
   ZendeskIcon, ZendeskColor, IntercomIcon, IntercomColor,
   FreshdeskIcon, FreshdeskColor, HubSpotIcon, HubSpotColor,
@@ -291,9 +292,9 @@ function Landing() {
           <Reveal delay={120} className="order-2">
             <div className="overflow-hidden rounded-[18px] border border-[#D8E7EF] bg-white shadow-sm">
               <img
-                src={askChaiWidgetAsset.url}
+                src="/askchai-widget-50.png"
                 alt="Ask ChAi chat widget showing a retention question and a prioritised, data-grounded answer"
-                className="w-full"
+                className="mx-auto w-full max-w-[240px]"
               />
             </div>
           </Reveal>
