@@ -221,16 +221,14 @@ function Landing() {
 
         <div className="mt-24 grid items-stretch gap-8 lg:mt-32 lg:grid-cols-2">
           <div className="flex flex-col gap-6">
-            {pairedFeatures.map((f, i) => (
-              <Reveal key={f.title} delay={i * 100}>
-                <div className="h-full rounded-[18px] bg-white p-8">
+            {pairedFeatures.map((f) => (
+              <div key={f.title} className="flex-1 rounded-[18px] bg-white p-8">
                   <span className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#204654] text-white">
                     <f.icon className="h-5 w-5" strokeWidth={1.75} />
                   </span>
                   <h3 className="mt-5 text-lg font-extrabold tracking-[-0.02em]">{f.title}</h3>
                   <p className="mt-2 leading-relaxed text-[#4A5A6B]">{f.desc}</p>
-                </div>
-              </Reveal>
+              </div>
             ))}
           </div>
           <div className="flex min-h-0 items-center justify-center overflow-hidden rounded-[18px] bg-white p-3 shadow-sm lg:h-full">
