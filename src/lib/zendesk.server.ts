@@ -12,6 +12,7 @@ import {
   decryptSecret,
   decryptSecretOrNull,
 } from "./connection-key-crypto.server";
+import { resolveRedirectUri } from "./oauth-state.server";
 
 export const ZENDESK_SCOPE = "read offline_access";
 /** State older than this is rejected on callback. */
