@@ -290,13 +290,11 @@ function Landing() {
             </p>
           </Reveal>
           <Reveal delay={120} className="order-2">
-            <div className="overflow-hidden rounded-[18px] border border-[#D8E7EF] bg-white shadow-sm">
-              <img
-                src="/askchai-widget-50.png"
-                alt="Ask ChAi chat widget showing a retention question and a prioritised, data-grounded answer"
-                className="mx-auto w-full max-w-[240px]"
-              />
-            </div>
+            <img
+              src="/askchai-widget-50.png"
+              alt="Ask ChAi chat widget showing a retention question and a prioritised, data-grounded answer"
+              className="mx-auto w-full max-w-[240px]"
+            />
           </Reveal>
         </div>
       </section>
