@@ -30,7 +30,6 @@ import {
   ClipboardCheck,
   UserPlus,
   TrendingUp,
-  Sparkles,
   UserMinus,
   RotateCcw,
 } from "lucide-react";
@@ -83,12 +82,6 @@ const timelineIcons: Record<TimelineEvent["type"], typeof ShoppingCart> = {
   conversation: MessageSquare,
   survey: ClipboardCheck,
   score: TrendingUp,
-};
-
-const priorityChip: Record<string, string> = {
-  High: "bg-danger/10 text-danger border-danger/20",
-  Medium: "bg-warning/15 text-warning-foreground border-warning/30",
-  Low: "bg-secondary text-secondary-foreground border-border",
 };
 
 function CustomerDetail() {
