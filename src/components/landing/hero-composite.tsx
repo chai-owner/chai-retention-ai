@@ -15,7 +15,7 @@ export function HeroComposite() {
   const c = heroCompositeCustomer;
 
   return (
-    <div className="relative mx-auto w-full max-w-[416px] pr-2 sm:pr-8 md:translate-x-10">
+    <div className="relative mx-auto w-full max-w-[520px] origin-top-left scale-[0.8] translate-x-[10%] sm:translate-x-[18%]">
       {/* Top card — renders in front */}
       <div className="relative z-10 rounded-[16px] bg-card" style={{ boxShadow: cardShadow }}>
         <RiskFactorsCard
@@ -27,7 +27,7 @@ export function HeroComposite() {
 
       {/* Bottom card — offset down and to the right, overlapping by ~60px */}
       <div
-        className="relative z-0 -mt-[40px] ml-auto w-[94%] rounded-[16px] bg-card sm:-mt-[60px] sm:w-[88%] sm:translate-x-14"
+        className="relative z-0 -mt-[40px] ml-auto w-[94%] rounded-[16px] bg-card sm:-mt-[60px] sm:w-[88%] sm:translate-x-8"
         style={{ boxShadow: cardShadow }}
       >
         <RecommendedActionsCard
