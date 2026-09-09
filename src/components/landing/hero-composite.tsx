@@ -15,7 +15,7 @@ export function HeroComposite() {
   const c = heroCompositeCustomer;
 
   return (
-    <div className="relative mx-auto w-full max-w-[520px] origin-top-left scale-[0.8] translate-x-[10%] sm:translate-x-[18%]">
+    <div className="relative mx-auto w-full max-w-[520px] origin-center scale-[0.8] translate-x-[10%] sm:translate-x-[18%]">
       {/* Top card — renders in front */}
       <div className="relative z-10 rounded-[16px] bg-card" style={{ boxShadow: cardShadow }}>
         <RiskFactorsCard
