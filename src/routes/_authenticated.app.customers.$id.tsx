@@ -35,6 +35,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
+import { RiskFactorsCard, RecommendedActionsCard } from "@/components/customer/risk-panels";
 import {
   getCustomer,
   categoryFromHealth,
