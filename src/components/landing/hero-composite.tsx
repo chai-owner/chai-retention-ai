@@ -39,7 +39,7 @@ export function HeroComposite() {
       </div>
 
       {/* Floating health score badge */}
-      <div className="absolute -top-4 right-0 z-20 rounded-[12px] bg-[#152238] px-4 py-3 text-right shadow-[0_8px_20px_rgba(0,0,0,0.18)] sm:-right-2">
+      <div className="absolute -top-9 right-0 z-20 rounded-[12px] bg-[#152238] px-4 py-2.5 text-right shadow-[0_8px_20px_rgba(0,0,0,0.18)] sm:-top-4 sm:-right-2 sm:py-3">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-[#A9E0F1]">
           Health score
         </p>
