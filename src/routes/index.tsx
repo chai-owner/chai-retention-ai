@@ -15,8 +15,8 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
+import { HeroComposite } from "@/components/landing/hero-composite";
 // Homepage imagery is served from /public so it resolves on any domain.
-const heroDashboardSrc = "/screenshots/hero-dashboard.png";
 const recommendationsPanelSrc = "/screenshots/top-retention-recommendations.png";
 
 import {
