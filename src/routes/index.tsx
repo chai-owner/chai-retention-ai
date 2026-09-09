@@ -186,11 +186,7 @@ function Landing() {
           </Reveal>
 
           <Reveal delay={120}>
-            <img
-              src={heroDashboardSrc}
-              alt="ChAi customer risk dashboard showing health score, churn probability, revenue value, and recommended actions"
-              className="w-full scale-[1.15] translate-x-[5%] rounded-[8px] border border-white/10 shadow-2xl shadow-black/25"
-            />
+            <HeroComposite />
           </Reveal>
         </div>
       </section>
