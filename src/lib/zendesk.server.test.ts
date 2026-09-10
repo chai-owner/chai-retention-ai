@@ -77,15 +77,14 @@ describe("Zendesk configuration", () => {
     expect(url.searchParams.get("redirect_uri")).toBe("https://app.test/cb");
     expect(url.searchParams.get("state")).toBe("state-123");
     expect(url.searchParams.get("response_type")).toBe("code");
-    expect(url.searchParams.get("scope")).toBe("read offline_access");
+    expect(url.searchParams.get("scope")).toBe("read");
   });
 
-  it("requests offline_access so Zendesk issues a refresh token", () => {
-    expect(ZENDESK_SCOPE).toBe("read offline_access");
+  it("uses the read scope for global OAuth clients", () => {
+    expect(ZENDESK_SCOPE).toBe("read");
     const scopes = ZENDESK_SCOPE.split(" ");
     expect(scopes).toContain("read");
-    expect(scopes).toContain("offline_access");
-    expect(scopes).toHaveLength(2);
+    expect(scopes).toHaveLength(1);
   });
 
   it("sends the same scope on the authorization-code exchange", async () => {
