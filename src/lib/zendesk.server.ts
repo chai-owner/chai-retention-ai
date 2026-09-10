@@ -14,7 +14,7 @@ import {
 } from "./connection-key-crypto.server";
 import { resolveRedirectUri } from "./oauth-state.server";
 
-export const ZENDESK_SCOPE = "read offline_access";
+export const ZENDESK_SCOPE = "read";
 /** State older than this is rejected on callback. */
 export const STATE_TTL_MS = 15 * 60 * 1000;
 /** Refresh the access token this long before it actually expires. */
