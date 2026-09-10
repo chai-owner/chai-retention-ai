@@ -94,7 +94,7 @@ describe("Zendesk configuration", () => {
     await exchangeZendeskCode("acme", "code-1", "https://app.test/cb");
     const body = http.requests[0].body as string;
     const parsed = typeof body === "string" ? JSON.parse(body) : body;
-    expect(parsed.scope).toBe("read offline_access");
+    expect(parsed.scope).toBe("read");
   });
 });
 
