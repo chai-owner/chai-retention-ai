@@ -87,16 +87,9 @@ function HelpIndex() {
                     <Link
                       to="/help/$category/$slug"
                       params={{ category: category.slug, slug: article.slug }}
-                      className="group block rounded-[8px]"
+                      className="group block rounded-[8px] font-semibold text-[#204654] group-hover:text-[#152238]"
                     >
-                      <span className="font-semibold text-[#204654] group-hover:text-[#152238]">
-                        {article.title}
-                      </span>
-                      {article.description ? (
-                        <span className="mt-0.5 block text-sm text-[#4A5A6B]">
-                          {article.description}
-                        </span>
-                      ) : null}
+                      {article.title}
                     </Link>
                   </li>
                 ))}
