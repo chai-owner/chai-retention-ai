@@ -1,0 +1,1 @@
+ALTER TABLE public.zendesk_connections ADD CONSTRAINT zendesk_connections_user_id_key UNIQUE (user_id);
