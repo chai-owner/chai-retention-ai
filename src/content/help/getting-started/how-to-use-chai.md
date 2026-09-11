@@ -1,7 +1,7 @@
 ---
 order: 3
 title: "How to Use ChAi"
-category: "Getting Started"
+category: "getting-started"
 slug: "how-to-use-chai"
 description: "A practical, day-to-day guide to navigating ChAi: the Today screen, acting on high-risk customers, your Monday digest, and more."
 ---

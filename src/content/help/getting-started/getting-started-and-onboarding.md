@@ -1,7 +1,7 @@
 ---
 order: 2
 title: "Getting Started and Onboarding"
-category: "Getting Started"
+category: "getting-started"
 slug: "getting-started-and-onboarding"
 description: "How to sign up for ChAi, start your 14-day free trial, set up your business profile, and complete your onboarding call."
 ---

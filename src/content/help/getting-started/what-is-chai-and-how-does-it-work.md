@@ -1,7 +1,7 @@
 ---
 order: 1
 title: "What is ChAi and how does it work"
-category: "Getting Started"
+category: "getting-started"
 slug: "what-is-chai-and-how-does-it-work"
 description: "ChAi is a customer retention analytics platform that shows recurring revenue businesses who's about to churn and why."
 ---

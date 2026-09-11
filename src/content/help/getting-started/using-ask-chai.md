@@ -1,7 +1,7 @@
 ---
 order: 5
 title: "Using Ask ChAi"
-category: "Getting Started"
+category: "getting-started"
 slug: "using-ask-chai"
 description: "How to ask ChAi questions about your customers in plain language, what it can and can't tell you, and how to get better answers."
 ---

@@ -1,7 +1,7 @@
 ---
 order: 4
 title: "Understanding Your ChAi Risk Scores"
-category: "Getting Started"
+category: "getting-started"
 slug: "understanding-your-chai-risk-scores"
 description: "How ChAi calculates churn probability, reads risk breakdowns, and factors in data sufficiency and industry context."
 ---

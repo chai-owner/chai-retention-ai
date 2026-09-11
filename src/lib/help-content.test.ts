@@ -48,7 +48,7 @@ describe("article index", () => {
   });
 
   it("finds an article by category and slug", () => {
-    expect(findArticle("getting-started", "welcome-to-chai")?.title).toContain("Welcome");
+    expect(findArticle("getting-started", "what-is-chai-and-how-does-it-work")?.title).toContain("ChAi");
     expect(findArticle("getting-started", "nope")).toBeUndefined();
   });
 });
