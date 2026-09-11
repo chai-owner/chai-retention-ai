@@ -48,6 +48,7 @@ export async function persistDatasetsAdmin(
   sourceProvider: string,
   datasets: ExtractedDataset[],
 ): Promise<PersistResult> {
+  const supabaseAdmin = await getSupabaseAdmin();
   const batchIds: string[] = [];
   let totalRows = 0;
 
