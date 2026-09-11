@@ -43,7 +43,9 @@ describe("supabaseAdmin credential lookup", () => {
   });
 
   it("throws the missing-variable error only when no source has the credentials", async () => {
-    const { supabaseAdmin } = await import("./client.server");
+    // Query suffix forces a fresh module instance: the earlier tests already
+    // created and cached a client inside their module's lazy singleton.
+    const { supabaseAdmin } = await import("./client.server?fresh=missing");
     expect(() => supabaseAdmin.from("profiles")).toThrow(
       "Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY",
     );
