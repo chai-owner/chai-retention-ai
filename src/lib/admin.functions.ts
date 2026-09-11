@@ -77,8 +77,8 @@ export const listCustomers = createServerFn({ method: "GET" })
   .middleware([requireConnectedAuth])
   .handler(async ({ context }): Promise<AdminCustomer[]> => {
     await assertAdmin(context);
-    const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
-    const supabaseAdmin = await loadSupabaseAdmin();
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
 
     const { data: profiles, error } = await supabaseAdmin
       .from("profiles")
@@ -178,8 +178,8 @@ export const setUnlocked = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
-    const supabaseAdmin = await loadSupabaseAdmin();
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from("profiles")
       .update({ unlocked: data.unlocked })
@@ -197,8 +197,8 @@ export const startImpersonation = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
-    const supabaseAdmin = await loadSupabaseAdmin();
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
 
     const { data: userRes, error: userErr } =
       await supabaseAdmin.auth.admin.getUserById(data.userId);
@@ -243,8 +243,8 @@ async function closeImpersonation(
   auditId: string,
   targetId: string,
 ): Promise<{ active: false; reason: ImpersonationEndReason }> {
-  const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
-  const supabaseAdmin = await loadSupabaseAdmin();
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data: row, error: readError } = await supabaseAdmin
     .from("impersonation_audit")
     .select("started_at, ended_at, end_reason")
@@ -278,8 +278,8 @@ export const getImpersonationStatus = createServerFn({ method: "POST" })
     z.object({ auditId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
-    const supabaseAdmin = await loadSupabaseAdmin();
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: row, error } = await supabaseAdmin
       .from("impersonation_audit")
       .select("started_at, ended_at, end_reason")
@@ -348,8 +348,8 @@ export const resetAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
-    const supabaseAdmin = await loadSupabaseAdmin();
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
 
     for (const table of USER_DATA_TABLES) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -399,8 +399,8 @@ export const deleteAccount = createServerFn({ method: "POST" })
     if (data.userId === context.userId) {
       throw new Error("You cannot delete your own account");
     }
-    const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
-    const supabaseAdmin = await loadSupabaseAdmin();
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
 
     const { data: profile } = await supabaseAdmin
       .from("profiles")
@@ -480,8 +480,8 @@ export const listBilling = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => envInput.parse(input))
   .handler(async ({ data, context }): Promise<AdminBillingRow[]> => {
     await assertAdmin(context);
-    const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
-    const supabaseAdmin = await loadSupabaseAdmin();
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
 
     const [{ data: profiles }, { data: subs }, { data: members }] = await Promise.all([
       supabaseAdmin.from("profiles").select("id, full_name, email"),
@@ -545,8 +545,8 @@ export const listBilling = createServerFn({ method: "POST" })
   });
 
 async function adminLatestSubscription(userId: string, env: PaddleEnv) {
-  const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
-  const supabaseAdmin = await loadSupabaseAdmin();
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data } = await supabaseAdmin
     .from("subscriptions")
     .select("*")
@@ -634,8 +634,8 @@ export const adminChangePlan = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ kind: PlanChangeKind; effectiveAt?: string }> => {
     await assertAdmin(context);
-    const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
-    const supabaseAdmin = await loadSupabaseAdmin();
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const sub = await adminLatestSubscription(data.userId, data.environment);
     if (!["active", "trialing"].includes(sub.status)) {
       throw new Error("This subscription isn't active, so it can't be changed.");
