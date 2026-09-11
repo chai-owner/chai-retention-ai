@@ -35,7 +35,6 @@ describe("articleFromFile", () => {
 
 describe("article index", () => {
   it("ships at least one article per category", () => {
-    console.log("HELP_ARTICLES:", HELP_ARTICLES.map((a) => ({ slug: a.slug, cat: a.categorySlug })));
     for (const c of HELP_CATEGORIES) {
       expect(articlesByCategory(c.slug).length).toBeGreaterThan(0);
     }
