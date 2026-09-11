@@ -44,14 +44,18 @@ describe("supabaseAdmin credential lookup", () => {
   });
 
   it("throws the missing-variable error only when no source has the credentials", async () => {
-    const { getSupabaseAdmin } = await import("./client.server");
+    // Query suffix forces a fresh module instance: earlier tests cached a
+    // client inside their module's lazy singleton.
+    // @ts-expect-error -- runtime-only query suffix; TS has no declaration for it.
+    const { getSupabaseAdmin } = await import("./client.server?fresh=missing");
     await expect(getSupabaseAdmin()).rejects.toThrow(
       "Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY",
     );
   });
 
   it("throws a clear error when the proxy is used before initialisation", async () => {
-    const { supabaseAdmin } = await import("./client.server");
+    // @ts-expect-error -- runtime-only query suffix; TS has no declaration for it.
+    const { supabaseAdmin } = await import("./client.server?fresh=proxy");
     expect(() => supabaseAdmin.from("profiles")).toThrow(
       "supabaseAdmin accessed before initialisation",
     );
