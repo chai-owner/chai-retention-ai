@@ -429,6 +429,9 @@ function Landing() {
               </button>
             </li>
             <li>
+              <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/help">Help</Link>
+            </li>
+            <li>
               <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/terms">Terms</Link>
             </li>
             <li>

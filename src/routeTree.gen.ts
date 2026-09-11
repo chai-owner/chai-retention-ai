@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FounderRouteImport } from './routes/founder'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -21,6 +22,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
+import { Route as HelpIndexRouteImport } from './routes/help.index'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as AuthenticatedAppChurnedRouteImport } from './routes/_authenticated.app.churned'
@@ -38,6 +40,7 @@ import { Route as AuthenticatedAppTodayRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppTransactionsRouteImport } from './routes/_authenticated.app.transactions'
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated.settings.account'
+import { Route as HelpCategorySlugRouteImport } from './routes/help.$category.$slug'
 import { Route as OauthSalesforceReturnRouteImport } from './routes/oauth/salesforce/return'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
@@ -72,6 +75,11 @@ const AuthRoute = AuthRouteImport.update({
 const FounderRoute = FounderRouteImport.update({
   id: '/founder',
   path: '/founder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -113,6 +121,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const HelpIndexRoute = HelpIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => HelpRoute,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
@@ -207,6 +220,11 @@ const AuthenticatedSettingsAccountRoute =
     path: '/settings/account',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const HelpCategorySlugRoute = HelpCategorySlugRouteImport.update({
+  id: '/$category/$slug',
+  path: '/$category/$slug',
+  getParentRoute: () => HelpRoute,
+} as any)
 const OauthSalesforceReturnRoute = OauthSalesforceReturnRouteImport.update({
   id: '/oauth/salesforce/return',
   path: '/oauth/salesforce/return',
@@ -303,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/founder': typeof FounderRoute
+  '/help': typeof HelpRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -312,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/help/': typeof HelpIndexRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
   '/app/customers': typeof AuthenticatedAppCustomersRouteWithChildren
   '/app/dashboard': typeof AuthenticatedAppDashboardRoute
@@ -327,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -357,6 +378,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/help': typeof HelpIndexRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardRoute
   '/app/data': typeof AuthenticatedAppDataRoute
@@ -371,6 +393,7 @@ export interface FileRoutesByTo {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -395,6 +418,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
   '/founder': typeof FounderRoute
+  '/help': typeof HelpRouteWithChildren
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -404,6 +428,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/help/': typeof HelpIndexRoute
   '/_authenticated/app/churned': typeof AuthenticatedAppChurnedRoute
   '/_authenticated/app/customers': typeof AuthenticatedAppCustomersRouteWithChildren
   '/_authenticated/app/dashboard': typeof AuthenticatedAppDashboardRoute
@@ -419,6 +444,7 @@ export interface FileRoutesById {
   '/_authenticated/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -443,6 +469,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/founder'
+    | '/help'
     | '/pricing'
     | '/privacy'
     | '/reset-password'
@@ -452,6 +479,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/onboarding'
     | '/invite/$token'
+    | '/help/'
     | '/app/churned'
     | '/app/customers'
     | '/app/dashboard'
@@ -467,6 +495,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/app/welcome'
     | '/settings/account'
+    | '/help/$category/$slug'
     | '/oauth/salesforce/return'
     | '/app/'
     | '/app/customers/$id'
@@ -497,6 +526,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/onboarding'
     | '/invite/$token'
+    | '/help'
     | '/app/churned'
     | '/app/dashboard'
     | '/app/data'
@@ -511,6 +541,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/app/welcome'
     | '/settings/account'
+    | '/help/$category/$slug'
     | '/oauth/salesforce/return'
     | '/app'
     | '/app/customers/$id'
@@ -534,6 +565,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/founder'
+    | '/help'
     | '/pricing'
     | '/privacy'
     | '/reset-password'
@@ -543,6 +575,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/_authenticated/onboarding'
     | '/invite/$token'
+    | '/help/'
     | '/_authenticated/app/churned'
     | '/_authenticated/app/customers'
     | '/_authenticated/app/dashboard'
@@ -558,6 +591,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/transactions'
     | '/_authenticated/app/welcome'
     | '/_authenticated/settings/account'
+    | '/help/$category/$slug'
     | '/oauth/salesforce/return'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
@@ -582,6 +616,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
   FounderRoute: typeof FounderRoute
+  HelpRoute: typeof HelpRouteWithChildren
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -632,6 +667,13 @@ declare module '@tanstack/react-router' {
       path: '/founder'
       fullPath: '/founder'
       preLoaderRoute: typeof FounderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -689,6 +731,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/help/': {
+      id: '/help/'
+      path: '/'
+      fullPath: '/help/'
+      preLoaderRoute: typeof HelpIndexRouteImport
+      parentRoute: typeof HelpRoute
     }
     '/invite/$token': {
       id: '/invite/$token'
@@ -808,6 +857,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/account'
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/help/$category/$slug': {
+      id: '/help/$category/$slug'
+      path: '/$category/$slug'
+      fullPath: '/help/$category/$slug'
+      preLoaderRoute: typeof HelpCategorySlugRouteImport
+      parentRoute: typeof HelpRoute
     }
     '/oauth/salesforce/return': {
       id: '/oauth/salesforce/return'
@@ -997,11 +1053,24 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface HelpRouteChildren {
+  HelpIndexRoute: typeof HelpIndexRoute
+  HelpCategorySlugRoute: typeof HelpCategorySlugRoute
+}
+
+const HelpRouteChildren: HelpRouteChildren = {
+  HelpIndexRoute: HelpIndexRoute,
+  HelpCategorySlugRoute: HelpCategorySlugRoute,
+}
+
+const HelpRouteWithChildren = HelpRoute._addFileChildren(HelpRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
   FounderRoute: FounderRoute,
+  HelpRoute: HelpRouteWithChildren,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
