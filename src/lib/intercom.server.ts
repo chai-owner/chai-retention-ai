@@ -46,7 +46,6 @@ export function resolveIntercomHost(
   return { region: "us", apiHost: INTERCOM_REGIONS.us };
 }
 
-
 export function getIntercomCreds(): { clientId: string; clientSecret: string } {
   const clientId = process.env.INTERCOM_CLIENT_ID;
   const clientSecret = process.env.INTERCOM_CLIENT_SECRET;
@@ -97,10 +96,7 @@ async function readJson(res: Response, ctx: string): Promise<any> {
   }
 }
 
-export async function exchangeIntercomCode(
-  code: string,
-  redirectUri?: string,
-): Promise<TokenSet> {
+export async function exchangeIntercomCode(code: string, redirectUri?: string): Promise<TokenSet> {
   const { clientId, clientSecret } = getIntercomCreds();
   const res = await fetch(INTERCOM_TOKEN_URL, {
     method: "POST",
@@ -121,7 +117,8 @@ export async function exchangeIntercomCode(
 }
 
 async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const supabaseAdmin = await getSupabaseAdmin();
   return supabaseAdmin;
 }
 
@@ -141,14 +138,17 @@ interface IntercomIdentity {
   apiHost: string;
 }
 
-function parseMe(j: {
-  app?: { id_code?: string; name?: string; id?: string; region?: string };
-}): { workspaceId: string | null; workspaceName: string | null; appId: string | null; region: string | null } {
+function parseMe(j: { app?: { id_code?: string; name?: string; id?: string; region?: string } }): {
+  workspaceId: string | null;
+  workspaceName: string | null;
+  appId: string | null;
+  region: string | null;
+} {
   const app = j.app ?? {};
   return {
     workspaceId: app.id_code ?? null,
     workspaceName: app.name ?? null,
-    appId: app.id ? String(app.id) : app.id_code ?? null,
+    appId: app.id ? String(app.id) : (app.id_code ?? null),
     region: app.region ? String(app.region).toLowerCase() : null,
   };
 }
@@ -179,7 +179,8 @@ export async function detectIntercomRegion(token: string): Promise<IntercomIdent
     }
     const me = parseMe((await res.json()) as never);
     // Prefer Intercom's own region hint, but only when it is allowlisted.
-    const reported = me.region && me.region in INTERCOM_REGIONS ? (me.region as IntercomRegion) : null;
+    const reported =
+      me.region && me.region in INTERCOM_REGIONS ? (me.region as IntercomRegion) : null;
     const resolved = resolveIntercomHost(reported ?? region);
     return {
       workspaceId: me.workspaceId,
@@ -248,7 +249,6 @@ async function loadIntercomConnection(userId: string): Promise<Row & { apiHost: 
   return { ...row, apiHost };
 }
 
-
 function toStr(v: unknown): string {
   return v == null ? "" : String(v);
 }
@@ -281,7 +281,9 @@ interface IntercomConversation {
   updated_at?: number;
   state?: string;
   source?: { subject?: string; author?: { email?: string; id?: string; name?: string } };
-  contacts?: { contacts?: Array<{ id?: string; external_id?: string; email?: string; name?: string }> };
+  contacts?: {
+    contacts?: Array<{ id?: string; external_id?: string; email?: string; name?: string }>;
+  };
   conversation_rating?: { rating?: number };
 }
 
@@ -316,7 +318,8 @@ export async function syncIntercomForUser(
     body: JSON.stringify(body),
   });
 
-  if (res.status === 429) throw new Error("Intercom rate limit hit — please try again in a moment.");
+  if (res.status === 429)
+    throw new Error("Intercom rate limit hit — please try again in a moment.");
   const text = await res.text();
   if (!res.ok) throw new Error(`Intercom request failed [${res.status}]: ${text.slice(0, 300)}`);
 
@@ -376,7 +379,6 @@ export async function getIntercomStatusRow(userId: string) {
   const resolved = resolveIntercomHost(row.region, row.api_host);
   return { ...row, region: resolved.region, api_host: resolved.apiHost };
 }
-
 
 export async function deleteIntercomConnection(userId: string) {
   const db = await admin();

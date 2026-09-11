@@ -7,11 +7,7 @@
 // scoped to the authenticated ChAi user id — never an id supplied by the
 // browser. Never import this module from client code.
 import type { ExtractedDataset } from "./ingest.functions";
-import {
-  encryptSecret,
-  decryptSecret,
-  decryptSecretOrNull,
-} from "./connection-key-crypto.server";
+import { encryptSecret, decryptSecret, decryptSecretOrNull } from "./connection-key-crypto.server";
 import { resolveRedirectUri } from "./oauth-state.server";
 
 export const ZENDESK_SCOPE = "tickets:read users:read organizations:read satisfaction_ratings:read";
@@ -51,13 +47,8 @@ export function hasZendeskCreds(): boolean {
  * authorization code to an attacker-controlled host.
  */
 export function getZendeskRedirectUri(originFallback: string): string {
-  return resolveRedirectUri(
-    "ZENDESK_REDIRECT_URI",
-    "/api/public/zendesk/callback",
-    originFallback,
-  );
+  return resolveRedirectUri("ZENDESK_REDIRECT_URI", "/api/public/zendesk/callback", originFallback);
 }
-
 
 /** Accepts "acme", "acme.zendesk.com", "https://acme.zendesk.com/agent" → "acme". */
 export function normalizeSubdomain(input: string): string {
@@ -119,7 +110,11 @@ export function logZendeskDiagnostic(info: {
 }
 
 /** Maps a Zendesk OAuth/API failure to a human-readable ChAi message. */
-export function humanZendeskError(status: number, code: string | undefined, subdomain: string): string {
+export function humanZendeskError(
+  status: number,
+  code: string | undefined,
+  subdomain: string,
+): string {
   if (code === "access_denied") return "Zendesk connection was cancelled.";
   if (code === "invalid_client" || /no such client/i.test(code ?? ""))
     return "ChAi could not start the Zendesk authorization process. Please verify the Zendesk connection configuration.";
@@ -191,7 +186,9 @@ async function postTokens(
       // token bodies never contain the code/secret we sent, but keep it short
       detail: typeof json.description === "string" ? json.description : undefined,
     });
-    throw new Error(humanZendeskError(res.status, typeof code === "string" ? code : undefined, subdomain));
+    throw new Error(
+      humanZendeskError(res.status, typeof code === "string" ? code : undefined, subdomain),
+    );
   }
   return {
     accessToken: json.access_token,
@@ -243,7 +240,8 @@ export async function refreshZendeskToken(
 // ------------------------------------------------------------- persistence ---
 
 async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const supabaseAdmin = await getSupabaseAdmin();
   return supabaseAdmin;
 }
 
@@ -562,7 +560,8 @@ const SUPPORT_HEADERS = [
 
 function mapZendeskStatus(status: string): string {
   if (status === "solved" || status === "closed") return "resolved";
-  if (status === "open" || status === "pending" || status === "hold" || status === "new") return "open";
+  if (status === "open" || status === "pending" || status === "hold" || status === "new")
+    return "open";
   return status;
 }
 
@@ -679,10 +678,7 @@ export async function deleteZendeskConnection(userId: string) {
     .eq("user_id", userId)
     .maybeSingle();
   if (data?.access_token) {
-    await revokeZendeskToken(
-      data.subdomain as string,
-      decryptSecret(data.access_token as string),
-    );
+    await revokeZendeskToken(data.subdomain as string, decryptSecret(data.access_token as string));
   }
   const { clearSupportSyncState } = await import("./support.server");
   await clearSupportSyncState(userId, "zendesk");

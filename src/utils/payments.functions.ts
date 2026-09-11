@@ -100,7 +100,11 @@ export const getMySubscription = createServerFn({ method: "GET" })
       plan: resolved?.plan ?? null,
       period:
         resolved?.period ??
-        (sub.billing_interval === "year" ? "annual" : sub.billing_interval === "month" ? "monthly" : null),
+        (sub.billing_interval === "year"
+          ? "annual"
+          : sub.billing_interval === "month"
+            ? "monthly"
+            : null),
       currentPeriodEnd: sub.current_period_end ?? null,
       cancelAtPeriodEnd: !!sub.cancel_at_period_end,
       pendingPlan: org.pending_plan ?? null,
@@ -154,7 +158,8 @@ export const requestPlanChange = createServerFn({ method: "POST" })
     if (kind === "same") return { kind };
 
     const { resolvePaddlePriceId, updateSubscriptionItems } = await import("@/lib/paddle.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
 
     // Keep any add-on the subscription already carries. Paddle requires all
     // recurring items to share a billing interval, so the monthly add-on can

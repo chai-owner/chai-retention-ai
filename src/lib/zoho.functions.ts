@@ -20,16 +20,19 @@ export const getZohoStatus = createServerFn({ method: "GET" })
 export const startZohoConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({
-      origin: z.string().url(),
-      dc: z.string().optional(),
-    }).parse(input),
+    z
+      .object({
+        origin: z.string().url(),
+        dc: z.string().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { getZohoCreds, buildZohoAuthorizeUrl } = await import("./zoho.server");
     const { defaultDc } = getZohoCreds();
     const dc = data.dc || defaultDc;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { createOAuthState, resolveRedirectUri } = await import("./oauth-state.server");
     const redirectUri = resolveRedirectUri(
       "ZOHO_REDIRECT_URI",
@@ -46,11 +49,11 @@ export const startZohoConnect = createServerFn({ method: "POST" })
     return { url: buildZohoAuthorizeUrl(dc, redirectUri, state) };
   });
 
-
 export const disconnectZoho = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { revokeZohoRefreshToken, deleteZohoConnection } = await import("./zoho.server");
     const { decryptSecretOrNull } = await import("./connection-key-crypto.server");
     const { data } = await supabaseAdmin

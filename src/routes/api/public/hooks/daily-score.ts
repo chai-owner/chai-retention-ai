@@ -25,14 +25,11 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
           });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const supabaseAdmin = await getSupabaseAdmin();
         const { scoreCustomers } = await import("@/lib/customer-scoring");
-        const {
-          INGEST_COLUMNS,
-          INGEST_PAGE,
-          normalizeIngestRow,
-          batchSource,
-        } = await import("@/lib/ingest-row-normalize");
+        const { INGEST_COLUMNS, INGEST_PAGE, normalizeIngestRow, batchSource } =
+          await import("@/lib/ingest-row-normalize");
         type PlannerMetric = import("@/lib/mock-data").PlannerMetric;
         type IngestedData = import("@/lib/ingested-data-store").IngestedData;
         type HistoryPoint = import("@/lib/customer-scoring").HistoryPoint;
@@ -95,22 +92,41 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
 
         for (const profile of profiles ?? []) {
           const userId = profile.id as string;
-          const metrics = (Array.isArray(profile.metrics) ? profile.metrics : []) as unknown as PlannerMetric[];
+          const metrics = (Array.isArray(profile.metrics)
+            ? profile.metrics
+            : []) as unknown as PlannerMetric[];
           if (metrics.length === 0) continue;
 
           try {
-            const [customers, transactions, support, usage, surveys, batchRows] = await Promise.all([
-              readAll("ingested_customers", "id, data, customer_id, batch_id", userId, true),
-              readAll("ingested_transactions", "id, data, transaction_id, customer_id, amount, occurred_at, batch_id", userId),
-              readAll("ingested_support", "id, data, ticket_id, customer_id, batch_id", userId),
-              readAll("ingested_usage", "id, data, customer_id, occurred_at, batch_id", userId),
-              readAll("ingested_surveys", "id, data, customer_id, submitted_at, batch_id", userId),
-              supabaseAdmin
-                .from("ingest_batches")
-                .select("id, source_kind, source_provider")
-                .eq("user_id", userId)
-                .then((r) => (r.data ?? []) as Array<{ id: string; source_kind: string; source_provider: string }>),
-            ]);
+            const [customers, transactions, support, usage, surveys, batchRows] = await Promise.all(
+              [
+                readAll("ingested_customers", "id, data, customer_id, batch_id", userId, true),
+                readAll(
+                  "ingested_transactions",
+                  "id, data, transaction_id, customer_id, amount, occurred_at, batch_id",
+                  userId,
+                ),
+                readAll("ingested_support", "id, data, ticket_id, customer_id, batch_id", userId),
+                readAll("ingested_usage", "id, data, customer_id, occurred_at, batch_id", userId),
+                readAll(
+                  "ingested_surveys",
+                  "id, data, customer_id, submitted_at, batch_id",
+                  userId,
+                ),
+                supabaseAdmin
+                  .from("ingest_batches")
+                  .select("id, source_kind, source_provider")
+                  .eq("user_id", userId)
+                  .then(
+                    (r) =>
+                      (r.data ?? []) as Array<{
+                        id: string;
+                        source_kind: string;
+                        source_provider: string;
+                      }>,
+                  ),
+              ],
+            );
 
             const sourceByBatch = new Map(
               batchRows.map((b) => [b.id, batchSource(b.source_kind, b.source_provider)]),

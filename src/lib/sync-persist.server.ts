@@ -3,11 +3,10 @@
 // run without a user session. Upserts on stable natural keys so records that
 // already exist get updated instead of duplicated.
 import type { ExtractedDataset } from "./ingest.functions";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getSupabaseAdmin } from "@/integrations/supabase/client.server";
 import { SOURCE_FIELD, UNKNOWN_SOURCE } from "./ingested-data-store";
 import { customerKeyForRow } from "./row-validation";
 import { assertCustomerCapacity } from "./plan-limits.server";
-
 
 function toNumberOrNull(v: unknown): number | null {
   if (v == null || v === "") return null;
@@ -48,6 +47,7 @@ export async function persistDatasetsAdmin(
   sourceProvider: string,
   datasets: ExtractedDataset[],
 ): Promise<PersistResult> {
+  const supabaseAdmin = await getSupabaseAdmin();
   const batchIds: string[] = [];
   let totalRows = 0;
 

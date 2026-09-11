@@ -27,8 +27,8 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
           });
         }
 
-
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const supabaseAdmin = await getSupabaseAdmin();
         const { fetchAndNormalize } = await import("@/lib/accounting.server");
         const { runCrmSync, markCrmSynced } = await import("@/lib/crm.server");
         const { runSupportSync, markSupportSynced } = await import("@/lib/support.server");
@@ -60,7 +60,13 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
               provider,
               datasets,
             );
-            summaries.push({ user_id: userId, source: "accounting", provider, ok: true, rows: totalRows });
+            summaries.push({
+              user_id: userId,
+              source: "accounting",
+              provider,
+              ok: true,
+              rows: totalRows,
+            });
           } catch (err) {
             summaries.push({
               user_id: userId,
@@ -83,12 +89,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
             const since = (row.last_synced_at as string | null) ?? null;
             const startedAt = new Date().toISOString();
             const datasets = await runCrmSync(provider, userId, 500, since);
-            const { totalRows } = await persistDatasetsAdmin(
-              userId,
-              "crm",
-              provider,
-              datasets,
-            );
+            const { totalRows } = await persistDatasetsAdmin(userId, "crm", provider, datasets);
             await markCrmSynced(userId, provider, startedAt);
             summaries.push({ user_id: userId, source: "crm", provider, ok: true, rows: totalRows });
           } catch (err) {
@@ -113,14 +114,15 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
             const since = (row.last_synced_at as string | null) ?? null;
             const startedAt = new Date().toISOString();
             const { datasets, rows } = await runSupportSync(provider, userId, 500, since);
-            const { totalRows } = await persistDatasetsAdmin(
-              userId,
-              "support",
-              provider,
-              datasets,
-            );
+            const { totalRows } = await persistDatasetsAdmin(userId, "support", provider, datasets);
             await markSupportSynced(userId, provider, startedAt);
-            summaries.push({ user_id: userId, source: "support", provider, ok: true, rows: totalRows });
+            summaries.push({
+              user_id: userId,
+              source: "support",
+              provider,
+              ok: true,
+              rows: totalRows,
+            });
           } catch (err) {
             summaries.push({
               user_id: userId,
