@@ -81,7 +81,6 @@ function HelpIndex() {
               className="rounded-[16px] border border-[#D8E7EF] bg-white p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)]"
             >
               <h2 className="text-lg font-bold tracking-tight text-[#152238]">{category.name}</h2>
-              <p className="mt-1 text-sm text-[#4A5A6B]">{category.blurb}</p>
               <ul className="mt-4 space-y-3 border-t border-[#E3F1F8] pt-4">
                 {articles.map((article) => (
                   <li key={article.slug}>
