@@ -3,28 +3,16 @@
 // Use this for admin operations in server functions and server routes only.
 // For user-authenticated queries (with RLS), use the auth middleware instead.
 import { createClient } from "@supabase/supabase-js";
+import { inspectServerEnvAsync } from "@/lib/server-env";
 import type { Database } from "./types";
 
-
-/** Reads a server credential the same way the payments webhook route does. */
-function readCredential(name: string): string | undefined {
-  const g = globalThis as unknown as Record<string, any>;
-  return (
-    process.env[name] ??
-    g[name] ??
-    g.env?.[name] ??
-    g.__env__?.[name]
-  );
-}
-
 async function createSupabaseAdminClient() {
-  // process.env is the primary source in every runtime this app deploys to:
-  // the published Cloudflare Worker populates it per request (nodejs_compat),
-  // which is why the public payments webhook route reads it directly. The
-  // globalThis fallbacks only cover runtimes that expose bindings instead.
-  const SUPABASE_URL = readCredential("SUPABASE_URL");
-  const SUPABASE_SERVICE_ROLE_KEY = readCredential("SUPABASE_SERVICE_ROLE_KEY");
-
+  const [urlLookup, keyLookup] = await Promise.all([
+    inspectServerEnvAsync("SUPABASE_URL"),
+    inspectServerEnvAsync("SUPABASE_SERVICE_ROLE_KEY"),
+  ]);
+  const SUPABASE_URL = urlLookup.value;
+  const SUPABASE_SERVICE_ROLE_KEY = keyLookup.value;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = [
@@ -45,27 +33,10 @@ async function createSupabaseAdminClient() {
   });
 }
 
-let _supabaseAdmin: Awaited<ReturnType<typeof createSupabaseAdminClient>> | undefined;
-
 // Server-side Supabase client with service role - bypasses RLS
 // SECURITY: Only use this for trusted server-side operations, never expose to client code
 // Load inside server handlers: const supabaseAdmin = await getSupabaseAdmin();
-// Top-level import is safe only in other .server.ts modules - route files and *.functions.ts ship to the client bundle.
+// A fresh client is created per call so Worker bindings are read after request initialisation.
 export async function getSupabaseAdmin() {
-  if (!_supabaseAdmin) _supabaseAdmin = await createSupabaseAdminClient();
-  return _supabaseAdmin;
+  return createSupabaseAdminClient();
 }
-
-export const supabaseAdmin = new Proxy(
-  {} as Awaited<ReturnType<typeof createSupabaseAdminClient>>,
-  {
-    get(_, prop, receiver) {
-      if (!_supabaseAdmin) {
-        throw new Error(
-          "supabaseAdmin accessed before initialisation — await getSupabaseAdmin() first",
-        );
-      }
-      return Reflect.get(_supabaseAdmin, prop, receiver);
-    },
-  },
-);

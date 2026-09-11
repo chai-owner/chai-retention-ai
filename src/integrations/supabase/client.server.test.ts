@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.unmock("@/integrations/supabase/client.server");
+
 // The service-role client must resolve its credentials in both runtimes:
 // preview (process.env) and the published Cloudflare Worker (bindings exposed
 // on globalThis rather than process.env).
@@ -44,20 +46,22 @@ describe("supabaseAdmin credential lookup", () => {
   });
 
   it("throws the missing-variable error only when no source has the credentials", async () => {
-    // Query suffix forces a fresh module instance: earlier tests cached a
-    // client inside their module's lazy singleton.
-    // @ts-expect-error -- runtime-only query suffix; TS has no declaration for it.
-    const { getSupabaseAdmin } = await import("./client.server?fresh=missing");
+    const { getSupabaseAdmin } = await import("./client.server");
     await expect(getSupabaseAdmin()).rejects.toThrow(
       "Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY",
     );
   });
 
-  it("throws a clear error when the proxy is used before initialisation", async () => {
-    // @ts-expect-error -- runtime-only query suffix; TS has no declaration for it.
-    const { supabaseAdmin } = await import("./client.server?fresh=proxy");
-    expect(() => supabaseAdmin.from("profiles")).toThrow(
-      "supabaseAdmin accessed before initialisation",
-    );
+  it("reads credentials afresh and creates a new client for every call", async () => {
+    process.env.SUPABASE_URL = "https://first.example.supabase.co";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "first-service-role-key";
+    const { getSupabaseAdmin } = await import("./client.server");
+    const first = await getSupabaseAdmin();
+
+    process.env.SUPABASE_URL = "https://second.example.supabase.co";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "second-service-role-key";
+    const second = await getSupabaseAdmin();
+
+    expect(second).not.toBe(first);
   });
 });

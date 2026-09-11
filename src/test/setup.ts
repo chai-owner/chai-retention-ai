@@ -82,7 +82,6 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 
 vi.mock("@/integrations/supabase/client.server", () => ({
-  supabaseAdmin: supabaseMock,
   getSupabaseAdmin: async () => supabaseMock,
 }));
 
