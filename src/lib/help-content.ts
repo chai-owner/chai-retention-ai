@@ -16,13 +16,6 @@ export interface HelpCategory {
 export const HELP_CATEGORIES: HelpCategory[] = [
   { slug: "getting-started", name: "Getting Started", blurb: "Set up your account and get your first health scores." },
   { slug: "data-integrations", name: "Data & Integrations", blurb: "Connect your tools or upload data by spreadsheet." },
-  { slug: "how-to-use-chai", name: "How to Use ChAi", blurb: "Day-to-day workflow across Today, Customers and Planner." },
-  { slug: "risk-scores", name: "Understanding Your Risk Scores", blurb: "What the health score and churn probability mean." },
-  { slug: "notifications-reporting", name: "Notifications & Reporting", blurb: "Weekly digests, alerts and exports." },
-  { slug: "ask-chai", name: "Using Ask ChAi", blurb: "Get plain-English answers from your own data." },
-  { slug: "billing", name: "Billing", blurb: "Plans, trials, invoices and changing your subscription." },
-  { slug: "team-organisation", name: "Team & Organisation", blurb: "Invite teammates, manage roles and seats." },
-  { slug: "faq-troubleshooting", name: "FAQ & Troubleshooting", blurb: "Common questions and quick fixes." },
 ];
 
 export function parseFrontmatter(raw: string): { data: Record<string, string>; body: string } {
