@@ -45,7 +45,8 @@ export const requireConnectedAuth = createMiddleware({ type: "function" }).serve
     // It contains no credential and cannot be removed or forged by app code.
     const impersonationId = getCookie("chai-impersonation");
     if (impersonationId) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { loadSupabaseAdmin } = await import("@/lib/supabase-admin.server");
+      const supabaseAdmin = await loadSupabaseAdmin();
       const { data: impersonation, error: impersonationError } = await supabaseAdmin
         .from("impersonation_audit")
         .select("started_at, ended_at")
