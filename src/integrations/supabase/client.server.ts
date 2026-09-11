@@ -36,15 +36,24 @@ async function createSupabaseAdminClient() {
   });
 }
 
-let _supabaseAdmin: ReturnType<typeof createSupabaseAdminClient> | undefined;
+let _supabaseAdmin: Awaited<ReturnType<typeof createSupabaseAdminClient>> | undefined;
 
 // Server-side Supabase client with service role - bypasses RLS
 // SECURITY: Only use this for trusted server-side operations, never expose to client code
-// Load inside server handlers: const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+// Load inside server handlers: const supabaseAdmin = await getSupabaseAdmin();
 // Top-level import is safe only in other .server.ts modules - route files and *.functions.ts ship to the client bundle.
-export const supabaseAdmin = new Proxy({} as ReturnType<typeof createSupabaseAdminClient>, {
+export async function getSupabaseAdmin() {
+  if (!_supabaseAdmin) _supabaseAdmin = await createSupabaseAdminClient();
+  return _supabaseAdmin;
+}
+
+export const supabaseAdmin = new Proxy({} as Awaited<ReturnType<typeof createSupabaseAdminClient>>, {
   get(_, prop, receiver) {
-    if (!_supabaseAdmin) _supabaseAdmin = createSupabaseAdminClient();
+    if (!_supabaseAdmin) {
+      throw new Error(
+        "supabaseAdmin accessed before initialisation — await getSupabaseAdmin() first",
+      );
+    }
     return Reflect.get(_supabaseAdmin, prop, receiver);
   },
 });
