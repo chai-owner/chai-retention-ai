@@ -30,7 +30,8 @@ describe("plans and seats", () => {
   it("maps plans to seat limits", () => {
     expect(seatsAllowed("core")).toBe(1);
     expect(seatsAllowed("standard")).toBe(5);
-    expect(seatsAllowed("enterprise")).toBeNull();
+    expect(seatsAllowed("enterprise")).toBe(10);
+    expect(seatsAllowed("elite")).toBeNull();
   });
 
   it("counts accepted members plus pending invites", () => {
@@ -43,12 +44,12 @@ describe("plans and seats", () => {
     expect(hasSeatAvailable("core", 1)).toBe(false);
     expect(hasSeatAvailable("standard", 4)).toBe(true);
     expect(hasSeatAvailable("standard", 5)).toBe(false);
-    expect(hasSeatAvailable("enterprise", 5000)).toBe(true);
+    expect(hasSeatAvailable("elite", 5000)).toBe(true);
   });
 
   it("labels seat usage", () => {
     expect(seatsLabel("standard", 3)).toBe("3 / 5 seats used");
-    expect(seatsLabel("enterprise", 3)).toBe("3 seats used (unlimited)");
+    expect(seatsLabel("elite", 3)).toBe("3 seats used (unlimited)");
   });
 
   it("validates plan and role values", () => {
@@ -111,27 +112,29 @@ describe("customer limits", () => {
   it("uses the documented per-plan allowances", () => {
     expect(customersAllowed("core")).toBe(250);
     expect(customersAllowed("standard")).toBe(1500);
-    expect(customersAllowed("enterprise")).toBeNull();
+    expect(customersAllowed("enterprise")).toBe(10000);
+    expect(customersAllowed("elite")).toBeNull();
   });
 
   it("blocks imports that would exceed the plan", () => {
     expect(hasCustomerCapacity("core", 240, 10)).toBe(true);
     expect(hasCustomerCapacity("core", 240, 11)).toBe(false);
-    expect(hasCustomerCapacity("enterprise", 1_000_000, 5000)).toBe(true);
+    expect(hasCustomerCapacity("elite", 1_000_000, 5000)).toBe(true);
     expect(customerHeadroom("standard", 1400)).toBe(100);
-    expect(customerHeadroom("enterprise", 10)).toBeNull();
+    expect(customerHeadroom("elite", 10)).toBeNull();
   });
 
   it("warns from 80% of a finite limit only", () => {
     expect(shouldWarnCustomerLimit("core", 199)).toBe(false);
     expect(shouldWarnCustomerLimit("core", 200)).toBe(true);
-    expect(shouldWarnCustomerLimit("enterprise", 999_999)).toBe(false);
+    expect(shouldWarnCustomerLimit("elite", 999_999)).toBe(false);
   });
 
   it("upgrades to the next tier", () => {
     expect(nextPlan("core")).toBe("standard");
     expect(nextPlan("standard")).toBe("enterprise");
-    expect(nextPlan("enterprise")).toBeNull();
+    expect(nextPlan("enterprise")).toBe("elite");
+    expect(nextPlan("elite")).toBeNull();
   });
 
   it("explains a rejected import", () => {

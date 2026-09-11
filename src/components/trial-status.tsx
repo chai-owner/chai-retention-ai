@@ -131,6 +131,7 @@ const PAYWALL_FEATURES: Record<OrgPlan, string[]> = {
   core: ["Daily risk scoring", "Email support"],
   standard: ["All integrations (CRM, support, accounting)", "Team seats and shared workspace"],
   enterprise: ["Everything in Standard", "Priority support and onboarding help"],
+  elite: ["Everything in Enterprise", "Custom customer capacity and team seats"],
 };
 
 function limitLabel(value: number | null) {

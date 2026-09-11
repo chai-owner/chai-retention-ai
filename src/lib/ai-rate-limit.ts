@@ -14,6 +14,7 @@ export const AI_HOURLY_LIMITS: Record<string, number> = {
   pro: 200,
   scale: 500,
   enterprise: 2000,
+  elite: 5000,
 };
 
 // Operations that must never be rate limited. These run once per account

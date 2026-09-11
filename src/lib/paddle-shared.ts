@@ -20,6 +20,8 @@ export const PLAN_PRICE_IDS: Record<OrgPlan, Record<BillingPeriod, string>> = {
     monthly: "pri_01m1mfs2cavrew542dscww9396",
     annual: "pri_01m1mfs2mmq3sj64ykbbhxca3x",
   },
+  // Elite is sold by enquiry — there is no Paddle checkout for it.
+  elite: { monthly: "", annual: "" },
 };
 
 /** Smart Ingest ("Data Drop") add-on price. Monthly billing only. */
