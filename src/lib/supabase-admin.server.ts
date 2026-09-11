@@ -25,7 +25,7 @@ export async function loadSupabaseAdmin() {
       }
     }
   }
-  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
-  return supabaseAdmin;
+  const mod = await import("@/integrations/supabase/client.server");
+  // Test mocks may only expose the proxy; prefer the async initialiser.
+  return mod.getSupabaseAdmin ? await mod.getSupabaseAdmin() : mod.supabaseAdmin;
 }
