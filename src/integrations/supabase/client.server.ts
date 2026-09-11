@@ -13,8 +13,15 @@ function createSupabaseAdminClient() {
   // as worker bindings, not process env vars. The Cloudflare source resolves
   // once the bindings have been warmed (see loadSupabaseAdmin in
   // src/lib/supabase-admin.server.ts); process.env covers preview/dev.
-  const SUPABASE_URL = inspectServerEnv('SUPABASE_URL').value;
-  const SUPABASE_SERVICE_ROLE_KEY = inspectServerEnv('SUPABASE_SERVICE_ROLE_KEY').value;
+  const SUPABASE_URL =
+    process.env.SUPABASE_URL ??
+    (globalThis as any).SUPABASE_URL ??
+    (globalThis as any).env?.SUPABASE_URL;
+
+  const SUPABASE_SERVICE_ROLE_KEY =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    (globalThis as any).SUPABASE_SERVICE_ROLE_KEY ??
+    (globalThis as any).env?.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = [
