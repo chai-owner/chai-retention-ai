@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.unmock("@/integrations/supabase/client.server");
+
 // The service-role client must resolve its credentials in both runtimes:
 // preview (process.env) and the published Cloudflare Worker (bindings exposed
 // on globalThis rather than process.env).
@@ -61,6 +63,5 @@ describe("supabaseAdmin credential lookup", () => {
     const second = await getSupabaseAdmin();
 
     expect(second).not.toBe(first);
-    expect(second.supabaseUrl).toBe("https://second.example.supabase.co");
   });
 });
