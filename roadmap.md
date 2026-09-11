@@ -12,3 +12,4 @@
 - [x] Add a safe authenticated live AI configuration diagnostic
 - [x] Verify fresh-signup onboarding auth and metric-generation wiring
 - [x] Run diagnostic tests, full tests, and the production build
+- [ ] Remove cached privileged client initialization and verify production-safe env lookup
