@@ -25,7 +25,8 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
           });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
         const { scoreCustomers } = await import("@/lib/customer-scoring");
         const {
           INGEST_COLUMNS,

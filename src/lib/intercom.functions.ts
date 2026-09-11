@@ -32,7 +32,8 @@ export const startIntercomConnect = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { getIntercomCreds, buildIntercomAuthorizeUrl } = await import("./intercom.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { createOAuthState, resolveRedirectUri } = await import("./oauth-state.server");
     getIntercomCreds();
     const redirectUri = resolveRedirectUri(

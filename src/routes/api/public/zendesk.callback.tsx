@@ -44,7 +44,8 @@ export const Route = createFileRoute("/api/public/zendesk/callback")({
 
         let subdomain = "unknown";
         try {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
 
           const { data: stateRow, error: stateErr } = await supabaseAdmin
             .from("zendesk_oauth_states")

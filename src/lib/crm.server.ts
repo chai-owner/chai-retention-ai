@@ -229,7 +229,8 @@ async function syncZoho(userId: string, limit: number, since: string | null): Pr
 // ---------------- Public entry points ----------------
 
 async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
   return supabaseAdmin;
 }
 

@@ -29,7 +29,8 @@ export const startZohoConnect = createServerFn({ method: "POST" })
     const { getZohoCreds, buildZohoAuthorizeUrl } = await import("./zoho.server");
     const { defaultDc } = getZohoCreds();
     const dc = data.dc || defaultDc;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { createOAuthState, resolveRedirectUri } = await import("./oauth-state.server");
     const redirectUri = resolveRedirectUri(
       "ZOHO_REDIRECT_URI",
@@ -50,7 +51,8 @@ export const startZohoConnect = createServerFn({ method: "POST" })
 export const disconnectZoho = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { revokeZohoRefreshToken, deleteZohoConnection } = await import("./zoho.server");
     const { decryptSecretOrNull } = await import("./connection-key-crypto.server");
     const { data } = await supabaseAdmin

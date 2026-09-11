@@ -38,7 +38,8 @@ export const Route = createFileRoute("/api/public/hooks/weekly-digest")({
           });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
         const { loadDailyBrief } = await import("@/lib/daily-brief.server");
         const [{ render }, React, { WeeklyDigestEmail }] = await Promise.all([
           import("@react-email/render"),

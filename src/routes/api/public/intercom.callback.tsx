@@ -35,7 +35,8 @@ export const Route = createFileRoute("/api/public/intercom/callback")({
         if (!code || !state) return appRedirect(origin, { intercom_error: "missing_code_or_state" });
 
         try {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
           const { exchangeIntercomCode, saveIntercomConnection } = await import(
             "@/lib/intercom.server"
           );

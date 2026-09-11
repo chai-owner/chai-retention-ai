@@ -30,7 +30,8 @@ export const getAccountingConfig = createServerFn({ method: "GET" }).handler(
 export const getAccountingStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from("accounting_connections")
       .select(
@@ -59,7 +60,8 @@ export const startAccountingOAuth = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { buildAuthorizeUrl, getCreds } = await import("./accounting.server");
     getCreds(data.provider); // throws a clear error if not configured
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { createOAuthState, resolveRedirectUri } = await import("./oauth-state.server");
 
     const redirectUri = resolveRedirectUri(
@@ -96,7 +98,8 @@ export const disconnectAccounting = createServerFn({ method: "POST" })
     z.object({ provider: providerSchema }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from("accounting_connections")
       .delete()
@@ -114,7 +117,8 @@ export const selectXeroTenant = createServerFn({ method: "POST" })
     z.object({ tenantId: z.string().min(1).max(100).nullable() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: row, error: readErr } = await supabaseAdmin
       .from("accounting_connections")
       .select("tenants")

@@ -24,7 +24,8 @@ export const Route = createFileRoute("/api/public/hooks/plan-changes")({
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
         const { applyPlanEnforcement } = await import("@/lib/plan-enforcement.server");
         const { resolvePaddlePriceId, updateSubscriptionItems } = await import(
           "@/lib/paddle.server"

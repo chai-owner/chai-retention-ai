@@ -28,7 +28,8 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
         }
 
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
         const { fetchAndNormalize } = await import("@/lib/accounting.server");
         const { runCrmSync, markCrmSynced } = await import("@/lib/crm.server");
         const { runSupportSync, markSupportSynced } = await import("@/lib/support.server");

@@ -25,6 +25,7 @@ export async function loadSupabaseAdmin() {
       }
     }
   }
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
   return supabaseAdmin;
 }

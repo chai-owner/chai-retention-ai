@@ -33,7 +33,8 @@ export const Route = createFileRoute("/api/public/zoho/callback")({
         if (!code || !state) return appRedirect(origin, { zoho_error: "missing_code_or_state" });
 
         try {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
           const { exchangeZohoCode, saveZohoConnection, resolveOrgName } = await import("@/lib/zoho.server");
 
           const outcome = await consumeOAuthState(supabaseAdmin as never, {

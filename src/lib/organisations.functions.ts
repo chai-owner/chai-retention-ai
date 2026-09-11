@@ -110,7 +110,8 @@ export const getMyTeam = createServerFn({ method: "GET" })
     let profiles: any[] = [];
     if (ids.length) {
       try {
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
         const { data } = await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", ids);
         profiles = data ?? [];
       } catch {
@@ -174,7 +175,8 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     if (!canManageMembers(membership.role)) {
       throw new Error("You don't have permission to invite people.");
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
 
     const [{ count: memberCount }, { data: pendingInvites }] = await Promise.all([
       supabaseAdmin
@@ -283,7 +285,8 @@ export const cancelTeamInvite = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const membership = await loadMembership(context as Ctx);
     if (!canManageMembers(membership.role)) throw new Error("You don't have permission to do that.");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from("organisation_invites")
       .delete()
@@ -301,7 +304,8 @@ export const updateTeamMemberRole = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     const membership = await loadMembership(context as Ctx);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: target, error: targetError } = await supabaseAdmin
       .from("organisation_members")
       .select("id, role, user_id")
@@ -328,7 +332,8 @@ export const removeTeamMember = createServerFn({ method: "POST" })
   .inputValidator((input: { memberId: string }) => ({ memberId: String(input?.memberId ?? "") }))
   .handler(async ({ data, context }) => {
     const membership = await loadMembership(context as Ctx);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: target, error: targetError } = await supabaseAdmin
       .from("organisation_members")
       .select("id, role, user_id")
@@ -377,7 +382,8 @@ export const acceptTeamInvite = createServerFn({ method: "POST" })
   .inputValidator((input: { token: string }) => ({ token: String(input?.token ?? "") }))
   .handler(async ({ data, context }) => {
     const userId = (context as Ctx).userId;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
 
     const { data: invite, error: inviteError } = await supabaseAdmin
       .from("organisation_invites")
@@ -463,7 +469,8 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const membership = await loadMembership(context as Ctx);
     if (!canManageMembers(membership.role)) throw new Error("You don't have permission to do that.");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
 
     const { data: invite, error: loadError } = await supabaseAdmin
       .from("organisation_invites")
@@ -596,7 +603,8 @@ export const upgradeOrganisationPlan = createServerFn({ method: "POST" })
     if (ORG_PLANS.indexOf(data.plan) <= ORG_PLANS.indexOf(current)) {
       throw new Error("Pick a plan above your current one.");
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from("organisations")
       .update({ plan: data.plan, pending_plan: null, pending_plan_effective_at: null })

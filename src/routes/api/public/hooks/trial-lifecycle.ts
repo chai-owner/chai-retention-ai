@@ -29,7 +29,8 @@ export const Route = createFileRoute("/api/public/hooks/trial-lifecycle")({
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
         const { queueTransactionalEmail } = await import("@/lib/transactional-email.server");
         const { TrialNoticeEmail } = await import("@/lib/email-templates/trial-notice");
         const { applyPlanEnforcement, sendDowngradeSeatWarning } = await import(

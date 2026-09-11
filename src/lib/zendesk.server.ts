@@ -243,7 +243,8 @@ export async function refreshZendeskToken(
 // ------------------------------------------------------------- persistence ---
 
 async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
   return supabaseAdmin;
 }
 

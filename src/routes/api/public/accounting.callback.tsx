@@ -42,7 +42,8 @@ export const Route = createFileRoute("/api/public/accounting/callback")({
         }
 
         try {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
           const { exchangeCode, resolveAccountInfo, saveConnection } = await import(
             "@/lib/accounting.server"
           );
