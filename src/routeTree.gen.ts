@@ -40,6 +40,7 @@ import { Route as AuthenticatedAppTodayRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppTransactionsRouteImport } from './routes/_authenticated.app.transactions'
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated.settings.account'
+import { Route as HelpCategorySlugRouteImport } from './routes/help.$category.$slug'
 import { Route as OauthSalesforceReturnRouteImport } from './routes/oauth/salesforce/return'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
@@ -219,6 +220,11 @@ const AuthenticatedSettingsAccountRoute =
     path: '/settings/account',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const HelpCategorySlugRoute = HelpCategorySlugRouteImport.update({
+  id: '/$category/$slug',
+  path: '/$category/$slug',
+  getParentRoute: () => HelpRoute,
+} as any)
 const OauthSalesforceReturnRoute = OauthSalesforceReturnRouteImport.update({
   id: '/oauth/salesforce/return',
   path: '/oauth/salesforce/return',
@@ -341,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -386,6 +393,7 @@ export interface FileRoutesByTo {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -436,6 +444,7 @@ export interface FileRoutesById {
   '/_authenticated/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -486,6 +495,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/app/welcome'
     | '/settings/account'
+    | '/help/$category/$slug'
     | '/oauth/salesforce/return'
     | '/app/'
     | '/app/customers/$id'
@@ -531,6 +541,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/app/welcome'
     | '/settings/account'
+    | '/help/$category/$slug'
     | '/oauth/salesforce/return'
     | '/app'
     | '/app/customers/$id'
@@ -580,6 +591,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/transactions'
     | '/_authenticated/app/welcome'
     | '/_authenticated/settings/account'
+    | '/help/$category/$slug'
     | '/oauth/salesforce/return'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
@@ -846,6 +858,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/help/$category/$slug': {
+      id: '/help/$category/$slug'
+      path: '/$category/$slug'
+      fullPath: '/help/$category/$slug'
+      preLoaderRoute: typeof HelpCategorySlugRouteImport
+      parentRoute: typeof HelpRoute
+    }
     '/oauth/salesforce/return': {
       id: '/oauth/salesforce/return'
       path: '/oauth/salesforce/return'
@@ -1036,10 +1055,12 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 interface HelpRouteChildren {
   HelpIndexRoute: typeof HelpIndexRoute
+  HelpCategorySlugRoute: typeof HelpCategorySlugRoute
 }
 
 const HelpRouteChildren: HelpRouteChildren = {
   HelpIndexRoute: HelpIndexRoute,
+  HelpCategorySlugRoute: HelpCategorySlugRoute,
 }
 
 const HelpRouteWithChildren = HelpRoute._addFileChildren(HelpRouteChildren)
