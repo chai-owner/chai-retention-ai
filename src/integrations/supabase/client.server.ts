@@ -4,18 +4,27 @@
 // For user-authenticated queries (with RLS), use the auth middleware instead.
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
-import { inspectServerEnvAsync } from "@/lib/server-env";
+
+
+/** Reads a server credential the same way the payments webhook route does. */
+function readCredential(name: string): string | undefined {
+  const g = globalThis as unknown as Record<string, any>;
+  return (
+    process.env[name] ??
+    g[name] ??
+    g.env?.[name] ??
+    g.__env__?.[name]
+  );
+}
 
 async function createSupabaseAdminClient() {
-  // Credentials are read through the multi-source async server-env lookup (the
-  // same method the AI provider uses) rather than process.env alone: on the
-  // published site the app runs as a Cloudflare Worker where secrets arrive as
-  // worker bindings, not process env vars.
-  const urlLookup = await inspectServerEnvAsync("SUPABASE_URL");
-  const keyLookup = await inspectServerEnvAsync("SUPABASE_SERVICE_ROLE_KEY");
+  // process.env is the primary source in every runtime this app deploys to:
+  // the published Cloudflare Worker populates it per request (nodejs_compat),
+  // which is why the public payments webhook route reads it directly. The
+  // globalThis fallbacks only cover runtimes that expose bindings instead.
+  const SUPABASE_URL = readCredential("SUPABASE_URL");
+  const SUPABASE_SERVICE_ROLE_KEY = readCredential("SUPABASE_SERVICE_ROLE_KEY");
 
-  const SUPABASE_URL = urlLookup.value;
-  const SUPABASE_SERVICE_ROLE_KEY = keyLookup.value;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = [
