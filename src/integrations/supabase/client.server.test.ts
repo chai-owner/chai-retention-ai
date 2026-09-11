@@ -45,6 +45,7 @@ describe("supabaseAdmin credential lookup", () => {
   it("throws the missing-variable error only when no source has the credentials", async () => {
     // Query suffix forces a fresh module instance: the earlier tests already
     // created and cached a client inside their module's lazy singleton.
+    // @ts-expect-error -- Vite resolves the query suffix at runtime; TS has no declaration for it.
     const { supabaseAdmin } = await import("./client.server?fresh=missing");
     expect(() => supabaseAdmin.from("profiles")).toThrow(
       "Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY",
