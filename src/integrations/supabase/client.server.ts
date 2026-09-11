@@ -4,7 +4,7 @@
 // For user-authenticated queries (with RLS), use the auth middleware instead.
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
-import { inspectServerEnvAsync } from "@/lib/server-env";
+
 
 /** Reads a server credential the same way the payments webhook route does. */
 function readCredential(name: string): string | undefined {
