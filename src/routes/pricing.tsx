@@ -635,7 +635,7 @@ function RoiCalculator({ annual }: { annual: boolean }) {
   const aRoi = useAnimatedNumber(roi);
 
   return (
-    <section className="bg-card py-24 lg:py-[7.5rem]">
+    <section id="roi-calculator" className="bg-card py-24 lg:py-[7.5rem]">
       <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
         <Reveal className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-[2.75rem]">
