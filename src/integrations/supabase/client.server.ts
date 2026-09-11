@@ -4,10 +4,17 @@
 // For user-authenticated queries (with RLS), use the auth middleware instead.
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+import { inspectServerEnv } from '@/lib/server-env';
 
 function createSupabaseAdminClient() {
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Credentials are read through the multi-source server-env lookup (the same
+  // method the AI provider uses) rather than process.env alone: on the
+  // published site the app runs as a Cloudflare Worker where secrets arrive
+  // as worker bindings, not process env vars. The Cloudflare source resolves
+  // once the bindings have been warmed (see loadSupabaseAdmin in
+  // src/lib/supabase-admin.server.ts); process.env covers preview/dev.
+  const SUPABASE_URL = inspectServerEnv('SUPABASE_URL').value;
+  const SUPABASE_SERVICE_ROLE_KEY = inspectServerEnv('SUPABASE_SERVICE_ROLE_KEY').value;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = [
