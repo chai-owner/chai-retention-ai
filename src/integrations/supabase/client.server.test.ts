@@ -28,9 +28,9 @@ describe("supabaseAdmin credential lookup", () => {
   it("creates the client from process.env credentials (preview/dev)", async () => {
     process.env.SUPABASE_URL = "https://example.supabase.co";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
-    const { supabaseAdmin } = await import("./client.server");
-    expect(supabaseAdmin).toBeTruthy();
-    expect(typeof supabaseAdmin.from).toBe("function");
+    const { getSupabaseAdmin } = await import("./client.server");
+    const client = await getSupabaseAdmin();
+    expect(typeof client.from).toBe("function");
   });
 
   it("creates the client from worker-style globalThis.env bindings (production)", async () => {
@@ -38,17 +38,22 @@ describe("supabaseAdmin credential lookup", () => {
       SUPABASE_URL: "https://example.supabase.co",
       SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
     };
-    const { supabaseAdmin } = await import("./client.server");
-    expect(typeof supabaseAdmin.from).toBe("function");
+    const { getSupabaseAdmin } = await import("./client.server");
+    const client = await getSupabaseAdmin();
+    expect(typeof client.from).toBe("function");
   });
 
   it("throws the missing-variable error only when no source has the credentials", async () => {
-    // Query suffix forces a fresh module instance: the earlier tests already
-    // created and cached a client inside their module's lazy singleton.
-    // @ts-expect-error -- Vite resolves the query suffix at runtime; TS has no declaration for it.
-    const { supabaseAdmin } = await import("./client.server?fresh=missing");
-    expect(() => supabaseAdmin.from("profiles")).toThrow(
+    const { getSupabaseAdmin } = await import("./client.server");
+    await expect(getSupabaseAdmin()).rejects.toThrow(
       "Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY",
+    );
+  });
+
+  it("throws a clear error when the proxy is used before initialisation", async () => {
+    const { supabaseAdmin } = await import("./client.server");
+    expect(() => supabaseAdmin.from("profiles")).toThrow(
+      "supabaseAdmin accessed before initialisation",
     );
   });
 });
