@@ -655,9 +655,9 @@ const inputs = [
 ] as const;
 
 function RoiCalculator({ annual }: { annual: boolean }) {
-  const [customers, setCustomers] = useState(500);
-  const [value, setValue] = useState(250);
-  const [churn, setChurn] = useState(4);
+  const [customers, setCustomers] = useState(200);
+  const [value, setValue] = useState(150);
+  const [churn, setChurn] = useState(3);
 
   const state = { customers, value, churn };
   const setters = {
