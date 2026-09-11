@@ -22,6 +22,8 @@ import {
   PLAN_SEATS,
   annualSaving,
   canManageMembers,
+  isCustomPricingPlan,
+  ELITE_CONTACT_MAILTO,
   shouldWarnCustomerLimit,
   type OrgPlan,
   type BillingPeriod,
@@ -54,6 +56,11 @@ const PLAN_FEATURES: Record<OrgPlan, string[]> = {
     "Everything in Standard",
     "Unlimited customers and seats",
     "Priority support and onboarding help",
+  ],
+  elite: [
+    "Everything in Enterprise",
+    "Custom customer capacity",
+    "Custom team seats",
   ],
 };
 
@@ -184,17 +191,28 @@ export function UpgradePlanDialog({
                   }`}
                 >
                   <p className="text-sm font-semibold text-foreground">{PLAN_LABELS[option]}</p>
-                  <p className="mt-1 text-lg font-semibold text-foreground">
-                    {money(pricing.monthly)}
-                    <span className="text-xs font-normal text-muted-foreground">/mo</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    or {money(pricing.annualMonthly)}/mo billed annually (
-                    {money(pricing.annualTotal)}/year — save {money(annualSaving(option))})
-                  </p>
+                  {isCustomPricingPlan(option) ? (
+                    <p className="mt-1 text-lg font-semibold text-foreground">Custom pricing</p>
+                  ) : (
+                    <>
+                      <p className="mt-1 text-lg font-semibold text-foreground">
+                        {money(pricing.monthly)}
+                        <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        or {money(pricing.annualMonthly)}/mo billed annually (
+                        {money(pricing.annualTotal)}/year — save {money(annualSaving(option))})
+                      </p>
+                    </>
+                  )}
                   <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
-                    <li>{limitText(PLAN_CUSTOMERS[option])} customers</li>
-                    <li>{limitText(PLAN_SEATS[option])} seats</li>
+                    <li>
+                      {isCustomPricingPlan(option) ? "Custom" : limitText(PLAN_CUSTOMERS[option])}{" "}
+                      customers
+                    </li>
+                    <li>
+                      {isCustomPricingPlan(option) ? "Custom" : limitText(PLAN_SEATS[option])} seats
+                    </li>
                     {PLAN_FEATURES[option].map((feature) => (
                       <li key={feature}>{feature}</li>
                     ))}
@@ -209,6 +227,11 @@ export function UpgradePlanDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
+          {selected && isCustomPricingPlan(selected) ? (
+            <Button asChild>
+              <a href={ELITE_CONTACT_MAILTO}>Contact us</a>
+            </Button>
+          ) : (
           <Button
             onClick={() => selected && mutation.mutate(selected)}
             disabled={!selected || mutation.isPending}
@@ -221,6 +244,7 @@ export function UpgradePlanDialog({
               "Confirm upgrade"
             )}
           </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

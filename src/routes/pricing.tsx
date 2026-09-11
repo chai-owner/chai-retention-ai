@@ -17,6 +17,8 @@ import {
   PLAN_LABELS,
   PLAN_PRICING,
   annualSaving,
+  isCustomPricingPlan,
+  ELITE_CONTACT_MAILTO,
   type BillingPeriod,
   type OrgPlan,
 } from "@/lib/organisations";
@@ -42,16 +44,16 @@ export const Route = createFileRoute("/pricing")({
   }),
   head: () => ({
     meta: [
-      { title: "Pricing — ChAi | Core, Standard & Enterprise plans" },
+      { title: "Pricing — ChAi | Core, Standard, Enterprise & Elite plans" },
       {
         name: "description",
         content:
-          "ChAi pricing: Core $99/mo, Standard $249/mo and Enterprise $599/mo — save 10% with annual billing. AI churn prediction, health scores and native integrations.",
+          "ChAi pricing: Core $99/mo, Standard $249/mo, Enterprise $599/mo and Elite custom pricing — save 10% with annual billing. AI churn prediction, health scores and native integrations.",
       },
-      { property: "og:title", content: "ChAi Pricing — Core, Standard and Enterprise" },
+      { property: "og:title", content: "ChAi Pricing — Core, Standard, Enterprise and Elite" },
       {
         property: "og:description",
-        content: "Three plans from $99/month. Save 10% when you pay annually.",
+        content: "Four plans from $99/month. Save 10% when you pay annually.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -106,11 +108,21 @@ const tiers: Array<{
   },
   {
     plan: "enterprise",
-    tagline: "For established teams with no limits on scale.",
+    tagline: "For established teams operating at scale.",
     features: [
-      "Unlimited customers",
-      "Unlimited user seats",
+      "Up to 10,000 customers",
+      "10 user seats",
       "ChAi Data Drop included",
+      ...sharedFeatures,
+    ],
+  },
+  {
+    plan: "elite",
+    tagline: "For large teams with high customer volumes and complex needs.",
+    features: [
+      "Custom customer capacity",
+      "Custom team seats",
+      "Everything in Enterprise",
       ...sharedFeatures,
     ],
   },
@@ -325,7 +337,7 @@ function PricingPage() {
           <Reveal className="mx-auto max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur">
               <Sparkles className="h-3.5 w-3.5 text-gold" />
-              Three plans. Everything included.
+              Four plans. Everything included.
             </span>
             <h1 className="mt-7 text-[2.5rem] font-semibold leading-[1.05] tracking-[-0.03em] text-white sm:text-6xl lg:text-[4rem]">
               Simple pricing.
@@ -383,15 +395,20 @@ function PricingPage() {
       {/* ── Section 2: Pricing tiers ────────────────────── */}
       <section id="pricing" className="relative -mt-28 pb-24 lg:-mt-32 lg:pb-[7.5rem]">
         <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {tiers.map((tier, i) => {
               const price = PLAN_PRICING[tier.plan];
+              const custom = isCustomPricingPlan(tier.plan);
               const founder = !!promoCode && tier.plan === FOUNDER_PLAN && !annual;
               return (
                 <Reveal key={tier.plan} delay={i * 90}>
                   <div
-                    className={`group relative flex h-full flex-col rounded-[20px] bg-card p-8 shadow-card transition-all duration-300 hover:-translate-y-2 hover:shadow-lift ${
-                      tier.highlight ? "ring-2 ring-primary" : "ring-1 ring-border/70"
+                    className={`group relative flex h-full flex-col rounded-[20px] p-8 shadow-card transition-all duration-300 hover:-translate-y-2 hover:shadow-lift ${
+                      custom
+                        ? "bg-[#152238] text-white ring-1 ring-[#E0A93A]/50"
+                        : tier.highlight
+                          ? "bg-card ring-2 ring-primary"
+                          : "bg-card ring-1 ring-border/70"
                     }`}
                   >
                     {founder ? (
@@ -399,6 +416,13 @@ function PricingPage() {
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-success">
                           <Sparkles className="h-3.5 w-3.5" />
                           Founder Plan
+                        </span>
+                      </div>
+                    ) : custom ? (
+                      <div className="flex justify-center">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E0A93A]/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[#E0A93A]">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Premium
                         </span>
                       </div>
                     ) : tier.highlight ? (
@@ -414,8 +438,18 @@ function PricingPage() {
                       <h2 className="text-2xl font-semibold tracking-tight">
                         {PLAN_LABELS[tier.plan]}
                       </h2>
-                      <p className="mt-2 text-sm text-muted-foreground">{tier.tagline}</p>
+                      <p className={`mt-2 text-sm ${custom ? "text-white/70" : "text-muted-foreground"}`}>
+                        {tier.tagline}
+                      </p>
 
+                      {custom ? (
+                        <div className="mt-6">
+                          <p className="text-4xl font-semibold tracking-[-0.04em] text-[#E0A93A]">
+                            Custom pricing
+                          </p>
+                          <p className="mt-2 text-sm text-white/60">Tailored to your volume</p>
+                        </div>
+                      ) : (
                       <div key={annual ? "y" : "m"} className="mt-6 animate-[fade-in_0.35s_ease-out]">
                         <div className="flex items-end justify-center gap-2">
                           {founder ? (
@@ -446,8 +480,17 @@ function PricingPage() {
                           <p className="mt-2 text-sm text-muted-foreground">billed monthly</p>
                         )}
                       </div>
+                      )}
 
 
+                      {custom ? (
+                        <a
+                          href={ELITE_CONTACT_MAILTO}
+                          className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#E0A93A] px-6 py-3.5 text-base font-semibold text-[#152238] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#c9963090]"
+                        >
+                          Contact us <ArrowRight className="h-4 w-4" />
+                        </a>
+                      ) : (
                       <button
                         type="button"
                         disabled={checkoutLoading}
@@ -460,6 +503,7 @@ function PricingPage() {
                       >
                         {checkoutLoading ? "Opening checkout…" : "Get started"} <ArrowRight className="h-4 w-4" />
                       </button>
+                      )}
                       {tier.plan === "core" && !annual && (
                         <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 text-sm text-muted-foreground">
                           <input
@@ -473,11 +517,11 @@ function PricingPage() {
                       )}
                     </div>
 
-                    <div className="mt-8 border-t border-border pt-6">
+                    <div className={`mt-8 border-t pt-6 ${custom ? "border-white/15" : "border-border"}`}>
                       <ul className="grid gap-3">
                         {tier.features.map((f) => (
                           <li key={f} className="flex items-start gap-3">
-                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${custom ? "bg-[#E0A93A]/20 text-[#E0A93A]" : "bg-primary/10 text-primary"}`}>
                               <Check className="h-3 w-3" strokeWidth={3} />
                             </span>
                             <span className="text-sm leading-relaxed">{f}</span>

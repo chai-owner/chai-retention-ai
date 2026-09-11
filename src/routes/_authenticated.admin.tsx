@@ -59,6 +59,7 @@ const PLAN_FILTERS: { value: PlanFilter; label: string }[] = [
   { value: "core", label: "Core" },
   { value: "standard", label: "Standard" },
   { value: "enterprise", label: "Enterprise" },
+  { value: "elite", label: "Elite" },
   { value: "trial", label: "Trial" },
 ];
 
