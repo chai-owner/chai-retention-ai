@@ -3,7 +3,7 @@
 // run without a user session. Upserts on stable natural keys so records that
 // already exist get updated instead of duplicated.
 import type { ExtractedDataset } from "./ingest.functions";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getSupabaseAdmin } from "@/integrations/supabase/client.server";
 import { SOURCE_FIELD, UNKNOWN_SOURCE } from "./ingested-data-store";
 import { customerKeyForRow } from "./row-validation";
 import { assertCustomerCapacity } from "./plan-limits.server";
