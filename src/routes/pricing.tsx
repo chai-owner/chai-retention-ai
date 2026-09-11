@@ -729,7 +729,7 @@ function RoiCalculator({ annual }: { annual: boolean }) {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-white/55">Potential revenue protected</p>
+                <p className="text-sm text-white/55">Revenue you could be saving monthly</p>
                 <p className="mt-3 text-4xl font-semibold tracking-[-0.03em] text-[color:var(--gold)]">
                   {money(aProtected)}
                 </p>
