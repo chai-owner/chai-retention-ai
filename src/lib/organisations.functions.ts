@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireConnectedAuth } from "@/lib/connected-auth-middleware";
 import {
+  APP_ORIGIN,
+  EMAIL_SENDER_DOMAIN,
+  EMAIL_FROM_DOMAIN,
+} from "@/lib/site";
+import {
   INVITE_TTL_DAYS,
   ORG_PLANS,
   isOrgPlan,
@@ -25,12 +30,12 @@ import {
   type OrgRole,
 } from "@/lib/organisations";
 
-// Emails always point at the stable production site; never at a caller-supplied
-// origin, which would make the invite link forgeable.
-const SITE_ORIGIN = "https://askchai.tech";
+// Emails always point at the stable production app origin; never at a
+// caller-supplied origin, which would make the invite link forgeable.
+const SITE_ORIGIN = APP_ORIGIN;
 const SITE_NAME = "ChAi";
-const SENDER_DOMAIN = "notify.askchai.tech";
-const FROM_DOMAIN = "askchai.tech";
+const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
+const FROM_DOMAIN = EMAIL_FROM_DOMAIN;
 
 export interface TeamMember {
   id: string;

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
+import { APP_ORIGIN } from "@/lib/site";
 import { HELP_ARTICLES, HELP_CATEGORIES, articlesByCategory } from "@/lib/help-content";
 
 export const Route = createFileRoute("/help/")({
@@ -18,10 +19,10 @@ export const Route = createFileRoute("/help/")({
         content: "Guides and answers for using ChAi, your AI customer retention analyst.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://askchai.tech/help" },
+      { property: "og:url", content: `${APP_ORIGIN}/help` },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://askchai.tech/help" }],
+    links: [{ rel: "canonical", href: `${APP_ORIGIN}/help` }],
   }),
   component: HelpIndex,
 });

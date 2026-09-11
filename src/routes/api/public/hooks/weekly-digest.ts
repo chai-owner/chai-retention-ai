@@ -9,10 +9,12 @@ import { churnConfidenceLabel } from "@/lib/churn-probability";
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 
-const SITE_ORIGIN = "https://askchai.tech";
+import { APP_ORIGIN, EMAIL_SENDER_DOMAIN, EMAIL_FROM_DOMAIN } from "@/lib/site";
+
+const SITE_ORIGIN = APP_ORIGIN;
 const SITE_NAME = "ChAi";
-const SENDER_DOMAIN = "notify.askchai.tech";
-const FROM_DOMAIN = "askchai.tech";
+const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
+const FROM_DOMAIN = EMAIL_FROM_DOMAIN;
 const TODAY_URL = `${SITE_ORIGIN}/app/today`;
 
 const RISK_LABELS: Record<string, string> = {
