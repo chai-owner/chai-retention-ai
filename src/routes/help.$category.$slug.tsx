@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ChevronRight, ThumbsDown, ThumbsUp } from "lucide-react";
+import { APP_ORIGIN } from "@/lib/site";
 import { Markdown } from "@/components/help/markdown";
 import { articlesByCategory, categoryName, findArticle } from "@/lib/help-content";
 
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/help/$category/$slug")({
   },
   head: ({ params, loaderData }) => {
     const article = loaderData?.article;
-    const url = `https://askchai.tech/help/${params.category}/${params.slug}`;
+    const url = `${APP_ORIGIN}/help/${params.category}/${params.slug}`;
     if (!article) {
       return {
         meta: [{ title: "Article not found — ChAi Help" }, { name: "robots", content: "noindex" }],

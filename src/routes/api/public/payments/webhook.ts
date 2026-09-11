@@ -4,6 +4,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import { APP_ORIGIN } from "@/lib/site";
 import { EventName, verifyWebhook, type PaddleEnv } from "@/lib/paddle.server";
 import { planForProduct, planPeriodForPrice, ADDON_PRODUCT_ID, ADDON_PRICE_ID } from "@/lib/paddle-shared";
 
@@ -17,7 +18,7 @@ function getSupabase(): SupabaseClient {
   return _supabase;
 }
 
-const SITE_ORIGIN = "https://askchai.tech";
+const SITE_ORIGIN = APP_ORIGIN;
 
 /** Escapes user-supplied values before they are placed into HTML email bodies. */
 function escapeHtml(value: string): string {
