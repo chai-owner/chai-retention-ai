@@ -2,27 +2,27 @@
 // Server-side Supabase client with service role key - bypasses RLS.
 // Use this for admin operations in server functions and server routes only.
 // For user-authenticated queries (with RLS), use the auth middleware instead.
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
-import { inspectServerEnvAsync } from '@/lib/server-env';
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./types";
+import { inspectServerEnvAsync } from "@/lib/server-env";
 
 async function createSupabaseAdminClient() {
   // Credentials are read through the multi-source async server-env lookup (the
   // same method the AI provider uses) rather than process.env alone: on the
   // published site the app runs as a Cloudflare Worker where secrets arrive as
   // worker bindings, not process env vars.
-  const urlLookup = await inspectServerEnvAsync('SUPABASE_URL');
-  const keyLookup = await inspectServerEnvAsync('SUPABASE_SERVICE_ROLE_KEY');
+  const urlLookup = await inspectServerEnvAsync("SUPABASE_URL");
+  const keyLookup = await inspectServerEnvAsync("SUPABASE_SERVICE_ROLE_KEY");
 
   const SUPABASE_URL = urlLookup.value;
   const SUPABASE_SERVICE_ROLE_KEY = keyLookup.value;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = [
-      ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
-      ...(!SUPABASE_SERVICE_ROLE_KEY ? ['SUPABASE_SERVICE_ROLE_KEY'] : []),
+      ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),
+      ...(!SUPABASE_SERVICE_ROLE_KEY ? ["SUPABASE_SERVICE_ROLE_KEY"] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
+    const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Connect Supabase in Lovable Cloud.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }
@@ -32,7 +32,7 @@ async function createSupabaseAdminClient() {
       storage: undefined,
       persistSession: false,
       autoRefreshToken: false,
-    }
+    },
   });
 }
 
@@ -47,13 +47,16 @@ export async function getSupabaseAdmin() {
   return _supabaseAdmin;
 }
 
-export const supabaseAdmin = new Proxy({} as Awaited<ReturnType<typeof createSupabaseAdminClient>>, {
-  get(_, prop, receiver) {
-    if (!_supabaseAdmin) {
-      throw new Error(
-        "supabaseAdmin accessed before initialisation — await getSupabaseAdmin() first",
-      );
-    }
-    return Reflect.get(_supabaseAdmin, prop, receiver);
+export const supabaseAdmin = new Proxy(
+  {} as Awaited<ReturnType<typeof createSupabaseAdminClient>>,
+  {
+    get(_, prop, receiver) {
+      if (!_supabaseAdmin) {
+        throw new Error(
+          "supabaseAdmin accessed before initialisation — await getSupabaseAdmin() first",
+        );
+      }
+      return Reflect.get(_supabaseAdmin, prop, receiver);
+    },
   },
-});
+);

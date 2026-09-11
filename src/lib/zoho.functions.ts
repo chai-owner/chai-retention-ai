@@ -20,10 +20,12 @@ export const getZohoStatus = createServerFn({ method: "GET" })
 export const startZohoConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({
-      origin: z.string().url(),
-      dc: z.string().optional(),
-    }).parse(input),
+    z
+      .object({
+        origin: z.string().url(),
+        dc: z.string().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { getZohoCreds, buildZohoAuthorizeUrl } = await import("./zoho.server");
@@ -46,7 +48,6 @@ export const startZohoConnect = createServerFn({ method: "POST" })
     });
     return { url: buildZohoAuthorizeUrl(dc, redirectUri, state) };
   });
-
 
 export const disconnectZoho = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

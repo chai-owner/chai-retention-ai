@@ -3,19 +3,19 @@
 // API key (found in Freshdesk → Profile settings → View API Key). We store
 // the API key AES-256-GCM encrypted and pull tickets on their behalf.
 import type { ExtractedDataset } from "./ingest.functions";
-import {
-  encryptConnectionKey,
-  decryptConnectionKey,
-} from "./connection-key-crypto.server";
+import { encryptConnectionKey, decryptConnectionKey } from "./connection-key-crypto.server";
 
 async function admin() {
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
+  const supabaseAdmin = await getSupabaseAdmin();
   return supabaseAdmin;
 }
 
 function freshdeskHost(domain: string): string {
-  const d = domain.trim().toLowerCase().replace(/\.freshdesk\.com$/, "");
+  const d = domain
+    .trim()
+    .toLowerCase()
+    .replace(/\.freshdesk\.com$/, "");
   return `https://${d}.freshdesk.com`;
 }
 
@@ -48,7 +48,11 @@ export async function saveFreshdeskConnection(
   domain: string,
   apiKey: string,
 ): Promise<{ accountName: string | null }> {
-  const cleaned = domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\.freshdesk\.com.*$/, "");
+  const cleaned = domain
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\.freshdesk\.com.*$/, "");
   if (!/^[a-z0-9-]+$/.test(cleaned)) {
     throw new Error("Domain must look like 'acme' (from acme.freshdesk.com).");
   }
@@ -185,7 +189,8 @@ export async function syncFreshdeskForUser(
   const res = await fetch(url, {
     headers: { Authorization: basicAuth(conn.apiKey), Accept: "application/json" },
   });
-  if (res.status === 429) throw new Error("Freshdesk rate limit hit — please try again in a moment.");
+  if (res.status === 429)
+    throw new Error("Freshdesk rate limit hit — please try again in a moment.");
   const body = await res.text();
   if (!res.ok) throw new Error(`Freshdesk request failed [${res.status}]: ${body.slice(0, 300)}`);
 

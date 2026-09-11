@@ -15,16 +15,14 @@ export const ACCOUNTING_PROVIDERS: { id: AccountingProvider; name: string }[] = 
 ];
 
 // Which providers have developer credentials configured (client id/secret).
-export const getAccountingConfig = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const { hasCreds } = await import("./accounting.server");
-    return {
-      quickbooks: hasCreds("quickbooks"),
-      xero: hasCreds("xero"),
-      freshbooks: hasCreds("freshbooks"),
-    } as Record<AccountingProvider, boolean>;
-  },
-);
+export const getAccountingConfig = createServerFn({ method: "GET" }).handler(async () => {
+  const { hasCreds } = await import("./accounting.server");
+  return {
+    quickbooks: hasCreds("quickbooks"),
+    xero: hasCreds("xero"),
+    freshbooks: hasCreds("freshbooks"),
+  } as Record<AccountingProvider, boolean>;
+});
 
 // Connection status for the current user (no tokens ever returned).
 export const getAccountingStatus = createServerFn({ method: "GET" })
@@ -34,9 +32,7 @@ export const getAccountingStatus = createServerFn({ method: "GET" })
     const supabaseAdmin = await getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from("accounting_connections")
-      .select(
-        "provider, company_name, connected_at, tenant_id, tenants, status, last_error_at",
-      )
+      .select("provider, company_name, connected_at, tenant_id, tenants, status, last_error_at")
       .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
     return (data ?? []) as {
@@ -78,7 +74,6 @@ export const startAccountingOAuth = createServerFn({ method: "POST" })
 
     return { url: buildAuthorizeUrl(data.provider, redirectUri, state) };
   });
-
 
 // Pulls live customers + invoices for a connected provider.
 export const syncAccounting = createServerFn({ method: "POST" })
@@ -128,9 +123,7 @@ export const selectXeroTenant = createServerFn({ method: "POST" })
     if (readErr) throw new Error(readErr.message);
     if (!row) throw new Error("Xero is not connected.");
     const tenants = (row.tenants ?? []) as { tenantId: string; tenantName: string }[];
-    const match = data.tenantId
-      ? tenants.find((t) => t.tenantId === data.tenantId)
-      : null;
+    const match = data.tenantId ? tenants.find((t) => t.tenantId === data.tenantId) : null;
     if (data.tenantId && !match) {
       throw new Error("That Xero organisation isn't available on this connection.");
     }

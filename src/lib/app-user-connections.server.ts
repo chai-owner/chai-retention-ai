@@ -3,7 +3,7 @@ import { encryptConnectionKey, decryptConnectionKey } from "./connection-key-cry
 
 async function admin() {
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
+  const supabaseAdmin = await getSupabaseAdmin();
   return supabaseAdmin;
 }
 

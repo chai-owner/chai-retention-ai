@@ -25,11 +25,10 @@ export const Route = createFileRoute("/api/public/hooks/plan-changes")({
         }
 
         const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
+        const supabaseAdmin = await getSupabaseAdmin();
         const { applyPlanEnforcement } = await import("@/lib/plan-enforcement.server");
-        const { resolvePaddlePriceId, updateSubscriptionItems } = await import(
-          "@/lib/paddle.server"
-        );
+        const { resolvePaddlePriceId, updateSubscriptionItems } =
+          await import("@/lib/paddle.server");
 
         const results = { downgradesApplied: 0, cancellationsFinalised: 0, errors: 0 };
 

@@ -30,12 +30,11 @@ export const Route = createFileRoute("/api/public/hooks/trial-lifecycle")({
         }
 
         const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
+        const supabaseAdmin = await getSupabaseAdmin();
         const { queueTransactionalEmail } = await import("@/lib/transactional-email.server");
         const { TrialNoticeEmail } = await import("@/lib/email-templates/trial-notice");
-        const { applyPlanEnforcement, sendDowngradeSeatWarning } = await import(
-          "@/lib/plan-enforcement.server"
-        );
+        const { applyPlanEnforcement, sendDowngradeSeatWarning } =
+          await import("@/lib/plan-enforcement.server");
 
         const now = new Date();
         const results = { trialEmails: 0, downgradeWarnings: 0, enforced: 0, errors: 0 };
@@ -82,7 +81,11 @@ export const Route = createFileRoute("/api/public/hooks/trial-lifecycle")({
             }
 
             // 2. Owner warning 7 days before a scheduled downgrade locks seats.
-            if (org.pending_plan && org.pending_plan_effective_at && !org.downgrade_warning_sent_at) {
+            if (
+              org.pending_plan &&
+              org.pending_plan_effective_at &&
+              !org.downgrade_warning_sent_at
+            ) {
               const effectiveAt = new Date(org.pending_plan_effective_at).getTime();
               if (effectiveAt - now.getTime() <= WARN_WINDOW_MS && effectiveAt > now.getTime()) {
                 const sent = await sendDowngradeSeatWarning(

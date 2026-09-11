@@ -100,7 +100,11 @@ export const getMySubscription = createServerFn({ method: "GET" })
       plan: resolved?.plan ?? null,
       period:
         resolved?.period ??
-        (sub.billing_interval === "year" ? "annual" : sub.billing_interval === "month" ? "monthly" : null),
+        (sub.billing_interval === "year"
+          ? "annual"
+          : sub.billing_interval === "month"
+            ? "monthly"
+            : null),
       currentPeriodEnd: sub.current_period_end ?? null,
       cancelAtPeriodEnd: !!sub.cancel_at_period_end,
       pendingPlan: org.pending_plan ?? null,

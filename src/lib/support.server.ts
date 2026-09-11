@@ -9,7 +9,7 @@ export async function getSupportSince(
   provider: SupportProvider,
 ): Promise<string | null> {
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data } = await supabaseAdmin
     .from("support_sync_state")
     .select("last_synced_at")
@@ -25,11 +25,13 @@ export async function markSupportSynced(
   when: string,
 ): Promise<void> {
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
-  await supabaseAdmin.from("support_sync_state").upsert(
-    { user_id: userId, provider, last_synced_at: when },
-    { onConflict: "user_id,provider" },
-  );
+  const supabaseAdmin = await getSupabaseAdmin();
+  await supabaseAdmin
+    .from("support_sync_state")
+    .upsert(
+      { user_id: userId, provider, last_synced_at: when },
+      { onConflict: "user_id,provider" },
+    );
   // Also stamp the connection table so the UI can show "last synced".
   if (provider === "zendesk") {
     await supabaseAdmin
@@ -79,7 +81,7 @@ export async function ensureSupportSyncState(
   provider: SupportProvider,
 ): Promise<void> {
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data } = await supabaseAdmin
     .from("support_sync_state")
     .select("id")
@@ -98,7 +100,7 @@ export async function clearSupportSyncState(
   provider: SupportProvider,
 ): Promise<void> {
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
+  const supabaseAdmin = await getSupabaseAdmin();
   const { error } = await supabaseAdmin
     .from("support_sync_state")
     .delete()

@@ -27,9 +27,7 @@ export const getIntercomStatus = createServerFn({ method: "GET" })
 
 export const startIntercomConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ origin: z.string().url() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ origin: z.string().url() }).parse(input))
   .handler(async ({ data, context }) => {
     const { getIntercomCreds, buildIntercomAuthorizeUrl } = await import("./intercom.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -49,7 +47,6 @@ export const startIntercomConnect = createServerFn({ method: "POST" })
     });
     return { url: buildIntercomAuthorizeUrl(state, redirectUri) };
   });
-
 
 export const disconnectIntercom = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

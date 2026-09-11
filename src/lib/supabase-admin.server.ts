@@ -14,8 +14,7 @@ import { loadCloudflareEnv } from "./server-env";
 export async function loadSupabaseAdmin() {
   const env = await loadCloudflareEnv();
   if (env) {
-    const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } })
-      .process;
+    const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
     if (proc?.env) {
       if (!proc.env.SUPABASE_URL && env.SUPABASE_URL) {
         proc.env.SUPABASE_URL = env.SUPABASE_URL;

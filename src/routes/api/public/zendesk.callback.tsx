@@ -31,21 +31,26 @@ export const Route = createFileRoute("/api/public/zendesk/callback")({
         } = await import("@/lib/zendesk.server");
 
         if (errorParam) {
-          logZendeskDiagnostic({ stage: "authorize_redirect", subdomain: "unknown", errorCode: errorParam });
+          logZendeskDiagnostic({
+            stage: "authorize_redirect",
+            subdomain: "unknown",
+            errorCode: errorParam,
+          });
           return appRedirect(origin, {
             zendesk_error: humanZendeskError(400, errorParam, "unknown"),
           });
         }
         if (!code || !state) {
           return appRedirect(origin, {
-            zendesk_error: "Zendesk didn't return a valid authorization response. Please try connecting again.",
+            zendesk_error:
+              "Zendesk didn't return a valid authorization response. Please try connecting again.",
           });
         }
 
         let subdomain = "unknown";
         try {
           const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
+          const supabaseAdmin = await getSupabaseAdmin();
 
           const { data: stateRow, error: stateErr } = await supabaseAdmin
             .from("zendesk_oauth_states")
@@ -54,9 +59,14 @@ export const Route = createFileRoute("/api/public/zendesk/callback")({
             .maybeSingle();
           if (stateErr) throw new Error(stateErr.message);
           if (!stateRow) {
-            logZendeskDiagnostic({ stage: "state_validation", subdomain, errorCode: "invalid_or_reused_state" });
+            logZendeskDiagnostic({
+              stage: "state_validation",
+              subdomain,
+              errorCode: "invalid_or_reused_state",
+            });
             return appRedirect(origin, {
-              zendesk_error: "This Zendesk connection link is no longer valid. Please start the connection again.",
+              zendesk_error:
+                "This Zendesk connection link is no longer valid. Please start the connection again.",
             });
           }
 
@@ -68,14 +78,23 @@ export const Route = createFileRoute("/api/public/zendesk/callback")({
             ? new Date(expiresAt).getTime()
             : new Date(stateRow.created_at as string).getTime() + STATE_TTL_MS;
           if (Date.now() > deadline) {
-            logZendeskDiagnostic({ stage: "state_validation", subdomain, errorCode: "expired_state" });
+            logZendeskDiagnostic({
+              stage: "state_validation",
+              subdomain,
+              errorCode: "expired_state",
+            });
             return appRedirect(origin, {
-              zendesk_error: "The Zendesk authorization request expired. Please try connecting again.",
+              zendesk_error:
+                "The Zendesk authorization request expired. Please try connecting again.",
             });
           }
 
           subdomain = stateRow.subdomain as string;
-          const tokens = await exchangeZendeskCode(subdomain, code, stateRow.redirect_uri as string);
+          const tokens = await exchangeZendeskCode(
+            subdomain,
+            code,
+            stateRow.redirect_uri as string,
+          );
 
           // Prove the token really works before showing "Connected".
           const account = await verifyZendeskConnection(subdomain, tokens.accessToken);

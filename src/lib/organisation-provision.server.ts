@@ -10,7 +10,7 @@ const TRIAL_DAYS = 14;
 
 export async function ensureOrganisationForUser(userId: string): Promise<void> {
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
+  const supabaseAdmin = await getSupabaseAdmin();
 
   const { data: existing } = await supabaseAdmin
     .from("organisation_members")

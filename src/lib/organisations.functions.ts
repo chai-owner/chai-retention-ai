@@ -89,7 +89,6 @@ async function loadMembership(context: Ctx) {
   };
 }
 
-
 export const getMyTeam = createServerFn({ method: "GET" })
   .middleware([requireConnectedAuth])
   .handler(async ({ context }): Promise<TeamSnapshot> => {
@@ -111,11 +110,17 @@ export const getMyTeam = createServerFn({ method: "GET" })
     if (ids.length) {
       try {
         const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
-        const { data } = await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", ids);
+        const supabaseAdmin = await getSupabaseAdmin();
+        const { data } = await supabaseAdmin
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", ids);
         profiles = data ?? [];
       } catch {
-        const { data } = await ctx.supabase.from("profiles").select("id, full_name, email").in("id", ids);
+        const { data } = await ctx.supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", ids);
         profiles = data ?? [];
       }
     }
@@ -149,7 +154,6 @@ export const getMyTeam = createServerFn({ method: "GET" })
         expired: isInviteExpired(i.expires_at),
       }));
     }
-
 
     const pending = invites.filter((i) => !i.expired).length;
     return {
@@ -284,7 +288,8 @@ export const cancelTeamInvite = createServerFn({ method: "POST" })
   .inputValidator((input: { inviteId: string }) => ({ inviteId: String(input?.inviteId ?? "") }))
   .handler(async ({ data, context }) => {
     const membership = await loadMembership(context as Ctx);
-    if (!canManageMembers(membership.role)) throw new Error("You don't have permission to do that.");
+    if (!canManageMembers(membership.role))
+      throw new Error("You don't have permission to do that.");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin
@@ -393,7 +398,8 @@ export const acceptTeamInvite = createServerFn({ method: "POST" })
     if (inviteError) throw new Error(inviteError.message);
     if (!invite) throw new Error("That invitation link isn't valid.");
     if (invite.accepted_at) throw new Error("That invitation has already been used.");
-    if (isInviteExpired(invite.expires_at)) throw new Error("That invitation has expired. Ask for a new one.");
+    if (isInviteExpired(invite.expires_at))
+      throw new Error("That invitation has expired. Ask for a new one.");
 
     const { data: profile } = await supabaseAdmin
       .from("profiles")
@@ -468,7 +474,8 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
   .inputValidator((input: { inviteId: string }) => ({ inviteId: String(input?.inviteId ?? "") }))
   .handler(async ({ data, context }) => {
     const membership = await loadMembership(context as Ctx);
-    if (!canManageMembers(membership.role)) throw new Error("You don't have permission to do that.");
+    if (!canManageMembers(membership.role))
+      throw new Error("You don't have permission to do that.");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabaseAdmin = await getSupabaseAdmin();
 
@@ -563,10 +570,7 @@ export const getPlanUsage = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<PlanUsage> => {
     const membership = await loadMembership(context as Ctx);
     const { countCustomers } = await import("@/lib/plan-limits.server");
-    const customers = await countCustomers(
-      (context as Ctx).supabase,
-      (context as Ctx).userId,
-    );
+    const customers = await countCustomers((context as Ctx).supabase, (context as Ctx).userId);
     const plan = membership.organisation.plan;
     return {
       plan,

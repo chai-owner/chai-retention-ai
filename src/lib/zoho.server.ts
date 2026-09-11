@@ -2,11 +2,7 @@
 // own Zoho account; we store their refresh token and refresh access tokens
 // as needed. Never import from client code.
 import type { ExtractedDataset } from "./ingest.functions";
-import {
-  encryptSecret,
-  decryptSecret,
-  decryptSecretOrNull,
-} from "./connection-key-crypto.server";
+import { encryptSecret, decryptSecret, decryptSecretOrNull } from "./connection-key-crypto.server";
 
 export const ZOHO_SCOPES = [
   "ZohoCRM.modules.ALL",
@@ -20,15 +16,18 @@ export function getZohoCreds(): { clientId: string; clientSecret: string; defaul
   const clientSecret = process.env.ZOHO_CLIENT_SECRET;
   const defaultDc = process.env.ZOHO_DATA_CENTER || "com";
   if (!clientId || !clientSecret) {
-    throw new Error(
-      "Zoho CRM isn't configured. Missing ZOHO_CLIENT_ID / ZOHO_CLIENT_SECRET.",
-    );
+    throw new Error("Zoho CRM isn't configured. Missing ZOHO_CLIENT_ID / ZOHO_CLIENT_SECRET.");
   }
   return { clientId, clientSecret, defaultDc };
 }
 
 export function hasZohoCreds(): boolean {
-  try { getZohoCreds(); return true; } catch { return false; }
+  try {
+    getZohoCreds();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +157,11 @@ async function readJson(res: Response, ctx: string): Promise<any> {
     console.error(`${ctx} failed [${res.status}]: ${text}`);
     throw new Error(`${ctx} failed [${res.status}]: ${text.slice(0, 300)}`);
   }
-  try { return JSON.parse(text); } catch { throw new Error(`${ctx}: invalid JSON`); }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`${ctx}: invalid JSON`);
+  }
 }
 
 export async function exchangeZohoCode(args: {
@@ -219,11 +222,14 @@ export async function refreshZohoToken(
 
 async function admin() {
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = await getSupabaseAdmin();
+  const supabaseAdmin = await getSupabaseAdmin();
   return supabaseAdmin;
 }
 
-export async function resolveOrgName(apiDomain: string, accessToken: string): Promise<string | null> {
+export async function resolveOrgName(
+  apiDomain: string,
+  accessToken: string,
+): Promise<string | null> {
   try {
     const res = await fetch(`${apiDomain}/crm/v6/org`, {
       headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
@@ -231,7 +237,9 @@ export async function resolveOrgName(apiDomain: string, accessToken: string): Pr
     if (!res.ok) return null;
     const j = await res.json();
     return j?.org?.[0]?.company_name ?? null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function saveZohoConnection(
@@ -292,11 +300,14 @@ async function loadFreshZohoConnection(userId: string): Promise<Row> {
     const accountsServer =
       validateAccountsServer(row.accounts_server)?.accountsServer ?? accountsHost(row.dc);
     const refreshed = await refreshZohoToken(accountsServer, row.refresh_token, row.dc);
-    await db.from("zoho_crm_connections").update({
-      access_token: encryptSecret(refreshed.accessToken),
-      expires_at: refreshed.expiresAt ?? null,
-      api_domain: refreshed.apiDomain,
-    }).eq("id", row.id);
+    await db
+      .from("zoho_crm_connections")
+      .update({
+        access_token: encryptSecret(refreshed.accessToken),
+        expires_at: refreshed.expiresAt ?? null,
+        api_domain: refreshed.apiDomain,
+      })
+      .eq("id", row.id);
     row.access_token = refreshed.accessToken;
     row.expires_at = refreshed.expiresAt ?? null;
     row.api_domain = refreshed.apiDomain;
@@ -304,10 +315,14 @@ async function loadFreshZohoConnection(userId: string): Promise<Row> {
   return row;
 }
 
-function toStr(v: unknown): string { return v == null ? "" : String(v); }
+function toStr(v: unknown): string {
+  return v == null ? "" : String(v);
+}
 function dateOnly(v: unknown): string {
-  const s = toStr(v); if (!s) return "";
-  const d = new Date(s); return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+  const s = toStr(v);
+  if (!s) return "";
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
 }
 function num(v: unknown): string {
   const s = toStr(v).replace(/[^0-9.\-]/g, "");
@@ -316,8 +331,23 @@ function num(v: unknown): string {
 
 import { domainEmailHint } from "./crm-identity";
 
-const CUSTOMER_HEADERS = ["customer_id","name","email","signup_date","monthly_revenue","plan","region"];
-const TRANSACTION_HEADERS = ["customer_id","transaction_id","amount","transaction_date","product","currency"];
+const CUSTOMER_HEADERS = [
+  "customer_id",
+  "name",
+  "email",
+  "signup_date",
+  "monthly_revenue",
+  "plan",
+  "region",
+];
+const TRANSACTION_HEADERS = [
+  "customer_id",
+  "transaction_id",
+  "amount",
+  "transaction_date",
+  "product",
+  "currency",
+];
 
 export async function syncZohoForUser(
   userId: string,
@@ -347,7 +377,9 @@ export async function syncZohoForUser(
     get(`/Accounts?fields=${encodeURIComponent(accFields)}&per_page=${cap}`),
     get(`/Deals?fields=${encodeURIComponent(dealFields)}&per_page=${cap}`),
     // Primary contact email per account — the strongest cross-platform signal.
-    get(`/Contacts?fields=${encodeURIComponent("Email,Account_Name")}&per_page=${cap}`).catch(() => null),
+    get(`/Contacts?fields=${encodeURIComponent("Email,Account_Name")}&per_page=${cap}`).catch(
+      () => null,
+    ),
   ]);
 
   const emailByAccount = new Map<string, string>();
@@ -359,24 +391,47 @@ export async function syncZohoForUser(
   }
 
   const customers: string[][] = (acc?.data ?? []).map((r: Record<string, unknown>) => [
-    toStr(r.id), toStr(r.Account_Name),
+    toStr(r.id),
+    toStr(r.Account_Name),
     emailByAccount.get(toStr(r.id)) ?? domainEmailHint(toStr(r.Website)),
     dateOnly(r.Created_Time),
     num((r.Annual_Revenue as number) ? Number(r.Annual_Revenue) / 12 : ""),
-    toStr(r.Industry), toStr(r.Billing_Country),
+    toStr(r.Industry),
+    toStr(r.Billing_Country),
   ]);
   const transactions: string[][] = (deals?.data ?? []).map((r: Record<string, unknown>) => {
     const account = r.Account_Name as { id?: string } | string | undefined;
     const accountId = typeof account === "object" && account ? toStr(account.id) : "";
-    return [accountId, toStr(r.id), num(r.Amount), dateOnly(r.Closing_Date), toStr(r.Deal_Name), "USD"];
+    return [
+      accountId,
+      toStr(r.id),
+      num(r.Amount),
+      dateOnly(r.Closing_Date),
+      toStr(r.Deal_Name),
+      "USD",
+    ];
   });
 
   const out: ExtractedDataset[] = [];
   if (customers.length) {
-    out.push({ key: "customers", label: "Customers", headers: CUSTOMER_HEADERS, rows: customers, confidence: 95, note: "Imported from Zoho CRM accounts." });
+    out.push({
+      key: "customers",
+      label: "Customers",
+      headers: CUSTOMER_HEADERS,
+      rows: customers,
+      confidence: 95,
+      note: "Imported from Zoho CRM accounts.",
+    });
   }
   if (transactions.length) {
-    out.push({ key: "transactions", label: "Transactions", headers: TRANSACTION_HEADERS, rows: transactions, confidence: 92, note: "Imported from Zoho CRM deals." });
+    out.push({
+      key: "transactions",
+      label: "Transactions",
+      headers: TRANSACTION_HEADERS,
+      rows: transactions,
+      confidence: 92,
+      note: "Imported from Zoho CRM deals.",
+    });
   }
   return out;
 }
@@ -388,7 +443,12 @@ export async function getZohoStatusRow(userId: string) {
     .select("org_name, connected_at, api_domain, dc")
     .eq("user_id", userId)
     .maybeSingle();
-  return data as { org_name: string | null; connected_at: string; api_domain: string; dc: string } | null;
+  return data as {
+    org_name: string | null;
+    connected_at: string;
+    api_domain: string;
+    dc: string;
+  } | null;
 }
 
 export async function deleteZohoConnection(userId: string) {
@@ -410,7 +470,9 @@ export async function revokeZohoRefreshToken(
 ) {
   const host = validateAccountsServer(accountsServer)?.accountsServer ?? accountsHost(dc);
   try {
-    await fetch(`${host}/oauth/v2/token/revoke?token=${encodeURIComponent(refreshToken)}`, { method: "POST" });
+    await fetch(`${host}/oauth/v2/token/revoke?token=${encodeURIComponent(refreshToken)}`, {
+      method: "POST",
+    });
   } catch (e) {
     console.error("Zoho token revoke failed:", e instanceof Error ? e.message : e);
   }
