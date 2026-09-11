@@ -2,7 +2,7 @@
 title: Welcome to ChAi
 category: getting-started
 description: What ChAi does, what you need to get started, and what happens in your first week.
-order: 1
+order: 6
 ---
 
 ChAi is your AI retention analyst. It watches how your customers behave, scores their health, predicts who is likely to leave, and tells you what to do about it in plain English.
