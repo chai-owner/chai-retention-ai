@@ -367,6 +367,16 @@ function PricingPage() {
               </button>
             </div>
           </Reveal>
+
+          <Reveal delay={150}>
+            <a
+              href="#roi-calculator"
+              className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-[#CAFFA6] transition-colors hover:text-[#B8E895] hover:underline underline-offset-4"
+            >
+              See how much revenue you could be protecting
+              <ArrowRight className="h-3.5 w-3.5" />
+            </a>
+          </Reveal>
         </div>
       </section>
 
