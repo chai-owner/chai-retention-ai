@@ -31,6 +31,8 @@ import {
   FOUNDER_PLAN,
   readStoredPromoCode,
 } from "@/lib/promo-codes";
+import { clearPendingPlan, readPendingPlan } from "@/lib/pending-plan";
+
 
 
 /** Small countdown chip for the sidebar / header. */
@@ -148,6 +150,8 @@ export function TrialExpiredPaywall() {
   const [pending, setPending] = useState<OrgPlan | null>(null);
   const [promoCode, setPromoCode] = useState<string | null>(null);
   const [initialPromo, setInitialPromo] = useState<string | null>(null);
+  // The plan they picked on the pricing page before signing up.
+  const [preferredPlan, setPreferredPlan] = useState<OrgPlan | null>(null);
   const changePlan = useServerFn(requestPlanChange);
   const { openCheckout, environment } = usePaddleCheckout();
   const userId = useAuthUserId();
@@ -156,7 +160,13 @@ export function TrialExpiredPaywall() {
   // A Founder invite link stored the code before sign-up.
   useEffect(() => {
     setInitialPromo(readStoredPromoCode());
+    const selection = readPendingPlan();
+    if (selection) {
+      setPreferredPlan(selection.plan);
+      setPeriod(selection.period);
+    }
   }, []);
+
 
   const startCheckout = async (plan: OrgPlan) => {
     if (!userId) throw new Error("Please sign in again to choose a plan.");
@@ -187,10 +197,12 @@ export function TrialExpiredPaywall() {
     onSettled: () => setPending(null),
     onSuccess: (result) => {
       if (!result) return;
+      clearPendingPlan();
       toast.success(`You're now on ${PLAN_LABELS[result.plan]}. Welcome back.`);
       refresh();
       window.location.assign("/app/today?checkout=success");
     },
+
     onError: (e: unknown) =>
       toast.error(e instanceof Error ? e.message : "We couldn't start that plan just now."),
   });
@@ -237,7 +249,7 @@ export function TrialExpiredPaywall() {
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {ORG_PLANS.map((plan) => {
             const pricing = PLAN_PRICING[plan];
-            const highlighted = plan === "standard";
+            const highlighted = plan === (preferredPlan ?? "standard");
             const founder = !!promoCode && plan === FOUNDER_PLAN && period === "monthly";
             return (
               <div

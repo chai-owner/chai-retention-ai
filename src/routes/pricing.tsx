@@ -27,6 +27,8 @@ import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
 import { supabase } from "@/integrations/supabase/client";
 import { PromoCodeField } from "@/components/promo-code-field";
 import { FOUNDER_MONTHLY_PRICE, FOUNDER_PLAN, readStoredPromoCode } from "@/lib/promo-codes";
+import { storePendingPlan } from "@/lib/pending-plan";
+
 
 type PricingSearch = { plan?: OrgPlan; period?: "monthly" | "annual"; addon?: true };
 
@@ -224,14 +226,17 @@ function PricingPage() {
 
   const buy = async (plan: OrgPlan, period: BillingPeriod, includeAddon: boolean) => {
     if (!signedIn || !userId) {
-      // Send them through sign-up/sign-in first; the query string below brings
-      // them straight back here and auto-opens checkout.
+      // New visitors sign up and go through onboarding first — they only pay at
+      // the end of the trial, so remember the choice instead of charging now.
+      storePendingPlan({ plan, period, addon: includeAddon });
       navigate({
         to: "/auth",
         search: {
           mode: "signup",
           demo: false,
-          redirect: `/pricing?plan=${plan}&period=${period}${includeAddon ? "&addon=1" : ""}`,
+          plan,
+          period,
+          redirect: undefined,
         },
       });
       return;
@@ -260,6 +265,7 @@ function PricingPage() {
     void buy(plan, period, addon);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn, userId, search.plan, search.period, search.addon]);
+
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);

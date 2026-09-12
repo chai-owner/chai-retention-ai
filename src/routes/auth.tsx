@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Loader2, Mail, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { storePendingPlan } from "@/lib/pending-plan";
+import type { OrgPlan } from "@/lib/organisations";
+
 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -20,10 +23,26 @@ function stripDemo(href: string): string {
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    redirect?: string;
+    mode?: "signup";
+    plan?: string;
+    period?: "monthly" | "annual";
+  } => ({
     redirect: typeof search.redirect === "string" ? search.redirect : undefined,
     mode: search.mode === "signup" ? ("signup" as const) : undefined,
+    plan: typeof search.plan === "string" ? search.plan : undefined,
+    period:
+      search.period === "annual"
+        ? ("annual" as const)
+        : search.period === "monthly"
+          ? ("monthly" as const)
+          : undefined,
   }),
+
+
   head: () => ({ meta: [{ title: "Sign in — ChAi" }] }),
   beforeLoad: async () => {
     // Intentionally do NOT auto-redirect signed-in users away from /auth.
@@ -39,8 +58,15 @@ const inputCls =
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
+  const { redirect: redirectTo, mode: initialMode, plan, period } = Route.useSearch();
   const dest = stripDemo(redirectTo ?? "/app");
+
+  // Arriving from a pricing "Get started" link: remember the chosen plan so the
+  // paywall at the end of the trial can pre-select it.
+  useEffect(() => {
+    if (plan) storePendingPlan({ plan: plan as OrgPlan, period: period ?? "monthly" });
+  }, [plan, period]);
+
   // A brand-new account must always land in onboarding first; the app pages
   // are only meaningful once the business profile exists.
   const signupDest = "/onboarding";
