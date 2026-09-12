@@ -275,7 +275,9 @@ function PricingPage() {
     const period = search.period;
     const addon = !!search.addon;
     navigate({ to: "/pricing", search: {}, replace: true });
-    void buy(plan, period, addon);
+    buy(plan, period, addon).catch((err) => {
+      console.error("[pricing] Auto-open checkout failed:", err);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn, userId, search.plan, search.period, search.addon]);
 
