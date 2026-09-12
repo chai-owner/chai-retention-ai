@@ -245,7 +245,7 @@ export function TrialExpiredPaywall() {
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {ORG_PLANS.map((plan) => {
             const pricing = PLAN_PRICING[plan];
-            const highlighted = plan === "standard";
+            const highlighted = plan === (preferredPlan ?? "standard");
             const founder = !!promoCode && plan === FOUNDER_PLAN && period === "monthly";
             return (
               <div
