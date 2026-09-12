@@ -21,6 +21,14 @@ export function usePaddleCheckout() {
     setLoading(true);
     try {
       await initializePaddle();
+    } catch (e) {
+      // Paddle may not be available on custom domains where the token isn't
+      // injected. Fail silently on the pricing page so the visitor never sees
+      // a broken checkout modal.
+      console.error("[paddle] Checkout initialisation failed:", e);
+      return;
+    }
+    try {
       const priceId = PLAN_PRICE_IDS[options.plan][options.period];
       const items = [{ priceId: await getPaddlePriceId(priceId), quantity: 1 }];
       // Paddle requires all recurring items to share a billing interval, so
