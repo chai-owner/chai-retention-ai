@@ -197,10 +197,12 @@ export function TrialExpiredPaywall() {
     onSettled: () => setPending(null),
     onSuccess: (result) => {
       if (!result) return;
+      clearPendingPlan();
       toast.success(`You're now on ${PLAN_LABELS[result.plan]}. Welcome back.`);
       refresh();
       window.location.assign("/app/today?checkout=success");
     },
+
     onError: (e: unknown) =>
       toast.error(e instanceof Error ? e.message : "We couldn't start that plan just now."),
   });
