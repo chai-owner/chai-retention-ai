@@ -23,7 +23,15 @@ export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: typeof search.redirect === "string" ? search.redirect : undefined,
     mode: search.mode === "signup" ? ("signup" as const) : undefined,
+    plan: typeof search.plan === "string" ? search.plan : undefined,
+    period:
+      search.period === "annual"
+        ? ("annual" as const)
+        : search.period === "monthly"
+          ? ("monthly" as const)
+          : undefined,
   }),
+
   head: () => ({ meta: [{ title: "Sign in — ChAi" }] }),
   beforeLoad: async () => {
     // Intentionally do NOT auto-redirect signed-in users away from /auth.
