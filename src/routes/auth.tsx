@@ -47,8 +47,15 @@ const inputCls =
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
+  const { redirect: redirectTo, mode: initialMode, plan, period } = Route.useSearch();
   const dest = stripDemo(redirectTo ?? "/app");
+
+  // Arriving from a pricing "Get started" link: remember the chosen plan so the
+  // paywall at the end of the trial can pre-select it.
+  useEffect(() => {
+    if (plan) storePendingPlan({ plan: plan as OrgPlan, period: period ?? "monthly" });
+  }, [plan, period]);
+
   // A brand-new account must always land in onboarding first; the app pages
   // are only meaningful once the business profile exists.
   const signupDest = "/onboarding";
