@@ -27,6 +27,8 @@ import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
 import { supabase } from "@/integrations/supabase/client";
 import { PromoCodeField } from "@/components/promo-code-field";
 import { FOUNDER_MONTHLY_PRICE, FOUNDER_PLAN, readStoredPromoCode } from "@/lib/promo-codes";
+import { storePendingPlan } from "@/lib/pending-plan";
+
 
 type PricingSearch = { plan?: OrgPlan; period?: "monthly" | "annual"; addon?: true };
 
