@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Loader2, Mail, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { storePendingPlan } from "@/lib/pending-plan";
+import type { OrgPlan } from "@/lib/organisations";
+
 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
