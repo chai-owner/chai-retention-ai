@@ -68,7 +68,7 @@ export function isCustomPricingPlan(plan: OrgPlan): boolean {
   return CUSTOM_PRICING_PLANS.includes(plan);
 }
 
-export const ELITE_CONTACT_EMAIL = "hello@askchai.tech";
+export const ELITE_CONTACT_EMAIL = "support@askchai.tech";
 export const ELITE_CONTACT_SUBJECT = "ChAi Elite Plan Enquiry";
 export const ELITE_CONTACT_MAILTO =
   `mailto:${ELITE_CONTACT_EMAIL}?subject=${encodeURIComponent(ELITE_CONTACT_SUBJECT)}`;
