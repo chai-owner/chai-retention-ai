@@ -476,7 +476,6 @@ function PricingPage() {
                       ) : (
                       <button
                         type="button"
-                        disabled={checkoutLoading}
                         onClick={() => void buy(tier.plan, annual ? "annual" : "monthly", addonChecked)}
                         className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60 ${
                           tier.highlight
@@ -484,7 +483,7 @@ function PricingPage() {
                             : "border border-border bg-background hover:border-primary/40"
                         }`}
                       >
-                        {checkoutLoading ? "Opening checkout…" : "Get started"} <ArrowRight className="h-4 w-4" />
+                        Get started <ArrowRight className="h-4 w-4" />
                       </button>
                       )}
                       {tier.plan === "core" && !annual && (
