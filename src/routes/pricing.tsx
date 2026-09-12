@@ -24,6 +24,7 @@ import {
 } from "@/lib/organisations";
 import { useSignedIn, useAuthUserId } from "@/lib/use-auth-state";
 import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
+import { initializePaddle } from "@/lib/paddle";
 import { supabase } from "@/integrations/supabase/client";
 import { PromoCodeField } from "@/components/promo-code-field";
 import { FOUNDER_MONTHLY_PRICE, FOUNDER_PLAN, readStoredPromoCode } from "@/lib/promo-codes";
@@ -218,6 +219,18 @@ function PricingPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const autoOpenedRef = useRef(false);
+  const paddleInitAttemptedRef = useRef(false);
+
+  // Only warm up Paddle.js for signed-in users. On custom domains where the
+  // client token isn't injected, this fails harmlessly and is logged to the
+  // console — the visitor never sees a broken checkout modal.
+  useEffect(() => {
+    if (signedIn !== true || paddleInitAttemptedRef.current) return;
+    paddleInitAttemptedRef.current = true;
+    initializePaddle().catch((err) => {
+      console.error("[pricing] Paddle initialisation failed:", err);
+    });
+  }, [signedIn]);
 
   // A Founder invite stored a code before sign-up: pre-fill and apply it.
   useEffect(() => {
@@ -262,7 +275,9 @@ function PricingPage() {
     const period = search.period;
     const addon = !!search.addon;
     navigate({ to: "/pricing", search: {}, replace: true });
-    void buy(plan, period, addon);
+    buy(plan, period, addon).catch((err) => {
+      console.error("[pricing] Auto-open checkout failed:", err);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn, userId, search.plan, search.period, search.addon]);
 
