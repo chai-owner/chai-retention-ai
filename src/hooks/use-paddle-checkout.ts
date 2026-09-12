@@ -65,6 +65,7 @@ export function usePaddleCheckout() {
       await initializePaddle();
     } catch (e) {
       console.error("[paddle] Add-on checkout initialisation failed:", e);
+      setLoading(false);
       return;
     }
     try {
