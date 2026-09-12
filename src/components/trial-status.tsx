@@ -148,6 +148,8 @@ export function TrialExpiredPaywall() {
   const [pending, setPending] = useState<OrgPlan | null>(null);
   const [promoCode, setPromoCode] = useState<string | null>(null);
   const [initialPromo, setInitialPromo] = useState<string | null>(null);
+  // The plan they picked on the pricing page before signing up.
+  const [preferredPlan, setPreferredPlan] = useState<OrgPlan | null>(null);
   const changePlan = useServerFn(requestPlanChange);
   const { openCheckout, environment } = usePaddleCheckout();
   const userId = useAuthUserId();
@@ -156,7 +158,13 @@ export function TrialExpiredPaywall() {
   // A Founder invite link stored the code before sign-up.
   useEffect(() => {
     setInitialPromo(readStoredPromoCode());
+    const selection = readPendingPlan();
+    if (selection) {
+      setPreferredPlan(selection.plan);
+      setPeriod(selection.period);
+    }
   }, []);
+
 
   const startCheckout = async (plan: OrgPlan) => {
     if (!userId) throw new Error("Please sign in again to choose a plan.");
