@@ -62,6 +62,11 @@ export function usePaddleCheckout() {
     setLoading(true);
     try {
       await initializePaddle();
+    } catch (e) {
+      console.error("[paddle] Add-on checkout initialisation failed:", e);
+      return;
+    }
+    try {
       window.Paddle.Checkout.open({
         items: [{ priceId: await getPaddlePriceId(ADDON_PRICE_ID), quantity: 1 }],
         customer: options.customerEmail ? { email: options.customerEmail } : undefined,
