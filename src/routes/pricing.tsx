@@ -24,6 +24,7 @@ import {
 } from "@/lib/organisations";
 import { useSignedIn, useAuthUserId } from "@/lib/use-auth-state";
 import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
+import { initializePaddle } from "@/lib/paddle";
 import { supabase } from "@/integrations/supabase/client";
 import { PromoCodeField } from "@/components/promo-code-field";
 import { FOUNDER_MONTHLY_PRICE, FOUNDER_PLAN, readStoredPromoCode } from "@/lib/promo-codes";
