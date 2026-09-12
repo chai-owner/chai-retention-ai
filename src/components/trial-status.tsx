@@ -31,6 +31,8 @@ import {
   FOUNDER_PLAN,
   readStoredPromoCode,
 } from "@/lib/promo-codes";
+import { clearPendingPlan, readPendingPlan } from "@/lib/pending-plan";
+
 
 
 /** Small countdown chip for the sidebar / header. */
