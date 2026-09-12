@@ -23,9 +23,6 @@ import {
   type OrgPlan,
 } from "@/lib/organisations";
 import { useSignedIn, useAuthUserId } from "@/lib/use-auth-state";
-import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
-import { initializePaddle } from "@/lib/paddle";
-import { supabase } from "@/integrations/supabase/client";
 import { PromoCodeField } from "@/components/promo-code-field";
 import { FOUNDER_MONTHLY_PRICE, FOUNDER_PLAN, readStoredPromoCode } from "@/lib/promo-codes";
 import { storePendingPlan } from "@/lib/pending-plan";
@@ -215,22 +212,8 @@ function PricingPage() {
   const [initialPromo, setInitialPromo] = useState<string | null>(null);
   const signedIn = useSignedIn();
   const userId = useAuthUserId();
-  const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const autoOpenedRef = useRef(false);
-  const paddleInitAttemptedRef = useRef(false);
-
-  // Only warm up Paddle.js for signed-in users. On custom domains where the
-  // client token isn't injected, this fails harmlessly and is logged to the
-  // console — the visitor never sees a broken checkout modal.
-  useEffect(() => {
-    if (signedIn !== true || paddleInitAttemptedRef.current) return;
-    paddleInitAttemptedRef.current = true;
-    initializePaddle().catch((err) => {
-      console.error("[pricing] Paddle initialisation failed:", err);
-    });
-  }, [signedIn]);
 
   // A Founder invite stored a code before sign-up: pre-fill and apply it.
   useEffect(() => {
@@ -254,32 +237,11 @@ function PricingPage() {
       });
       return;
     }
-    const { data } = await supabase.auth.getSession();
-    await openCheckout({
-      plan,
-      period,
-      includeAddon,
-      userId,
-      customerEmail: data.session?.user.email ?? undefined,
-      discountCode: plan === FOUNDER_PLAN ? promoCode : null,
-    });
+    // Signed-in users never check out from the pricing page: send them into
+    // the app instead. Trialing users keep working; expired trials hit the
+    // in-app paywall; subscribers are already paying.
+    navigate({ to: "/app/today" });
   };
-
-
-  // Returning from auth with a pending purchase: open checkout automatically.
-  useEffect(() => {
-    if (autoOpenedRef.current) return;
-    if (!signedIn || !userId || !search.plan || !search.period) return;
-    autoOpenedRef.current = true;
-    const plan = search.plan;
-    const period = search.period;
-    const addon = !!search.addon;
-    navigate({ to: "/pricing", search: {}, replace: true });
-    buy(plan, period, addon).catch((err) => {
-      console.error("[pricing] Auto-open checkout failed:", err);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signedIn, userId, search.plan, search.period, search.addon]);
 
 
   useEffect(() => {
@@ -514,7 +476,6 @@ function PricingPage() {
                       ) : (
                       <button
                         type="button"
-                        disabled={checkoutLoading}
                         onClick={() => void buy(tier.plan, annual ? "annual" : "monthly", addonChecked)}
                         className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60 ${
                           tier.highlight
@@ -522,7 +483,7 @@ function PricingPage() {
                             : "border border-border bg-background hover:border-primary/40"
                         }`}
                       >
-                        {checkoutLoading ? "Opening checkout…" : "Get started"} <ArrowRight className="h-4 w-4" />
+                        Get started <ArrowRight className="h-4 w-4" />
                       </button>
                       )}
                       {tier.plan === "core" && !annual && (
