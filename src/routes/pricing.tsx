@@ -219,6 +219,18 @@ function PricingPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const autoOpenedRef = useRef(false);
+  const paddleInitAttemptedRef = useRef(false);
+
+  // Only warm up Paddle.js for signed-in users. On custom domains where the
+  // client token isn't injected, this fails harmlessly and is logged to the
+  // console — the visitor never sees a broken checkout modal.
+  useEffect(() => {
+    if (signedIn !== true || paddleInitAttemptedRef.current) return;
+    paddleInitAttemptedRef.current = true;
+    initializePaddle().catch((err) => {
+      console.error("[pricing] Paddle initialisation failed:", err);
+    });
+  }, [signedIn]);
 
   // A Founder invite stored a code before sign-up: pre-fill and apply it.
   useEffect(() => {
