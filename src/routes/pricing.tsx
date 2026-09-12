@@ -221,17 +221,6 @@ function PricingPage() {
   const autoOpenedRef = useRef(false);
   const paddleInitAttemptedRef = useRef(false);
 
-  // Only warm up Paddle.js for signed-in users. On custom domains where the
-  // client token isn't injected, this fails harmlessly and is logged to the
-  // console — the visitor never sees a broken checkout modal.
-  useEffect(() => {
-    if (signedIn !== true || paddleInitAttemptedRef.current) return;
-    paddleInitAttemptedRef.current = true;
-    initializePaddle().catch((err) => {
-      console.error("[pricing] Paddle initialisation failed:", err);
-    });
-  }, [signedIn]);
-
   // A Founder invite stored a code before sign-up: pre-fill and apply it.
   useEffect(() => {
     setInitialPromo(readStoredPromoCode());
@@ -254,32 +243,11 @@ function PricingPage() {
       });
       return;
     }
-    const { data } = await supabase.auth.getSession();
-    await openCheckout({
-      plan,
-      period,
-      includeAddon,
-      userId,
-      customerEmail: data.session?.user.email ?? undefined,
-      discountCode: plan === FOUNDER_PLAN ? promoCode : null,
-    });
+    // Signed-in users never check out from the pricing page: send them into
+    // the app instead. Trialing users keep working; expired trials hit the
+    // in-app paywall; subscribers are already paying.
+    navigate({ to: "/app/today" });
   };
-
-
-  // Returning from auth with a pending purchase: open checkout automatically.
-  useEffect(() => {
-    if (autoOpenedRef.current) return;
-    if (!signedIn || !userId || !search.plan || !search.period) return;
-    autoOpenedRef.current = true;
-    const plan = search.plan;
-    const period = search.period;
-    const addon = !!search.addon;
-    navigate({ to: "/pricing", search: {}, replace: true });
-    buy(plan, period, addon).catch((err) => {
-      console.error("[pricing] Auto-open checkout failed:", err);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signedIn, userId, search.plan, search.period, search.addon]);
 
 
   useEffect(() => {
