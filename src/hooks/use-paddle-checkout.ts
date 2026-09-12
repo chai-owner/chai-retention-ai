@@ -26,6 +26,7 @@ export function usePaddleCheckout() {
       // injected. Fail silently on the pricing page so the visitor never sees
       // a broken checkout modal.
       console.error("[paddle] Checkout initialisation failed:", e);
+      setLoading(false);
       return;
     }
     try {
