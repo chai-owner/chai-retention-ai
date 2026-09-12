@@ -23,7 +23,14 @@ function stripDemo(href: string): string {
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    redirect?: string;
+    mode?: "signup";
+    plan?: string;
+    period?: "monthly" | "annual";
+  } => ({
     redirect: typeof search.redirect === "string" ? search.redirect : undefined,
     mode: search.mode === "signup" ? ("signup" as const) : undefined,
     plan: typeof search.plan === "string" ? search.plan : undefined,
@@ -34,6 +41,7 @@ export const Route = createFileRoute("/auth")({
           ? ("monthly" as const)
           : undefined,
   }),
+
 
   head: () => ({ meta: [{ title: "Sign in — ChAi" }] }),
   beforeLoad: async () => {
