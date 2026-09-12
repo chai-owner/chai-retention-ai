@@ -152,7 +152,7 @@ export const Route = createFileRoute("/api/public/hooks/weekly-digest")({
               payload: {
                 message_id: messageId,
                 to: email,
-                from: `${SITE_NAME} <hello@${FROM_DOMAIN}>`,
+                from: `${SITE_NAME} <support@${FROM_DOMAIN}>`,
                 sender_domain: SENDER_DOMAIN,
                 subject: `Your Monday brief: ${brief.needsAttention} customers need attention`,
                 html,

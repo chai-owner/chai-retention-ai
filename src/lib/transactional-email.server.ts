@@ -41,7 +41,7 @@ export async function queueTransactionalEmail(
       payload: {
         message_id: messageId,
         to,
-        from: `${SITE_NAME} <hello@${FROM_DOMAIN}>`,
+        from: `${SITE_NAME} <support@${FROM_DOMAIN}>`,
         sender_domain: SENDER_DOMAIN,
         subject,
         html,

@@ -270,7 +270,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
         payload: {
           message_id: messageId,
           to: data.email,
-          from: `ChAi <hello@${FROM_DOMAIN}>`,
+          from: `ChAi <support@${FROM_DOMAIN}>`,
           sender_domain: SENDER_DOMAIN,
           subject: `You've been invited to join ${membership.organisation.name || "a team"} on ChAi`,
           html,
@@ -540,7 +540,7 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
         payload: {
           message_id: messageId,
           to: invite.email,
-          from: `ChAi <hello@${FROM_DOMAIN}>`,
+          from: `ChAi <support@${FROM_DOMAIN}>`,
           sender_domain: SENDER_DOMAIN,
           subject: `Reminder: you've been invited to join ${membership.organisation.name || "a team"} on ChAi`,
           html,
