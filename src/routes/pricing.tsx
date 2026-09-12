@@ -23,9 +23,6 @@ import {
   type OrgPlan,
 } from "@/lib/organisations";
 import { useSignedIn, useAuthUserId } from "@/lib/use-auth-state";
-import { usePaddleCheckout } from "@/hooks/use-paddle-checkout";
-import { initializePaddle } from "@/lib/paddle";
-import { supabase } from "@/integrations/supabase/client";
 import { PromoCodeField } from "@/components/promo-code-field";
 import { FOUNDER_MONTHLY_PRICE, FOUNDER_PLAN, readStoredPromoCode } from "@/lib/promo-codes";
 import { storePendingPlan } from "@/lib/pending-plan";
@@ -215,11 +212,8 @@ function PricingPage() {
   const [initialPromo, setInitialPromo] = useState<string | null>(null);
   const signedIn = useSignedIn();
   const userId = useAuthUserId();
-  const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const autoOpenedRef = useRef(false);
-  const paddleInitAttemptedRef = useRef(false);
 
   // A Founder invite stored a code before sign-up: pre-fill and apply it.
   useEffect(() => {
