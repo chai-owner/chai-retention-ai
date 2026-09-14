@@ -4,7 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
-import { saveProfile } from "@/lib/profile.functions";
+import {
+  saveProfile,
+  getOnboardingProgress,
+  saveOnboardingProgress,
+} from "@/lib/profile.functions";
 import { recommendMetrics } from "@/lib/ai.functions";
 import { plannerMetrics, IMPORTANCE_LABELS, type PlannerMetric } from "@/lib/mock-data";
 import { SmartIngestCard, UploadDatasetsCard } from "@/components/data-uploads-panel";
