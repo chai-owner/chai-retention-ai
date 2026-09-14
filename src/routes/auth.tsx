@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Mail, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getProfile } from "@/lib/profile.functions";
+import { resolvePostLoginDestination } from "@/lib/post-login-destination";
 import { storePendingPlan } from "@/lib/pending-plan";
 import type { OrgPlan } from "@/lib/organisations";
 
@@ -58,6 +61,7 @@ const inputCls =
 
 function AuthPage() {
   const navigate = useNavigate();
+  const fetchProfile = useServerFn(getProfile);
   const { redirect: redirectTo, mode: initialMode, plan, period } = Route.useSearch();
   const dest = stripDemo(redirectTo ?? "/app");
 
@@ -83,9 +87,26 @@ function AuthPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
 
-  function goToDest() {
-    if (redirectTo) navigate({ href: stripDemo(redirectTo) });
-    else navigate({ to: "/app", search: { demo: false } });
+  // After login the account state decides the destination: unfinished
+  // onboarding always wins, then the welcome screen, then Today.
+  async function goToDest() {
+    let dest = "/onboarding";
+    try {
+      const profile = await fetchProfile();
+      dest = resolvePostLoginDestination(profile);
+    } catch {
+      // Profile unreachable: fall back to the requested page, or the app.
+      dest = redirectTo ? stripDemo(redirectTo) : "/app";
+      navigate({ href: dest });
+      return;
+    }
+    // Honour an explicit ?redirect= target only once the account is fully set
+    // up; otherwise it would skip onboarding.
+    if (redirectTo && dest === "/app/today") {
+      navigate({ href: stripDemo(redirectTo) });
+      return;
+    }
+    navigate({ href: dest });
   }
 
 
@@ -149,7 +170,7 @@ function AuthPage() {
       setLoading(false);
       return;
     }
-    goToDest();
+    void goToDest();
   }
 
   return (

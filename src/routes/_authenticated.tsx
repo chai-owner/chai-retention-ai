@@ -71,7 +71,7 @@ export const Route = createFileRoute("/_authenticated")({
     try {
       const profile = await getProfile();
       const dest = resolveGuardedDestination(profile, location.pathname);
-      if (dest) throw redirect({ to: dest });
+      if (dest) throw redirect({ href: dest });
     } catch (err) {
       if (isRedirect(err)) throw err;
       // If the profile can't be loaded, don't block the app.
