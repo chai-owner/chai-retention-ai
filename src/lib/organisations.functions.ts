@@ -505,33 +505,14 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
         acceptUrl: inviteAcceptUrl(SITE_ORIGIN, token),
         expiresInDays: INVITE_TTL_DAYS,
       });
-      const html = await render(element);
-      const text = await render(element, { plainText: true });
-      const messageId = crypto.randomUUID();
-
-      await supabaseAdmin.from("email_send_log").insert({
-        message_id: messageId,
-        template_name: "org_invite",
-        recipient_email: invite.email,
-        status: "pending",
+      const { queueTransactionalEmail } = await import("@/lib/transactional-email.server");
+      emailQueued = await queueTransactionalEmail(supabaseAdmin, {
+        to: invite.email,
+        subject: `Reminder: you've been invited to join ${membership.organisation.name || "a team"} on ChAi`,
+        template: "org_invite",
+        element,
+        idempotencyKey: `org_invite-resend-${token}`,
       });
-
-      const { error: enqueueError } = await supabaseAdmin.rpc("enqueue_email", {
-        queue_name: "transactional_emails",
-        payload: {
-          message_id: messageId,
-          to: invite.email,
-          from: `ChAi <support@${FROM_DOMAIN}>`,
-          sender_domain: SENDER_DOMAIN,
-          subject: `Reminder: you've been invited to join ${membership.organisation.name || "a team"} on ChAi`,
-          html,
-          text,
-          purpose: "transactional",
-          label: "org_invite",
-          queued_at: new Date().toISOString(),
-        },
-      });
-      emailQueued = !enqueueError;
     } catch (error) {
       console.error("Failed to resend organisation invite email", error);
     }
