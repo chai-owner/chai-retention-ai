@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfile } from "@/lib/profile.functions";
 import { resolvePostLoginDestination } from "@/lib/post-login-destination";
 import { storePendingPlan } from "@/lib/pending-plan";
+import { APP_ORIGIN } from "@/lib/site";
 import type { OrgPlan } from "@/lib/organisations";
 
 
