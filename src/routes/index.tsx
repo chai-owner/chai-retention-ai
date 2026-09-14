@@ -48,8 +48,6 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-const signup = { mode: "signup" as const, demo: false, redirect: undefined };
-const login = { mode: undefined, demo: false, redirect: undefined };
 
 const navItems = [
   { label: "Features", href: "#features" },
@@ -132,23 +130,21 @@ function Landing() {
             >
               View Demo
             </button>
-            <Link
-              to="/auth"
-              search={login}
+            <a
+              href="https://app.askchai.tech/auth"
               className={`rounded-[10px] px-3.5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white ${focusRing}`}
             >
               Log in
-            </Link>
+            </a>
           </div>
 
-          <Link
-            to="/auth"
-            search={signup}
+          <a
+            href="https://app.askchai.tech/auth?mode=signup"
             className={`group ml-auto inline-flex items-center gap-2 rounded-[10px] bg-[#C3FFA5] px-4 py-2.5 text-sm font-bold text-[#152238] transition-colors hover:bg-[#A8E080] md:ml-3 ${focusRing}`}
           >
             Get started
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
+          </a>
         </nav>
 
         <div className="mx-auto mt-10 grid max-w-[1240px] items-center gap-16 px-6 lg:mt-16 lg:grid-cols-[1fr_0.95fr] lg:px-8">
@@ -166,13 +162,12 @@ function Landing() {
               to do about it, before it's too late.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link
-                to="/auth"
-                search={signup}
+              <a
+                href="https://app.askchai.tech/auth?mode=signup"
                 className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#C3FFA5] px-6 py-3.5 text-base font-bold text-[#152238] transition-colors hover:bg-[#A8E080] ${focusRing}`}
               >
                 Try it for free <ArrowRight className="h-4 w-4" />
-              </Link>
+              </a>
               <button
                 onClick={openGate}
                 className={`inline-flex items-center justify-center gap-2 rounded-[10px] border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-white/10 ${focusRing}`}
@@ -400,13 +395,12 @@ function Landing() {
               next, in plain English.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                to="/auth"
-                search={signup}
+              <a
+                href="https://app.askchai.tech/auth?mode=signup"
                 className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#C3FFA5] px-6 py-3.5 text-base font-bold text-[#152238] transition-colors hover:bg-[#A8E080] ${focusRing}`}
               >
                 Sign up free <ArrowRight className="h-4 w-4" />
-              </Link>
+              </a>
               <button
                 onClick={openGate}
                 className={`inline-flex items-center justify-center gap-2 rounded-[10px] border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-white/10 ${focusRing}`}
@@ -438,9 +432,9 @@ function Landing() {
               <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/privacy">Privacy</Link>
             </li>
             <li>
-              <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/auth" search={login}>
+              <a className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} href="https://app.askchai.tech/auth">
                 Log in
-              </Link>
+              </a>
             </li>
           </ul>
           <p>© {new Date().getFullYear()} ChAi. All rights reserved.</p>
