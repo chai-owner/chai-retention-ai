@@ -59,6 +59,7 @@ export function allowedOrigins(): string[] {
   return Array.from(
     new Set([
       PRODUCTION_ORIGIN,
+      LEGACY_PRODUCTION_ORIGIN,
       "http://localhost:8080",
       "http://127.0.0.1:8080",
       ...configured,
