@@ -63,7 +63,6 @@ function AuthPage() {
   const navigate = useNavigate();
   const fetchProfile = useServerFn(getProfile);
   const { redirect: redirectTo, mode: initialMode, plan, period } = Route.useSearch();
-  const dest = stripDemo(redirectTo ?? "/app");
 
   // Arriving from a pricing "Get started" link: remember the chosen plan so the
   // paywall at the end of the trial can pre-select it.
