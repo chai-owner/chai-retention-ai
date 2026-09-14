@@ -96,7 +96,7 @@ function Onboarding() {
     loadProgress()
       .then((progress) => {
         if (cancelled || !progress) return;
-        const draft = (progress.draft ?? {}) as {
+        const draft = ((progress as { draft?: unknown; step?: number }).draft ?? {}) as {
           form?: Partial<typeof form>;
           tracked?: Record<string, boolean>;
           channels?: string[];
@@ -115,8 +115,9 @@ function Onboarding() {
           // Already tailored for this business — don't regenerate on arrival.
           metricsGenerated.current = true;
         }
-        if (typeof progress.step === "number" && progress.step > 0) {
-          setStep(Math.min(progress.step, steps.length - 1));
+        const savedStep = (progress as { step?: number }).step;
+        if (typeof savedStep === "number" && savedStep > 0) {
+          setStep(Math.min(savedStep, steps.length - 1));
         }
       })
       .catch(() => {

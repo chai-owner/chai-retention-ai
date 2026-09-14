@@ -126,10 +126,10 @@ export const getOnboardingProgress = createServerFn({ method: "GET" })
       .eq("id", userId)
       .maybeSingle();
     if (error) throw error;
-    if (!data) return { step: 0, draft: {} as Record<string, unknown>, onboarded: false };
+    if (!data) return { step: 0, draft: {} as Json, onboarded: false };
     return {
       step: typeof data.onboarding_step === "number" ? data.onboarding_step : 0,
-      draft: (data.onboarding_draft ?? {}) as Record<string, unknown>,
+      draft: (data.onboarding_draft ?? {}) as Json,
       onboarded: data.onboarded === true,
     };
   });
