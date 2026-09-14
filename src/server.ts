@@ -37,8 +37,24 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   });
 }
 
+// Cloudflare delivers secrets on the per-request `env` object. Some runtimes
+// never expose them on `process.env`, and `import("cloudflare:workers")` is not
+// always resolvable, so stash the bindings where the shared server-env lookup
+// (globalThis.__env__) can find them on every subsequent server call.
+function captureRuntimeEnv(env: unknown) {
+  if (!env || typeof env !== "object") return;
+  const g = globalThis as unknown as { __env__?: Record<string, unknown> };
+  const existing = g.__env__ ?? {};
+  const merged: Record<string, unknown> = { ...existing };
+  for (const [key, value] of Object.entries(env as Record<string, unknown>)) {
+    if (typeof value === "string" && value) merged[key] = value;
+  }
+  g.__env__ = merged;
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    captureRuntimeEnv(env);
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
