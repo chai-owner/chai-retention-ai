@@ -935,6 +935,8 @@ export type Database = {
           model: string
           must_track: string
           onboarded: boolean
+          onboarding_draft: Json
+          onboarding_step: number
           segments: Json
           size: string
           success_actions: string
@@ -964,6 +966,8 @@ export type Database = {
           model?: string
           must_track?: string
           onboarded?: boolean
+          onboarding_draft?: Json
+          onboarding_step?: number
           segments?: Json
           size?: string
           success_actions?: string
@@ -993,6 +997,8 @@ export type Database = {
           model?: string
           must_track?: string
           onboarded?: boolean
+          onboarding_draft?: Json
+          onboarding_step?: number
           segments?: Json
           size?: string
           success_actions?: string
