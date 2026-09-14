@@ -120,7 +120,7 @@ function AuthPage() {
     setLoading(true);
     if (mode === "forgot") {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${emailLinkOrigin()}/reset-password`,
       });
       if (error) {
         toast.error(error.message);
@@ -136,7 +136,7 @@ function AuthPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}${signupDest}`,
+          emailRedirectTo: `${emailLinkOrigin()}${signupDest}`,
           data: {
             full_name: name.trim(),
             terms_accepted_at: new Date().toISOString(),
