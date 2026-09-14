@@ -93,18 +93,29 @@ async function resolveOrgId(userId: string): Promise<string | null> {
 }
 
 async function enqueueEmail(to: string, subject: string, html: string, text: string, label: string) {
-  try {
-    const messageId = crypto.randomUUID();
-    await getSupabase().from("email_send_log").insert({
-      message_id: messageId,
+  const admin = getSupabase();
+  const logSend = async (status: string, errorMessage?: string) => {
+    const { error } = await admin.from("email_send_log").insert({
+      message_id: crypto.randomUUID(),
       template_name: label,
       recipient_email: to,
-      status: "pending",
+      status,
+      ...(errorMessage ? { error_message: errorMessage.slice(0, 1000) } : {}),
     });
-    await getSupabase().rpc("enqueue_email", {
-      queue_name: "transactional_emails",
-      payload: {
-        message_id: messageId,
+    if (error) console.error("Failed to record email send log row", { label, status, error });
+  };
+
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  if (!apiKey) {
+    console.error(`Cannot send ${label} email: LOVABLE_API_KEY is not configured`);
+    await logSend("failed", "LOVABLE_API_KEY is not configured");
+    return;
+  }
+
+  try {
+    const { sendLovableEmail } = await import("@lovable.dev/email-js");
+    await sendLovableEmail(
+      {
         to,
         from: `ChAi <support@${FROM_DOMAIN}>`,
         sender_domain: SENDER_DOMAIN,
@@ -113,12 +124,20 @@ async function enqueueEmail(to: string, subject: string, html: string, text: str
         text,
         purpose: "transactional",
         label,
-        queued_at: new Date().toISOString(),
+        idempotency_key: crypto.randomUUID(),
       },
-    });
+      { apiKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
+    );
+    await logSend("sent");
   } catch (error) {
     // Email must never fail the webhook — Paddle would retry for 3 days.
-    console.error(`Failed to enqueue ${label} email`, error);
+    const code = (error as { code?: string } | null)?.code;
+    if (code === "recipient_suppressed") {
+      await logSend("suppressed");
+      return;
+    }
+    console.error(`Failed to send ${label} email`, error);
+    await logSend("failed", error instanceof Error ? error.message : String(error));
   }
 }
 

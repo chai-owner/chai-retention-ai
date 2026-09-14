@@ -41,6 +41,7 @@ import { Route as AuthenticatedAppTransactionsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated.settings.account'
 import { Route as HelpCategorySlugRouteImport } from './routes/help.$category.$slug'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as OauthSalesforceReturnRouteImport } from './routes/oauth/salesforce/return'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
@@ -56,7 +57,7 @@ import { Route as ApiPublicZendeskCallbackRouteImport } from './routes/api/publi
 import { Route as ApiPublicZohoCallbackRouteImport } from './routes/api/public/zoho.callback'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -225,6 +226,11 @@ const HelpCategorySlugRoute = HelpCategorySlugRouteImport.update({
   path: '/$category/$slug',
   getParentRoute: () => HelpRoute,
 } as any)
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OauthSalesforceReturnRoute = OauthSalesforceReturnRouteImport.update({
   id: '/oauth/salesforce/return',
   path: '/oauth/salesforce/return',
@@ -310,10 +316,10 @@ const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
   path: '/lovable/email/auth/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -348,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -363,7 +370,7 @@ export interface FileRoutesByFullPath {
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -394,6 +401,7 @@ export interface FileRoutesByTo {
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -409,7 +417,7 @@ export interface FileRoutesByTo {
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/customers': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRoutesById {
@@ -445,6 +453,7 @@ export interface FileRoutesById {
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
@@ -460,7 +469,7 @@ export interface FileRoutesById {
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRouteTypes {
@@ -496,6 +505,7 @@ export interface FileRouteTypes {
     | '/app/welcome'
     | '/settings/account'
     | '/help/$category/$slug'
+    | '/lovable/email/events'
     | '/oauth/salesforce/return'
     | '/app/'
     | '/app/customers/$id'
@@ -511,7 +521,7 @@ export interface FileRouteTypes {
     | '/api/public/zoho/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
     | '/app/customers/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -542,6 +552,7 @@ export interface FileRouteTypes {
     | '/app/welcome'
     | '/settings/account'
     | '/help/$category/$slug'
+    | '/lovable/email/events'
     | '/oauth/salesforce/return'
     | '/app'
     | '/app/customers/$id'
@@ -557,7 +568,7 @@ export interface FileRouteTypes {
     | '/api/public/zoho/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
     | '/app/customers'
   id:
     | '__root__'
@@ -592,6 +603,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/welcome'
     | '/_authenticated/settings/account'
     | '/help/$category/$slug'
+    | '/lovable/email/events'
     | '/oauth/salesforce/return'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
@@ -607,7 +619,7 @@ export interface FileRouteTypes {
     | '/api/public/zoho/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
     | '/_authenticated/app/customers/'
   fileRoutesById: FileRoutesById
 }
@@ -623,6 +635,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   OauthSalesforceReturnRoute: typeof OauthSalesforceReturnRoute
   ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
   ApiPublicHooksDailyScoreRoute: typeof ApiPublicHooksDailyScoreRoute
@@ -636,7 +649,7 @@ export interface RootRouteChildren {
   ApiPublicZohoCallbackRoute: typeof ApiPublicZohoCallbackRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
-  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -865,6 +878,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HelpCategorySlugRouteImport
       parentRoute: typeof HelpRoute
     }
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oauth/salesforce/return': {
       id: '/oauth/salesforce/return'
       path: '/oauth/salesforce/return'
@@ -970,11 +990,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -1077,6 +1097,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   InviteTokenRoute: InviteTokenRoute,
+  LovableEmailEventsRoute: LovableEmailEventsRoute,
   OauthSalesforceReturnRoute: OauthSalesforceReturnRoute,
   ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
   ApiPublicHooksDailyScoreRoute: ApiPublicHooksDailyScoreRoute,
@@ -1090,7 +1111,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicZohoCallbackRoute: ApiPublicZohoCallbackRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
-  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

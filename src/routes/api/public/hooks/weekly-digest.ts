@@ -99,24 +99,6 @@ export const Route = createFileRoute("/api/public/hooks/weekly-digest")({
               continue;
             }
 
-            // One reusable one-click unsubscribe token per address.
-            let unsubscribeToken: string | undefined;
-            const { data: existingToken } = await supabaseAdmin
-              .from("email_unsubscribe_tokens")
-              .select("token")
-              .eq("email", email)
-              .limit(1)
-              .maybeSingle();
-            if (existingToken?.token) {
-              unsubscribeToken = existingToken.token as string;
-            } else {
-              const token = crypto.randomUUID();
-              const { error: tokenError } = await supabaseAdmin
-                .from("email_unsubscribe_tokens")
-                .insert({ token, email });
-              if (!tokenError) unsubscribeToken = token;
-            }
-
             const element = React.createElement(WeeklyDigestEmail, {
               headline: brief.headline,
               needsAttention: brief.needsAttention,
@@ -136,34 +118,16 @@ export const Route = createFileRoute("/api/public/hooks/weekly-digest")({
               })),
               todayUrl: TODAY_URL,
             });
-            const html = await render(element);
-            const text = await render(element, { plainText: true });
-            const messageId = crypto.randomUUID();
 
-            await supabaseAdmin.from("email_send_log").insert({
-              message_id: messageId,
-              template_name: "weekly_digest",
-              recipient_email: email,
-              status: "pending",
+            const { queueTransactionalEmail } = await import("@/lib/transactional-email.server");
+            const sent = await queueTransactionalEmail(supabaseAdmin, {
+              to: email,
+              subject: `Your Monday brief: ${brief.needsAttention} customers need attention`,
+              template: "weekly_digest",
+              element,
+              idempotencyKey: `weekly_digest-${userId}-${new Date().toISOString().slice(0, 10)}`,
             });
-
-            const { error: enqueueError } = await supabaseAdmin.rpc("enqueue_email", {
-              queue_name: "transactional_emails",
-              payload: {
-                message_id: messageId,
-                to: email,
-                from: `${SITE_NAME} <support@${FROM_DOMAIN}>`,
-                sender_domain: SENDER_DOMAIN,
-                subject: `Your Monday brief: ${brief.needsAttention} customers need attention`,
-                html,
-                text,
-                purpose: "transactional",
-                label: "weekly_digest",
-                unsubscribe_token: unsubscribeToken,
-                queued_at: new Date().toISOString(),
-              },
-            });
-            if (enqueueError) throw new Error(enqueueError.message);
+            if (!sent) throw new Error("send_failed");
             results.push({ user_id: userId, queued: true });
           } catch (err) {
             results.push({
