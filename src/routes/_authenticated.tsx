@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfile } from "@/lib/profile.functions";
 import { isDemoValue } from "@/lib/use-demo-mode";
 import { checkAiConfig, type AiConfigCheckResult } from "@/lib/ai.functions";
+import { resolveGuardedDestination } from "@/lib/post-login-destination";
 
 declare global {
   interface Window {
