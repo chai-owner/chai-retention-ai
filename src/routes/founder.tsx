@@ -1,9 +1,13 @@
 // Founder invite link: /founder?code=XXXX stores the promo code for later and
-// sends the visitor straight into sign-up.
+// sends the visitor straight into sign-up. If this route is reached from the
+// marketing domain, redirect to the app origin first so the code is always
+// stored on the app.
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { storePromoCode, validatePromoCode } from "@/lib/promo-codes";
+
+const APP_ORIGIN = "https://app.askchai.tech";
 
 export const Route = createFileRoute("/founder")({
   validateSearch: (search: Record<string, unknown>): { code?: string } =>
@@ -32,6 +36,16 @@ function FounderInvite() {
   useEffect(() => {
     const valid = validatePromoCode(code);
     if (valid) storePromoCode(valid);
+
+    // If the marketing site served this page, jump to the app origin so the
+    // stored promo code and subsequent sign-up happen on the right domain.
+    if (typeof window !== "undefined" && window.location.origin !== APP_ORIGIN) {
+      const url = new URL("/founder", APP_ORIGIN);
+      if (valid) url.searchParams.set("code", valid);
+      window.location.href = url.toString();
+      return;
+    }
+
     void navigate({
       to: "/auth",
       search: { mode: "signup", demo: false, redirect: undefined },
