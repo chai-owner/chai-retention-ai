@@ -272,7 +272,7 @@ export async function sendDowngradeSeatWarning(
         year: "numeric",
       }),
       affected,
-      billingUrl: "https://chai-retention-ai.lovable.app/settings/account",
+      billingUrl: `${APP_ORIGIN}/settings/account`,
     }),
   });
 }
