@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfile } from "@/lib/profile.functions";
 import { resolvePostLoginDestination } from "@/lib/post-login-destination";
 import { storePendingPlan } from "@/lib/pending-plan";
+import { APP_ORIGIN } from "@/lib/site";
 import type { OrgPlan } from "@/lib/organisations";
 
 
@@ -22,6 +23,17 @@ function stripDemo(href: string): string {
   } catch {
     return href;
   }
+}
+
+// Links inside auth emails must always land on the hosted app domain, never on
+// a marketing or legacy origin. Local/preview origins are kept as-is so
+// development flows still work.
+function emailLinkOrigin(): string {
+  const origin = window.location.origin;
+  if (/localhost|127\.0\.0\.1|lovable\.app|lovableproject\.com/.test(origin)) {
+    return origin;
+  }
+  return APP_ORIGIN;
 }
 
 export const Route = createFileRoute("/auth")({
@@ -119,7 +131,7 @@ function AuthPage() {
     setLoading(true);
     if (mode === "forgot") {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${emailLinkOrigin()}/reset-password`,
       });
       if (error) {
         toast.error(error.message);
@@ -135,7 +147,7 @@ function AuthPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}${signupDest}`,
+          emailRedirectTo: `${emailLinkOrigin()}${signupDest}`,
           data: {
             full_name: name.trim(),
             terms_accepted_at: new Date().toISOString(),
