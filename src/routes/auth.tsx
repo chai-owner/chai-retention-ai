@@ -25,6 +25,17 @@ function stripDemo(href: string): string {
   }
 }
 
+// Links inside auth emails must always land on the hosted app domain, never on
+// a marketing or legacy origin. Local/preview origins are kept as-is so
+// development flows still work.
+function emailLinkOrigin(): string {
+  const origin = window.location.origin;
+  if (/localhost|127\.0\.0\.1|lovable\.app|lovableproject\.com/.test(origin)) {
+    return origin;
+  }
+  return APP_ORIGIN;
+}
+
 export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (
