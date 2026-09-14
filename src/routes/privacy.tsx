@@ -27,8 +27,6 @@ export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
 });
 
-const signup = { mode: "signup" as const, demo: false, redirect: undefined };
-const login = { mode: undefined, demo: false, redirect: undefined };
 
 const navItems = [
   { label: "Product", href: "/#product" },
@@ -84,20 +82,18 @@ function PrivacyPage() {
             >
               View Demo
             </button>
-            <Link
-              to="/auth"
-              search={login}
+            <a
+              href="https://app.askchai.tech/auth"
               className="hidden rounded-full px-4 py-2 text-sm font-medium text-white/75 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
             >
               Log in
-            </Link>
-            <Link
-              to="/auth"
-              search={signup}
+            </a>
+            <a
+              href="https://app.askchai.tech/auth?mode=signup"
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(32,70,84,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
             >
               Sign Up
-            </Link>
+            </a>
           </div>
         </nav>
       </header>
@@ -364,13 +360,12 @@ function PrivacyPage() {
                 Reach out through our support channels and we’ll be happy to help.
               </p>
               <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link
-                  to="/auth"
-                  search={signup}
+                <a
+                  href="https://app.askchai.tech/auth?mode=signup"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
                 >
                   Sign Up <ArrowRight className="h-4.5 w-4.5" />
-                </Link>
+                </a>
                 <button
                   onClick={openGate}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-background px-7 py-4 text-base font-semibold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted"
@@ -411,9 +406,9 @@ function PrivacyPage() {
                   </Link>
                 </li>
                 <li>
-                  <Link className="transition-colors hover:text-primary" to="/auth" search={login}>
+                  <a className="transition-colors hover:text-primary" href="https://app.askchai.tech/auth">
                     Log in
-                  </Link>
+                  </a>
                 </li>
               </ul>
             </div>
