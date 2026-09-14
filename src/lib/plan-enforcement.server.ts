@@ -15,6 +15,7 @@ import {
 } from "@/lib/organisations";
 import { selectMembersToLock, selectMembersToUnlock, type LockCandidate } from "@/lib/seat-locking";
 import { queueTransactionalEmail } from "@/lib/transactional-email.server";
+import { APP_ORIGIN } from "@/lib/site";
 
 type AdminClient = any;
 
