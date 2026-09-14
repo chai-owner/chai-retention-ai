@@ -4,7 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
-import { saveProfile } from "@/lib/profile.functions";
+import {
+  saveProfile,
+  getOnboardingProgress,
+  saveOnboardingProgress,
+} from "@/lib/profile.functions";
 import { recommendMetrics } from "@/lib/ai.functions";
 import { plannerMetrics, IMPORTANCE_LABELS, type PlannerMetric } from "@/lib/mock-data";
 import { SmartIngestCard, UploadDatasetsCard } from "@/components/data-uploads-panel";
@@ -80,6 +84,69 @@ function Onboarding() {
   const [segments, setSegments] = useState<Segment[]>([
     { name: "", min: "", max: "" },
   ]);
+
+  // Resume support: the step and the answers so far live in the user's account,
+  // so closing the browser mid-onboarding loses nothing.
+  const loadProgress = useServerFn(getOnboardingProgress);
+  const persistProgress = useServerFn(saveOnboardingProgress);
+  const [restored, setRestored] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadProgress()
+      .then((progress) => {
+        if (cancelled || !progress) return;
+        const draft = ((progress as { draft?: unknown; step?: number }).draft ?? {}) as {
+          form?: Partial<typeof form>;
+          tracked?: Record<string, boolean>;
+          channels?: string[];
+          metricWeights?: Record<string, number>;
+          metrics?: PlannerMetric[];
+          segments?: Segment[];
+        };
+        if (draft.form) setForm((f) => ({ ...f, ...draft.form }));
+        if (draft.tracked) setTracked(draft.tracked);
+        if (draft.channels) setChannels(draft.channels);
+        if (draft.metricWeights) setMetricWeights(draft.metricWeights);
+        if (draft.segments && draft.segments.length > 0) setSegments(draft.segments);
+        if (draft.metrics && draft.metrics.length > 0) {
+          setMetrics(draft.metrics);
+          setRecommendedWeights(draft.metricWeights ?? {});
+          // Already tailored for this business — don't regenerate on arrival.
+          metricsGenerated.current = true;
+        }
+        const savedStep = (progress as { step?: number }).step;
+        if (typeof savedStep === "number" && savedStep > 0) {
+          setStep(Math.min(savedStep, steps.length - 1));
+        }
+      })
+      .catch(() => {
+        // No saved progress reachable — start from the beginning.
+      })
+      .finally(() => {
+        if (!cancelled) setRestored(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!restored) return;
+    const timer = setTimeout(() => {
+      void persistProgress({
+        data: {
+          step,
+          draft: { form, tracked, channels, metricWeights, metrics, segments },
+        },
+      }).catch(() => {
+        // Saving progress is best-effort; never block the flow.
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [restored, step, form, tracked, channels, metricWeights, metrics, segments, persistProgress]);
+
 
   const MIN_METRICS = 4;
   const activeMetrics: PlannerMetric[] = metrics;

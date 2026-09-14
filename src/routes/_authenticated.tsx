@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfile } from "@/lib/profile.functions";
 import { isDemoValue } from "@/lib/use-demo-mode";
 import { checkAiConfig, type AiConfigCheckResult } from "@/lib/ai.functions";
+import { resolveGuardedDestination } from "@/lib/post-login-destination";
 
 declare global {
   interface Window {
@@ -65,23 +66,15 @@ export const Route = createFileRoute("/_authenticated")({
 
 
 
-    // Force signed-in users who haven't finished onboarding into the flow.
-    if (location.pathname !== "/onboarding" && location.pathname !== "/admin") {
-      try {
-        const profile = await getProfile();
-        if (!profile?.onboarded) {
-          throw redirect({ to: "/onboarding" });
-        }
-        // Access is governed by the 14-day trial and the plan, not by a manual
-        // unlock, so an onboarded account is never trapped on the welcome
-        // screen — it simply opens on Today.
-        if (profile.unlocked && location.pathname === "/app/welcome") {
-          throw redirect({ to: "/app/today" });
-        }
-      } catch (err) {
-        if (isRedirect(err)) throw err;
-        // If the profile can't be loaded, don't block the app.
-      }
+    // Signed-in users always land where their account state says they belong:
+    // unfinished onboarding wins over everything else.
+    try {
+      const profile = await getProfile();
+      const dest = resolveGuardedDestination(profile, location.pathname);
+      if (dest) throw redirect({ href: dest });
+    } catch (err) {
+      if (isRedirect(err)) throw err;
+      // If the profile can't be loaded, don't block the app.
     }
 
     return { user };
