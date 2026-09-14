@@ -62,8 +62,6 @@ export const Route = createFileRoute("/pricing")({
   component: PricingPage,
 });
 
-const signup = { mode: "signup" as const, demo: false, redirect: undefined };
-const login = { mode: undefined, demo: false, redirect: undefined };
 
 const navItems = [
   { label: "Features", href: "/#features" },
@@ -223,18 +221,14 @@ function PricingPage() {
   const buy = async (plan: OrgPlan, period: BillingPeriod, includeAddon: boolean) => {
     if (!signedIn || !userId) {
       // New visitors sign up and go through onboarding first — they only pay at
-      // the end of the trial, so remember the choice instead of charging now.
-      storePendingPlan({ plan, period, addon: includeAddon });
-      navigate({
-        to: "/auth",
-        search: {
-          mode: "signup",
-          demo: false,
-          plan,
-          period,
-          redirect: undefined,
-        },
-      });
+      // the end of the trial. Pass the chosen plan through to the app origin so
+      // the trial-expiry paywall can pre-select it.
+      const url = new URL("https://app.askchai.tech/auth");
+      url.searchParams.set("mode", "signup");
+      url.searchParams.set("plan", plan);
+      url.searchParams.set("period", period);
+      if (includeAddon) url.searchParams.set("addon", "true");
+      window.location.href = url.toString();
       return;
     }
     // Signed-in users never check out from the pricing page: send them into
@@ -290,20 +284,18 @@ function PricingPage() {
             >
               View Demo
             </button>
-            <Link
-              to="/auth"
-              search={login}
+            <a
+              href="https://app.askchai.tech/auth"
               className="hidden rounded-full px-4 py-2 text-sm font-medium text-white/75 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
             >
               Log in
-            </Link>
-            <Link
-              to="/auth"
-              search={signup}
+            </a>
+            <a
+              href="https://app.askchai.tech/auth?mode=signup"
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(32,70,84,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
             >
               Sign Up
-            </Link>
+            </a>
           </div>
         </nav>
       </header>
@@ -608,9 +600,9 @@ function PricingPage() {
                   </Link>
                 </li>
                 <li>
-                  <Link className="transition-colors hover:text-primary" to="/auth" search={login}>
+                  <a className="transition-colors hover:text-primary" href="https://app.askchai.tech/auth">
                     Log in
-                  </Link>
+                  </a>
                 </li>
               </ul>
             </div>
