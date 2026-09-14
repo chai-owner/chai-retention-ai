@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { initializePaddle, getPaddlePriceId, getPaddleEnvironment } from "@/lib/paddle";
+import { APP_ORIGIN } from "@/lib/site";
 import { ADDON_PRICE_ID, PLAN_PRICE_IDS } from "@/lib/paddle-shared";
 import type { BillingPeriod, OrgPlan } from "@/lib/organisations";
 
@@ -49,7 +50,7 @@ export function usePaddleCheckout() {
         },
         settings: {
           displayMode: "overlay",
-          successUrl: `${window.location.origin}/app/today?checkout=success`,
+          successUrl: `${APP_ORIGIN}/app/today?checkout=success`,
           allowLogout: false,
           variant: "one-page",
         },
@@ -75,7 +76,7 @@ export function usePaddleCheckout() {
         customData: { userId: options.userId },
         settings: {
           displayMode: "overlay",
-          successUrl: `${window.location.origin}/app/today?checkout=success`,
+          successUrl: `${APP_ORIGIN}/app/today?checkout=success`,
           allowLogout: false,
           variant: "one-page",
         },
