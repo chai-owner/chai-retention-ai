@@ -37,7 +37,10 @@ export function hashOAuthState(state: string): string {
 // ---------------------------------------------------------------------------
 
 /** Fixed production origin for ChAi. */
-export const PRODUCTION_ORIGIN = "https://chai-retention-ai.lovable.app";
+export const PRODUCTION_ORIGIN = "https://app.askchai.tech";
+
+/** The original Lovable origin still serves the app, so keep it trusted. */
+export const LEGACY_PRODUCTION_ORIGIN = "https://chai-retention-ai.lovable.app";
 
 function normalizeOrigin(value: string): string {
   return value.trim().replace(/\/+$/, "");
@@ -56,6 +59,7 @@ export function allowedOrigins(): string[] {
   return Array.from(
     new Set([
       PRODUCTION_ORIGIN,
+      LEGACY_PRODUCTION_ORIGIN,
       "http://localhost:8080",
       "http://127.0.0.1:8080",
       ...configured,

@@ -1,5 +1,8 @@
-/** Origin where the ChAi app is hosted (Lovable deployment). */
-export const APP_ORIGIN = "https://chai-retention-ai.lovable.app";
+/** Origin where the ChAi app is hosted (custom domain on the Lovable deployment). */
+export const APP_ORIGIN = "https://app.askchai.tech";
+
+/** Legacy Lovable origin, still served and kept allow-listed for redirects. */
+export const LEGACY_APP_ORIGIN = "https://chai-retention-ai.lovable.app";
 
 /** Origin where the marketing site is hosted (Vercel). */
 export const MARKETING_ORIGIN = "https://askchai.tech";

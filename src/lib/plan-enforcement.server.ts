@@ -15,6 +15,7 @@ import {
 } from "@/lib/organisations";
 import { selectMembersToLock, selectMembersToUnlock, type LockCandidate } from "@/lib/seat-locking";
 import { queueTransactionalEmail } from "@/lib/transactional-email.server";
+import { APP_ORIGIN } from "@/lib/site";
 
 type AdminClient = any;
 
@@ -272,7 +273,7 @@ export async function sendDowngradeSeatWarning(
         year: "numeric",
       }),
       affected,
-      billingUrl: "https://chai-retention-ai.lovable.app/settings/account",
+      billingUrl: `${APP_ORIGIN}/settings/account`,
     }),
   });
 }
