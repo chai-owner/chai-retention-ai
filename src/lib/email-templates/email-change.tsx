@@ -12,6 +12,7 @@ import {
   Preview,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 interface EmailChangeEmailProps {
   siteName: string
@@ -25,7 +26,7 @@ interface EmailChangeEmailProps {
   confirmationUrl: string
 }
 
-const LOGO_URL = 'https://chai-retention-ai.lovable.app/logo-dark.png'
+const LOGO_URL = 'https://askchai.tech/logo-dark.png'
 
 export const EmailChangeEmail = ({
   siteName,
@@ -61,6 +62,7 @@ export const EmailChangeEmail = ({
           If you didn't request this change, please secure your account
           immediately.
         </Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>

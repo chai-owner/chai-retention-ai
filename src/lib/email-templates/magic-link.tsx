@@ -11,13 +11,14 @@ import {
   Preview,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 interface MagicLinkEmailProps {
   siteName: string
   confirmationUrl: string
 }
 
-const LOGO_URL = 'https://chai-retention-ai.lovable.app/logo-dark.png'
+const LOGO_URL = 'https://askchai.tech/logo-dark.png'
 
 export const MagicLinkEmail = ({
   siteName,
@@ -40,6 +41,7 @@ export const MagicLinkEmail = ({
         <Text style={footer}>
           If you didn't request this link, you can safely ignore this email.
         </Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>

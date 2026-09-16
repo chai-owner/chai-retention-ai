@@ -1,0 +1,349 @@
+// Paddle webhook endpoint. Registered automatically for both environments with
+// ?env=sandbox / ?env=live. Public by design — security is the verified
+// Paddle-Signature HMAC on every request.
+import { createFileRoute } from "@tanstack/react-router";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
+import { APP_ORIGIN } from "@/lib/site";
+import { EventName, verifyWebhook, type PaddleEnv } from "@/lib/paddle.server";
+import { planForProduct, planPeriodForPrice, ADDON_PRODUCT_ID, ADDON_PRICE_ID } from "@/lib/paddle-shared";
+
+// Defer client construction until first use so env var availability is not
+// assumed at module load time.
+let _supabase: SupabaseClient | null = null;
+function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    _supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  }
+  return _supabase;
+}
+
+const SITE_ORIGIN = APP_ORIGIN;
+
+/** Escapes user-supplied values before they are placed into HTML email bodies. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+const SENDER_DOMAIN = "notify.askchai.tech";
+const FROM_DOMAIN = "askchai.tech";
+
+interface NormalisedItems {
+  planProductId: string | null;
+  priceExternalId: string | null;
+  hasAddon: boolean;
+  billingInterval: string | null;
+  amount: number | null;
+  currency: string | null;
+}
+
+/** Plan for a normalised item set: product external ID first, then price ID. */
+function planForItems(n: NormalisedItems) {
+  return (
+    (n.planProductId ? planForProduct(n.planProductId) : null) ??
+    planPeriodForPrice(n.priceExternalId)?.plan ??
+    null
+  );
+}
+
+function normaliseItems(items: any[] | undefined): NormalisedItems {
+  const out: NormalisedItems = {
+    planProductId: null,
+    priceExternalId: null,
+    hasAddon: false,
+    billingInterval: null,
+    amount: null,
+    currency: null,
+  };
+  for (const item of items ?? []) {
+    const productExt = item?.product?.importMeta?.externalId ?? null;
+    // External IDs aren't set on the catalog, so fall back to the Paddle price ID.
+    const priceExt = item?.price?.importMeta?.externalId ?? item?.price?.id ?? null;
+    if (productExt === ADDON_PRODUCT_ID || priceExt === "smart_ingest_monthly" || priceExt === ADDON_PRICE_ID) {
+      out.hasAddon = true;
+      continue;
+    }
+    if ((productExt && planForProduct(productExt)) || planPeriodForPrice(priceExt)) {
+      out.planProductId = productExt;
+      out.priceExternalId = priceExt;
+      out.billingInterval = item?.price?.billingCycle?.interval ?? null;
+      const unit = item?.price?.unitPrice;
+      if (unit?.amount) {
+        out.amount = Number(unit.amount) / 100;
+        out.currency = unit.currencyCode ?? null;
+      }
+    }
+  }
+  return out;
+}
+
+async function resolveOrgId(userId: string): Promise<string | null> {
+  const { data } = await getSupabase()
+    .from("organisation_members")
+    .select("org_id")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return (data?.org_id as string) ?? null;
+}
+
+async function enqueueEmail(to: string, subject: string, html: string, text: string, label: string) {
+  const admin = getSupabase();
+  const logSend = async (status: string, errorMessage?: string) => {
+    const { error } = await admin.from("email_send_log").insert({
+      message_id: crypto.randomUUID(),
+      template_name: label,
+      recipient_email: to,
+      status,
+      ...(errorMessage ? { error_message: errorMessage.slice(0, 1000) } : {}),
+    });
+    if (error) console.error("Failed to record email send log row", { label, status, error });
+  };
+
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  if (!apiKey) {
+    console.error(`Cannot send ${label} email: LOVABLE_API_KEY is not configured`);
+    await logSend("failed", "LOVABLE_API_KEY is not configured");
+    return;
+  }
+
+  try {
+    const { sendLovableEmail } = await import("@lovable.dev/email-js");
+    await sendLovableEmail(
+      {
+        to,
+        from: `ChAi <support@${FROM_DOMAIN}>`,
+        sender_domain: SENDER_DOMAIN,
+        subject,
+        html,
+        text,
+        purpose: "transactional",
+        label,
+        idempotency_key: crypto.randomUUID(),
+      },
+      { apiKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
+    );
+    await logSend("sent");
+  } catch (error) {
+    // Email must never fail the webhook — Paddle would retry for 3 days.
+    const code = (error as { code?: string } | null)?.code;
+    if (code === "recipient_suppressed") {
+      await logSend("suppressed");
+      return;
+    }
+    console.error(`Failed to send ${label} email`, error);
+    await logSend("failed", error instanceof Error ? error.message : String(error));
+  }
+}
+
+async function sendWelcomeAndNotify(userId: string, planLabel: string) {
+  const { data: profile } = await getSupabase()
+    .from("profiles")
+    .select("email, full_name")
+    .eq("id", userId)
+    .maybeSingle();
+  const email = profile?.email as string | undefined;
+  const name = (profile?.full_name as string | undefined) || "there";
+  const safeName = escapeHtml(name);
+  const identifier = email ?? userId;
+  const safeIdentifier = escapeHtml(identifier);
+  if (email) {
+    await enqueueEmail(
+      email,
+      `Welcome to ChAi ${planLabel}`,
+      `<p>Hi ${safeName},</p><p>Your <strong>ChAi ${planLabel}</strong> subscription is active. Your customer health scores, daily risk brief and weekly digest are ready.</p><p><a href="${SITE_ORIGIN}/app/today">Open your Today brief</a></p><p>— The ChAi team</p>`,
+      `Hi ${name},\n\nYour ChAi ${planLabel} subscription is active. Open your Today brief: ${SITE_ORIGIN}/app/today\n\n— The ChAi team`,
+      "subscription_welcome",
+    );
+  }
+  // Notify workspace admins (the ChAi team) about the new subscriber.
+  const { data: admins } = await getSupabase().from("user_roles").select("user_id").eq("role", "admin");
+  const adminIds = (admins ?? []).map((a: any) => a.user_id).filter(Boolean);
+  if (adminIds.length) {
+    const { data: adminProfiles } = await getSupabase()
+      .from("profiles")
+      .select("email")
+      .in("id", adminIds);
+    for (const p of adminProfiles ?? []) {
+      if (!p.email) continue;
+      await enqueueEmail(
+        p.email,
+        `New ChAi subscriber: ${identifier} (${planLabel})`,
+        `<p><strong>${safeIdentifier}</strong> just subscribed to <strong>ChAi ${planLabel}</strong>.</p>`,
+        `${identifier} just subscribed to ChAi ${planLabel}.`,
+        "admin_new_subscriber",
+      );
+    }
+  }
+}
+
+async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
+  const { id, customerId, items, status, currentBillingPeriod, customData } = data;
+  const userId = customData?.userId;
+  if (!userId) {
+    console.error("subscription.created without customData.userId");
+    return;
+  }
+  const n = normaliseItems(items);
+  if (!n.planProductId && !n.hasAddon) {
+    // Products created outside the payments tools carry no external ID — skip
+    // rather than store an unmappable row.
+    console.warn("Skipping subscription: missing importMeta.externalId", { subscription: id });
+    return;
+  }
+
+  await getSupabase().from("subscriptions").upsert(
+    {
+      user_id: userId,
+      provider: "paddle",
+      provider_subscription_id: id,
+      plan_id: n.planProductId,
+      status,
+      billing_interval: n.billingInterval ?? "month",
+      amount: n.amount,
+      currency: n.currency,
+      current_period_start: currentBillingPeriod?.startsAt ?? null,
+      current_period_end: currentBillingPeriod?.endsAt ?? null,
+      cancel_at_period_end: false,
+      environment: env,
+      raw: {
+        customerId,
+        priceExternalId: n.priceExternalId,
+        hasAddon: n.hasAddon,
+        // Promo code the buyer applied at checkout (e.g. the Founder Plan code).
+        promoCode: typeof customData?.promoCode === "string" ? customData.promoCode : null,
+        discountId: (data as any)?.discount?.id ?? null,
+      },
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "provider,provider_subscription_id" },
+  );
+
+  // Business rule: activate the plan instantly, unlock the account and flag
+  // the add-on whether it was a bundled line item or a standalone purchase.
+  const orgId = await resolveOrgId(userId);
+  const plan = planForItems(n);
+  if (orgId) {
+    const update: Record<string, unknown> = {};
+    if (plan) {
+      update.plan = plan;
+      update.pending_plan = null;
+      update.pending_plan_effective_at = null;
+    }
+    if (n.hasAddon) update.smart_ingest_addon = true;
+    // Paying ends the free trial: limits now come from the purchased plan.
+    update.trial_ends_at = null;
+    await getSupabase().from("organisations").update(update).eq("id", orgId);
+    // Re-apply limits so anything paused or locked under a smaller plan is
+    // restored straight away.
+    try {
+      const { applyPlanEnforcement } = await import("@/lib/plan-enforcement.server");
+      await applyPlanEnforcement(getSupabase(), orgId);
+    } catch (error) {
+      console.error("plan enforcement after subscription failed", error);
+    }
+  }
+  await getSupabase().from("profiles").update({ unlocked: true }).eq("id", userId);
+
+  if (plan) {
+    const { PLAN_LABELS } = await import("@/lib/organisations");
+    await sendWelcomeAndNotify(userId, PLAN_LABELS[plan]);
+  }
+}
+
+async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
+  const { id, status, currentBillingPeriod, scheduledChange, items } = data;
+  const n = normaliseItems(items);
+
+  const update: Record<string, unknown> = {
+    status,
+    current_period_start: currentBillingPeriod?.startsAt ?? null,
+    current_period_end: currentBillingPeriod?.endsAt ?? null,
+    cancel_at_period_end: scheduledChange?.action === "cancel",
+    updated_at: new Date().toISOString(),
+  };
+  if (n.billingInterval) update.billing_interval = n.billingInterval;
+
+  const { data: row } = await getSupabase()
+    .from("subscriptions")
+    .update(update)
+    .eq("provider_subscription_id", id)
+    .eq("provider", "paddle")
+    .eq("environment", env)
+    .select("user_id")
+    .maybeSingle();
+
+  // Keep the workspace plan in step with whatever the subscription now bills
+  // for (covers in-app upgrades, portal changes and applied downgrades).
+  if (row?.user_id && (n.planProductId || n.priceExternalId)) {
+    const plan = planForItems(n);
+    const orgId = await resolveOrgId(row.user_id);
+    if (orgId && plan) {
+      const orgUpdate: Record<string, unknown> = { plan, smart_ingest_addon: n.hasAddon };
+      // Only clear a pending change once it has actually been applied — an
+      // unrelated update event must not wipe a scheduled downgrade.
+      const { data: org } = await getSupabase()
+        .from("organisations")
+        .select("pending_plan")
+        .eq("id", orgId)
+        .maybeSingle();
+      if (org?.pending_plan && org.pending_plan === plan) {
+        orgUpdate.pending_plan = null;
+        orgUpdate.pending_plan_effective_at = null;
+      }
+      await getSupabase().from("organisations").update(orgUpdate).eq("id", orgId);
+    }
+  }
+}
+
+async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
+  // Access continues until current_period_end — the daily plan-changes job
+  // reverts the workspace to Core limits once that date passes.
+  await getSupabase()
+    .from("subscriptions")
+    .update({
+      status: "canceled",
+      cancelled_at: new Date().toISOString(),
+      cancel_at_period_end: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("provider_subscription_id", data.id)
+    .eq("provider", "paddle")
+    .eq("environment", env);
+}
+
+export const Route = createFileRoute("/api/public/payments/webhook")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const url = new URL(request.url);
+        const env = (url.searchParams.get("env") || "sandbox") as PaddleEnv;
+        try {
+          const event = await verifyWebhook(request, env);
+          switch (event.eventType) {
+            case EventName.SubscriptionCreated:
+              await handleSubscriptionCreated(event.data, env);
+              break;
+            case EventName.SubscriptionUpdated:
+              await handleSubscriptionUpdated(event.data, env);
+              break;
+            case EventName.SubscriptionCanceled:
+              await handleSubscriptionCanceled(event.data, env);
+              break;
+            default:
+              console.log("Unhandled Paddle event:", event.eventType);
+          }
+          return Response.json({ received: true });
+        } catch (e) {
+          console.error("Paddle webhook error:", e);
+          return new Response("Webhook error", { status: 400 });
+        }
+      },
+    },
+  },
+});

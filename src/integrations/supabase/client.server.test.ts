@@ -1,0 +1,67 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.unmock("@/integrations/supabase/client.server");
+
+// The service-role client must resolve its credentials in both runtimes:
+// preview (process.env) and the published Cloudflare Worker (bindings exposed
+// on globalThis rather than process.env).
+describe("supabaseAdmin credential lookup", () => {
+  const ORIGINAL_URL = process.env.SUPABASE_URL;
+  const ORIGINAL_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const g = globalThis as Record<string, unknown>;
+
+  beforeEach(() => {
+    vi.resetModules();
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    delete g.env;
+    delete g.__env__;
+  });
+
+  afterEach(() => {
+    if (ORIGINAL_URL === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = ORIGINAL_URL;
+    if (ORIGINAL_KEY === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    else process.env.SUPABASE_SERVICE_ROLE_KEY = ORIGINAL_KEY;
+    delete g.env;
+    delete g.__env__;
+  });
+
+  it("creates the client from process.env credentials (preview/dev)", async () => {
+    process.env.SUPABASE_URL = "https://example.supabase.co";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
+    const { getSupabaseAdmin } = await import("./client.server");
+    const client = await getSupabaseAdmin();
+    expect(typeof client.from).toBe("function");
+  });
+
+  it("creates the client from worker-style globalThis.env bindings (production)", async () => {
+    g.env = {
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+    };
+    const { getSupabaseAdmin } = await import("./client.server");
+    const client = await getSupabaseAdmin();
+    expect(typeof client.from).toBe("function");
+  });
+
+  it("throws the missing-variable error only when no source has the credentials", async () => {
+    const { getSupabaseAdmin } = await import("./client.server");
+    await expect(getSupabaseAdmin()).rejects.toThrow(
+      "Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY",
+    );
+  });
+
+  it("reads credentials afresh and creates a new client for every call", async () => {
+    process.env.SUPABASE_URL = "https://first.example.supabase.co";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "first-service-role-key";
+    const { getSupabaseAdmin } = await import("./client.server");
+    const first = await getSupabaseAdmin();
+
+    process.env.SUPABASE_URL = "https://second.example.supabase.co";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "second-service-role-key";
+    const second = await getSupabaseAdmin();
+
+    expect(second).not.toBe(first);
+  });
+});

@@ -12,13 +12,18 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as FounderRouteImport } from './routes/founder'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
+import { Route as HelpIndexRouteImport } from './routes/help.index'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as AuthenticatedAppChurnedRouteImport } from './routes/_authenticated.app.churned'
 import { Route as AuthenticatedAppCustomersRouteImport } from './routes/_authenticated.app.customers'
@@ -29,17 +34,30 @@ import { Route as AuthenticatedAppIdentityRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenticated.app.insights'
 import { Route as AuthenticatedAppPlannerRouteImport } from './routes/_authenticated.app.planner'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated.app.settings'
+import { Route as AuthenticatedAppSupportRouteImport } from './routes/_authenticated.app.support'
+import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated.app.team'
+import { Route as AuthenticatedAppTodayRouteImport } from './routes/_authenticated.app.today'
+import { Route as AuthenticatedAppTransactionsRouteImport } from './routes/_authenticated.app.transactions'
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
+import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated.settings.account'
+import { Route as HelpCategorySlugRouteImport } from './routes/help.$category.$slug'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
+import { Route as OauthSalesforceReturnRouteImport } from './routes/oauth/salesforce/return'
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
 import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
+import { Route as ApiPublicHooksDailyScoreRouteImport } from './routes/api/public/hooks/daily-score'
 import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public/hooks/daily-sync'
+import { Route as ApiPublicHooksPlanChangesRouteImport } from './routes/api/public/hooks/plan-changes'
+import { Route as ApiPublicHooksTrialLifecycleRouteImport } from './routes/api/public/hooks/trial-lifecycle'
+import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 import { Route as ApiPublicIntercomCallbackRouteImport } from './routes/api/public/intercom.callback'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicZendeskCallbackRouteImport } from './routes/api/public/zendesk.callback'
 import { Route as ApiPublicZohoCallbackRouteImport } from './routes/api/public/zoho.callback'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -55,9 +73,24 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FounderRoute = FounderRouteImport.update({
+  id: '/founder',
+  path: '/founder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -89,6 +122,16 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const HelpIndexRoute = HelpIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => HelpRoute,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
@@ -146,10 +189,52 @@ const AuthenticatedAppSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppSupportRoute = AuthenticatedAppSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppTeamRoute = AuthenticatedAppTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppTodayRoute = AuthenticatedAppTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppTransactionsRoute =
+  AuthenticatedAppTransactionsRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppWelcomeRoute = AuthenticatedAppWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
   getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedSettingsAccountRoute =
+  AuthenticatedSettingsAccountRouteImport.update({
+    id: '/settings/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const HelpCategorySlugRoute = HelpCategorySlugRouteImport.update({
+  id: '/$category/$slug',
+  path: '/$category/$slug',
+  getParentRoute: () => HelpRoute,
+} as any)
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthSalesforceReturnRoute = OauthSalesforceReturnRouteImport.update({
+  id: '/oauth/salesforce/return',
+  path: '/oauth/salesforce/return',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppCustomersIndexRoute =
   AuthenticatedAppCustomersIndexRouteImport.update({
@@ -169,15 +254,45 @@ const ApiPublicAccountingCallbackRoute =
     path: '/api/public/accounting/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksDailyScoreRoute =
+  ApiPublicHooksDailyScoreRouteImport.update({
+    id: '/api/public/hooks/daily-score',
+    path: '/api/public/hooks/daily-score',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDailySyncRoute = ApiPublicHooksDailySyncRouteImport.update({
   id: '/api/public/hooks/daily-sync',
   path: '/api/public/hooks/daily-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPlanChangesRoute =
+  ApiPublicHooksPlanChangesRouteImport.update({
+    id: '/api/public/hooks/plan-changes',
+    path: '/api/public/hooks/plan-changes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksTrialLifecycleRoute =
+  ApiPublicHooksTrialLifecycleRouteImport.update({
+    id: '/api/public/hooks/trial-lifecycle',
+    path: '/api/public/hooks/trial-lifecycle',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksWeeklyDigestRoute =
+  ApiPublicHooksWeeklyDigestRouteImport.update({
+    id: '/api/public/hooks/weekly-digest',
+    path: '/api/public/hooks/weekly-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIntercomCallbackRoute =
   ApiPublicIntercomCallbackRouteImport.update({
     id: '/api/public/intercom/callback',
     path: '/api/public/intercom/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicZendeskCallbackRoute =
@@ -201,23 +316,28 @@ const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
   path: '/lovable/email/auth/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/founder': typeof FounderRoute
+  '/help': typeof HelpRouteWithChildren
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/help/': typeof HelpIndexRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
   '/app/customers': typeof AuthenticatedAppCustomersRouteWithChildren
   '/app/dashboard': typeof AuthenticatedAppDashboardRoute
@@ -227,28 +347,45 @@ export interface FileRoutesByFullPath {
   '/app/insights': typeof AuthenticatedAppInsightsRoute
   '/app/planner': typeof AuthenticatedAppPlannerRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/support': typeof AuthenticatedAppSupportRoute
+  '/app/team': typeof AuthenticatedAppTeamRoute
+  '/app/today': typeof AuthenticatedAppTodayRoute
+  '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
+  '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/help/$category/$slug': typeof HelpCategorySlugRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
+  '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
+  '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
+  '/api/public/hooks/trial-lifecycle': typeof ApiPublicHooksTrialLifecycleRoute
+  '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/founder': typeof FounderRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/help': typeof HelpIndexRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardRoute
   '/app/data': typeof AuthenticatedAppDataRoute
@@ -257,17 +394,30 @@ export interface FileRoutesByTo {
   '/app/insights': typeof AuthenticatedAppInsightsRoute
   '/app/planner': typeof AuthenticatedAppPlannerRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/app/support': typeof AuthenticatedAppSupportRoute
+  '/app/team': typeof AuthenticatedAppTeamRoute
+  '/app/today': typeof AuthenticatedAppTodayRoute
+  '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
+  '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/help/$category/$slug': typeof HelpCategorySlugRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
+  '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
+  '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
+  '/api/public/hooks/trial-lifecycle': typeof ApiPublicHooksTrialLifecycleRoute
+  '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/customers': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRoutesById {
@@ -275,13 +425,18 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
+  '/founder': typeof FounderRoute
+  '/help': typeof HelpRouteWithChildren
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/help/': typeof HelpIndexRoute
   '/_authenticated/app/churned': typeof AuthenticatedAppChurnedRoute
   '/_authenticated/app/customers': typeof AuthenticatedAppCustomersRouteWithChildren
   '/_authenticated/app/dashboard': typeof AuthenticatedAppDashboardRoute
@@ -291,17 +446,30 @@ export interface FileRoutesById {
   '/_authenticated/app/insights': typeof AuthenticatedAppInsightsRoute
   '/_authenticated/app/planner': typeof AuthenticatedAppPlannerRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
+  '/_authenticated/app/support': typeof AuthenticatedAppSupportRoute
+  '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
+  '/_authenticated/app/today': typeof AuthenticatedAppTodayRoute
+  '/_authenticated/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
+  '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/help/$category/$slug': typeof HelpCategorySlugRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
+  '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
+  '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
+  '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
+  '/api/public/hooks/trial-lifecycle': typeof ApiPublicHooksTrialLifecycleRoute
+  '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/api/public/intercom/callback': typeof ApiPublicIntercomCallbackRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/zendesk/callback': typeof ApiPublicZendeskCallbackRoute
   '/api/public/zoho/callback': typeof ApiPublicZohoCallbackRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/app/customers/': typeof AuthenticatedAppCustomersIndexRoute
 }
 export interface FileRouteTypes {
@@ -309,13 +477,18 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/founder'
+    | '/help'
     | '/pricing'
+    | '/privacy'
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
     | '/admin'
     | '/app'
     | '/onboarding'
+    | '/invite/$token'
+    | '/help/'
     | '/app/churned'
     | '/app/customers'
     | '/app/dashboard'
@@ -325,28 +498,45 @@ export interface FileRouteTypes {
     | '/app/insights'
     | '/app/planner'
     | '/app/settings'
+    | '/app/support'
+    | '/app/team'
+    | '/app/today'
+    | '/app/transactions'
     | '/app/welcome'
+    | '/settings/account'
+    | '/help/$category/$slug'
+    | '/lovable/email/events'
+    | '/oauth/salesforce/return'
     | '/app/'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
+    | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/plan-changes'
+    | '/api/public/hooks/trial-lifecycle'
+    | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
+    | '/api/public/payments/webhook'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
     | '/app/customers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/founder'
     | '/pricing'
+    | '/privacy'
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
     | '/admin'
     | '/onboarding'
+    | '/invite/$token'
+    | '/help'
     | '/app/churned'
     | '/app/dashboard'
     | '/app/data'
@@ -355,30 +545,48 @@ export interface FileRouteTypes {
     | '/app/insights'
     | '/app/planner'
     | '/app/settings'
+    | '/app/support'
+    | '/app/team'
+    | '/app/today'
+    | '/app/transactions'
     | '/app/welcome'
+    | '/settings/account'
+    | '/help/$category/$slug'
+    | '/lovable/email/events'
+    | '/oauth/salesforce/return'
     | '/app'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
+    | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/plan-changes'
+    | '/api/public/hooks/trial-lifecycle'
+    | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
+    | '/api/public/payments/webhook'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
     | '/app/customers'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/founder'
+    | '/help'
     | '/pricing'
+    | '/privacy'
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
     | '/_authenticated/admin'
     | '/_authenticated/app'
     | '/_authenticated/onboarding'
+    | '/invite/$token'
+    | '/help/'
     | '/_authenticated/app/churned'
     | '/_authenticated/app/customers'
     | '/_authenticated/app/dashboard'
@@ -388,17 +596,30 @@ export interface FileRouteTypes {
     | '/_authenticated/app/insights'
     | '/_authenticated/app/planner'
     | '/_authenticated/app/settings'
+    | '/_authenticated/app/support'
+    | '/_authenticated/app/team'
+    | '/_authenticated/app/today'
+    | '/_authenticated/app/transactions'
     | '/_authenticated/app/welcome'
+    | '/_authenticated/settings/account'
+    | '/help/$category/$slug'
+    | '/lovable/email/events'
+    | '/oauth/salesforce/return'
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
     | '/api/public/accounting/callback'
+    | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
+    | '/api/public/hooks/plan-changes'
+    | '/api/public/hooks/trial-lifecycle'
+    | '/api/public/hooks/weekly-digest'
     | '/api/public/intercom/callback'
+    | '/api/public/payments/webhook'
     | '/api/public/zendesk/callback'
     | '/api/public/zoho/callback'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
     | '/_authenticated/app/customers/'
   fileRoutesById: FileRoutesById
 }
@@ -406,18 +627,29 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
+  FounderRoute: typeof FounderRoute
+  HelpRoute: typeof HelpRouteWithChildren
   PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  InviteTokenRoute: typeof InviteTokenRoute
+  LovableEmailEventsRoute: typeof LovableEmailEventsRoute
+  OauthSalesforceReturnRoute: typeof OauthSalesforceReturnRoute
   ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
+  ApiPublicHooksDailyScoreRoute: typeof ApiPublicHooksDailyScoreRoute
   ApiPublicHooksDailySyncRoute: typeof ApiPublicHooksDailySyncRoute
+  ApiPublicHooksPlanChangesRoute: typeof ApiPublicHooksPlanChangesRoute
+  ApiPublicHooksTrialLifecycleRoute: typeof ApiPublicHooksTrialLifecycleRoute
+  ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
   ApiPublicIntercomCallbackRoute: typeof ApiPublicIntercomCallbackRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicZendeskCallbackRoute: typeof ApiPublicZendeskCallbackRoute
   ApiPublicZohoCallbackRoute: typeof ApiPublicZohoCallbackRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
-  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -443,11 +675,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/founder': {
+      id: '/founder'
+      path: '/founder'
+      fullPath: '/founder'
+      preLoaderRoute: typeof FounderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -491,6 +744,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/help/': {
+      id: '/help/'
+      path: '/'
+      fullPath: '/help/'
+      preLoaderRoute: typeof HelpIndexRouteImport
+      parentRoute: typeof HelpRoute
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
@@ -562,12 +829,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/support': {
+      id: '/_authenticated/app/support'
+      path: '/support'
+      fullPath: '/app/support'
+      preLoaderRoute: typeof AuthenticatedAppSupportRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/team': {
+      id: '/_authenticated/app/team'
+      path: '/team'
+      fullPath: '/app/team'
+      preLoaderRoute: typeof AuthenticatedAppTeamRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/today': {
+      id: '/_authenticated/app/today'
+      path: '/today'
+      fullPath: '/app/today'
+      preLoaderRoute: typeof AuthenticatedAppTodayRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/transactions': {
+      id: '/_authenticated/app/transactions'
+      path: '/transactions'
+      fullPath: '/app/transactions'
+      preLoaderRoute: typeof AuthenticatedAppTransactionsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/welcome': {
       id: '/_authenticated/app/welcome'
       path: '/welcome'
       fullPath: '/app/welcome'
       preLoaderRoute: typeof AuthenticatedAppWelcomeRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/settings/account': {
+      id: '/_authenticated/settings/account'
+      path: '/settings/account'
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/help/$category/$slug': {
+      id: '/help/$category/$slug'
+      path: '/$category/$slug'
+      fullPath: '/help/$category/$slug'
+      preLoaderRoute: typeof HelpCategorySlugRouteImport
+      parentRoute: typeof HelpRoute
+    }
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/salesforce/return': {
+      id: '/oauth/salesforce/return'
+      path: '/oauth/salesforce/return'
+      fullPath: '/oauth/salesforce/return'
+      preLoaderRoute: typeof OauthSalesforceReturnRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/customers/': {
       id: '/_authenticated/app/customers/'
@@ -590,6 +913,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAccountingCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/daily-score': {
+      id: '/api/public/hooks/daily-score'
+      path: '/api/public/hooks/daily-score'
+      fullPath: '/api/public/hooks/daily-score'
+      preLoaderRoute: typeof ApiPublicHooksDailyScoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/daily-sync': {
       id: '/api/public/hooks/daily-sync'
       path: '/api/public/hooks/daily-sync'
@@ -597,11 +927,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDailySyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/plan-changes': {
+      id: '/api/public/hooks/plan-changes'
+      path: '/api/public/hooks/plan-changes'
+      fullPath: '/api/public/hooks/plan-changes'
+      preLoaderRoute: typeof ApiPublicHooksPlanChangesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/trial-lifecycle': {
+      id: '/api/public/hooks/trial-lifecycle'
+      path: '/api/public/hooks/trial-lifecycle'
+      fullPath: '/api/public/hooks/trial-lifecycle'
+      preLoaderRoute: typeof ApiPublicHooksTrialLifecycleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/weekly-digest': {
+      id: '/api/public/hooks/weekly-digest'
+      path: '/api/public/hooks/weekly-digest'
+      fullPath: '/api/public/hooks/weekly-digest'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/intercom/callback': {
       id: '/api/public/intercom/callback'
       path: '/api/public/intercom/callback'
       fullPath: '/api/public/intercom/callback'
       preLoaderRoute: typeof ApiPublicIntercomCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/zendesk/callback': {
@@ -632,11 +990,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -668,6 +1026,10 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppInsightsRoute: typeof AuthenticatedAppInsightsRoute
   AuthenticatedAppPlannerRoute: typeof AuthenticatedAppPlannerRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
+  AuthenticatedAppSupportRoute: typeof AuthenticatedAppSupportRoute
+  AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
+  AuthenticatedAppTodayRoute: typeof AuthenticatedAppTodayRoute
+  AuthenticatedAppTransactionsRoute: typeof AuthenticatedAppTransactionsRoute
   AuthenticatedAppWelcomeRoute: typeof AuthenticatedAppWelcomeRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
@@ -682,6 +1044,10 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppInsightsRoute: AuthenticatedAppInsightsRoute,
   AuthenticatedAppPlannerRoute: AuthenticatedAppPlannerRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
+  AuthenticatedAppSupportRoute: AuthenticatedAppSupportRoute,
+  AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
+  AuthenticatedAppTodayRoute: AuthenticatedAppTodayRoute,
+  AuthenticatedAppTransactionsRoute: AuthenticatedAppTransactionsRoute,
   AuthenticatedAppWelcomeRoute: AuthenticatedAppWelcomeRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
@@ -693,34 +1059,59 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface HelpRouteChildren {
+  HelpIndexRoute: typeof HelpIndexRoute
+  HelpCategorySlugRoute: typeof HelpCategorySlugRoute
+}
+
+const HelpRouteChildren: HelpRouteChildren = {
+  HelpIndexRoute: HelpIndexRoute,
+  HelpCategorySlugRoute: HelpCategorySlugRoute,
+}
+
+const HelpRouteWithChildren = HelpRoute._addFileChildren(HelpRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
+  FounderRoute: FounderRoute,
+  HelpRoute: HelpRouteWithChildren,
   PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  InviteTokenRoute: InviteTokenRoute,
+  LovableEmailEventsRoute: LovableEmailEventsRoute,
+  OauthSalesforceReturnRoute: OauthSalesforceReturnRoute,
   ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
+  ApiPublicHooksDailyScoreRoute: ApiPublicHooksDailyScoreRoute,
   ApiPublicHooksDailySyncRoute: ApiPublicHooksDailySyncRoute,
+  ApiPublicHooksPlanChangesRoute: ApiPublicHooksPlanChangesRoute,
+  ApiPublicHooksTrialLifecycleRoute: ApiPublicHooksTrialLifecycleRoute,
+  ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
   ApiPublicIntercomCallbackRoute: ApiPublicIntercomCallbackRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicZendeskCallbackRoute: ApiPublicZendeskCallbackRoute,
   ApiPublicZohoCallbackRoute: ApiPublicZohoCallbackRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
-  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

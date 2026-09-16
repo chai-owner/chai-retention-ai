@@ -6,11 +6,7 @@
 // writes OAuth tokens via the service-role Supabase client. It must only ever
 // be imported from server code (server functions / server routes).
 import type { ExtractedDataset } from "./ingest.functions";
-import {
-  encryptSecret,
-  decryptSecret,
-  decryptSecretOrNull,
-} from "./connection-key-crypto.server";
+import { encryptSecret, decryptSecret, decryptSecretOrNull } from "./connection-key-crypto.server";
 
 export type AccountingProvider = "quickbooks" | "xero" | "freshbooks";
 
@@ -41,9 +37,7 @@ export function getCreds(provider: AccountingProvider): Creds {
   const clientId = process.env[idKey];
   const clientSecret = process.env[secretKey];
   if (!clientId || !clientSecret) {
-    throw new Error(
-      `${providerName(provider)} is not configured. Missing ${idKey}/${secretKey}.`,
-    );
+    throw new Error(`${providerName(provider)} is not configured. Missing ${idKey}/${secretKey}.`);
   }
   return { clientId, clientSecret };
 }
@@ -126,15 +120,10 @@ function expiryFrom(expiresInSec?: number): string | undefined {
 // values they actually return (never invent a fixed window).
 function refreshExpiryFrom(j: any): string | undefined {
   const secs =
-    j?.x_refresh_token_expires_in ??
-    j?.refresh_expires_in ??
-    j?.refresh_token_expires_in;
+    j?.x_refresh_token_expires_in ?? j?.refresh_expires_in ?? j?.refresh_token_expires_in;
   const n = Number(secs);
-  return Number.isFinite(n) && n > 0
-    ? new Date(Date.now() + n * 1000).toISOString()
-    : undefined;
+  return Number.isFinite(n) && n > 0 ? new Date(Date.now() + n * 1000).toISOString() : undefined;
 }
-
 
 function basicAuth({ clientId, clientSecret }: Creds): string {
   return "Basic " + Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
@@ -147,22 +136,19 @@ export async function exchangeCode(
 ): Promise<TokenSet> {
   const creds = getCreds(provider);
   if (provider === "quickbooks") {
-    const res = await fetch(
-      "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
-      {
-        method: "POST",
-        headers: {
-          Authorization: basicAuth(creds),
-          "Content-Type": "application/x-www-form-urlencoded",
-          Accept: "application/json",
-        },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code,
-          redirect_uri: redirectUri,
-        }),
+    const res = await fetch("https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer", {
+      method: "POST",
+      headers: {
+        Authorization: basicAuth(creds),
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
       },
-    );
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri,
+      }),
+    });
     const j = await readJson(res, "QuickBooks token exchange");
     return {
       accessToken: j.access_token,
@@ -219,21 +205,18 @@ async function refreshTokens(
 ): Promise<TokenSet> {
   const creds = getCreds(provider);
   if (provider === "quickbooks") {
-    const res = await fetch(
-      "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
-      {
-        method: "POST",
-        headers: {
-          Authorization: basicAuth(creds),
-          "Content-Type": "application/x-www-form-urlencoded",
-          Accept: "application/json",
-        },
-        body: new URLSearchParams({
-          grant_type: "refresh_token",
-          refresh_token: refreshToken,
-        }),
+    const res = await fetch("https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer", {
+      method: "POST",
+      headers: {
+        Authorization: basicAuth(creds),
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
       },
-    );
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      }),
+    });
     const j = await readJson(res, "QuickBooks token refresh");
     return {
       accessToken: j.access_token,
@@ -285,8 +268,8 @@ async function refreshTokens(
 // credentials into logs or user-facing errors.
 function redactSecrets(text: string): string {
   return text
-    .replace(/("(?:access|refresh|id)_token"\s*:\s*")[^"]+/gi, '$1[redacted]')
-    .replace(/(client_secret=|code=)[^&\s"]+/gi, '$1[redacted]');
+    .replace(/("(?:access|refresh|id)_token"\s*:\s*")[^"]+/gi, "$1[redacted]")
+    .replace(/(client_secret=|code=)[^&\s"]+/gi, "$1[redacted]");
 }
 
 async function readJson(res: Response, ctx: string): Promise<any> {
@@ -375,10 +358,7 @@ export async function resolveAccountInfo(
     return {
       tenants,
       tenantId: tenants.length === 1 ? tenants[0].tenantId : undefined,
-      companyName:
-        tenants.length === 1
-          ? tenants[0].tenantName
-          : `${tenants.length} organisations`,
+      companyName: tenants.length === 1 ? tenants[0].tenantName : `${tenants.length} organisations`,
     };
   }
   // freshbooks — the account/business id is required for every later API call,
@@ -391,16 +371,13 @@ export async function resolveAccountInfo(
   });
   const j = await readJson(res, "FreshBooks identity");
   const memberships: any[] = [
-    ...(Array.isArray(j?.response?.business_memberships)
-      ? j.response.business_memberships
-      : []),
+    ...(Array.isArray(j?.response?.business_memberships) ? j.response.business_memberships : []),
     ...(Array.isArray(j?.response?.roles) ? j.response.roles : []),
   ];
   let accountId: string | undefined;
   let companyName: string | undefined;
   for (const m of memberships) {
-    const id =
-      m?.business?.account_id ?? m?.accountid ?? m?.account_id ?? m?.business?.id;
+    const id = m?.business?.account_id ?? m?.accountid ?? m?.account_id ?? m?.business?.id;
     if (id) {
       accountId = String(id);
       companyName = m?.business?.name ?? undefined;
@@ -442,7 +419,8 @@ export interface ConnectionRow {
 }
 
 async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const supabaseAdmin = await getSupabaseAdmin();
   return supabaseAdmin;
 }
 
@@ -675,7 +653,6 @@ export async function refreshWithLock(
     }
   }
 
-
   if (!row.refresh_token) {
     await markAccountingNeedsReauth(userId, provider, "No refresh token stored.");
     throw new AccountingReauthRequired(provider);
@@ -692,8 +669,7 @@ export async function refreshWithLock(
           ? encryptSecret(t.refreshToken)
           : encryptSecret(row.refresh_token),
         expires_at: t.expiresAt ?? null,
-        refresh_token_expires_at:
-          t.refreshTokenExpiresAt ?? row.refresh_token_expires_at ?? null,
+        refresh_token_expires_at: t.refreshTokenExpiresAt ?? row.refresh_token_expires_at ?? null,
         status: "connected",
         last_error_at: null,
         last_error_message: null,
@@ -703,8 +679,7 @@ export async function refreshWithLock(
     row.access_token = t.accessToken;
     row.refresh_token = t.refreshToken ?? row.refresh_token;
     row.expires_at = t.expiresAt ?? null;
-    row.refresh_token_expires_at =
-      t.refreshTokenExpiresAt ?? row.refresh_token_expires_at ?? null;
+    row.refresh_token_expires_at = t.refreshTokenExpiresAt ?? row.refresh_token_expires_at ?? null;
     row.status = "connected";
     return row;
   } catch (e) {
@@ -811,7 +786,6 @@ export function makeAccountingClient(
   };
 }
 
-
 // ---- Data fetch + normalization -----------------------------------------
 
 const CUSTOMER_HEADERS = [
@@ -830,12 +804,39 @@ const TRANSACTION_HEADERS = [
   "transaction_date",
   "product",
   "currency",
+  "due_date",
+  "amount_due",
+  "paid_date",
+  "days_overdue",
 ];
 
 function isoDate(v: any): string {
   if (!v) return "";
   const d = new Date(v);
   return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+}
+
+/**
+ * Days an invoice is past due. Only an invoice with money still outstanding can
+ * be overdue, so a fully paid (or credited) invoice always scores 0.
+ */
+export function daysOverdue(
+  dueDate: unknown,
+  amountDue: unknown,
+  now: number = Date.now(),
+): number {
+  const due = isoDate(dueDate);
+  const outstanding = Number(amountDue);
+  if (!due || !Number.isFinite(outstanding) || outstanding <= 0) return 0;
+  const dueMs = Date.parse(`${due}T00:00:00Z`);
+  const today = Date.parse(`${new Date(now).toISOString().slice(0, 10)}T00:00:00Z`);
+  if (isNaN(dueMs) || dueMs >= today) return 0;
+  return Math.round((today - dueMs) / 86_400_000);
+}
+
+function numStr(v: unknown): string {
+  const n = Number(v);
+  return Number.isFinite(n) ? String(n) : "";
 }
 
 export async function fetchAndNormalize(
@@ -858,12 +859,8 @@ export async function fetchAndNormalize(
 
   if (provider === "quickbooks") {
     const base = `${qboApiBase()}/v3/company/${conn.realm_id}`;
-    const customerWhere = since
-      ? ` where Metadata.LastUpdatedTime > '${since}'`
-      : "";
-    const invoiceWhere = since
-      ? ` where Metadata.LastUpdatedTime > '${since}'`
-      : "";
+    const customerWhere = since ? ` where Metadata.LastUpdatedTime > '${since}'` : "";
+    const invoiceWhere = since ? ` where Metadata.LastUpdatedTime > '${since}'` : "";
     const cJson = await api.fetchJson(
       `${base}/query?query=${encodeURIComponent(`select * from Customer${customerWhere} maxresults 500`)}&minorversion=65`,
       "QuickBooks customers",
@@ -891,6 +888,12 @@ export async function fetchAndNormalize(
         isoDate(inv.TxnDate),
         inv.Line?.find((l: any) => l.SalesItemLineDetail)?.Description ?? "Invoice",
         inv.CurrencyRef?.value ?? "USD",
+        isoDate(inv.DueDate),
+        numStr(inv.Balance),
+        // QuickBooks only exposes settlement dates through the Payments API,
+        // which this sync does not call yet.
+        "",
+        String(daysOverdue(inv.DueDate, inv.Balance)),
       ]);
     }
   } else if (provider === "xero") {
@@ -956,6 +959,10 @@ export async function fetchAndNormalize(
             isoDate(inv.DateString || inv.Date),
             inv.LineItems?.[0]?.Description ?? "Invoice",
             inv.CurrencyCode ?? "",
+            isoDate(inv.DueDateString || inv.DueDate),
+            numStr(inv.AmountDue),
+            isoDate(inv.FullyPaidOnDate),
+            String(daysOverdue(inv.DueDateString || inv.DueDate, inv.AmountDue)),
           ]);
         }
         if (invoices.length < PAGE_SIZE) break;
@@ -977,7 +984,9 @@ export async function fetchAndNormalize(
 
     const updatedMs = (v: unknown): number | null => {
       if (!v) return null;
-      const t = new Date(String(v).replace(" ", "T") + (String(v).includes("Z") ? "" : "Z")).getTime();
+      const t = new Date(
+        String(v).replace(" ", "T") + (String(v).includes("Z") ? "" : "Z"),
+      ).getTime();
       return isNaN(t) ? null : t;
     };
 
@@ -995,11 +1004,7 @@ export async function fetchAndNormalize(
           stop = true;
           break;
         }
-        const name =
-          c.organization ||
-          `${c.fname ?? ""} ${c.lname ?? ""}`.trim() ||
-          c.email ||
-          "";
+        const name = c.organization || `${c.fname ?? ""} ${c.lname ?? ""}`.trim() || c.email || "";
         customerRows.push([
           String(c.id ?? ""),
           name,
@@ -1034,6 +1039,10 @@ export async function fetchAndNormalize(
           isoDate(inv.create_date),
           inv.lines?.[0]?.name ?? "Invoice",
           inv.amount?.code ?? inv.currency_code ?? "",
+          isoDate(inv.due_date),
+          numStr(inv.outstanding?.amount),
+          "",
+          String(daysOverdue(inv.due_date, inv.outstanding?.amount)),
         ]);
       }
       if (invoices.length < PER_PAGE || page >= (result.pages ?? page)) break;
@@ -1047,7 +1056,6 @@ export async function fetchAndNormalize(
     .update({ last_synced_at: startedAt })
     .eq("user_id", userId)
     .eq("provider", provider);
-
 
   const datasets: ExtractedDataset[] = [];
   if (customerRows.length) {

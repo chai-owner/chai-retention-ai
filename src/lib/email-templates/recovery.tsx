@@ -11,13 +11,14 @@ import {
   Preview,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 interface RecoveryEmailProps {
   siteName: string
   confirmationUrl: string
 }
 
-const LOGO_URL = 'https://chai-retention-ai.lovable.app/logo-dark.png'
+const LOGO_URL = 'https://askchai.tech/logo-dark.png'
 
 export const RecoveryEmail = ({
   siteName,
@@ -41,6 +42,7 @@ export const RecoveryEmail = ({
           If you didn't request a password reset, you can safely ignore this
           email. Your password will not be changed.
         </Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>

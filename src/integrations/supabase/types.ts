@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -110,31 +110,40 @@ export type Database = {
       ai_usage_log: {
         Row: {
           created_at: string
+          error_message: string | null
           id: string
           input_tokens: number
           model: string
           operation: string
           output_tokens: number
+          provider: string
+          success: boolean
           total_tokens: number
           user_id: string
         }
         Insert: {
           created_at?: string
+          error_message?: string | null
           id?: string
           input_tokens?: number
           model?: string
           operation: string
           output_tokens?: number
+          provider?: string
+          success?: boolean
           total_tokens?: number
           user_id: string
         }
         Update: {
           created_at?: string
+          error_message?: string | null
           id?: string
           input_tokens?: number
           model?: string
           operation?: string
           output_tokens?: number
+          provider?: string
+          success?: boolean
           total_tokens?: number
           user_id?: string
         }
@@ -226,6 +235,42 @@ export type Database = {
           source_id?: string
           status?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      customer_scores: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          is_latest: boolean
+          risk_level: string
+          score: number
+          score_breakdown: Json
+          scored_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          is_latest?: boolean
+          risk_level: string
+          score: number
+          score_breakdown?: Json
+          scored_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          is_latest?: boolean
+          risk_level?: string
+          score?: number
+          score_breakdown?: Json
+          scored_at?: string
           user_id?: string
         }
         Relationships: []
@@ -380,6 +425,7 @@ export type Database = {
       impersonation_audit: {
         Row: {
           admin_id: string
+          end_reason: string | null
           ended_at: string | null
           id: string
           started_at: string
@@ -387,6 +433,7 @@ export type Database = {
         }
         Insert: {
           admin_id: string
+          end_reason?: string | null
           ended_at?: string | null
           id?: string
           started_at?: string
@@ -394,6 +441,7 @@ export type Database = {
         }
         Update: {
           admin_id?: string
+          end_reason?: string | null
           ended_at?: string | null
           id?: string
           started_at?: string
@@ -450,6 +498,7 @@ export type Database = {
           customer_id: string
           data: Json
           id: string
+          paused: boolean
           updated_at: string
           user_id: string
         }
@@ -459,6 +508,7 @@ export type Database = {
           customer_id: string
           data?: Json
           id?: string
+          paused?: boolean
           updated_at?: string
           user_id: string
         }
@@ -468,6 +518,7 @@ export type Database = {
           customer_id?: string
           data?: Json
           id?: string
+          paused?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -560,34 +611,46 @@ export type Database = {
       ingested_transactions: {
         Row: {
           amount: number | null
+          amount_due: number | null
           batch_id: string | null
           created_at: string
           customer_id: string | null
           data: Json
+          days_overdue: number | null
+          due_date: string | null
           id: string
           occurred_at: string | null
+          paid_date: string | null
           transaction_id: string
           user_id: string
         }
         Insert: {
           amount?: number | null
+          amount_due?: number | null
           batch_id?: string | null
           created_at?: string
           customer_id?: string | null
           data?: Json
+          days_overdue?: number | null
+          due_date?: string | null
           id?: string
           occurred_at?: string | null
+          paid_date?: string | null
           transaction_id: string
           user_id: string
         }
         Update: {
           amount?: number | null
+          amount_due?: number | null
           batch_id?: string | null
           created_at?: string
           customer_id?: string | null
           data?: Json
+          days_overdue?: number | null
+          due_date?: string | null
           id?: string
           occurred_at?: string | null
+          paid_date?: string | null
           transaction_id?: string
           user_id?: string
         }
@@ -714,6 +777,142 @@ export type Database = {
         }
         Relationships: []
       }
+      organisation_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          org_id: string
+          role: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          org_id: string
+          role?: string
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          org_id?: string
+          role?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisation_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organisation_members: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invited_at: string
+          locked: boolean
+          locked_at: string | null
+          org_id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string
+          locked?: boolean
+          locked_at?: string | null
+          org_id: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string
+          locked?: boolean
+          locked_at?: string | null
+          org_id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisation_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organisations: {
+        Row: {
+          created_at: string
+          downgrade_warning_sent_at: string | null
+          id: string
+          name: string
+          owner_id: string
+          pending_plan: string | null
+          pending_plan_effective_at: string | null
+          plan: string
+          smart_ingest_addon: boolean
+          trial_emails_sent: string[]
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          downgrade_warning_sent_at?: string | null
+          id?: string
+          name?: string
+          owner_id: string
+          pending_plan?: string | null
+          pending_plan_effective_at?: string | null
+          plan?: string
+          smart_ingest_addon?: boolean
+          trial_emails_sent?: string[]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          downgrade_warning_sent_at?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          pending_plan?: string | null
+          pending_plan_effective_at?: string | null
+          plan?: string
+          smart_ingest_addon?: boolean
+          trial_emails_sent?: string[]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avg_value: string
@@ -736,6 +935,8 @@ export type Database = {
           model: string
           must_track: string
           onboarded: boolean
+          onboarding_draft: Json
+          onboarding_step: number
           segments: Json
           size: string
           success_actions: string
@@ -765,6 +966,8 @@ export type Database = {
           model?: string
           must_track?: string
           onboarded?: boolean
+          onboarding_draft?: Json
+          onboarding_step?: number
           segments?: Json
           size?: string
           success_actions?: string
@@ -794,6 +997,8 @@ export type Database = {
           model?: string
           must_track?: string
           onboarded?: boolean
+          onboarding_draft?: Json
+          onboarding_step?: number
           segments?: Json
           size?: string
           success_actions?: string
@@ -808,10 +1013,13 @@ export type Database = {
         Row: {
           amount: number | null
           billing_interval: string
+          cancel_at_period_end: boolean
           cancelled_at: string | null
           created_at: string
           currency: string | null
           current_period_end: string | null
+          current_period_start: string | null
+          environment: string
           id: string
           payer_email: string | null
           plan_id: string | null
@@ -825,10 +1033,13 @@ export type Database = {
         Insert: {
           amount?: number | null
           billing_interval?: string
+          cancel_at_period_end?: boolean
           cancelled_at?: string | null
           created_at?: string
           currency?: string | null
           current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
           id?: string
           payer_email?: string | null
           plan_id?: string | null
@@ -842,10 +1053,13 @@ export type Database = {
         Update: {
           amount?: number | null
           billing_interval?: string
+          cancel_at_period_end?: boolean
           cancelled_at?: string | null
           created_at?: string
           currency?: string | null
           current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
           id?: string
           payer_email?: string | null
           plan_id?: string | null
@@ -1127,18 +1341,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_org: { Args: { _org_id: string }; Returns: boolean }
       consume_oauth_state: {
         Args: { p_provider?: string; p_state_hash: string; p_table: string }
         Returns: Json
       }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
+      current_org_id: { Args: never; Returns: string }
+      has_active_subscription: {
+        Args: { check_env?: string; user_uuid: string }
         Returns: boolean
-      }
-      email_queue_dispatch: { Args: never; Returns: undefined }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
       }
       has_role: {
         Args: {
@@ -1147,22 +1358,10 @@ export type Database = {
         }
         Returns: boolean
       }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
+      org_role: { Args: { _org_id: string; _user_id: string }; Returns: string }
+      replace_customer_scores: {
+        Args: { p_rows: Json; p_user_id: string }
         Returns: number
-      }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
-        }[]
       }
     }
     Enums: {
@@ -1182,12 +1381,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1211,11 +1410,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1236,11 +1435,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1261,11 +1460,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1278,11 +1477,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

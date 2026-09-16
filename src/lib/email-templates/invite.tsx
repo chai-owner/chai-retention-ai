@@ -12,6 +12,7 @@ import {
   Preview,
   Text,
 } from '@react-email/components'
+import { BrandFooter } from './brand-footer'
 
 interface InviteEmailProps {
   siteName: string
@@ -19,7 +20,7 @@ interface InviteEmailProps {
   confirmationUrl: string
 }
 
-const LOGO_URL = 'https://chai-retention-ai.lovable.app/logo-dark.png'
+const LOGO_URL = 'https://askchai.tech/logo-dark.png'
 
 export const InviteEmail = ({
   siteName,
@@ -48,6 +49,7 @@ export const InviteEmail = ({
           If you weren't expecting this invitation, you can safely ignore this
           email.
         </Text>
+        <BrandFooter />
       </Container>
     </Body>
   </Html>

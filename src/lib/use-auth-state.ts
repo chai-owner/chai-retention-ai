@@ -3,14 +3,21 @@
 // uploaded/synced data only — never sample data).
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useImpersonation } from "@/lib/impersonation";
 
 export function useSignedIn(): boolean | null {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   useEffect(() => {
     let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) setSignedIn(!!data.session);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (active) setSignedIn(!!data.session);
+      })
+      .catch((err) => {
+        console.error("[auth] getSession failed; treating as signed out", err);
+        if (active) setSignedIn(false);
+      });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
       setSignedIn(!!session),
     );
@@ -28,9 +35,15 @@ export function useAuthUserId(): string | null | undefined {
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) setUserId(data.session?.user.id ?? null);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (active) setUserId(data.session?.user.id ?? null);
+      })
+      .catch((err) => {
+        console.error("[auth] getSession failed; treating as signed out", err);
+        if (active) setUserId(null);
+      });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) =>
       setUserId(session?.user.id ?? null),
     );
@@ -40,4 +53,14 @@ export function useAuthUserId(): string | null | undefined {
     };
   }, []);
   return userId;
+}
+
+// Effective session for UI/data decisions. During admin impersonation the
+// target session lives in memory only (its persisted token is deliberately not
+// left in localStorage), so the raw Supabase check can read as signed out even
+// though impersonation is active. Treat an active impersonation as signed in.
+export function useEffectiveSignedIn(): boolean | null {
+  const impersonation = useImpersonation();
+  const signedIn = useSignedIn();
+  return impersonation ? true : signedIn;
 }

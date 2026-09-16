@@ -1,7 +1,30 @@
+import { useEffect } from "react";
 import { createFileRoute, Outlet, redirect, isRedirect } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfile } from "@/lib/profile.functions";
 import { isDemoValue } from "@/lib/use-demo-mode";
+import { checkAiConfig, type AiConfigCheckResult } from "@/lib/ai.functions";
+import { resolveGuardedDestination } from "@/lib/post-login-destination";
+
+declare global {
+  interface Window {
+    checkAiConfig?: () => Promise<AiConfigCheckResult>;
+  }
+}
+
+function AuthenticatedLayout() {
+  const runAiConfigCheck = useServerFn(checkAiConfig);
+
+  useEffect(() => {
+    window.checkAiConfig = () => runAiConfigCheck();
+    return () => {
+      delete window.checkAiConfig;
+    };
+  }, [runAiConfigCheck]);
+
+  return <Outlet />;
+}
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -22,6 +45,18 @@ export const Route = createFileRoute("/_authenticated")({
       user = null;
     }
 
+    // Right after sign-up/confirmation the session can still be hydrating from
+    // the URL; without this fallback the visitor is mistaken for a demo guest
+    // and drops into the sample-data app instead of onboarding.
+    if (!user) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        user = data.session?.user ?? null;
+      } catch {
+        user = null;
+      }
+    }
+
     if (!user) {
       if (isDemo) return { user: null };
       throw redirect({ to: "/auth", search: { redirect: location.href, mode: undefined, demo: false } });
@@ -31,39 +66,18 @@ export const Route = createFileRoute("/_authenticated")({
 
 
 
-    // Force signed-in users who haven't finished onboarding into the flow.
-    if (location.pathname !== "/onboarding" && location.pathname !== "/admin") {
-      try {
-        const profile = await getProfile();
-        if (!profile?.onboarded) {
-          throw redirect({ to: "/onboarding" });
-        }
-        // Onboarded but not yet unlocked by an admin: keep them on the
-        // insights/booking screen. They may still revisit Business Profile
-        // and Data to improve their inputs.
-        const lockedAllowed = new Set([
-          "/app/welcome",
-          "/app/settings",
-          "/app/data",
-        ]);
-        if (
-          !profile.unlocked &&
-          location.pathname.startsWith("/app") &&
-          !lockedAllowed.has(location.pathname)
-        ) {
-          throw redirect({ to: "/app/welcome" });
-        }
-        // Unlocked accounts no longer need the welcome/booking screen.
-        if (profile.unlocked && location.pathname === "/app/welcome") {
-          throw redirect({ to: "/app/dashboard" });
-        }
-      } catch (err) {
-        if (isRedirect(err)) throw err;
-        // If the profile can't be loaded, don't block the app.
-      }
+    // Signed-in users always land where their account state says they belong:
+    // unfinished onboarding wins over everything else.
+    try {
+      const profile = await getProfile();
+      const dest = resolveGuardedDestination(profile, location.pathname);
+      if (dest) throw redirect({ href: dest });
+    } catch (err) {
+      if (isRedirect(err)) throw err;
+      // If the profile can't be loaded, don't block the app.
     }
 
     return { user };
   },
-  component: () => <Outlet />,
+  component: AuthenticatedLayout,
 });

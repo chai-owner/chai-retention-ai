@@ -1,0 +1,148 @@
+// Public cron endpoint. Called every Monday at 7am UTC by pg_cron. For each
+// workspace owner it builds the same brief the Today screen shows (from the
+// stored `customer_scores` snapshots) and queues a digest email through the
+// existing transactional email queue.
+//
+// Auth: pg_cron sends the server-only CRON_SECRET in the `x-cron-secret`
+// header, exactly as the daily scoring job does.
+import { churnConfidenceLabel } from "@/lib/churn-probability";
+import { createFileRoute } from "@tanstack/react-router";
+import { timingSafeEqual } from "crypto";
+
+import { APP_ORIGIN, EMAIL_SENDER_DOMAIN, EMAIL_FROM_DOMAIN } from "@/lib/site";
+
+const SITE_ORIGIN = APP_ORIGIN;
+const SITE_NAME = "ChAi";
+const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
+const FROM_DOMAIN = EMAIL_FROM_DOMAIN;
+const TODAY_URL = `${SITE_ORIGIN}/app/today`;
+
+const RISK_LABELS: Record<string, string> = {
+  critical: "Critical",
+  "at-risk": "At risk",
+  healthy: "Healthy",
+};
+
+export const Route = createFileRoute("/api/public/hooks/weekly-digest")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const expected = process.env.CRON_SECRET ?? "";
+        const provided = request.headers.get("x-cron-secret") ?? "";
+        if (
+          !expected ||
+          provided.length !== expected.length ||
+          !timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
+        ) {
+          return new Response(JSON.stringify({ error: "unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const supabaseAdmin = await getSupabaseAdmin();
+        const { loadDailyBrief } = await import("@/lib/daily-brief.server");
+        const [{ render }, React, { WeeklyDigestEmail }] = await Promise.all([
+          import("@react-email/render"),
+          import("react"),
+          import("@/lib/email-templates/weekly-digest"),
+        ]);
+
+        // Workspace owners only.
+        const { data: orgs, error: orgError } = await supabaseAdmin
+          .from("organisations")
+          .select("id, name, owner_id");
+        if (orgError) {
+          return new Response(JSON.stringify({ error: orgError.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        type Summary = { user_id: string; queued: boolean; reason?: string };
+        const results: Summary[] = [];
+        const seen = new Set<string>();
+
+        for (const org of orgs ?? []) {
+          const userId = org.owner_id as string;
+          if (!userId || seen.has(userId)) continue;
+          seen.add(userId);
+
+          try {
+            const { data: profile } = await supabaseAdmin
+              .from("profiles")
+              .select("email")
+              .eq("id", userId)
+              .maybeSingle();
+            const email = (profile?.email ?? "").trim().toLowerCase();
+            if (!email) {
+              results.push({ user_id: userId, queued: false, reason: "no_email" });
+              continue;
+            }
+
+            // Respect bounces, complaints and unsubscribes.
+            const { data: suppressed } = await supabaseAdmin
+              .from("suppressed_emails")
+              .select("id")
+              .eq("email", email)
+              .limit(1)
+              .maybeSingle();
+            if (suppressed) {
+              results.push({ user_id: userId, queued: false, reason: "suppressed" });
+              continue;
+            }
+
+            const brief = await loadDailyBrief(supabaseAdmin, userId, { useAi: true });
+            if (brief.totalScored === 0) {
+              results.push({ user_id: userId, queued: false, reason: "no_scores" });
+              continue;
+            }
+
+            const element = React.createElement(WeeklyDigestEmail, {
+              headline: brief.headline,
+              needsAttention: brief.needsAttention,
+              criticalCount: brief.criticalCount,
+              atRiskCount: brief.atRiskCount,
+              movedCount: brief.movedCount,
+              declinedCount: brief.declinedCount,
+              improvedCount: brief.improvedCount,
+              customers: brief.actions.map((a) => ({
+                name: a.name,
+                score: a.score,
+                riskLabel: RISK_LABELS[a.riskLevel] ?? a.riskLevel,
+                topMetric: a.topMetric,
+                action: a.action,
+                churnProbability: a.churnProbability,
+                confidenceLabel: churnConfidenceLabel(a.churnConfidence),
+              })),
+              todayUrl: TODAY_URL,
+            });
+
+            const { queueTransactionalEmail } = await import("@/lib/transactional-email.server");
+            const sent = await queueTransactionalEmail(supabaseAdmin, {
+              to: email,
+              subject: `Your Monday brief: ${brief.needsAttention} customers need attention`,
+              template: "weekly_digest",
+              element,
+              idempotencyKey: `weekly_digest-${userId}-${new Date().toISOString().slice(0, 10)}`,
+            });
+            if (!sent) throw new Error("send_failed");
+            results.push({ user_id: userId, queued: true });
+          } catch (err) {
+            results.push({
+              user_id: userId,
+              queued: false,
+              reason: (err as Error).message,
+            });
+          }
+        }
+
+        return new Response(
+          JSON.stringify({ ok: true, ran_at: new Date().toISOString(), results }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      },
+    },
+  },
+});

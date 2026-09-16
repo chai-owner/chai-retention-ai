@@ -175,12 +175,47 @@ function GenericCrmCard({ name, category, desc }: { name: string; category: stri
 
 type SfStatus =
   | { connected: false }
-  | { connected: true; orgName: string | null; connectedAt: string };
+  | { connected: true; orgName: string | null; instanceUrl?: string | null; connectedAt: string };
+
+/** Resolves with the one-time OAuth code posted by the /oauth/salesforce/return popup. */
+function waitForSalesforceOAuth(popup: Window): Promise<string | null> {
+  return new Promise<string | null>((resolve, reject) => {
+    let poll: number | undefined;
+    const cleanup = () => {
+      window.removeEventListener("message", onMessage);
+      if (poll !== undefined) window.clearInterval(poll);
+    };
+    const onMessage = (event: MessageEvent) => {
+      const type = event.data?.type;
+      if (
+        event.origin !== window.location.origin ||
+        event.source !== popup ||
+        event.data?.connectorId !== "salesforce" ||
+        (type !== "appUserConnectorOAuthComplete" && type !== "appUserConnectorOAuthFailed")
+      )
+        return;
+      cleanup();
+      if (type === "appUserConnectorOAuthComplete") {
+        resolve(typeof event.data?.code === "string" ? event.data.code : null);
+        return;
+      }
+      popup.close();
+      reject(new Error("Salesforce sign-in failed."));
+    };
+    window.addEventListener("message", onMessage);
+    poll = window.setInterval(() => {
+      if (!popup.closed) return;
+      cleanup();
+      reject(new Error("Sign-in window was closed before completion."));
+    }, 500);
+  });
+}
 
 function SalesforceCard({ name, category, desc }: { name: string; category: string; desc: string }) {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [status, setStatus] = useState<SfStatus | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [instanceUrl, setInstanceUrl] = useState("");
   const uploads = useUploads();
 
   const fetchStatus = useServerFn(getSalesforceStatus);
@@ -214,35 +249,36 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
 
   async function handleConnect() {
     setConnecting(true);
+    // Open the popup during the user gesture, then point it at Lovable's
+    // Salesforce OAuth URL once the server fn returns it.
+    const popup = window.open("", "lovable-oauth", "width=600,height=720");
+    if (!popup) {
+      setConnecting(false);
+      toast.error("Popup blocked", { description: "Allow popups and try again." });
+      return;
+    }
     try {
-      const result = await connectAppUser({
-        connectorId: "salesforce",
-        gatewayBaseUrl: GATEWAY_BASE_URL,
-        start: async (targetOrigin) => {
-          const r = (await startConnect({ data: { targetOrigin } })) as {
-            authorizationUrl: string;
-          };
-          return { authorizationUrl: r.authorizationUrl };
-        },
-      });
-      if (!result.success) {
-        if (result.error) toast.error("Couldn’t connect Salesforce", { description: result.error });
-        return;
-      }
-      if (!result.connectionAPIKey) {
-        toast.error("Salesforce offline access disabled", {
-          description: "Ask a workspace admin to enable offline access on the connector client.",
+      const { authorizationUrl } = (await startConnect({
+        data: { targetOrigin: window.location.origin, instanceUrl },
+      })) as { authorizationUrl: string };
+      const completion = waitForSalesforceOAuth(popup);
+      popup.location.href = authorizationUrl;
+      const code = await completion;
+      // Exchange the one-time code here (the popup has no app session in the
+      // embedded preview). The connection key never reaches the browser.
+      if (code) {
+        const saved = (await saveConnection({ data: { code, instanceUrl } })) as {
+          orgName: string | null;
+        };
+        toast.success("Salesforce connected", {
+          description: saved.orgName ? `Linked to ${saved.orgName}.` : "You can now sync your data.",
         });
-        return;
+      } else {
+        toast.success("Salesforce connected", { description: "You can now sync your data." });
       }
-      const saved = (await saveConnection({
-        data: { connectionAPIKey: result.connectionAPIKey },
-      })) as { orgName: string | null };
-      toast.success("Salesforce connected", {
-        description: saved.orgName ? `Linked to ${saved.orgName}.` : "You can now sync your data.",
-      });
       await refresh();
     } catch (e) {
+      if (!popup.closed) popup.close();
       toast.error("Couldn’t connect Salesforce", {
         description: e instanceof Error ? e.message : "Please try again.",
       });
@@ -311,14 +347,36 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
           )}
         </>
       ) : (
-        <button
-          onClick={handleConnect}
-          disabled={connecting}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
-        >
-          {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
-          {connecting ? "Connecting…" : "Connect with OAuth"}
-        </button>
+        <>
+          <div className="mt-3 space-y-1">
+            <label
+              htmlFor="salesforce-instance-url"
+              className="text-[11px] font-medium text-foreground"
+            >
+              Instance URL (optional)
+            </label>
+            <input
+              id="salesforce-instance-url"
+              type="url"
+              value={instanceUrl}
+              onChange={(e) => setInstanceUrl(e.target.value)}
+              placeholder="https://login.salesforce.com"
+              className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-ring"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Leave blank to use your organisation&apos;s usual Salesforce sign-in page. Only fill
+              this in to sign in somewhere else, e.g. https://test.salesforce.com for a sandbox.
+            </p>
+          </div>
+          <button
+            onClick={handleConnect}
+            disabled={connecting}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+          >
+            {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+            {connecting ? "Connecting…" : "Connect with Salesforce"}
+          </button>
+        </>
       )}
 
       <CrmSyncWizard

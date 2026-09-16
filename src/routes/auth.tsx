@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Mail, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { getProfile } from "@/lib/profile.functions";
+import { resolvePostLoginDestination } from "@/lib/post-login-destination";
+import { storePendingPlan } from "@/lib/pending-plan";
+import { APP_ORIGIN } from "@/lib/site";
+import type { OrgPlan } from "@/lib/organisations";
+
+
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -18,12 +25,39 @@ function stripDemo(href: string): string {
   }
 }
 
+// Links inside auth emails must always land on the hosted app domain, never on
+// a marketing or legacy origin. Local/preview origins are kept as-is so
+// development flows still work.
+function emailLinkOrigin(): string {
+  const origin = window.location.origin;
+  if (/localhost|127\.0\.0\.1|lovable\.app|lovableproject\.com/.test(origin)) {
+    return origin;
+  }
+  return APP_ORIGIN;
+}
+
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    redirect?: string;
+    mode?: "signup";
+    plan?: string;
+    period?: "monthly" | "annual";
+  } => ({
     redirect: typeof search.redirect === "string" ? search.redirect : undefined,
     mode: search.mode === "signup" ? ("signup" as const) : undefined,
+    plan: typeof search.plan === "string" ? search.plan : undefined,
+    period:
+      search.period === "annual"
+        ? ("annual" as const)
+        : search.period === "monthly"
+          ? ("monthly" as const)
+          : undefined,
   }),
+
+
   head: () => ({ meta: [{ title: "Sign in — ChAi" }] }),
   beforeLoad: async () => {
     // Intentionally do NOT auto-redirect signed-in users away from /auth.
@@ -39,8 +73,18 @@ const inputCls =
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { redirect: redirectTo, mode: initialMode } = Route.useSearch();
-  const dest = stripDemo(redirectTo ?? "/app/dashboard");
+  const fetchProfile = useServerFn(getProfile);
+  const { redirect: redirectTo, mode: initialMode, plan, period } = Route.useSearch();
+
+  // Arriving from a pricing "Get started" link: remember the chosen plan so the
+  // paywall at the end of the trial can pre-select it.
+  useEffect(() => {
+    if (plan) storePendingPlan({ plan: plan as OrgPlan, period: period ?? "monthly" });
+  }, [plan, period]);
+
+  // A brand-new account must always land in onboarding first; the app pages
+  // are only meaningful once the business profile exists.
+  const signupDest = "/onboarding";
   const [mode, setMode] = useState<"login" | "register" | "forgot">(
     initialMode === "signup" ? "register" : "login",
   );
@@ -54,29 +98,28 @@ function AuthPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
 
-  function goToDest() {
-    if (redirectTo) navigate({ href: stripDemo(redirectTo) });
-    else navigate({ to: "/app/dashboard", search: { demo: false } });
-  }
-
-  async function handleGoogle() {
-    if (mode === "register" && !acceptedTerms) {
-      toast.error("Please accept the Terms of Service to continue.");
+  // After login the account state decides the destination: unfinished
+  // onboarding always wins, then the welcome screen, then Today.
+  async function goToDest() {
+    let dest = "/onboarding";
+    try {
+      const profile = await fetchProfile();
+      dest = resolvePostLoginDestination(profile);
+    } catch {
+      // Profile unreachable: fall back to the requested page, or the app.
+      dest = redirectTo ? stripDemo(redirectTo) : "/app";
+      navigate({ href: dest });
       return;
     }
-    setLoading(true);
-
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + dest,
-    });
-    if (result.error) {
-      toast.error("Couldn't sign in with Google. Please try again.");
-      setLoading(false);
+    // Honour an explicit ?redirect= target only once the account is fully set
+    // up; otherwise it would skip onboarding.
+    if (redirectTo && dest === "/app/today") {
+      navigate({ href: stripDemo(redirectTo) });
       return;
     }
-    if (result.redirected) return;
-    goToDest();
+    navigate({ href: dest });
   }
+
 
 
   async function handleEmail(e: React.FormEvent) {
@@ -88,7 +131,7 @@ function AuthPage() {
     setLoading(true);
     if (mode === "forgot") {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${emailLinkOrigin()}/reset-password`,
       });
       if (error) {
         toast.error(error.message);
@@ -104,7 +147,7 @@ function AuthPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}${dest}`,
+          emailRedirectTo: `${emailLinkOrigin()}${signupDest}`,
           data: {
             full_name: name.trim(),
             terms_accepted_at: new Date().toISOString(),
@@ -138,7 +181,7 @@ function AuthPage() {
       setLoading(false);
       return;
     }
-    goToDest();
+    void goToDest();
   }
 
   return (
@@ -204,23 +247,6 @@ function AuthPage() {
 
 
 
-              {mode !== "forgot" && (
-                <>
-                  <button
-                    onClick={handleGoogle}
-                    disabled={loading}
-                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
-                  >
-                    <GoogleIcon /> Continue with Google
-                  </button>
-
-                  <div className="my-5 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-border" />
-                    <span className="text-xs text-muted-foreground">or</span>
-                    <div className="h-px flex-1 bg-border" />
-                  </div>
-                </>
-              )}
 
               <form onSubmit={handleEmail} className="space-y-3">
                 {mode === "register" && (
@@ -345,25 +371,3 @@ function AuthPage() {
   );
 }
 
-function GoogleIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="#4285F4"
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"
-      />
-    </svg>
-  );
-}

@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { getAiProvider, DEFAULT_AI_MODEL } from "./ai-provider.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { DeriveSpec } from "./ingest-mapping";
 
@@ -89,11 +88,6 @@ export const extractRecords = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => ExtractInput.parse(input))
   .handler(async ({ data }): Promise<ExtractResult> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
     const schemaSpec = data.schemas
       .map((s) => {
         const fields = s.fields
@@ -153,10 +147,17 @@ Return ONLY a JSON object (no markdown, no code fences) of the form:
       throw new Error("No readable content provided for this file.");
     }
 
-    const { text } = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
+    const extraction = await getAiProvider().generateText({
+      operation: "smartIngestExtract",
+      model: DEFAULT_AI_MODEL,
       messages: [{ role: "user", content: content as never }],
     });
+    if (!extraction.ok) {
+      throw new Error(
+        extraction.message ?? "ChAi couldn't read this document right now. Please try again.",
+      );
+    }
+    const text = extraction.text;
 
     const jsonText = text
       .trim()
@@ -216,11 +217,6 @@ export const mapColumns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => MapColumnsInput.parse(input))
   .handler(async ({ data }): Promise<MapColumnsResult> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
     const schemaSpec = data.schemas
       .map((s) => {
         const fields = s.fields
@@ -287,10 +283,17 @@ Return ONLY a JSON object (no markdown, no code fences):
 {"documentType":"...","mappings":[{"key":"transactions","confidence":90,"note":"short note","fields":[{"field":"customer_id","column":"Account ID"},{"field":"amount","column":"Total"}]},{"key":"metric_missed_appointments","confidence":85,"note":"counted no-shows per patient","groupBy":"Patient ID","fields":[{"field":"customer_id","column":"Patient ID"},{"field":"date","column":"Appointment Date"},{"field":"missed_appointments","derive":{"op":"count_if","column":"Status","anyOf":["No-show","DNA"]}}]}]}`;
 
 
-    const { text } = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
+    const mapping = await getAiProvider().generateText({
+      operation: "smartIngestMapColumns",
+      model: DEFAULT_AI_MODEL,
       messages: [{ role: "user", content: instruction }],
     });
+    if (!mapping.ok) {
+      throw new Error(
+        mapping.message ?? "ChAi couldn't map this file right now. Please try again.",
+      );
+    }
+    const text = mapping.text;
 
     const jsonText = text
       .trim()

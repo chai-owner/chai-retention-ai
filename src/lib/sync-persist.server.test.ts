@@ -8,6 +8,19 @@ import type { ExtractedDataset } from "@/lib/ingest.functions";
 
 // Each `from(table)` call returns a fresh chainable builder; pick the one
 // matching the given call occurrence (defaults to the first).
+// The plan-limit check also reads `ingested_customers`, so pick the builder
+// that actually performed the given method when asserting on writes.
+function builderWith(table: string, method: string) {
+  const idxs = supabaseMock.from.mock.calls
+    .map((c, i) => (c[0] === table ? i : -1))
+    .filter((i) => i !== -1);
+  for (const i of idxs) {
+    const b = supabaseMock.from.mock.results[i].value as Record<string, any>;
+    if (b?.[method]?.mock?.calls?.length) return b;
+  }
+  return undefined;
+}
+
 function builderFor(table: string, occurrence = 0) {
   const idxs = supabaseMock.from.mock.calls
     .map((c, i) => (c[0] === table ? i : -1))
@@ -59,7 +72,7 @@ describe("persistDatasetsAdmin", () => {
     setSupabaseResult("ingest_batches", { data: { id: "batch-1" } });
     await persistDatasetsAdmin("user-1", "crm", "hubspot", [customers]);
 
-    const [payload, opts] = builderFor("ingested_customers")!.upsert.mock.calls[0];
+    const [payload, opts] = builderWith("ingested_customers", "upsert")!.upsert.mock.calls[0];
     expect(opts).toEqual({ onConflict: "user_id,customer_id" });
     // Identity rule: rows keep their customer_id when present, and rows
     // identified only by name/email get a deterministic derived key.

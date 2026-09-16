@@ -45,7 +45,8 @@ export const startZendeskConnect = createServerFn({ method: "POST" })
       getZendeskRedirectUri,
       STATE_TTL_MS,
     } = await import("./zendesk.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
     getZendeskCreds(); // fail fast with a readable message if unconfigured
 
     const subdomain = normalizeSubdomain(data.subdomain);

@@ -32,7 +32,8 @@ export function useProfileSync() {
           if (typeof window !== "undefined") {
             try {
               for (const key of Object.keys(window.localStorage)) {
-                if (key.startsWith("chai.")) window.localStorage.removeItem(key);
+                if (key.startsWith("chai.") && key !== "chai.promo-code" && key !== "chai.cache.owner")
+                  window.localStorage.removeItem(key);
               }
             } catch {
               // ignore storage failures

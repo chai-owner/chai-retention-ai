@@ -8,7 +8,8 @@ export async function getSupportSince(
   userId: string,
   provider: SupportProvider,
 ): Promise<string | null> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data } = await supabaseAdmin
     .from("support_sync_state")
     .select("last_synced_at")
@@ -23,11 +24,14 @@ export async function markSupportSynced(
   provider: SupportProvider,
   when: string,
 ): Promise<void> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await supabaseAdmin.from("support_sync_state").upsert(
-    { user_id: userId, provider, last_synced_at: when },
-    { onConflict: "user_id,provider" },
-  );
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const supabaseAdmin = await getSupabaseAdmin();
+  await supabaseAdmin
+    .from("support_sync_state")
+    .upsert(
+      { user_id: userId, provider, last_synced_at: when },
+      { onConflict: "user_id,provider" },
+    );
   // Also stamp the connection table so the UI can show "last synced".
   if (provider === "zendesk") {
     await supabaseAdmin
@@ -76,7 +80,8 @@ export async function ensureSupportSyncState(
   userId: string,
   provider: SupportProvider,
 ): Promise<void> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data } = await supabaseAdmin
     .from("support_sync_state")
     .select("id")
@@ -94,7 +99,8 @@ export async function clearSupportSyncState(
   userId: string,
   provider: SupportProvider,
 ): Promise<void> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const supabaseAdmin = await getSupabaseAdmin();
   const { error } = await supabaseAdmin
     .from("support_sync_state")
     .delete()

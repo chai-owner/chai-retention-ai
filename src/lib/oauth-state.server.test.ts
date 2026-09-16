@@ -254,4 +254,3 @@ describe("hashing", () => {
   });
 });
 
-vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {} }));

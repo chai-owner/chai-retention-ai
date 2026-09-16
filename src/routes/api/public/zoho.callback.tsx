@@ -16,11 +16,8 @@ export const Route = createFileRoute("/api/public/zoho/callback")({
     handlers: {
       GET: async ({ request }) => {
         const url = new URL(request.url);
-        const {
-          consumeOAuthState,
-          safeAppOrigin,
-          sanitizeOAuthError,
-        } = await import("@/lib/oauth-state.server");
+        const { consumeOAuthState, safeAppOrigin, sanitizeOAuthError } =
+          await import("@/lib/oauth-state.server");
         const origin = safeAppOrigin(url.origin);
         const code = url.searchParams.get("code");
         const state = url.searchParams.get("state");
@@ -28,13 +25,17 @@ export const Route = createFileRoute("/api/public/zoho/callback")({
 
         if (errorParam) {
           console.error("Zoho OAuth error response:", sanitizeOAuthError(errorParam));
-          return appRedirect(origin, { zoho_error: "Zoho declined the connection. Please try again." });
+          return appRedirect(origin, {
+            zoho_error: "Zoho declined the connection. Please try again.",
+          });
         }
         if (!code || !state) return appRedirect(origin, { zoho_error: "missing_code_or_state" });
 
         try {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { exchangeZohoCode, saveZohoConnection, resolveOrgName } = await import("@/lib/zoho.server");
+          const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const supabaseAdmin = await getSupabaseAdmin();
+          const { exchangeZohoCode, saveZohoConnection, resolveOrgName } =
+            await import("@/lib/zoho.server");
 
           const outcome = await consumeOAuthState(supabaseAdmin as never, {
             table: "zoho_crm_oauth_states",

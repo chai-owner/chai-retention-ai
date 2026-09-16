@@ -3,6 +3,8 @@
 // the onboarding "Add your data" step so they stay identical.
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Check, Download, FileSpreadsheet, Info, Lock, Sparkles, Upload } from "lucide-react";
 import { Card } from "@/components/ui/chai";
 import { UploadWizard } from "@/components/upload-wizard";
@@ -21,7 +23,16 @@ import type { PlannerMetric } from "@/lib/mock-data";
 
 import { useAllDatasets } from "@/lib/all-datasets";
 import { useUploads } from "@/lib/uploads-store";
-import { useAddons, addonsStore, SMART_INGEST_PRICING } from "@/lib/addons-store";
+import { usePlanUsage } from "@/lib/use-plan-usage";
+import { useEnableDataDropAddon } from "@/lib/use-smart-ingest";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 
@@ -55,9 +66,16 @@ function rawDataHint(metric: PlannerMetric): string | null {
 }
 
 export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {}) {
-  const { smartIngest } = useAddons();
+  const { data: planUsage } = usePlanUsage();
+  const enableAddon = useEnableDataDropAddon();
+  const hasAccess =
+    planUsage?.plan === "standard" ||
+    planUsage?.plan === "enterprise" ||
+    (planUsage?.plan === "core" && planUsage?.smartIngestAddon === true);
+  const isAddon = planUsage?.plan === "core" && planUsage?.smartIngestAddon === true;
   const profile = useProfile();
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const metricExamples = useMemo(() => {
     const list = metrics ?? (profile?.metrics as PlannerMetric[] | undefined) ?? [];
     return list
@@ -67,7 +85,7 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
   }, [metrics, profile]);
 
 
-  if (!smartIngest) {
+  if (!hasAccess) {
     const benefits = [
       "Drop in scanned invoices, PDFs, spreadsheets, receipts or text",
       "AI reads the document and maps the data into your ChAi datasets",
@@ -99,28 +117,46 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
               ))}
             </ul>
           </div>
-          <div className="shrink-0 rounded-xl border border-border bg-background p-4 text-center md:w-56">
-            <p className="text-2xl font-bold">
-              ${SMART_INGEST_PRICING.monthly}
-              <span className="text-sm font-normal text-muted-foreground">/mo</span>
-            </p>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Includes {SMART_INGEST_PRICING.includedPages} document pages/month, then $
-              {SMART_INGEST_PRICING.topUpPerPage.toFixed(2)}/page.
-            </p>
+          <div className="shrink-0 md:w-56">
             <button
-              onClick={() => {
-                addonsStore.enable("smartIngest");
-                toast.success("ChAi Data Drop enabled", {
-                  description: "Demo mode — no billing was charged.",
-                });
-              }}
-              className="mt-3 w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              onClick={() => setConfirmOpen(true)}
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Enable add-on
+              Add Data Drop — $39/mo
             </button>
           </div>
         </div>
+
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add ChAi Data Drop</DialogTitle>
+              <DialogDescription>
+                You're adding ChAi Data Drop for $39/mo, billed with your ChAi subscription. You'll
+                complete payment securely at checkout.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={enableAddon.isPending}
+                onClick={() => {
+                  enableAddon.mutate(undefined, {
+                    onSuccess: () => setConfirmOpen(false),
+                  });
+                }}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+              >
+                {enableAddon.isPending ? "Opening checkout…" : "Continue to payment"}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Card>
     );
   }
@@ -134,11 +170,14 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
               <Sparkles className="h-4 w-4" />
             </span>
             <h3 className="font-semibold">ChAi Data Drop</h3>
-            <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
-              Active
-            </span>
+            {isAddon && (
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                Add-on active
+              </span>
+            )}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
+
             Upload one document or a whole folder's worth at once — invoices, PDFs, spreadsheets,
             receipts or text — and ChAi will extract and map the data for you to review.
           </p>

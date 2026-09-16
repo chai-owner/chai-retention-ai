@@ -20,6 +20,7 @@ import {
   type Customer,
 } from "@/lib/mock-data";
 import { useChurnOverrides } from "@/lib/churn-store";
+import { useIngested } from "@/lib/ingested-data-store";
 import { useScoredData } from "@/lib/use-scored-data";
 import { useSignedIn } from "@/lib/use-auth-state";
 import { cn } from "@/lib/utils";
@@ -94,8 +95,14 @@ function Churned() {
   const overrides = useChurnOverrides();
   const signedIn = useSignedIn();
   const { sortedByRisk } = useScoredData();
+  const ingested = useIngested();
   // Signed-in users only ever see their own real data — never the sample set.
   const isReal = signedIn === true;
+  // Distinguish "no data at all" from "has data but no churned customers",
+  // so an empty book never masquerades as great retention.
+  const hasData = isReal
+    ? (ingested.customers?.length ?? 0) > 0 || Object.keys(overrides).length > 0
+    : true;
 
   const churned = useMemo(() => {
     if (!isReal) return getChurnedCustomers();
@@ -158,29 +165,40 @@ function Churned() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Churn rate" value={`${stats.churnRate}%`} icon={TrendingDown} tone="danger" hint="Of your total book" />
-        <StatCard
-          label="Revenue lost"
-          value={
-            <span>
-              {formatCurrency(stats.revenueLost)} <span className="text-sm font-normal italic text-muted-foreground">/ yr</span>
-            </span>
-          }
-          icon={DollarSign}
-          tone="danger"
-        />
-        <StatCard
-          label="Win-back opportunity"
-          value={
-            <span>
-              {formatCurrency(stats.winBackOpportunity)} <span className="text-sm font-normal italic text-muted-foreground">/ yr</span>
-            </span>
-          }
-          icon={RotateCcw}
-          tone="success"
-          hint="Weighted by re-win likelihood"
-        />
-        <StatCard label="Avg. tenure before churn" value={`${stats.avgTenureMonths} mo`} icon={Clock} />
+        {!hasData ? (
+          <>
+            <StatCard label="Churn rate" value="No data yet" icon={TrendingDown} hint="Add customer data to see your churn rate" />
+            <StatCard label="Revenue lost" value="No data yet" icon={DollarSign} hint="Add customer data to track lost revenue" />
+            <StatCard label="Win-back opportunity" value="No data yet" icon={RotateCcw} hint="Add customer data to size win-back value" />
+            <StatCard label="Avg. tenure before churn" value="No data yet" icon={Clock} hint="Add customer data to measure tenure" />
+          </>
+        ) : (
+          <>
+            <StatCard label="Churn rate" value={`${stats.churnRate}%`} icon={TrendingDown} tone="danger" hint="Of your total book" />
+            <StatCard
+              label="Revenue lost"
+              value={
+                <span>
+                  {formatCurrency(stats.revenueLost)} <span className="text-sm font-normal italic text-muted-foreground">/ yr</span>
+                </span>
+              }
+              icon={DollarSign}
+              tone="danger"
+            />
+            <StatCard
+              label="Win-back opportunity"
+              value={
+                <span>
+                  {formatCurrency(stats.winBackOpportunity)} <span className="text-sm font-normal italic text-muted-foreground">/ yr</span>
+                </span>
+              }
+              icon={RotateCcw}
+              tone="success"
+              hint="Weighted by re-win likelihood"
+            />
+            <StatCard label="Avg. tenure before churn" value={`${stats.avgTenureMonths} mo`} icon={Clock} />
+          </>
+        )}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -245,8 +263,17 @@ function Churned() {
                   )}
                 </div>
               ))}
-              {candidates.length === 0 && (
-                <p className="py-6 text-center text-sm text-muted-foreground">No churned customers — great retention!</p>
+              {candidates.length === 0 && !hasData && (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No customer data yet.{" "}
+                  <Link to="/app/data" className="font-medium text-primary hover:underline">
+                    Connect an integration or upload a CSV
+                  </Link>{" "}
+                  to start tracking retention.
+                </p>
+              )}
+              {candidates.length === 0 && hasData && (
+                <p className="py-6 text-center text-sm text-muted-foreground">No churned customers yet — great retention!</p>
               )}
             </div>
           </Card>

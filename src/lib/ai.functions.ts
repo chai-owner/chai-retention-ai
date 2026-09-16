@@ -1,11 +1,87 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import { logAiUsage } from "./ai-usage.server";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getAiProvider, DEFAULT_AI_MODEL, resolveAiCredentials } from "./ai-provider.server";
+import { requireConnectedAuth } from "@/lib/connected-auth-middleware";
+import { inspectServerEnvAsync } from "@/lib/server-env";
 
-const MODEL = "google/gemini-3-flash-preview";
+const MODEL = DEFAULT_AI_MODEL;
+
+export interface AiConfigCheckResult {
+  /** Provider selected by the same precedence rules as every real AI call. */
+  activeProvider: "lovable" | "anthropic" | "missing";
+  /** The variable the AI provider will actually use, if any. */
+  variableName: "LOVABLE_API_KEY" | "ANTHROPIC_API_KEY" | null;
+  keyExists: boolean;
+  keyFingerprint: string | null;
+  source: string;
+  checkedSources: readonly string[];
+  lovableKeyExists: boolean;
+  lovableKeySource: string;
+  anthropicKeyExists: boolean;
+  anthropicKeySource: string;
+  checkedVariables: readonly ["LOVABLE_API_KEY", "ANTHROPIC_API_KEY"];
+  authenticated: true;
+  testCallSucceeded: boolean;
+  testCallMessage: string;
+}
+
+async function fingerprintSecret(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .slice(0, 4)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Authenticated production diagnostic. It deliberately returns a one-way
+ * fingerprint rather than any reusable characters from the secret.
+ */
+export const checkAiConfig = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .handler(async (): Promise<AiConfigCheckResult> => {
+    const lovable = await inspectServerEnvAsync("LOVABLE_API_KEY");
+    const anthropic = await inspectServerEnvAsync("ANTHROPIC_API_KEY");
+    const credentials = await resolveAiCredentials();
+    console.info(
+      `[ai-config] LOVABLE_API_KEY present=${Boolean(lovable.value)} source=${lovable.source}; ` +
+        `ANTHROPIC_API_KEY present=${Boolean(anthropic.value)} source=${anthropic.source}; ` +
+        `checked=${lovable.checkedSources.join(",")}`,
+    );
+
+    const test = await getAiProvider().generateText({
+      operation: "checkAiConfig",
+      model: MODEL,
+      prompt: 'Reply with exactly: "ok"',
+    });
+
+    const active = credentials.key
+      ? credentials.vendor === "anthropic"
+        ? ("ANTHROPIC_API_KEY" as const)
+        : ("LOVABLE_API_KEY" as const)
+      : null;
+
+    return {
+      activeProvider: credentials.key ? credentials.vendor : "missing",
+      variableName: active,
+      keyExists: Boolean(credentials.key),
+      keyFingerprint: credentials.key ? await fingerprintSecret(credentials.key) : null,
+      source: credentials.lookup.source,
+      checkedSources: lovable.checkedSources,
+      lovableKeyExists: Boolean(lovable.value),
+      lovableKeySource: lovable.source,
+      anthropicKeyExists: Boolean(anthropic.value),
+      anthropicKeySource: anthropic.source,
+      checkedVariables: ["LOVABLE_API_KEY", "ANTHROPIC_API_KEY"],
+      authenticated: true,
+      testCallSucceeded: test.ok,
+      testCallMessage: test.ok ? "AI test call succeeded." : (test.message ?? "AI test call failed."),
+    };
+  });
+
+const FALLBACK_REPLY =
+  "I couldn't reach the analysis service just now. In the meantime, check the Risk Center for your highest-risk accounts and the Data Quality page for gaps worth filling.";
 
 // ---------------------------------------------------------------------------
 
@@ -20,24 +96,67 @@ const ChatMessage = z.object({
 const AskChAiInput = z.object({
   messages: z.array(ChatMessage).min(1),
   context: z.string().optional(),
+  coverage: z
+    .object({
+      confidence: z.enum(["low", "partial", "good"]),
+      headline: z.string().optional(),
+      notes: z.array(z.string()).default([]),
+      basis: z.string().optional(),
+    })
+    .optional(),
+  profile: z
+    .object({
+      industry: z.string().optional(),
+      model: z.string().optional(),
+      whatBuy: z.string().optional(),
+      cadence: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type AskChAiInput = z.infer<typeof AskChAiInput>;
 
 export const askChai = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => AskChAiInput.parse(input))
   .handler(async ({ data }): Promise<{ reply: string }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const p = data.profile;
+    const businessLines = [
+      p?.industry && `Industry: ${p.industry}`,
+      p?.model && `Business model: ${p.model}`,
+      p?.whatBuy && `What customers buy: ${p.whatBuy}`,
+      p?.cadence && `Purchase/usage cadence: ${p.cadence}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
 
-    const gateway = createLovableAiGatewayProvider(key);
+    const cov = data.coverage;
+    const coverageBlock = cov
+      ? [
+          `Data confidence: ${cov.confidence}`,
+          cov.headline && `Coverage headline: ${cov.headline}`,
+          cov.basis && cov.basis,
+          cov.notes.length ? `Gaps:\n${cov.notes.map((n) => `- ${n}`).join("\n")}` : "Gaps: none recorded",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "(no coverage assessment provided)";
 
     const system = `You are ChAi, an AI customer-retention analyst inside a churn-intelligence app.
 Answer in plain, friendly language for a non-technical business owner. Be concise (2-4 sentences).
 Focus on customer health, churn risk, what data to track, and concrete next steps.
 When relevant, point users to the Risk Center, Insights, or Data Quality pages.
 Use the workspace context below if helpful; never invent specific numbers that aren't given.
+
+TAILOR EVERY ANSWER TO THIS BUSINESS. Use the industry's own vocabulary (a dental practice hears about recall appointments and missed visits; a B2B SaaS company hears about seats, adoption and renewals; a gym hears about weekly check-ins). Never give generic "increase engagement" advice when the business profile below tells you what they actually sell and how often customers buy.
+
+DATA SUFFICIENCY: if data confidence is "low" or "partial", start by saying plainly that your answer may be limited by data gaps, name the specific gaps listed below (e.g. which dataset is missing or how many days old it is), and suggest uploading more recent data on the Data Quality page. If confidence is "good", answer normally with no data caveat.
+
+Business profile:
+${businessLines || "(no business profile provided)"}
+
+Data coverage:
+${coverageBlock}
 
 Workspace context:
 ${data.context?.trim() || "(no live workspace data provided)"}`;
@@ -46,14 +165,16 @@ ${data.context?.trim() || "(no live workspace data provided)"}`;
       .map((m) => `${m.role === "user" ? "User" : "ChAi"}: ${m.text}`)
       .join("\n");
 
-    const { text, usage } = await generateText({
-      model: gateway(MODEL),
+    const result = await getAiProvider().generateText({
+      operation: "askChai",
+      model: MODEL,
       prompt: `${system}\n\nConversation so far:\n${convo}\n\nChAi:`,
     });
-    await logAiUsage("askChai", MODEL, usage);
+    if (!result.ok) return { reply: result.message ?? FALLBACK_REPLY };
 
-    return { reply: text.trim() };
+    return { reply: result.text.trim() || FALLBACK_REPLY };
   });
+
 
 // ---------------------------------------------------------------------------
 // Risk reason summaries — one-liners for the dashboard "Needs attention" list
@@ -78,14 +199,9 @@ const RiskSummaryInput = z.object({
 export type RiskSummaryInput = z.infer<typeof RiskSummaryInput>;
 
 export const summarizeRiskReasons = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => RiskSummaryInput.parse(input))
   .handler(async ({ data }): Promise<Record<string, string>> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
     const lines = data.customers
       .map(
         (c) =>
@@ -102,15 +218,20 @@ ${lines}
 
 Return ONLY a JSON object (no markdown, no code fences) mapping each account id to its one-sentence summary string.`;
 
-    const { text, usage } = await generateText({
-      model: gateway(MODEL),
-      prompt,
+    const result = await getAiProvider().generateSummary({
+      operation: "summarizeRiskReasons",
+      model: MODEL,
+      instructions: prompt,
+      content: "",
     });
-    await logAiUsage("summarizeRiskReasons", MODEL, usage);
+    if (!result.ok) return {};
 
-    const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
-    const parsed = z.record(z.string(), z.string()).parse(JSON.parse(jsonText));
-    return parsed;
+    const jsonText = result.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    try {
+      return z.record(z.string(), z.string()).parse(JSON.parse(jsonText));
+    } catch {
+      return {};
+    }
   });
 
 // ---------------------------------------------------------------------------
@@ -125,14 +246,9 @@ const CollectiveInsightsInput = z.object({
 export type CollectiveInsightsInput = z.infer<typeof CollectiveInsightsInput>;
 
 export const generateCollectiveInsights = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => CollectiveInsightsInput.parse(input))
   .handler(async ({ data }): Promise<{ insights: string[] }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
     const prompt = `You are ChAi, a customer-retention analyst. Based on the workspace analysis below, write the TOP 5 most interesting, high-level collective insights a business owner would most want to know about their customer base and retention. Each insight is ONE punchy plain-language sentence (max ~18 words), specific and useful. Do not invent precise numbers that aren't given.
 
 Workspace analysis:
@@ -140,13 +256,15 @@ ${data.summary}
 
 Return ONLY a JSON array of 5 strings (no markdown, no code fences).`;
 
-    const { text, usage } = await generateText({
-      model: gateway(MODEL),
-      prompt,
+    const result = await getAiProvider().generateSummary({
+      operation: "generateCollectiveInsights",
+      model: MODEL,
+      instructions: prompt,
+      content: "",
     });
-    await logAiUsage("generateCollectiveInsights", MODEL, usage);
+    if (!result.ok) return { insights: [] };
 
-    const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    const jsonText = result.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
     let insights: string[] = [];
     try {
       insights = z.array(z.string()).parse(JSON.parse(jsonText));
@@ -187,14 +305,9 @@ export type RecommendMetricWeightsInput = z.infer<typeof RecommendMetricWeightsI
 export type MetricRecommendation = { name: string; weight: number; reason: string };
 
 export const recommendMetricWeights = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => RecommendMetricWeightsInput.parse(input))
   .handler(async ({ data }): Promise<{ recommendations: MetricRecommendation[] }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
     const p = data.profile;
     const profileLines = [
       p.company && `Company: ${p.company}`,
@@ -228,13 +341,15 @@ Tailor the weights to this business. For example, a low-frequency high-value Saa
 Return ONLY a JSON array (no markdown, no code fences) where each item is:
 {"name": "<exact metric name>", "weight": <integer 1-5>, "reason": "<short reason>"}`;
 
-    const { text, usage } = await generateText({
-      model: gateway(MODEL),
-      prompt,
+    const result = await getAiProvider().generateRecommendations({
+      operation: "recommendMetricWeights",
+      model: MODEL,
+      instructions: prompt,
+      context: "",
     });
-    await logAiUsage("recommendMetricWeights", MODEL, usage);
+    if (!result.ok) return { recommendations: [] };
 
-    const jsonText = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    const jsonText = result.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
     const validNames = new Set(data.metrics.map((m) => m.name));
     let recommendations: MetricRecommendation[] = [];
     try {
@@ -296,14 +411,9 @@ export type GeneratedMetric = {
 };
 
 export const recommendMetrics = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => RecommendMetricsInput.parse(input))
-  .handler(async ({ data }): Promise<{ metrics: GeneratedMetric[] }> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
-    const gateway = createLovableAiGatewayProvider(key);
-
+  .handler(async ({ data }): Promise<{ metrics: GeneratedMetric[]; error?: string }> => {
     const p = data.profile;
     const profileLines = [
       p.company && `Company: ${p.company}`,
@@ -411,22 +521,59 @@ Return ONLY a JSON array (no prose, no markdown, no code fences) of 6-8 objects 
       return [];
     }
 
-    const first = await generateText({ model: gateway(MODEL), prompt });
-    await logAiUsage("recommendMetrics", MODEL, first.usage);
+    const ai = getAiProvider();
+    const first = await ai.generateRecommendations({
+      operation: "recommendMetrics",
+      model: MODEL,
+      instructions: prompt,
+      context: "",
+    });
+    if (!first.ok) {
+      console.error(
+        `[recommendMetrics] provider call failed (industry="${industry}", model="${model}"): ${first.message ?? "no message"}`,
+      );
+      return { metrics: [], error: first.message ?? "The AI service did not respond." };
+    }
     let metrics = extractMetrics(first.text);
+    if (metrics.length === 0) {
+      console.error(
+        `[recommendMetrics] could not parse metrics from first response (industry="${industry}"). Raw text (first 800 chars): ${first.text.slice(0, 800)}`,
+      );
+    }
 
     // One strict retry before we give up and show the generic fallback set.
     if (metrics.length === 0) {
-      const retry = await generateText({
-        model: gateway(MODEL),
-        prompt: `${prompt}
+      const retry = await ai.generateRecommendations({
+        operation: "recommendMetrics",
+        model: MODEL,
+        instructions: `${prompt}
 
 Your previous answer could not be parsed. Reply with the raw JSON array only — start with "[" and end with "]".`,
+        context: "",
       });
-      await logAiUsage("recommendMetrics", MODEL, retry.usage);
+      if (!retry.ok) {
+        console.error(
+          `[recommendMetrics] retry call failed (industry="${industry}"): ${retry.message ?? "no message"}`,
+        );
+        return { metrics: [], error: retry.message ?? "The AI service did not respond." };
+      }
       metrics = extractMetrics(retry.text);
+      if (metrics.length === 0) {
+        console.error(
+          `[recommendMetrics] retry response also unparseable (industry="${industry}"). Raw text (first 800 chars): ${retry.text.slice(0, 800)}`,
+        );
+      }
     }
 
+    console.info(
+      `[recommendMetrics] generated ${metrics.length} metrics (industry="${industry}", businessModel="${model}")`,
+    );
+    if (metrics.length === 0) {
+      return {
+        metrics: [],
+        error: "The AI service replied, but its answer couldn't be read as a metric list.",
+      };
+    }
     return { metrics };
   });
 

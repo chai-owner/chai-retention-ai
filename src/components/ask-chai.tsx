@@ -1,10 +1,14 @@
 import { useRef, useState } from "react";
-import { Sparkles, X, Send, Loader2 } from "lucide-react";
+import { Sparkles, X, Send, Loader2, AlertTriangle } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { askChai } from "@/lib/ai.functions";
-import { useScoredData } from "@/lib/use-scored-data";
+import { useScoredData, useDataCoverage } from "@/lib/use-scored-data";
+import { coverageBasis } from "@/lib/data-coverage";
+import { useProfile } from "@/lib/profile-store";
 import { formatCurrency } from "@/lib/mock-data";
+
 
 interface Msg {
   role: "user" | "assistant";
@@ -29,6 +33,8 @@ export function AskChAi() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { executive, sortedByRisk } = useScoredData();
+  const coverage = useDataCoverage();
+  const profile = useProfile();
   const ask = useServerFn(askChai);
 
   function buildContext() {
@@ -68,8 +74,21 @@ export function AskChAi() {
         data: {
           messages: history.filter((m) => m.text !== GREETING).map((m) => ({ role: m.role, text: m.text })),
           context: buildContext(),
+          coverage: {
+            confidence: coverage.confidence,
+            headline: coverage.headline,
+            notes: coverage.notes,
+            basis: coverageBasis(coverage),
+          },
+          profile: {
+            industry: profile?.industry,
+            model: profile?.model,
+            whatBuy: profile?.whatBuy,
+            cadence: profile?.cadence,
+          },
         },
       });
+
       setMessages((m) => [...m, { role: "assistant", text: reply }]);
     } catch {
       setMessages((m) => [
@@ -105,6 +124,26 @@ export function AskChAi() {
               <X className="h-4 w-4" />
             </button>
           </div>
+
+          {/* Persistent data-confidence strip — mirrors what ChAi says in its
+              caveats by using the same useDataCoverage() assessment. */}
+          {coverage.confidence !== "good" && (
+            <Link
+              to="/app/data-quality"
+              title="View data coverage details"
+              className={cn(
+                "flex items-center gap-1.5 border-b border-border px-4 py-1.5 text-[11px] font-medium transition-colors",
+                coverage.confidence === "low"
+                  ? "bg-danger/10 text-danger hover:bg-danger/15"
+                  : "bg-warning/10 text-warning-foreground hover:bg-warning/15",
+              )}
+            >
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              {coverage.confidence === "low"
+                ? "Limited data available — answers may be incomplete"
+                : "Some data may be outdated"}
+            </Link>
+          )}
 
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.map((m, i) => (

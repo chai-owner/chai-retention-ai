@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Plus, Trash2, AlertCircle, Check, Loader2, Save } from "lucide-react";
+import { Card } from "@/components/ui/chai";
 import { cn } from "@/lib/utils";
 import { profileStore, useProfile, type ProfileSegment } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
@@ -33,7 +34,7 @@ function Settings() {
 
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
-  const [model, setModel] = useState("SaaS");
+  const [model, setModel] = useState("Subscription business");
   const [size, setSize] = useState("1–10");
   const [customers, setCustomers] = useState("");
   const [avgValue, setAvgValue] = useState("");
@@ -54,7 +55,7 @@ function Settings() {
     if (!profile) return;
     setCompany(profile.company ?? "");
     setIndustry(profile.industry ?? "");
-    setModel(profile.model || "SaaS");
+    setModel(profile.model === "SaaS" || profile.model === "Subscription" ? "Subscription business" : profile.model || "Subscription business");
     setSize(profile.size || "1–10");
     setCustomers(profile.customers ?? "");
     setAvgValue(profile.avgValue ?? "");
@@ -193,21 +194,30 @@ function Settings() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Business profile</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          These answers power your customer health model. Update them any time your business changes.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Business profile</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            These answers power your customer health model. Update them any time your business changes.
+          </p>
+        </div>
+        <Link
+          to="/app/team"
+          className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+        >
+          Team &amp; access
+        </Link>
       </div>
 
+
       {/* Business */}
-      <Card title="Your business">
+      <Card title="Your business" className="space-y-4 sm:p-6">
         <Field label="Company name">
           <input className={inputCls} value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Northwind Labs" />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Industry">
-            <input className={inputCls} value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. B2B software" />
+            <input className={inputCls} value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. Membership, education or professional services" />
           </Field>
           <Field label="Business model">
             <select className={inputCls} value={model} onChange={(e) => setModel(e.target.value)}>
@@ -230,7 +240,7 @@ function Settings() {
 
 
       {/* Segments */}
-      <Card title="Customer segments" subtitle={`Group by average monthly revenue. Up to ${MAX_SEGMENTS} non-overlapping ranges.`}>
+      <Card title="Customer segments" subtitle={`Group by average monthly revenue. Up to ${MAX_SEGMENTS} non-overlapping ranges.`} className="space-y-4 sm:p-6">
         <div className="space-y-3">
           {segments.map((seg, i) => (
             <div key={i} className="rounded-xl border border-border p-4">
@@ -271,21 +281,21 @@ function Settings() {
       </Card>
 
       {/* How you work */}
-      <Card title="How a healthy customer behaves">
+      <Card title="How a healthy customer behaves" className="space-y-4 sm:p-6">
         <Field label="What do customers buy from you?">
-          <input className={inputCls} value={whatBuy} onChange={(e) => setWhatBuy(e.target.value)} placeholder="e.g. an annual software subscription" />
+          <input className={inputCls} value={whatBuy} onChange={(e) => setWhatBuy(e.target.value)} placeholder="e.g. a monthly membership or ongoing service" />
         </Field>
         <Field label="How often should a healthy customer engage?">
-          <input className={inputCls} value={cadence} onChange={(e) => setCadence(e.target.value)} placeholder="e.g. logs in weekly" />
+          <input className={inputCls} value={cadence} onChange={(e) => setCadence(e.target.value)} placeholder="e.g. engages weekly or buys monthly" />
         </Field>
         <Field label="How long should a healthy customer stay?">
           <input className={inputCls} value={lifespan} onChange={(e) => setLifespan(e.target.value)} placeholder="e.g. 3+ years" />
         </Field>
         <Field label="What actions show a customer is succeeding?">
-          <input className={inputCls} value={successActions} onChange={(e) => setSuccessActions(e.target.value)} placeholder="e.g. inviting teammates, renewing" />
+          <input className={inputCls} value={successActions} onChange={(e) => setSuccessActions(e.target.value)} placeholder="e.g. repeat visits, regular usage, renewing" />
         </Field>
         <Field label="What actions show disengagement?">
-          <input className={inputCls} value={disengagement} onChange={(e) => setDisengagement(e.target.value)} placeholder="e.g. no logins for 30 days" />
+          <input className={inputCls} value={disengagement} onChange={(e) => setDisengagement(e.target.value)} placeholder="e.g. no visits, purchases or activity for 30 days" />
         </Field>
         <div>
           <Field label="When would you consider a customer churned?">
@@ -315,7 +325,7 @@ function Settings() {
 
 
       {/* What matters — weights */}
-      <Card title="How much each metric matters" subtitle={isAdmin ? "Slide each metric from Unimportant to Critical, or remove a metric that isn't needed for accurate intelligence." : "Slide each metric from Unimportant to Critical to retune your customer health score."}>
+      <Card title="How much each metric matters" subtitle={isAdmin ? "Slide each metric from Unimportant to Critical, or remove a metric that isn't needed for accurate intelligence." : "Slide each metric from Unimportant to Critical to retune your customer health score."} className="space-y-4 sm:p-6">
         <div className="space-y-4">
           {metrics.map((m) => {
             const level = metricWeights[m.name] ?? m.weight ?? 3;
@@ -376,7 +386,7 @@ function Settings() {
       </Card>
 
       {/* What you track */}
-      <Card title="What you're already tracking" subtitle={`Tailored to ${model} businesses.`}>
+      <Card title="What you're already tracking" subtitle={`Tailored to ${model} businesses.`} className="space-y-4 sm:p-6">
         <div className="space-y-2">
           {questions.map((q) => (
             <button
@@ -398,7 +408,7 @@ function Settings() {
       </Card>
 
       {/* Interactions */}
-      <Card title="How customers interact with you" subtitle="Pick all that apply — these become churn signals.">
+      <Card title="How customers interact with you" subtitle="Pick all that apply — these become churn signals." className="space-y-4 sm:p-6">
         <div className="flex flex-wrap gap-2">
           {interactionChannels.map((ch) => {
             const active = channels.includes(ch);
@@ -437,7 +447,7 @@ function Settings() {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary";
+  "w-full rounded-[10px] border border-input bg-muted px-3 py-2 text-sm outline-none focus:border-primary";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -448,14 +458,3 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Card({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-card sm:p-6">
-      <div>
-        <h2 className="text-lg font-semibold">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
-      </div>
-      {children}
-    </div>
-  );
-}

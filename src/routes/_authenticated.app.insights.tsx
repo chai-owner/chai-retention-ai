@@ -82,7 +82,7 @@ function Insights() {
           {recAgg.map((r, i) => {
             const isOpen = expanded === r.title;
             return (
-              <div key={r.title} className="rounded-lg border border-border">
+              <div key={r.title} className="rounded-[10px] border border-border">
                 <button
                   type="button"
                   onClick={() => setExpanded(isOpen ? null : r.title)}
@@ -144,7 +144,7 @@ function Insights() {
               {benchmarks.map((b) => {
                 const { Icon, cls } = statusIcon[b.status];
                 return (
-                  <div key={b.metric} className="rounded-lg border border-border p-3">
+                  <div key={b.metric} className="rounded-[10px] border border-border p-3">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">{b.metric}</p>
                       <span className={cn("inline-flex items-center gap-1 text-sm font-semibold", cls)}>

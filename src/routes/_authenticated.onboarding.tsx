@@ -4,7 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { profileStore } from "@/lib/profile-store";
-import { saveProfile } from "@/lib/profile.functions";
+import {
+  saveProfile,
+  getOnboardingProgress,
+  saveOnboardingProgress,
+} from "@/lib/profile.functions";
 import { recommendMetrics } from "@/lib/ai.functions";
 import { plannerMetrics, IMPORTANCE_LABELS, type PlannerMetric } from "@/lib/mock-data";
 import { SmartIngestCard, UploadDatasetsCard } from "@/components/data-uploads-panel";
@@ -56,7 +60,7 @@ function Onboarding() {
     size: "1–10",
     customers: "",
     avgValue: "",
-    model: "SaaS",
+    model: "Subscription business",
     whatBuy: "",
     cadence: "",
     lifespan: "",
@@ -75,10 +79,74 @@ function Onboarding() {
   const [recommendedWeights, setRecommendedWeights] = useState<Record<string, number>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState(false);
+  const [metricsErrorDetail, setMetricsErrorDetail] = useState<string>("");
   const metricsGenerated = useRef(false);
   const [segments, setSegments] = useState<Segment[]>([
     { name: "", min: "", max: "" },
   ]);
+
+  // Resume support: the step and the answers so far live in the user's account,
+  // so closing the browser mid-onboarding loses nothing.
+  const loadProgress = useServerFn(getOnboardingProgress);
+  const persistProgress = useServerFn(saveOnboardingProgress);
+  const [restored, setRestored] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadProgress()
+      .then((progress) => {
+        if (cancelled || !progress) return;
+        const draft = ((progress as { draft?: unknown; step?: number }).draft ?? {}) as {
+          form?: Partial<typeof form>;
+          tracked?: Record<string, boolean>;
+          channels?: string[];
+          metricWeights?: Record<string, number>;
+          metrics?: PlannerMetric[];
+          segments?: Segment[];
+        };
+        if (draft.form) setForm((f) => ({ ...f, ...draft.form }));
+        if (draft.tracked) setTracked(draft.tracked);
+        if (draft.channels) setChannels(draft.channels);
+        if (draft.metricWeights) setMetricWeights(draft.metricWeights);
+        if (draft.segments && draft.segments.length > 0) setSegments(draft.segments);
+        if (draft.metrics && draft.metrics.length > 0) {
+          setMetrics(draft.metrics);
+          setRecommendedWeights(draft.metricWeights ?? {});
+          // Already tailored for this business — don't regenerate on arrival.
+          metricsGenerated.current = true;
+        }
+        const savedStep = (progress as { step?: number }).step;
+        if (typeof savedStep === "number" && savedStep > 0) {
+          setStep(Math.min(savedStep, steps.length - 1));
+        }
+      })
+      .catch(() => {
+        // No saved progress reachable — start from the beginning.
+      })
+      .finally(() => {
+        if (!cancelled) setRestored(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!restored) return;
+    const timer = setTimeout(() => {
+      void persistProgress({
+        data: {
+          step,
+          draft: { form, tracked, channels, metricWeights, metrics, segments },
+        },
+      }).catch(() => {
+        // Saving progress is best-effort; never block the flow.
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [restored, step, form, tracked, channels, metricWeights, metrics, segments, persistProgress]);
+
 
   const MIN_METRICS = 4;
   const activeMetrics: PlannerMetric[] = metrics;
@@ -90,8 +158,9 @@ function Onboarding() {
   async function generateMetricRecommendations() {
     setMetricsLoading(true);
     setMetricsError(false);
+    setMetricsErrorDetail("");
     try {
-      const { metrics } = await getRecommendedMetrics({
+      const { metrics, error } = await getRecommendedMetrics({
         data: {
           profile: {
             company: form.company,
@@ -111,7 +180,9 @@ function Onboarding() {
         },
       });
       if (metrics.length === 0) {
+        console.error("[onboarding] metric generation returned no metrics:", error);
         setMetricsError(true);
+        setMetricsErrorDetail(error ?? "No metrics were returned.");
         return;
       }
       const weights: Record<string, number> = {};
@@ -120,8 +191,12 @@ function Onboarding() {
       setRecommendedWeights(weights);
       setMetricWeights(weights);
       metricsGenerated.current = true;
-    } catch {
+    } catch (err) {
+      console.error("[onboarding] metric generation threw:", err);
       setMetricsError(true);
+      setMetricsErrorDetail(
+        err instanceof Error ? err.message : typeof err === "string" ? err : "Unknown error",
+      );
     } finally {
       setMetricsLoading(false);
     }
@@ -294,7 +369,7 @@ function Onboarding() {
     persistProfile({ data: payload }).catch(() => {
       // Non-blocking: localStorage already holds the profile.
     });
-    setTimeout(() => navigate({ to: "/app/welcome" }), 1600);
+    setTimeout(() => navigate({ to: "/app/welcome", search: { demo: false } }), 1600);
   }
 
   return (
@@ -481,7 +556,7 @@ function Onboarding() {
                       className={cn(inputCls, "min-h-28 resize-none")}
                       value={form.whatBuy}
                       onChange={(e) => update("whatBuy", e.target.value)}
-                      placeholder="Write a few sentences — what exactly are they paying for, how is it priced or packaged (one-off, monthly, contract), who typically uses it, what problem does it solve for them, and how do they usually get value from it?"
+                      placeholder="Write a few sentences — what exactly are they paying for, how is it priced or packaged (one-off, monthly, contract), which customers typically buy it, what problem does it solve for them, and how do they usually get value from it?"
                     />
                     <p className="mt-1.5 text-xs text-muted-foreground">
                       A paragraph is perfect — the more context you give, the sharper ChAi's metrics will be.
@@ -489,16 +564,16 @@ function Onboarding() {
                   </Field>
 
                   <Field label="How often should a healthy customer engage?">
-                    <input className={inputCls} value={form.cadence} onChange={(e) => update("cadence", e.target.value)} placeholder="e.g. logs in weekly" />
+                    <input className={inputCls} value={form.cadence} onChange={(e) => update("cadence", e.target.value)} placeholder="e.g. engages weekly or buys monthly" />
                   </Field>
                   <Field label="How long should a healthy customer stay?">
                     <input className={inputCls} value={form.lifespan} onChange={(e) => update("lifespan", e.target.value)} placeholder="e.g. 3+ years" />
                   </Field>
                   <Field label="What actions show a customer is succeeding?">
-                    <input className={inputCls} value={form.successActions} onChange={(e) => update("successActions", e.target.value)} placeholder="e.g. inviting teammates, renewing" />
+                    <input className={inputCls} value={form.successActions} onChange={(e) => update("successActions", e.target.value)} placeholder="e.g. repeat visits, regular usage, renewing" />
                   </Field>
                   <Field label="What actions show disengagement?">
-                    <input className={inputCls} value={form.disengagement} onChange={(e) => update("disengagement", e.target.value)} placeholder="e.g. no logins for 30 days" />
+                    <input className={inputCls} value={form.disengagement} onChange={(e) => update("disengagement", e.target.value)} placeholder="e.g. no visits, purchases or activity for 30 days" />
                   </Field>
                   <div>
                     <Field label="When would you consider a customer churned?">
@@ -606,9 +681,16 @@ function Onboarding() {
                     <>
                       {metricsError && (
                         <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-2">
-                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                            Couldn't generate tailored metrics — showing a sensible default set you can adjust.
+                          <span className="flex items-start gap-2">
+                            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                              Couldn't generate tailored metrics — showing a sensible default set you can adjust.
+                              {metricsErrorDetail && (
+                                <span className="mt-1 block break-words font-mono text-[11px] text-destructive">
+                                  {metricsErrorDetail}
+                                </span>
+                              )}
+                            </span>
                           </span>
                           <button
                             type="button"

@@ -3,9 +3,10 @@
 // run without a user session. Upserts on stable natural keys so records that
 // already exist get updated instead of duplicated.
 import type { ExtractedDataset } from "./ingest.functions";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getSupabaseAdmin } from "@/integrations/supabase/client.server";
 import { SOURCE_FIELD, UNKNOWN_SOURCE } from "./ingested-data-store";
 import { customerKeyForRow } from "./row-validation";
+import { assertCustomerCapacity } from "./plan-limits.server";
 
 function toNumberOrNull(v: unknown): number | null {
   if (v == null || v === "") return null;
@@ -46,6 +47,7 @@ export async function persistDatasetsAdmin(
   sourceProvider: string,
   datasets: ExtractedDataset[],
 ): Promise<PersistResult> {
+  const supabaseAdmin = await getSupabaseAdmin();
   const batchIds: string[] = [];
   let totalRows = 0;
 
@@ -83,6 +85,13 @@ export async function persistDatasetsAdmin(
             customer_id: key,
             data: r,
           }));
+        // Pause the sync rather than silently pushing the account over its plan.
+        await assertCustomerCapacity(
+          supabaseAdmin,
+          userId,
+          payload.map((p) => p.customer_id),
+        );
+
         await inChunks(payload, async (c) => {
           const { error } = await supabaseAdmin
             .from("ingested_customers")
@@ -99,6 +108,10 @@ export async function persistDatasetsAdmin(
             customer_id: r["customer_id"] || null,
             amount: toNumberOrNull(r["amount"]),
             occurred_at: toDateOrNull(r["transaction_date"] ?? r["date"]),
+            due_date: toDateOrNull(r["due_date"]),
+            amount_due: toNumberOrNull(r["amount_due"]),
+            paid_date: toDateOrNull(r["paid_date"]),
+            days_overdue: toNumberOrNull(r["days_overdue"]),
             data: r,
           }));
         await inChunks(payload, async (c) => {

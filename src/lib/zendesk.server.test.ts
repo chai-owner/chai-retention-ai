@@ -2,12 +2,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   buildZendeskAuthorizeUrl,
+  exchangeZendeskCode,
   getZendeskCreds,
   hasZendeskCreds,
   normalizeSubdomain,
   getZendeskRedirectUri,
   verifyZendeskConnection,
   syncZendeskForUser,
+  ZENDESK_SCOPE,
 } from "@/lib/zendesk.server";
 import { mockFetch } from "@/test/http";
 import { setSupabaseResult, supabaseMock } from "@/test/setup";
@@ -75,8 +77,30 @@ describe("Zendesk configuration", () => {
     expect(url.searchParams.get("redirect_uri")).toBe("https://app.test/cb");
     expect(url.searchParams.get("state")).toBe("state-123");
     expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("scope")).toBe("tickets:read users:read organizations:read satisfaction_ratings:read");
+  });
+
+  it("uses the scoped reads required by the global OAuth client", () => {
+    expect(ZENDESK_SCOPE).toBe("tickets:read users:read organizations:read satisfaction_ratings:read");
+    const scopes = ZENDESK_SCOPE.split(" ");
+    expect(scopes).toContain("tickets:read");
+    expect(scopes).toContain("users:read");
+    expect(scopes).toContain("organizations:read");
+    expect(scopes).toContain("satisfaction_ratings:read");
+    expect(scopes).toHaveLength(4);
+  });
+
+  it("sends the same scope on the authorization-code exchange", async () => {
+    const http = mockFetch([
+      { match: "/oauth/tokens", json: { access_token: "at-1", refresh_token: "rt-1", expires_in: 3600 } },
+    ]);
+    await exchangeZendeskCode("acme", "code-1", "https://app.test/cb");
+    const body = http.requests[0].body as string;
+    const parsed = typeof body === "string" ? JSON.parse(body) : body;
+    expect(parsed.scope).toBe("tickets:read users:read organizations:read satisfaction_ratings:read");
   });
 });
+
 
 describe("syncZendeskForUser", () => {
   it("normalizes tickets into ChAi's support dataset", async () => {

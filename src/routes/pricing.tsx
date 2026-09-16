@@ -12,20 +12,48 @@ import {
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import {
+  PLAN_LABELS,
+  PLAN_PRICING,
+  annualSaving,
+  isCustomPricingPlan,
+  ELITE_CONTACT_MAILTO,
+  type BillingPeriod,
+  type OrgPlan,
+} from "@/lib/organisations";
+import { useSignedIn, useAuthUserId } from "@/lib/use-auth-state";
+import { PromoCodeField } from "@/components/promo-code-field";
+import { FOUNDER_MONTHLY_PRICE, FOUNDER_PLAN, readStoredPromoCode } from "@/lib/promo-codes";
+import { storePendingPlan } from "@/lib/pending-plan";
+
+
+type PricingSearch = { plan?: OrgPlan; period?: "monthly" | "annual"; addon?: true };
 
 export const Route = createFileRoute("/pricing")({
+  validateSearch: (search: Record<string, unknown>): PricingSearch => ({
+    ...(search.plan === "core" || search.plan === "standard" || search.plan === "enterprise"
+      ? { plan: search.plan as OrgPlan }
+      : {}),
+    ...(search.period === "annual"
+      ? { period: "annual" as const }
+      : search.period === "monthly"
+        ? { period: "monthly" as const }
+        : {}),
+    ...(search.addon === "1" || search.addon === "true" ? { addon: true as const } : {}),
+  }),
   head: () => ({
     meta: [
-      { title: "Pricing — ChAi | Simple pricing, powerful retention" },
+      { title: "Pricing — ChAi | Core, Standard, Enterprise & Elite plans" },
       {
         name: "description",
         content:
-          "One simple ChAi plan: $99/month or $999/year. AI churn prediction, health scores, insights and native integrations — with an ROI calculator to size your savings.",
+          "ChAi pricing: Core $99/mo, Standard $249/mo, Enterprise $599/mo and Elite custom pricing — save 10% with annual billing. AI churn prediction, health scores and native integrations.",
       },
-      { property: "og:title", content: "ChAi Pricing — Simple pricing. Powerful customer retention." },
+      { property: "og:title", content: "ChAi Pricing — Core, Standard, Enterprise and Elite" },
       {
         property: "og:description",
-        content: "One plan, everything included. $99/month or $999/year (save 16%).",
+        content: "Four plans from $99/month. Save 10% when you pay annually.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -34,28 +62,70 @@ export const Route = createFileRoute("/pricing")({
   component: PricingPage,
 });
 
-const signup = { mode: "signup" as const, demo: false, redirect: undefined };
-const login = { mode: undefined, demo: false, redirect: undefined };
 
 const navItems = [
   { label: "Features", href: "/#features" },
   { label: "Integrations", href: "/#integrations" },
 ];
 
-const featureList = [
+const sharedFeatures = [
   "Personalized Customer Health Scores",
-  "AI Insights that update as your data changes",
-  "AI-powered churn prediction",
+  "AI churn prediction & insights",
   "ChAi AI assistant included",
-  "Recommended Actions",
-  "Customer Timeline",
-  "Reports & Analytics",
+  "Recommended actions & customer timeline",
   "Native integrations + CSV uploads",
-  "Email support",
-  "Secure cloud infrastructure",
-  "Automatic feature updates",
-  "Forget-a-customer anonymization",
+  "Guided onboarding and email support",
 ];
+
+const tiers: Array<{
+  plan: OrgPlan;
+  tagline: string;
+  highlight?: boolean;
+  features: string[];
+}> = [
+  {
+    plan: "core",
+    tagline: "For small teams getting their retention basics in place.",
+    features: [
+      "Up to 250 customers",
+      "1 user seat",
+      "ChAi Data Drop as a $39/mo add-on",
+      ...sharedFeatures,
+    ],
+  },
+  {
+    plan: "standard",
+    tagline: "For growing teams that need more customers and more seats.",
+    highlight: true,
+    features: [
+      "Up to 1,500 customers",
+      "5 user seats",
+      "ChAi Data Drop included",
+      ...sharedFeatures,
+    ],
+  },
+  {
+    plan: "enterprise",
+    tagline: "For established teams operating at scale.",
+    features: [
+      "Up to 10,000 customers",
+      "10 user seats",
+      "ChAi Data Drop included",
+      ...sharedFeatures,
+    ],
+  },
+  {
+    plan: "elite",
+    tagline: "For large teams with high customer volumes and complex needs.",
+    features: [
+      "Custom customer capacity",
+      "Custom team seats",
+      "Everything in Enterprise",
+      ...sharedFeatures,
+    ],
+  },
+];
+
 
 const builtFor = [
   "SaaS companies",
@@ -94,7 +164,7 @@ const faqs = [
   },
   {
     q: "Can I switch to annual later?",
-    a: "Absolutely. You can move from monthly to annual at any time and we'll prorate what you've already paid toward the annual price.",
+    a: "Absolutely. You can move from monthly to annual at any time and save 10%. We'll prorate what you've already paid toward the annual price.",
   },
   {
     q: "Will ChAi work with my existing tools?",
@@ -133,8 +203,40 @@ const money = (n: number) =>
 
 function PricingPage() {
   const [scrolled, setScrolled] = useState(false);
-  const [annual, setAnnual] = useState(true);
+  const [annual, setAnnual] = useState(false);
   const { open: demoOpen, openGate, closeGate } = useDemoGate();
+  const [addonChecked, setAddonChecked] = useState(false);
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [initialPromo, setInitialPromo] = useState<string | null>(null);
+  const signedIn = useSignedIn();
+  const userId = useAuthUserId();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+
+  // A Founder invite stored a code before sign-up: pre-fill and apply it.
+  useEffect(() => {
+    setInitialPromo(readStoredPromoCode());
+  }, []);
+
+  const buy = async (plan: OrgPlan, period: BillingPeriod, includeAddon: boolean) => {
+    if (!signedIn || !userId) {
+      // New visitors sign up and go through onboarding first — they only pay at
+      // the end of the trial. Pass the chosen plan through to the app origin so
+      // the trial-expiry paywall can pre-select it.
+      const url = new URL("https://app.askchai.tech/auth");
+      url.searchParams.set("mode", "signup");
+      url.searchParams.set("plan", plan);
+      url.searchParams.set("period", period);
+      if (includeAddon) url.searchParams.set("addon", "true");
+      window.location.href = url.toString();
+      return;
+    }
+    // Signed-in users never check out from the pricing page: send them into
+    // the app instead. Trialing users keep working; expired trials hit the
+    // in-app paywall; subscribers are already paying.
+    navigate({ to: "/app/today" });
+  };
+
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -145,6 +247,7 @@ function PricingPage() {
 
   return (
     <div className="landing min-h-screen scroll-smooth font-sans antialiased">
+      <PaymentTestModeBanner />
       {/* ── Nav ─────────────────────────────────────────── */}
       <header
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
@@ -181,20 +284,18 @@ function PricingPage() {
             >
               View Demo
             </button>
-            <Link
-              to="/auth"
-              search={login}
+            <a
+              href="https://app.askchai.tech/auth"
               className="hidden rounded-full px-4 py-2 text-sm font-medium text-white/75 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
             >
               Log in
-            </Link>
-            <Link
-              to="/auth"
-              search={signup}
+            </a>
+            <a
+              href="https://app.askchai.tech/auth?mode=signup"
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(32,70,84,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
             >
               Sign Up
-            </Link>
+            </a>
           </div>
         </nav>
       </header>
@@ -211,7 +312,7 @@ function PricingPage() {
           <Reveal className="mx-auto max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur">
               <Sparkles className="h-3.5 w-3.5 text-gold" />
-              One plan. Everything included.
+              Four plans. Everything included.
             </span>
             <h1 className="mt-7 text-[2.5rem] font-semibold leading-[1.05] tracking-[-0.03em] text-white sm:text-6xl lg:text-[4rem]">
               Simple pricing.
@@ -248,75 +349,177 @@ function PricingPage() {
                     annual ? "bg-gold/20 text-[color:var(--gold)]" : "bg-white/10 text-white/70"
                   }`}
                 >
-                  Save 16%
+                  Save 10%
                 </span>
               </button>
             </div>
           </Reveal>
-        </div>
-      </section>
 
-      {/* ── Section 2: Pricing card ─────────────────────── */}
-      <section id="pricing" className="relative -mt-28 pb-24 lg:-mt-32 lg:pb-[7.5rem]">
-        <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
-          <Reveal className="mx-auto max-w-[42rem]">
-            <div className="group relative rounded-[20px] bg-card p-8 shadow-card ring-1 ring-border/70 transition-all duration-300 hover:-translate-y-2 hover:shadow-lift sm:p-10">
-              {annual && (
-                <div className="flex justify-center">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[color:var(--accent-foreground)]">
-                    <Sparkles className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-                    Most Popular
-                  </span>
-                </div>
-              )}
-
-              <div className="mt-6 text-center">
-                <h2 className="text-2xl font-semibold tracking-tight">ChAi</h2>
-
-                <div key={annual ? "y" : "m"} className="mt-6 animate-[fade-in_0.35s_ease-out]">
-                  <div className="flex items-end justify-center gap-2">
-                    <span className="text-6xl font-semibold tracking-[-0.04em] sm:text-7xl">
-                      {annual ? "$999" : "$99"}
-                    </span>
-                    <span className="pb-2 text-lg font-medium text-muted-foreground">
-                      {annual ? "/year" : "/month"}
-                    </span>
-                  </div>
-                  {annual && (
-                    <>
-                      <p className="mt-4 text-sm font-semibold text-primary">Save 16%</p>
-                      <p className="mt-1 text-sm text-muted-foreground">(Equivalent to 2 months free)</p>
-                    </>
-                  )}
-                </div>
-
-                <div className="mt-8 flex flex-col items-center gap-3">
-                  <Link
-                    to="/auth"
-                    search={signup}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--primary-hover)]"
-                  >
-                    Start your 2-week free trial now <ArrowRight className="h-4.5 w-4.5" />
-                  </Link>
-                </div>
-              </div>
-
-              <div className="mt-10 border-t border-border pt-8">
-                <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-                  {featureList.map((f) => (
-                    <li key={f} className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <Check className="h-3 w-3" strokeWidth={3} />
-                      </span>
-                      <span className="text-sm leading-relaxed">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+          <Reveal delay={150}>
+            <a
+              href="#roi-calculator"
+              className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-[#CAFFA6] transition-colors hover:text-[#B8E895] hover:underline underline-offset-4"
+            >
+              See how much revenue you could be protecting
+              <ArrowRight className="h-3.5 w-3.5" />
+            </a>
           </Reveal>
         </div>
       </section>
+
+      {/* ── Section 2: Pricing tiers ────────────────────── */}
+      <section id="pricing" className="relative -mt-28 pb-24 lg:-mt-32 lg:pb-[7.5rem]">
+        <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {tiers.map((tier, i) => {
+              const price = PLAN_PRICING[tier.plan];
+              const custom = isCustomPricingPlan(tier.plan);
+              const founder = !!promoCode && tier.plan === FOUNDER_PLAN && !annual;
+              return (
+                <Reveal key={tier.plan} delay={i * 90}>
+                  <div
+                    className={`group relative flex h-full flex-col rounded-[20px] p-8 shadow-card transition-all duration-300 hover:-translate-y-2 hover:shadow-lift ${
+                      custom
+                        ? "bg-[#152238] text-white ring-1 ring-[#E0A93A]/50"
+                        : tier.highlight
+                          ? "bg-card ring-2 ring-primary"
+                          : "bg-card ring-1 ring-border/70"
+                    }`}
+                  >
+                    {founder ? (
+                      <div className="flex justify-center">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-success">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Founder Plan
+                        </span>
+                      </div>
+                    ) : custom ? (
+                      <div className="flex justify-center">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E0A93A]/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[#E0A93A]">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Premium
+                        </span>
+                      </div>
+                    ) : tier.highlight ? (
+                      <div className="flex justify-center">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[color:var(--accent-foreground)]">
+                          <Sparkles className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+                          Most Popular
+                        </span>
+                      </div>
+                    ) : null}
+
+                    <div className="mt-4 text-center">
+                      <h2 className="text-2xl font-semibold tracking-tight">
+                        {PLAN_LABELS[tier.plan]}
+                      </h2>
+                      <p className={`mt-2 text-sm ${custom ? "text-white/70" : "text-muted-foreground"}`}>
+                        {tier.tagline}
+                      </p>
+
+                      {custom ? (
+                        <div className="mt-6">
+                          <p className="text-4xl font-semibold tracking-[-0.04em] text-[#E0A93A]">
+                            Custom pricing
+                          </p>
+                          <p className="mt-2 text-sm text-white/60">Tailored to your volume</p>
+                        </div>
+                      ) : (
+                      <div key={annual ? "y" : "m"} className="mt-6 animate-[fade-in_0.35s_ease-out]">
+                        <div className="flex items-end justify-center gap-2">
+                          {founder ? (
+                            <span className="pb-2 text-2xl font-medium text-muted-foreground line-through">
+                              {money(price.monthly)}
+                            </span>
+                          ) : null}
+                          <span className="text-5xl font-semibold tracking-[-0.04em]">
+                            {money(
+                              founder
+                                ? FOUNDER_MONTHLY_PRICE
+                                : annual
+                                  ? price.annualMonthly
+                                  : price.monthly,
+                            )}
+                          </span>
+                          <span className="pb-2 text-base font-medium text-muted-foreground">/mo</span>
+                        </div>
+                        {annual ? (
+                          <>
+                            <p className="mt-2 text-sm text-muted-foreground">billed annually</p>
+                            <p className="mt-1 text-sm font-semibold text-primary">
+                              {money(price.annualTotal)} per year · save{" "}
+                              {money(annualSaving(tier.plan))}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="mt-2 text-sm text-muted-foreground">billed monthly</p>
+                        )}
+                      </div>
+                      )}
+
+
+                      {custom ? (
+                        <a
+                          href={ELITE_CONTACT_MAILTO}
+                          className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#E0A93A] px-6 py-3.5 text-base font-semibold text-[#152238] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#c9963090]"
+                        >
+                          Contact us <ArrowRight className="h-4 w-4" />
+                        </a>
+                      ) : (
+                      <button
+                        type="button"
+                        onClick={() => void buy(tier.plan, annual ? "annual" : "monthly", addonChecked)}
+                        className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-60 ${
+                          tier.highlight
+                            ? "bg-primary text-primary-foreground shadow-[0_16px_40px_-16px_rgba(32,70,84,1)] hover:bg-[color:var(--primary-hover)]"
+                            : "border border-border bg-background hover:border-primary/40"
+                        }`}
+                      >
+                        Get started <ArrowRight className="h-4 w-4" />
+                      </button>
+                      )}
+                      {tier.plan === "core" && !annual && (
+                        <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 text-sm text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={addonChecked}
+                            onChange={(e) => setAddonChecked(e.target.checked)}
+                            className="h-4 w-4 rounded border-border accent-[color:var(--primary)]"
+                          />
+                          Add ChAi Data Drop (+$39/mo)
+                        </label>
+                      )}
+                    </div>
+
+                    <div className={`mt-8 border-t pt-6 ${custom ? "border-white/15" : "border-border"}`}>
+                      <ul className="grid gap-3">
+                        {tier.features.map((f) => (
+                          <li key={f} className="flex items-start gap-3">
+                            <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${custom ? "bg-[#E0A93A]/20 text-[#E0A93A]" : "bg-primary/10 text-primary"}`}>
+                              <Check className="h-3 w-3" strokeWidth={3} />
+                            </span>
+                            <span className="text-sm leading-relaxed">{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
+          <PromoCodeField
+            className="mt-8"
+            appliedCode={promoCode}
+            onApply={setPromoCode}
+            initialCode={initialPromo}
+          />
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Annual billing saves 10% and is charged as a single yearly payment.
+          </p>
+        </div>
+      </section>
+
 
       {/* ── Section 3: ROI calculator ───────────────────── */}
       <RoiCalculator annual={annual} />
@@ -392,9 +595,14 @@ function PricingPage() {
                   </Link>
                 </li>
                 <li>
-                  <Link className="transition-colors hover:text-primary" to="/auth" search={login}>
-                    Log in
+                  <Link className="transition-colors hover:text-primary" to="/privacy">
+                    Privacy
                   </Link>
+                </li>
+                <li>
+                  <a className="transition-colors hover:text-primary" href="https://app.askchai.tech/auth">
+                    Log in
+                  </a>
                 </li>
               </ul>
             </div>
@@ -402,7 +610,7 @@ function PricingPage() {
 
           <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 text-sm text-muted-foreground sm:flex-row">
             <p>© {new Date().getFullYear()} ChAi. All rights reserved.</p>
-            <p className="hidden sm:block">Built for modern SaaS teams.</p>
+            <p className="hidden sm:block">Built for businesses that run on recurring revenue.</p>
           </div>
         </div>
       </footer>
@@ -421,9 +629,9 @@ const inputs = [
 ] as const;
 
 function RoiCalculator({ annual }: { annual: boolean }) {
-  const [customers, setCustomers] = useState(500);
-  const [value, setValue] = useState(250);
-  const [churn, setChurn] = useState(4);
+  const [customers, setCustomers] = useState(200);
+  const [value, setValue] = useState(150);
+  const [churn, setChurn] = useState(3);
 
   const state = { customers, value, churn };
   const setters = {
@@ -435,7 +643,7 @@ function RoiCalculator({ annual }: { annual: boolean }) {
   const { atRisk, protectedRev, roi } = useMemo(() => {
     const atRisk = customers * value * (churn / 100);
     const protectedRev = atRisk * 0.3; // conservative 30% of at-risk revenue saved
-    const cost = annual ? 999 / 12 : 99;
+    const cost = annual ? PLAN_PRICING.core.annualMonthly : PLAN_PRICING.core.monthly;
     const roi = cost > 0 ? ((protectedRev - cost) / cost) * 100 : 0;
     return { atRisk, protectedRev, roi };
   }, [customers, value, churn, annual]);
@@ -445,7 +653,7 @@ function RoiCalculator({ annual }: { annual: boolean }) {
   const aRoi = useAnimatedNumber(roi);
 
   return (
-    <section className="bg-card py-24 lg:py-[7.5rem]">
+    <section id="roi-calculator" className="bg-card py-24 lg:py-[7.5rem]">
       <div className="mx-auto max-w-[1280px] px-6 lg:px-8">
         <Reveal className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-[2.75rem]">
@@ -495,7 +703,7 @@ function RoiCalculator({ annual }: { annual: boolean }) {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-white/55">Potential revenue protected</p>
+                <p className="text-sm text-white/55">Revenue you could be saving monthly</p>
                 <p className="mt-3 text-4xl font-semibold tracking-[-0.03em] text-[color:var(--gold)]">
                   {money(aProtected)}
                 </p>

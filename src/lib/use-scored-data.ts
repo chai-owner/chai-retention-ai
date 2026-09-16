@@ -17,7 +17,7 @@ import { applyAliases, resolveIdentities } from "@/lib/customer-matching";
 import { mergeRoster } from "@/lib/customer-merge";
 import { assessSufficiency, buildRealDataset, type Sufficiency } from "@/lib/real-scoring";
 import { assessCoverage, type DataCoverage } from "@/lib/data-coverage";
-import { useSignedIn } from "@/lib/use-auth-state";
+import { useEffectiveSignedIn } from "@/lib/use-auth-state";
 import { useDemoMode } from "@/lib/use-demo-mode";
 
 // Resolve the active importance weights. Merges the user's saved importance
@@ -59,18 +59,44 @@ export function useActiveMetrics(): PlannerMetric[] {
 }
 
 
+// Neutral, all-zero dataset used while the auth session is still resolving, so
+// no one ever sees the fabricated sample companies in place of their own data.
+export function emptyDataset(): ScoredDataset {
+  return {
+    customers: [],
+    sortedByRisk: [],
+    totalRevenue: 0,
+    revenueAtRisk: 0,
+    executive: {
+      totalCustomers: 0,
+      healthy: 0,
+      watch: 0,
+      atRisk: 0,
+      critical: 0,
+      predictedMonthlyChurn: 0,
+      predictedRevenueLoss: 0,
+      revenueAtRisk: 0,
+      retentionOpportunity: 0,
+    },
+    healthDistribution: [],
+    segmentRevenue: [],
+  };
+}
+
 export function useScoredData(): ScoredDataset {
   const weights = useMetricWeights();
   const raw = useIngested();
   const aliases = useCustomerAliases();
   const ingested = useMemo(() => mergeRoster(applyAliases(resolveIdentities(raw), aliases), aliases), [raw, aliases]);
   const profile = useProfile();
-  const signedIn = useSignedIn();
+  const signedIn = useEffectiveSignedIn();
   const demo = useDemoMode();
   return useMemo(() => {
+    // Session still resolving — show a neutral empty state, never sample data.
+    if (signedIn === null) return emptyDataset();
     // Signed-in users ALWAYS see their own real data — never sample data,
     // even if a `?demo=1` flag leaked into the URL.
-    if (signedIn) return buildRealDataset(ingested, weights, profile);
+    if (signedIn === true) return buildRealDataset(ingested, weights, profile);
     // Demo mode (public, no-login) shows the illustrative sample dataset.
     if (demo) return buildDataset(weights);
     return buildDataset(weights);
@@ -105,7 +131,7 @@ export function useDataCoverage(): DataCoverage {
     [raw, aliases],
   );
   const profile = useProfile();
-  const signedIn = useSignedIn();
+  const signedIn = useEffectiveSignedIn();
   return useMemo(() => {
     const c = assessCoverage(ingested, profile?.metrics);
     if (!signedIn) return { ...c, flagged: false, confidence: "good" as const, notes: [] };

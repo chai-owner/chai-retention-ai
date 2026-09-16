@@ -1,4 +1,20 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  churnConfidenceFor,
+  churnConfidenceLabel,
+  churnProbabilityFromHealth,
+  churnProbabilityPhrase,
+} from "@/lib/churn-probability";
+import { churnMetaOf } from "@/lib/customer-scoring";
+import { getCustomerScore } from "@/lib/data-tables.functions";
+import {
+  breakdownEntries,
+  factorsFromBreakdown,
+  formatScoredAt,
+  recommendationsFromBreakdown,
+} from "@/lib/customer-score-snapshot";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -14,11 +30,11 @@ import {
   ClipboardCheck,
   UserPlus,
   TrendingUp,
-  Sparkles,
   UserMinus,
   RotateCcw,
 } from "lucide-react";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
+import { RiskFactorsCard, RecommendedActionsCard } from "@/components/customer/risk-panels";
 import {
   getCustomer,
   categoryFromHealth,
@@ -37,6 +53,7 @@ import { useIngested } from "@/lib/ingested-data-store";
 import { useCustomerAliases } from "@/lib/customer-aliases";
 import { sourceLabel, identityCardTitle } from "@/lib/customer-matching";
 import { customerIdentities } from "@/lib/customer-merge";
+import { worstOverdueInvoice } from "@/lib/payment-health";
 import { cn } from "@/lib/utils";
 
 
@@ -67,12 +84,6 @@ const timelineIcons: Record<TimelineEvent["type"], typeof ShoppingCart> = {
   score: TrendingUp,
 };
 
-const priorityChip: Record<string, string> = {
-  High: "bg-danger/10 text-danger border-danger/20",
-  Medium: "bg-warning/15 text-warning-foreground border-warning/30",
-  Low: "bg-secondary text-secondary-foreground border-border",
-};
-
 function CustomerDetail() {
   const { id } = Route.useParams();
   const { customers } = useScoredData();
@@ -80,8 +91,21 @@ function CustomerDetail() {
   const hydrated = useIngestHydrated();
   const overrides = useChurnOverrides();
   const metrics = useActiveMetrics();
+  const ingested = useIngested();
   const [dismissed, setDismissed] = useState(false);
   const [askChurn, setAskChurn] = useState(false);
+
+  // The nightly snapshot is the single source of truth for health, risk level
+  // and churn probability, so this page agrees with Today and the risk table.
+  const fetchScore = useServerFn(getCustomerScore);
+  const snapshotQuery = useQuery({
+    queryKey: ["customer-score", id],
+    queryFn: () => fetchScore({ data: { customerId: id } }),
+    enabled: signedIn === true,
+    staleTime: 60_000,
+  });
+  const snapshot = snapshotQuery.data ?? null;
+
   // Resolve strictly from the live dataset. Signed-out (demo) visitors can also
   // reach seeded churned/won-back accounts, which live outside the scored set.
   const found =
@@ -89,12 +113,39 @@ function CustomerDetail() {
 
   if (!found) {
     // Real data loads client-side; don't declare "not found" until it's in.
-    if (signedIn !== false && !hydrated) {
+    if (signedIn === null || (signedIn !== false && !hydrated)) {
       return <p className="py-16 text-center text-sm text-muted-foreground">Loading customer…</p>;
     }
     return <CustomerMissing />;
   }
-  const c = found as Customer;
+  const live = found as Customer;
+  // Snapshot present → override the scored fields (and the explanation/actions
+  // derived from them). Absent → keep the real-time client-side calculation.
+  const meta = snapshot ? churnMetaOf(snapshot.breakdown) : null;
+  const c: Customer = snapshot
+    ? {
+        ...live,
+        health: snapshot.score,
+        risk: Math.max(0, Math.min(100, 100 - snapshot.score)),
+        churnProbability: meta?.churn_probability ?? churnProbabilityFromHealth(snapshot.score),
+        churnConfidence:
+          meta?.confidence ??
+          churnConfidenceFor(
+            new Set(breakdownEntries(snapshot.breakdown).map((e) => e.metric)).size,
+          ),
+        dataCategories:
+          meta?.data_categories ??
+          new Set(breakdownEntries(snapshot.breakdown).map((e) => e.metric)).size,
+        factors: factorsFromBreakdown(snapshot.breakdown, metrics),
+        recommendations: recommendationsFromBreakdown(snapshot.breakdown, {
+          customerName: live.name,
+          revenue: live.revenue,
+          churnProbability:
+            meta?.churn_probability ?? churnProbabilityFromHealth(snapshot.score),
+          metrics,
+        }),
+      }
+    : live;
   const cat = categoryFromHealth(c.health);
   const sentimentLabel = c.sentiment >= 60 ? "Positive" : c.sentiment >= 40 ? "Neutral" : "Negative";
 
@@ -205,13 +256,53 @@ function CustomerDetail() {
         </div>
       ) : null}
 
+      {(() => {
+        const overdue = worstOverdueInvoice(
+          ingested.transactions as Array<Record<string, unknown>> | undefined,
+          c.id,
+        );
+        if (!overdue) return null;
+        return (
+          <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-4">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                ⚠️ Invoice {overdue.daysOverdue} {overdue.daysOverdue === 1 ? "day" : "days"} overdue —{" "}
+                {formatCurrency(overdue.amountDue)} outstanding
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {overdue.transactionId ? `Invoice ${overdue.transactionId}` : "Open invoice"}
+                {overdue.dueDate ? ` · due ${overdue.dueDate}` : ""} · unpaid invoices are a strong churn signal.
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
       <PageHeader title={c.name} description={`${c.segment} · ${c.contact} · last active ${c.lastActivity}`}>
         <HealthBadge category={cat} />
       </PageHeader>
 
+      {snapshot ? (
+        <p className="-mt-2 mb-4 text-xs text-muted-foreground">
+          Last scored: {formatScoredAt(snapshot.scoredAt)}
+        </p>
+      ) : signedIn ? (
+        <p className="-mt-2 mb-4 text-xs text-muted-foreground">
+          Score calculated in real-time — updates nightly.
+        </p>
+      ) : null}
+
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Health score" value={c.health} icon={HeartPulse} tone={cat === "healthy" ? "success" : cat === "watch" ? "warning" : cat === "at-risk" ? "caution" : "danger"} />
-        <StatCard label="Churn probability" value={`${c.churnProbability}%`} icon={AlertTriangle} tone="danger" />
+        <StatCard
+          label="Churn probability"
+          value={`${c.churnProbability}%`}
+          icon={AlertTriangle}
+          tone="danger"
+          hint={`${churnProbabilityPhrase(c.churnProbability)} · ${churnConfidenceLabel(c.churnConfidence ?? churnConfidenceFor(c.dataCategories ?? 0))}`}
+        />
         <StatCard label="Revenue value" value={formatCurrency(c.revenue)} icon={DollarSign} />
         <StatCard label="Sentiment" value={sentimentLabel} icon={Smile} tone={c.sentiment >= 60 ? "success" : c.sentiment >= 40 ? "warning" : "danger"} hint={`Score ${c.sentiment}/100`} />
       </div>
@@ -223,80 +314,10 @@ function CustomerDetail() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Root cause */}
-        <Card>
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-primary">
-              <Sparkles className="h-4 w-4" />
-            </span>
-            <h3 className="font-semibold">Why this customer is at risk</h3>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {analyzedCopy}
-          </p>
-          <div className="mt-4 space-y-4">
-            {c.factors.map((f) => (
-              <div key={f.label}>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{f.label}</span>
-                  <span className="text-xs text-muted-foreground">{f.weight}% of risk</span>
-                </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full rounded-full bg-danger" style={{ width: `${Math.min(100, f.weight * 2.6)}%` }} />
-                </div>
-                <p className="mt-1.5 text-xs text-muted-foreground">{f.detail}</p>
-              </div>
-            ))}
-            {c.factors.length === 0 && (
-              <p className="text-sm text-muted-foreground">No significant risk factors — this is a healthy account.</p>
-            )}
-          </div>
-          <div className="mt-4 rounded-lg bg-accent/50 p-3 text-xs text-accent-foreground">
-            <span className="font-medium">Confidence:</span> {Math.round(72 + c.risk / 5)}% — based on the volume and quality of data available for this customer.
-          </div>
-        </Card>
+        <RiskFactorsCard customer={c} analyzedCopy={analyzedCopy} />
 
         {/* Recommendations */}
-        <Card>
-          <h3 className="font-semibold">Recommended actions</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Ranked by expected revenue saved.</p>
-          <div className="mt-4 space-y-3">
-            {c.recommendations.map((r) => (
-              <div key={r.title} className="rounded-lg border border-border p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium">{r.title}</p>
-                  <span className={cn("shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium", priorityChip[r.priority])}>
-                    {r.priority}
-                  </span>
-                </div>
-                <p className="mt-1.5 text-xs text-muted-foreground">{r.reasoning}</p>
-                {r.steps && r.steps.length > 0 && (
-                  <ol className="mt-2 space-y-1.5 text-xs text-foreground">
-                    {r.steps.map((s, i) => (
-                      <li key={s} className="flex gap-2">
-                        <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
-                          {i + 1}
-                        </span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-                <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
-                  <span>Difficulty: <span className="font-medium text-foreground">{r.difficulty}</span></span>
-                  <span>Impact: <span className="font-medium text-foreground">{r.impact}</span></span>
-                  <span>Est. saved: <span className="font-medium text-success">{formatCurrency(r.revenueSaved)}</span></span>
-                </div>
-              </div>
-            ))}
-
-            {c.recommendations.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No actions needed right now — every tracked metric is in a healthy range for this customer.
-              </p>
-            )}
-          </div>
-
-        </Card>
+        <RecommendedActionsCard customer={c} />
       </div>
 
       {/* Timeline */}

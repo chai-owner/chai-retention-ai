@@ -105,8 +105,52 @@ export const saveProfile = createServerFn({ method: "POST" })
       metrics: (data.metrics ?? []) as unknown as Json,
       churn_definition: data.churnDefinition ?? "",
       onboarded: true,
+      // Onboarding is finished: clear the saved resume point.
+      onboarding_step: 0,
+      onboarding_draft: {},
       updated_at: new Date().toISOString(),
     });
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// Saved onboarding resume point: which step the user reached and the answers
+// they had entered, so closing the browser mid-flow loses nothing.
+export const getOnboardingProgress = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("onboarding_step, onboarding_draft, onboarded")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return { step: 0, draft: {} as Json, onboarded: false };
+    return {
+      step: typeof data.onboarding_step === "number" ? data.onboarding_step : 0,
+      draft: (data.onboarding_draft ?? {}) as Json,
+      onboarded: data.onboarded === true,
+    };
+  });
+
+export const saveOnboardingProgress = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({ step: z.number().int().min(0).max(20), draft: z.record(z.string(), z.any()) })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        onboarding_step: data.step,
+        onboarding_draft: data.draft as unknown as Json,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
     if (error) throw error;
     return { ok: true };
   });

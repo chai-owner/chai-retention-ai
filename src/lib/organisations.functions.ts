@@ -1,0 +1,585 @@
+import { createServerFn } from "@tanstack/react-start";
+import { requireConnectedAuth } from "@/lib/connected-auth-middleware";
+import {
+  APP_ORIGIN,
+  EMAIL_SENDER_DOMAIN,
+  EMAIL_FROM_DOMAIN,
+} from "@/lib/site";
+import {
+  INVITE_TTL_DAYS,
+  ORG_PLANS,
+  isOrgPlan,
+  canChangeRole,
+  canManageMembers,
+  canRemoveMember,
+  hasSeatAvailable,
+  inviteExpiryFrom,
+  isInviteExpired,
+  coercePlan,
+  isOrgRole,
+  isValidEmail,
+  normaliseEmail,
+  seatsAllowed,
+  seatsUsed,
+  customersAllowed,
+  nextPlan,
+  ROLE_LABELS,
+  inviteAcceptUrl,
+  type InviteRole,
+  type OrgPlan,
+  type OrgRole,
+} from "@/lib/organisations";
+
+// Emails always point at the stable production app origin; never at a
+// caller-supplied origin, which would make the invite link forgeable.
+const SITE_ORIGIN = APP_ORIGIN;
+const SITE_NAME = "ChAi";
+const SENDER_DOMAIN = EMAIL_SENDER_DOMAIN;
+const FROM_DOMAIN = EMAIL_FROM_DOMAIN;
+
+export interface TeamMember {
+  id: string;
+  userId: string;
+  role: OrgRole;
+  name: string;
+  email: string;
+  joinedAt: string | null;
+  invitedAt: string;
+}
+
+export interface TeamInvite {
+  id: string;
+  email: string;
+  role: InviteRole;
+  expiresAt: string;
+  createdAt: string;
+  expired: boolean;
+}
+
+export interface TeamSnapshot {
+  organisation: { id: string; name: string; plan: OrgPlan };
+  myRole: OrgRole;
+  members: TeamMember[];
+  invites: TeamInvite[];
+  seatsUsed: number;
+  seatsAllowed: number | null;
+}
+
+type Ctx = { supabase: any; userId: string };
+
+async function loadMembership(context: Ctx) {
+  try {
+    const { ensureOrganisationForUser } = await import("@/lib/organisation-provision.server");
+    await ensureOrganisationForUser(context.userId);
+  } catch {
+    // Best-effort: an existing member never needs this.
+  }
+  const { data, error } = await context.supabase
+    .from("organisation_members")
+    .select("org_id, role, organisations(id, name, plan, smart_ingest_addon)")
+    .eq("user_id", context.userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data?.org_id) throw new Error("You're not part of a team yet.");
+  const org = (data as any).organisations;
+  return {
+    orgId: data.org_id as string,
+    role: (isOrgRole(data.role) ? data.role : "member") as OrgRole,
+    organisation: {
+      id: org?.id ?? data.org_id,
+      name: org?.name ?? "My organisation",
+      plan: coercePlan(org?.plan),
+      smartIngestAddon: Boolean(org?.smart_ingest_addon),
+    },
+  };
+}
+
+export const getMyTeam = createServerFn({ method: "GET" })
+  .middleware([requireConnectedAuth])
+  .handler(async ({ context }): Promise<TeamSnapshot> => {
+    const ctx = context as Ctx;
+    const membership = await loadMembership(ctx);
+
+    // Reads go through the signed-in user's client (RLS lets a member see
+    // their own team). Service-role access is only used to enrich teammate
+    // names/emails, and never blocks the page when it isn't available.
+    const { data: memberRows, error: memberError } = await ctx.supabase
+      .from("organisation_members")
+      .select("id, user_id, role, invited_at, accepted_at")
+      .eq("org_id", membership.orgId)
+      .order("created_at", { ascending: true });
+    if (memberError) throw new Error(memberError.message);
+
+    const ids = (memberRows ?? []).map((m: any) => m.user_id);
+    let profiles: any[] = [];
+    if (ids.length) {
+      try {
+        const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const supabaseAdmin = await getSupabaseAdmin();
+        const { data } = await supabaseAdmin
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", ids);
+        profiles = data ?? [];
+      } catch {
+        const { data } = await ctx.supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", ids);
+        profiles = data ?? [];
+      }
+    }
+    const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+
+    const members: TeamMember[] = (memberRows ?? []).map((m: any) => ({
+      id: m.id,
+      userId: m.user_id,
+      role: (isOrgRole(m.role) ? m.role : "member") as OrgRole,
+      name: byId.get(m.user_id)?.full_name || "",
+      email: byId.get(m.user_id)?.email || "",
+      joinedAt: m.accepted_at ?? null,
+      invitedAt: m.invited_at,
+    }));
+
+    let invites: TeamInvite[] = [];
+    if (canManageMembers(membership.role)) {
+      const { data: inviteRows, error: inviteError } = await ctx.supabase
+        .from("organisation_invites")
+        .select("id, email, role, expires_at, created_at, accepted_at")
+        .eq("org_id", membership.orgId)
+        .is("accepted_at", null)
+        .order("created_at", { ascending: false });
+      if (inviteError) throw new Error(inviteError.message);
+      invites = (inviteRows ?? []).map((i: any) => ({
+        id: i.id,
+        email: i.email,
+        role: (i.role === "admin" ? "admin" : "member") as InviteRole,
+        expiresAt: i.expires_at,
+        createdAt: i.created_at,
+        expired: isInviteExpired(i.expires_at),
+      }));
+    }
+
+    const pending = invites.filter((i) => !i.expired).length;
+    return {
+      organisation: membership.organisation,
+      myRole: membership.role,
+      members,
+      invites,
+      seatsUsed: seatsUsed(members.length, pending),
+      seatsAllowed: seatsAllowed(membership.organisation.plan),
+    };
+  });
+
+export const inviteTeamMember = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: { email: string; role: InviteRole }) => {
+    const email = normaliseEmail(String(input?.email ?? ""));
+    if (!isValidEmail(email)) throw new Error("Enter a valid email address.");
+    const role: InviteRole = input?.role === "admin" ? "admin" : "member";
+    return { email, role };
+  })
+  .handler(async ({ data, context }) => {
+    const membership = await loadMembership(context as Ctx);
+    if (!canManageMembers(membership.role)) {
+      throw new Error("You don't have permission to invite people.");
+    }
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
+
+    const [{ count: memberCount }, { data: pendingInvites }] = await Promise.all([
+      supabaseAdmin
+        .from("organisation_members")
+        .select("id", { count: "exact", head: true })
+        .eq("org_id", membership.orgId),
+      supabaseAdmin
+        .from("organisation_invites")
+        .select("id, email, expires_at")
+        .eq("org_id", membership.orgId)
+        .is("accepted_at", null),
+    ]);
+
+    const livePending = (pendingInvites ?? []).filter((i: any) => !isInviteExpired(i.expires_at));
+    const used = seatsUsed(memberCount ?? 0, livePending.length);
+    if (!hasSeatAvailable(membership.organisation.plan, used)) {
+      throw new Error(
+        "You've used every seat on your plan. Upgrade your plan or remove a member to invite someone new.",
+      );
+    }
+    if (livePending.some((i: any) => normaliseEmail(i.email) === data.email)) {
+      throw new Error("That person already has a pending invitation.");
+    }
+
+    // Drop any expired invite for the same address so the token stays unique-ish
+    // and the team list stays clean.
+    await supabaseAdmin
+      .from("organisation_invites")
+      .delete()
+      .eq("org_id", membership.orgId)
+      .is("accepted_at", null)
+      .ilike("email", data.email);
+
+    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const expiresAt = inviteExpiryFrom().toISOString();
+
+    const { error: insertError } = await supabaseAdmin.from("organisation_invites").insert({
+      org_id: membership.orgId,
+      email: data.email,
+      role: data.role,
+      token,
+      invited_by: (context as Ctx).userId,
+      expires_at: expiresAt,
+    });
+    if (insertError) throw new Error(insertError.message);
+
+    // Email delivery is best-effort: the invite itself is already saved, and the
+    // link can be re-sent from the Team page if the queue is unavailable.
+    let emailQueued = false;
+    try {
+      const [{ render }, React, { OrgInviteEmail }] = await Promise.all([
+        import("@react-email/render"),
+        import("react"),
+        import("@/lib/email-templates/org-invite"),
+      ]);
+      const { data: inviterProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", (context as Ctx).userId)
+        .maybeSingle();
+
+      const element = React.createElement(OrgInviteEmail, {
+        organisationName: membership.organisation.name || "your team",
+        inviterName: inviterProfile?.full_name || inviterProfile?.email || "A teammate",
+        roleLabel: ROLE_LABELS[data.role],
+        acceptUrl: inviteAcceptUrl(SITE_ORIGIN, token),
+        expiresInDays: INVITE_TTL_DAYS,
+      });
+      const { queueTransactionalEmail } = await import("@/lib/transactional-email.server");
+      emailQueued = await queueTransactionalEmail(supabaseAdmin, {
+        to: data.email,
+        subject: `You've been invited to join ${membership.organisation.name || "a team"} on ChAi`,
+        template: "org_invite",
+        element,
+        idempotencyKey: `org_invite-${token}`,
+      });
+    } catch (error) {
+      console.error("Failed to send organisation invite email", error);
+    }
+
+    return { ok: true as const, emailQueued, acceptUrl: inviteAcceptUrl(SITE_ORIGIN, token) };
+  });
+
+export const cancelTeamInvite = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: { inviteId: string }) => ({ inviteId: String(input?.inviteId ?? "") }))
+  .handler(async ({ data, context }) => {
+    const membership = await loadMembership(context as Ctx);
+    if (!canManageMembers(membership.role))
+      throw new Error("You don't have permission to do that.");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { error } = await supabaseAdmin
+      .from("organisation_invites")
+      .delete()
+      .eq("id", data.inviteId)
+      .eq("org_id", membership.orgId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const updateTeamMemberRole = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: { memberId: string; role: InviteRole }) => ({
+    memberId: String(input?.memberId ?? ""),
+    role: (input?.role === "admin" ? "admin" : "member") as InviteRole,
+  }))
+  .handler(async ({ data, context }) => {
+    const membership = await loadMembership(context as Ctx);
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { data: target, error: targetError } = await supabaseAdmin
+      .from("organisation_members")
+      .select("id, role, user_id")
+      .eq("id", data.memberId)
+      .eq("org_id", membership.orgId)
+      .maybeSingle();
+    if (targetError) throw new Error(targetError.message);
+    if (!target) throw new Error("That team member no longer exists.");
+
+    const check = canChangeRole(membership.role, target.role as OrgRole, data.role);
+    if (!check.allowed) throw new Error(check.reason ?? "Not allowed.");
+
+    const { error } = await supabaseAdmin
+      .from("organisation_members")
+      .update({ role: data.role })
+      .eq("id", data.memberId)
+      .eq("org_id", membership.orgId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const removeTeamMember = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: { memberId: string }) => ({ memberId: String(input?.memberId ?? "") }))
+  .handler(async ({ data, context }) => {
+    const membership = await loadMembership(context as Ctx);
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { data: target, error: targetError } = await supabaseAdmin
+      .from("organisation_members")
+      .select("id, role, user_id")
+      .eq("id", data.memberId)
+      .eq("org_id", membership.orgId)
+      .maybeSingle();
+    if (targetError) throw new Error(targetError.message);
+    if (!target) throw new Error("That team member no longer exists.");
+
+    const check = canRemoveMember(membership.role, target.role as OrgRole);
+    if (!check.allowed) throw new Error(check.reason ?? "Not allowed.");
+
+    const { error } = await supabaseAdmin
+      .from("organisation_members")
+      .delete()
+      .eq("id", data.memberId)
+      .eq("org_id", membership.orgId);
+    if (error) throw new Error(error.message);
+
+    // A removed teammate keeps their account: give them a fresh solo workspace.
+    const { data: orphan } = await supabaseAdmin
+      .from("organisation_members")
+      .select("id")
+      .eq("user_id", target.user_id)
+      .maybeSingle();
+    if (!orphan) {
+      const { data: newOrg } = await supabaseAdmin
+        .from("organisations")
+        .insert({ name: "My organisation", owner_id: target.user_id })
+        .select("id")
+        .maybeSingle();
+      if (newOrg?.id) {
+        await supabaseAdmin.from("organisation_members").insert({
+          org_id: newOrg.id,
+          user_id: target.user_id,
+          role: "owner",
+          accepted_at: new Date().toISOString(),
+        });
+      }
+    }
+    return { ok: true as const };
+  });
+
+export const acceptTeamInvite = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: { token: string }) => ({ token: String(input?.token ?? "") }))
+  .handler(async ({ data, context }) => {
+    const userId = (context as Ctx).userId;
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
+
+    const { data: invite, error: inviteError } = await supabaseAdmin
+      .from("organisation_invites")
+      .select("id, org_id, email, role, expires_at, accepted_at, organisations(name, plan)")
+      .eq("token", data.token)
+      .maybeSingle();
+    if (inviteError) throw new Error(inviteError.message);
+    if (!invite) throw new Error("That invitation link isn't valid.");
+    if (invite.accepted_at) throw new Error("That invitation has already been used.");
+    if (isInviteExpired(invite.expires_at))
+      throw new Error("That invitation has expired. Ask for a new one.");
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", userId)
+      .maybeSingle();
+    if (normaliseEmail(profile?.email ?? "") !== normaliseEmail(invite.email)) {
+      throw new Error("This invitation was sent to a different email address.");
+    }
+
+    const { data: existing } = await supabaseAdmin
+      .from("organisation_members")
+      .select("id, org_id, role")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existing?.org_id === invite.org_id) {
+      await supabaseAdmin
+        .from("organisation_invites")
+        .update({ accepted_at: new Date().toISOString() })
+        .eq("id", invite.id);
+      return { ok: true as const, organisationName: (invite as any).organisations?.name ?? "" };
+    }
+
+    if (existing) {
+      const { count } = await supabaseAdmin
+        .from("organisation_members")
+        .select("id", { count: "exact", head: true })
+        .eq("org_id", existing.org_id);
+      if (existing.role !== "owner" || (count ?? 0) > 1) {
+        throw new Error("Leave your current team before joining another one.");
+      }
+      // Solo workspace: retire it so the user has exactly one organisation.
+      const { error: dropError } = await supabaseAdmin
+        .from("organisations")
+        .delete()
+        .eq("id", existing.org_id);
+      if (dropError) throw new Error(dropError.message);
+    }
+
+    const plan = coercePlan((invite as any).organisations?.plan);
+    const { count: memberCount } = await supabaseAdmin
+      .from("organisation_members")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", invite.org_id);
+    if (!hasSeatAvailable(plan, memberCount ?? 0)) {
+      throw new Error("That team has no seats left. Ask the owner to upgrade their plan.");
+    }
+
+    const { error: joinError } = await supabaseAdmin.from("organisation_members").insert({
+      org_id: invite.org_id,
+      user_id: userId,
+      role: invite.role,
+      accepted_at: new Date().toISOString(),
+    });
+    if (joinError) throw new Error(joinError.message);
+
+    await supabaseAdmin
+      .from("organisation_invites")
+      .update({ accepted_at: new Date().toISOString() })
+      .eq("id", invite.id);
+
+    return { ok: true as const, organisationName: (invite as any).organisations?.name ?? "" };
+  });
+
+/**
+ * Re-issues a pending invitation: a fresh token and expiry, plus another email.
+ * Owners and admins only.
+ */
+export const resendTeamInvite = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: { inviteId: string }) => ({ inviteId: String(input?.inviteId ?? "") }))
+  .handler(async ({ data, context }) => {
+    const membership = await loadMembership(context as Ctx);
+    if (!canManageMembers(membership.role))
+      throw new Error("You don't have permission to do that.");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
+
+    const { data: invite, error: loadError } = await supabaseAdmin
+      .from("organisation_invites")
+      .select("id, email, role")
+      .eq("id", data.inviteId)
+      .eq("org_id", membership.orgId)
+      .is("accepted_at", null)
+      .maybeSingle();
+    if (loadError) throw new Error(loadError.message);
+    if (!invite) throw new Error("That invitation no longer exists.");
+
+    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const expiresAt = inviteExpiryFrom().toISOString();
+    const { error: updateError } = await supabaseAdmin
+      .from("organisation_invites")
+      .update({ token, expires_at: expiresAt })
+      .eq("id", invite.id)
+      .eq("org_id", membership.orgId);
+    if (updateError) throw new Error(updateError.message);
+
+    const role: InviteRole = invite.role === "admin" ? "admin" : "member";
+    let emailQueued = false;
+    try {
+      const [{ render }, React, { OrgInviteEmail }] = await Promise.all([
+        import("@react-email/render"),
+        import("react"),
+        import("@/lib/email-templates/org-invite"),
+      ]);
+      const { data: inviterProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", (context as Ctx).userId)
+        .maybeSingle();
+
+      const element = React.createElement(OrgInviteEmail, {
+        organisationName: membership.organisation.name || "your team",
+        inviterName: inviterProfile?.full_name || inviterProfile?.email || "A teammate",
+        roleLabel: ROLE_LABELS[role],
+        acceptUrl: inviteAcceptUrl(SITE_ORIGIN, token),
+        expiresInDays: INVITE_TTL_DAYS,
+      });
+      const { queueTransactionalEmail } = await import("@/lib/transactional-email.server");
+      emailQueued = await queueTransactionalEmail(supabaseAdmin, {
+        to: invite.email,
+        subject: `Reminder: you've been invited to join ${membership.organisation.name || "a team"} on ChAi`,
+        template: "org_invite",
+        element,
+        idempotencyKey: `org_invite-resend-${token}`,
+      });
+    } catch (error) {
+      console.error("Failed to resend organisation invite email", error);
+    }
+
+    return { ok: true as const, emailQueued, acceptUrl: inviteAcceptUrl(SITE_ORIGIN, token) };
+  });
+
+// --- Plan usage & upgrades ---------------------------------------------------
+
+export interface PlanUsage {
+  plan: OrgPlan;
+  myRole: OrgRole;
+  customers: number;
+  customersAllowed: number | null;
+  nextPlan: OrgPlan | null;
+  /** Core-only paid add-on flag stored on the organisation. */
+  smartIngestAddon: boolean;
+}
+
+export const getPlanUsage = createServerFn({ method: "GET" })
+  .middleware([requireConnectedAuth])
+  .handler(async ({ context }): Promise<PlanUsage> => {
+    const membership = await loadMembership(context as Ctx);
+    const { countCustomers } = await import("@/lib/plan-limits.server");
+    const customers = await countCustomers((context as Ctx).supabase, (context as Ctx).userId);
+    const plan = membership.organisation.plan;
+    return {
+      plan,
+      myRole: membership.role,
+      customers,
+      customersAllowed: customersAllowed(plan),
+      nextPlan: nextPlan(plan),
+      smartIngestAddon: membership.organisation.smartIngestAddon,
+    };
+  });
+
+// Note: plan upgrades and the Data Drop add-on are sold through Paddle
+// checkout. The payments webhook (/api/public/payments/webhook) activates the
+// plan and sets `smart_ingest_addon` once payment clears.
+
+/**
+ * Applies a chosen upgrade immediately so limits lift straight away; billing is
+ * arranged by the team afterwards. Only higher tiers are accepted — downgrades
+ * and plan cancellations go through the billing flow.
+ */
+export const upgradeOrganisationPlan = createServerFn({ method: "POST" })
+  .inputValidator((raw: unknown) => {
+    const plan = (raw as { plan?: unknown } | null)?.plan;
+    if (!isOrgPlan(plan)) throw new Error("Pick a plan to upgrade to.");
+    return { plan };
+  })
+  .middleware([requireConnectedAuth])
+  .handler(async ({ data, context }): Promise<{ plan: OrgPlan }> => {
+    const membership = await loadMembership(context as Ctx);
+    if (!canManageMembers(membership.role)) {
+      throw new Error("Only owners and admins can change the plan.");
+    }
+    const current = membership.organisation.plan;
+    if (ORG_PLANS.indexOf(data.plan) <= ORG_PLANS.indexOf(current)) {
+      throw new Error("Pick a plan above your current one.");
+    }
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { error } = await supabaseAdmin
+      .from("organisations")
+      .update({ plan: data.plan, pending_plan: null, pending_plan_effective_at: null })
+      .eq("id", membership.orgId);
+    if (error) throw new Error(error.message);
+    return { plan: data.plan };
+  });
