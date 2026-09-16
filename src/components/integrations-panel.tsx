@@ -23,22 +23,16 @@ import {
   disconnectHubspot,
 } from "@/lib/hubspot.functions";
 import {
-  startZohoConnect,
   getZohoStatus,
   disconnectZoho,
-  getZohoConfig,
 } from "@/lib/zoho.functions";
 import {
-  startZendeskConnect,
   getZendeskStatus,
   disconnectZendesk,
-  getZendeskConfig,
 } from "@/lib/zendesk.functions";
 import {
-  startIntercomConnect,
   getIntercomStatus,
   disconnectIntercom,
-  getIntercomConfig,
 } from "@/lib/intercom.functions";
 import {
   connectFreshdesk,
@@ -49,12 +43,11 @@ import { syncZendesk, syncSupport } from "@/lib/support.functions";
 import { connectAppUser } from "@/integrations/lovable/appUserConnectorClient";
 import {
   getAccountingStatus,
-  getAccountingConfig,
-  startAccountingOAuth,
   disconnectAccounting,
   selectXeroTenant,
   type AccountingProvider,
 } from "@/lib/accounting.functions";
+import { fetchConnectorConfig, startConnectorOAuth } from "@/lib/oauth-edge";
 import { useUploads } from "@/lib/uploads-store";
 
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
@@ -508,15 +501,13 @@ function ZohoCrmCard({ name, category, desc }: { name: string; category: string;
   const uploads = useUploads();
 
   const fetchStatus = useServerFn(getZohoStatus);
-  const fetchConfig = useServerFn(getZohoConfig);
-  const startConnect = useServerFn(startZohoConnect);
   const disconnect = useServerFn(disconnectZoho);
 
   const refresh = async () => {
     try {
-      const [s, c] = await Promise.all([fetchStatus(), fetchConfig()]);
+      const [s, c] = await Promise.all([fetchStatus(), fetchConnectorConfig()]);
       setStatus(s as ZohoStatus);
-      setConfig(c as { configured: boolean });
+      setConfig({ configured: c.zoho_crm });
     } catch {
       setStatus({ connected: false });
       setConfig({ configured: false });
@@ -551,7 +542,7 @@ function ZohoCrmCard({ name, category, desc }: { name: string; category: string;
   async function handleConnect() {
     setConnecting(true);
     try {
-      const r = (await startConnect({ data: { origin: window.location.origin } })) as { url: string };
+      const r = await startConnectorOAuth("zoho_crm");
       window.location.href = r.url;
     } catch (e) {
       setConnecting(false);
@@ -707,16 +698,14 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
   const [reconnecting, setReconnecting] = useState(false);
 
   const fetchStatus = useServerFn(getZendeskStatus);
-  const fetchConfig = useServerFn(getZendeskConfig);
-  const startConnect = useServerFn(startZendeskConnect);
   const disconnect = useServerFn(disconnectZendesk);
   const sync = useServerFn(syncZendesk);
 
   const refresh = async () => {
     try {
-      const [s, c] = await Promise.all([fetchStatus(), fetchConfig()]);
+      const [s, c] = await Promise.all([fetchStatus(), fetchConnectorConfig()]);
       setStatus(s as ZendeskStatus);
-      setConfig(c as { configured: boolean });
+      setConfig({ configured: c.zendesk });
     } catch {
       setStatus({ connected: false });
       setConfig({ configured: false });
@@ -740,9 +729,7 @@ function ZendeskCard({ name, category, desc }: { name: string; category: string;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function beginOAuth(sub: string) {
-    const r = (await startConnect({
-      data: { origin: window.location.origin, subdomain: sub },
-    })) as { url: string };
+    const r = await startConnectorOAuth("zendesk", { subdomain: sub });
     window.location.href = r.url;
   }
 
@@ -929,13 +916,12 @@ function AccountingSection() {
   const [config, setConfig] = useState<Record<AccountingProvider, boolean> | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchStatus = useServerFn(getAccountingStatus);
-  const fetchConfig = useServerFn(getAccountingConfig);
 
   const refresh = async () => {
     try {
-      const [s, c] = await Promise.all([fetchStatus(), fetchConfig()]);
+      const [s, c] = await Promise.all([fetchStatus(), fetchConnectorConfig()]);
       setStatus(s as AccountingStatus[]);
-      setConfig(c as Record<AccountingProvider, boolean>);
+      setConfig(c as unknown as Record<AccountingProvider, boolean>);
     } catch {
       /* ignore — cards fall back to a connect prompt */
     } finally {
@@ -1007,7 +993,6 @@ function AccountingCard({
   const [connecting, setConnecting] = useState(false);
   const uploads = useUploads();
   const provider = ACCOUNTING_PROVIDER_BY_NAME[name];
-  const startOAuth = useServerFn(startAccountingOAuth);
   const disconnect = useServerFn(disconnectAccounting);
   const pickTenant = useServerFn(selectXeroTenant);
   const xeroTenants = provider === "xero" ? (connected?.tenants ?? []) : [];
@@ -1027,9 +1012,7 @@ function AccountingCard({
   async function handleConnect() {
     setConnecting(true);
     try {
-      const { url } = await startOAuth({
-        data: { provider, origin: window.location.origin },
-      });
+      const { url } = await startConnectorOAuth(provider);
       window.location.href = url;
     } catch (e) {
       setConnecting(false);
@@ -1187,16 +1170,14 @@ function IntercomCard({ name, category, desc }: { name: string; category: string
   const [syncing, setSyncing] = useState(false);
 
   const fetchStatus = useServerFn(getIntercomStatus);
-  const fetchConfig = useServerFn(getIntercomConfig);
-  const startConnect = useServerFn(startIntercomConnect);
   const disconnect = useServerFn(disconnectIntercom);
   const sync = useServerFn(syncZendesk); // shared support sync fn
 
   const refresh = async () => {
     try {
-      const [s, c] = await Promise.all([fetchStatus(), fetchConfig()]);
+      const [s, c] = await Promise.all([fetchStatus(), fetchConnectorConfig()]);
       setStatus(s as IntercomStatus);
-      setConfig(c as { configured: boolean });
+      setConfig({ configured: c.intercom });
     } catch {
       setStatus({ connected: false });
       setConfig({ configured: false });
@@ -1222,7 +1203,7 @@ function IntercomCard({ name, category, desc }: { name: string; category: string
   async function handleConnect() {
     setConnecting(true);
     try {
-      const r = (await startConnect({ data: { origin: window.location.origin } })) as { url: string };
+      const r = await startConnectorOAuth("intercom");
       window.location.href = r.url;
     } catch (e) {
       setConnecting(false);
