@@ -538,8 +538,17 @@ export async function saveConnection(
 
 function decryptRow(row: ConnectionRow): ConnectionRow {
   // Rows written before token-at-rest encryption are still plaintext.
-  row.access_token = decryptSecret(row.access_token);
-  row.refresh_token = decryptSecretOrNull(row.refresh_token);
+  try {
+    row.access_token = decryptSecret(row.access_token);
+    row.refresh_token = decryptSecretOrNull(row.refresh_token);
+  } catch (e) {
+    // A missing or different encryption key here looks exactly like an auth
+    // failure downstream, so name it precisely instead.
+    const detail = e instanceof Error ? e.message : String(e);
+    throw new Error(
+      `Stored ${providerName(row.provider as AccountingProvider)} tokens could not be unlocked (${detail}). Reconnect the account.`,
+    );
+  }
   return row;
 }
 

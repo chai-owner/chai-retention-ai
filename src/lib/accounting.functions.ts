@@ -92,12 +92,20 @@ export const syncAccounting = createServerFn({ method: "POST" })
       return { datasets };
     } catch (error) {
       // Never swallow: the wizard only ever showed "Authentication failed"
-      // because the real provider/runtime error was lost here.
-      console.error("[syncAccounting] failed", {
-        userId: context.userId,
-        provider: data.provider,
-        error,
-      });
+      // because the real provider/runtime error was lost here. Errors do not
+      // survive structured logging (they serialize to `{}`), so the useful
+      // fields are pulled out explicitly.
+      const err = error as Error | undefined;
+      console.error(
+        "[syncAccounting] failed " +
+          JSON.stringify({
+            userId: context.userId,
+            provider: data.provider,
+            name: err?.name ?? typeof error,
+            message: err?.message ?? String(error),
+            stack: err?.stack?.split("\n").slice(0, 6).join(" | "),
+          }),
+      );
       throw new Error(error instanceof Error ? error.message : "Sync failed.");
     }
   });
