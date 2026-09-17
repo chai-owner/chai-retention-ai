@@ -12,12 +12,36 @@ export async function warmSecretEnv(): Promise<void> {
   await loadCloudflareEnv();
 }
 
-function key(): Buffer {
-  const raw = readServerEnv("APP_USER_CONNECTION_KEY_SECRET");
-  if (!raw) throw new Error("APP_USER_CONNECTION_KEY_SECRET is not set");
-  return Buffer.from(raw, "base64");
+/**
+ * Candidate keys, in priority order.
+ *
+ * Provider tokens are written by the Supabase Edge Functions (oauth-callback)
+ * and read back here on the app host. Those are two separate secret stores, so
+ * the shared value must be one the operator sets identically in both places:
+ * ACCOUNTING_TOKEN_KEY. APP_USER_CONNECTION_KEY_SECRET is kept as a fallback
+ * for values written before the shared key existed.
+ */
+function keyCandidates(): Buffer[] {
+  const names = ["ACCOUNTING_TOKEN_KEY", "APP_USER_CONNECTION_KEY_SECRET"];
+  const keys: Buffer[] = [];
+  for (const name of names) {
+    const raw = readServerEnv(name);
+    if (!raw) continue;
+    const buf = Buffer.from(raw, "base64");
+    if (buf.length === 32) keys.push(buf);
+  }
+  return keys;
 }
 
+function key(): Buffer {
+  const [first] = keyCandidates();
+  if (!first) {
+    throw new Error(
+      "No token encryption key is set (ACCOUNTING_TOKEN_KEY or APP_USER_CONNECTION_KEY_SECRET, 32 bytes base64)",
+    );
+  }
+  return first;
+}
 
 export function encryptConnectionKey(plaintext: string): string {
   const iv = randomBytes(12);
@@ -31,9 +55,23 @@ export function decryptConnectionKey(stored: string): string {
   const iv = buf.subarray(0, 12);
   const tag = buf.subarray(12, 28);
   const ct = buf.subarray(28);
-  const decipher = createDecipheriv("aes-256-gcm", key(), iv);
-  decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(ct), decipher.final()]).toString("utf8");
+  const candidates = keyCandidates();
+  if (candidates.length === 0) key(); // throws the descriptive "not set" error
+  let lastError: unknown;
+  for (const k of candidates) {
+    try {
+      const decipher = createDecipheriv("aes-256-gcm", k, iv);
+      decipher.setAuthTag(tag);
+      return Buffer.concat([decipher.update(ct), decipher.final()]).toString("utf8");
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw new Error(
+    `Stored value does not match any configured token encryption key (${
+      lastError instanceof Error ? lastError.message : String(lastError)
+    })`,
+  );
 }
 
 // ---- Backwards-compatible secret storage --------------------------------
