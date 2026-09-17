@@ -129,9 +129,14 @@ function TodayPage() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Reading your latest scoring snapshot…</p>
         ) : error ? (
-          <p className="text-sm text-[var(--danger)]">
-            We couldn't load your brief just now. Try refreshing in a moment.
-          </p>
+          <div className="space-y-1">
+            <p className="text-sm text-[var(--danger)]">
+              We couldn't load your brief just now. Try refreshing in a moment.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {error instanceof Error ? error.message : String(error)}
+            </p>
+          </div>
         ) : (
           <>
             <p className="flex items-start gap-2 text-lg font-medium leading-snug text-foreground">
