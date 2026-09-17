@@ -51,8 +51,9 @@ export function getCreds(provider: AccountingProvider): Creds {
     freshbooks: ["FRESHBOOKS_CLIENT_ID", "FRESHBOOKS_CLIENT_SECRET"],
   };
   const [idKey, secretKey] = map[provider];
-  const clientId = process.env[idKey];
-  const clientSecret = process.env[secretKey];
+  const clientId = readServerEnv(idKey);
+  const clientSecret = readServerEnv(secretKey);
+
   if (!clientId || !clientSecret) {
     throw new Error(`${providerName(provider)} is not configured. Missing ${idKey}/${secretKey}.`);
   }
@@ -71,7 +72,7 @@ export function hasCreds(provider: AccountingProvider): boolean {
 // ---- OAuth config --------------------------------------------------------
 
 function qboApiBase(): string {
-  return process.env.QUICKBOOKS_ENVIRONMENT === "sandbox"
+  return readServerEnv("QUICKBOOKS_ENVIRONMENT") === "sandbox"
     ? "https://sandbox-quickbooks.api.intuit.com"
     : "https://quickbooks.api.intuit.com";
 }
