@@ -872,7 +872,19 @@ export async function fetchAndNormalize(
   sinceOverride?: string | null,
 ): Promise<ExtractedDataset[]> {
   await warmAccountingEnv();
+  // Checkpoints: a sync that dies before the first provider call left no trace
+  // at all previously, which made "Authentication failed" unattributable.
+  logAccounting(provider, "sync", { userId, step: "env_warmed", hasCreds: hasCreds(provider) });
   const conn = await loadFreshConnection(userId, provider);
+  logAccounting(provider, "sync", {
+    userId,
+    step: "connection_loaded",
+    connectionId: conn.id,
+    status: conn.status,
+    hasAccessToken: Boolean(conn.access_token),
+    realmId: conn.realm_id ?? null,
+    expiresAt: conn.expires_at ?? null,
+  });
 
   const api = makeAccountingClient(userId, provider, conn);
   // Prefer explicit override (used by the daily cron); otherwise fall back to
