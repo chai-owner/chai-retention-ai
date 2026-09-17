@@ -11,5 +11,13 @@ export const getTodayBrief = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<TodayBrief> => {
     const { supabase, userId } = context as Ctx;
     const { loadDailyBrief } = await import("@/lib/daily-brief.server");
-    return loadDailyBrief(supabase, userId, { useAi: true });
+    try {
+      return await loadDailyBrief(supabase, userId, { useAi: true });
+    } catch (error) {
+      // Never swallow: the Today screen shows this message to the user.
+      console.error("[getTodayBrief] failed", { userId, error });
+      throw new Error(
+        `Daily brief failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   });
