@@ -87,9 +87,21 @@ export const syncAccounting = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { fetchAndNormalize } = await import("./accounting.server");
-    const datasets = await fetchAndNormalize(context.userId, data.provider);
-    return { datasets };
+    try {
+      const datasets = await fetchAndNormalize(context.userId, data.provider);
+      return { datasets };
+    } catch (error) {
+      // Never swallow: the wizard only ever showed "Authentication failed"
+      // because the real provider/runtime error was lost here.
+      console.error("[syncAccounting] failed", {
+        userId: context.userId,
+        provider: data.provider,
+        error,
+      });
+      throw new Error(error instanceof Error ? error.message : "Sync failed.");
+    }
   });
+
 
 export const disconnectAccounting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
