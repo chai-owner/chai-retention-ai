@@ -56,8 +56,10 @@ export const startAccountingOAuth = createServerFn({ method: "POST" })
     z.object({ provider: providerSchema, origin: z.string().url() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { buildAuthorizeUrl, getCreds } = await import("./accounting.server");
+    const { buildAuthorizeUrl, getCreds, warmAccountingEnv } = await import("./accounting.server");
+    await warmAccountingEnv();
     getCreds(data.provider); // throws a clear error if not configured
+
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabaseAdmin = await getSupabaseAdmin();
     const { createOAuthState, resolveRedirectUri } = await import("./oauth-state.server");
