@@ -1,12 +1,23 @@
 // Server-only AES-256-GCM encryption for App User Connector connection keys.
 // Never import in the browser.
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { readServerEnv, loadCloudflareEnv } from "./server-env";
+
+/**
+ * Warms the runtime env cache. On the published site secrets arrive as worker
+ * bindings, which can only be loaded asynchronously — call this once before
+ * any encrypt/decrypt in a request.
+ */
+export async function warmSecretEnv(): Promise<void> {
+  await loadCloudflareEnv();
+}
 
 function key(): Buffer {
-  const raw = process.env.APP_USER_CONNECTION_KEY_SECRET;
+  const raw = readServerEnv("APP_USER_CONNECTION_KEY_SECRET");
   if (!raw) throw new Error("APP_USER_CONNECTION_KEY_SECRET is not set");
   return Buffer.from(raw, "base64");
 }
+
 
 export function encryptConnectionKey(plaintext: string): string {
   const iv = randomBytes(12);

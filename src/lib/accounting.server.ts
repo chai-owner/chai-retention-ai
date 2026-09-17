@@ -6,7 +6,24 @@
 // writes OAuth tokens via the service-role Supabase client. It must only ever
 // be imported from server code (server functions / server routes).
 import type { ExtractedDataset } from "./ingest.functions";
-import { encryptSecret, decryptSecret, decryptSecretOrNull } from "./connection-key-crypto.server";
+import {
+  encryptSecret,
+  decryptSecret,
+  decryptSecretOrNull,
+  warmSecretEnv,
+} from "./connection-key-crypto.server";
+import { readServerEnv, loadCloudflareEnv } from "./server-env";
+
+/**
+ * Loads the runtime env before any credential read. On the published site the
+ * app runs as a Cloudflare Worker where secrets are bindings, not
+ * `process.env` — reading `process.env` alone made every sync fail with
+ * "not configured" / "Authentication failed".
+ */
+export async function warmAccountingEnv(): Promise<void> {
+  await Promise.all([loadCloudflareEnv(), warmSecretEnv()]);
+}
+
 
 export type AccountingProvider = "quickbooks" | "xero" | "freshbooks";
 
