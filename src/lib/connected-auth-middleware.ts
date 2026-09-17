@@ -6,11 +6,14 @@ import { impersonationEndReason } from "@/lib/impersonation-policy";
 
 export const requireConnectedAuth = createMiddleware({ type: "function" }).server(
   async ({ next }) => {
-    const supabaseUrl =
-      process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL;
+    const { inspectServerEnvAsync } = await import("@/lib/server-env");
+    const [urlLookup, keyLookup] = await Promise.all([
+      inspectServerEnvAsync("SUPABASE_URL"),
+      inspectServerEnvAsync("SUPABASE_PUBLISHABLE_KEY"),
+    ]);
+    const supabaseUrl = urlLookup.value ?? import.meta.env.VITE_SUPABASE_URL;
     const publishableKey =
-      process.env.SUPABASE_PUBLISHABLE_KEY ??
-      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      keyLookup.value ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
     if (!supabaseUrl || !publishableKey) {
       throw new Error("The backend connection is unavailable.");

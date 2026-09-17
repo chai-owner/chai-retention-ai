@@ -49,6 +49,8 @@ import {
 } from "@/lib/accounting.functions";
 import { fetchConnectorConfig, startConnectorOAuth } from "@/lib/oauth-edge";
 import { useUploads } from "@/lib/uploads-store";
+import { useAuthUserId } from "@/lib/use-auth-state";
+import { useImpersonation } from "@/lib/impersonation";
 
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
 
@@ -973,22 +975,40 @@ function AccountingSection() {
   const [status, setStatus] = useState<AccountingStatus[]>([]);
   const [config, setConfig] = useState<Record<AccountingProvider, boolean> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const fetchStatus = useServerFn(getAccountingStatus);
+  // The connection list belongs to one account. Re-fetch (and blank out the
+  // previous account's rows first) whenever the effective user changes, so an
+  // account switch or impersonation never shows someone else's connections.
+  const impersonation = useImpersonation();
+  const authUserId = useAuthUserId();
+  const effectiveUserId = impersonation?.targetUserId ?? authUserId;
 
   const refresh = async () => {
     try {
       const [s, c] = await Promise.all([fetchStatus(), fetchConnectorConfig()]);
       setStatus(s as AccountingStatus[]);
       setConfig(c as unknown as Record<AccountingProvider, boolean>);
-    } catch {
-      /* ignore — cards fall back to a connect prompt */
+      setStatusError(null);
+    } catch (err) {
+      setStatus([]);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[integrations] getAccountingStatus failed", err);
+      setStatusError(message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (effectiveUserId === undefined) return; // session still resolving
+    setStatus([]);
+    setStatusError(null);
+    setLoading(true);
     refresh();
+  }, [effectiveUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const connected = params.get("accounting_connected");
     const err = params.get("accounting_error");
@@ -1012,6 +1032,11 @@ function AccountingSection() {
       <p className="mt-1 text-xs text-muted-foreground">
         Your accounting system knows what customers actually buy and how often. Connect it so ChAi can pull customers and invoices to reveal spend, buying cadence and lifetime value. You authorize securely with OAuth — ChAi never sees your password.
       </p>
+      {statusError && (
+        <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+          We couldn't check your accounting connections: {statusError}
+        </p>
+      )}
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         {accountingIntegrations.map((it) => (
           <AccountingCard
