@@ -16,13 +16,15 @@ export const ACCOUNTING_PROVIDERS: { id: AccountingProvider; name: string }[] = 
 
 // Which providers have developer credentials configured (client id/secret).
 export const getAccountingConfig = createServerFn({ method: "GET" }).handler(async () => {
-  const { hasCreds } = await import("./accounting.server");
+  const { hasCreds, warmAccountingEnv } = await import("./accounting.server");
+  await warmAccountingEnv();
   return {
     quickbooks: hasCreds("quickbooks"),
     xero: hasCreds("xero"),
     freshbooks: hasCreds("freshbooks"),
   } as Record<AccountingProvider, boolean>;
 });
+
 
 // Connection status for the current user (no tokens ever returned).
 export const getAccountingStatus = createServerFn({ method: "GET" })

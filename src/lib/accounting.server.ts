@@ -862,7 +862,9 @@ export async function fetchAndNormalize(
   provider: AccountingProvider,
   sinceOverride?: string | null,
 ): Promise<ExtractedDataset[]> {
+  await warmAccountingEnv();
   const conn = await loadFreshConnection(userId, provider);
+
   const api = makeAccountingClient(userId, provider, conn);
   // Prefer explicit override (used by the daily cron); otherwise fall back to
   // the connection's own last_synced_at so manual "Sync now" is also delta.
