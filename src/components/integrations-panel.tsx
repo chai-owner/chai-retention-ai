@@ -973,22 +973,40 @@ function AccountingSection() {
   const [status, setStatus] = useState<AccountingStatus[]>([]);
   const [config, setConfig] = useState<Record<AccountingProvider, boolean> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const fetchStatus = useServerFn(getAccountingStatus);
+  // The connection list belongs to one account. Re-fetch (and blank out the
+  // previous account's rows first) whenever the effective user changes, so an
+  // account switch or impersonation never shows someone else's connections.
+  const impersonation = useImpersonation();
+  const authUserId = useAuthUserId();
+  const effectiveUserId = impersonation?.targetUserId ?? authUserId;
 
   const refresh = async () => {
     try {
       const [s, c] = await Promise.all([fetchStatus(), fetchConnectorConfig()]);
       setStatus(s as AccountingStatus[]);
       setConfig(c as unknown as Record<AccountingProvider, boolean>);
-    } catch {
-      /* ignore — cards fall back to a connect prompt */
+      setStatusError(null);
+    } catch (err) {
+      setStatus([]);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[integrations] getAccountingStatus failed", err);
+      setStatusError(message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (effectiveUserId === undefined) return; // session still resolving
+    setStatus([]);
+    setStatusError(null);
+    setLoading(true);
     refresh();
+  }, [effectiveUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const connected = params.get("accounting_connected");
     const err = params.get("accounting_error");
