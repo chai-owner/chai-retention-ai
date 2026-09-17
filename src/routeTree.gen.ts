@@ -40,6 +40,7 @@ import { Route as AuthenticatedAppTodayRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppTransactionsRouteImport } from './routes/_authenticated.app.transactions'
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated.settings.account'
+import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 import { Route as HelpCategorySlugRouteImport } from './routes/help.$category.$slug'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as OauthSalesforceReturnRouteImport } from './routes/oauth/salesforce/return'
@@ -221,6 +222,11 @@ const AuthenticatedSettingsAccountRoute =
     path: '/settings/account',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicVersionRoute = ApiPublicVersionRouteImport.update({
+  id: '/api/public/version',
+  path: '/api/public/version',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HelpCategorySlugRoute = HelpCategorySlugRouteImport.update({
   id: '/$category/$slug',
   path: '/$category/$slug',
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
@@ -400,6 +407,7 @@ export interface FileRoutesByTo {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
@@ -452,6 +460,7 @@ export interface FileRoutesById {
   '/_authenticated/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
   '/oauth/salesforce/return': typeof OauthSalesforceReturnRoute
@@ -504,6 +513,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/app/welcome'
     | '/settings/account'
+    | '/api/public/version'
     | '/help/$category/$slug'
     | '/lovable/email/events'
     | '/oauth/salesforce/return'
@@ -551,6 +561,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/app/welcome'
     | '/settings/account'
+    | '/api/public/version'
     | '/help/$category/$slug'
     | '/lovable/email/events'
     | '/oauth/salesforce/return'
@@ -602,6 +613,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/transactions'
     | '/_authenticated/app/welcome'
     | '/_authenticated/settings/account'
+    | '/api/public/version'
     | '/help/$category/$slug'
     | '/lovable/email/events'
     | '/oauth/salesforce/return'
@@ -635,6 +647,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiPublicVersionRoute: typeof ApiPublicVersionRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   OauthSalesforceReturnRoute: typeof OauthSalesforceReturnRoute
   ApiPublicAccountingCallbackRoute: typeof ApiPublicAccountingCallbackRoute
@@ -871,6 +884,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/version': {
+      id: '/api/public/version'
+      path: '/api/public/version'
+      fullPath: '/api/public/version'
+      preLoaderRoute: typeof ApiPublicVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/help/$category/$slug': {
       id: '/help/$category/$slug'
       path: '/$category/$slug'
@@ -1097,6 +1117,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ApiPublicVersionRoute: ApiPublicVersionRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   OauthSalesforceReturnRoute: OauthSalesforceReturnRoute,
   ApiPublicAccountingCallbackRoute: ApiPublicAccountingCallbackRoute,
