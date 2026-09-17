@@ -16,13 +16,15 @@ export const ACCOUNTING_PROVIDERS: { id: AccountingProvider; name: string }[] = 
 
 // Which providers have developer credentials configured (client id/secret).
 export const getAccountingConfig = createServerFn({ method: "GET" }).handler(async () => {
-  const { hasCreds } = await import("./accounting.server");
+  const { hasCreds, warmAccountingEnv } = await import("./accounting.server");
+  await warmAccountingEnv();
   return {
     quickbooks: hasCreds("quickbooks"),
     xero: hasCreds("xero"),
     freshbooks: hasCreds("freshbooks"),
   } as Record<AccountingProvider, boolean>;
 });
+
 
 // Connection status for the current user (no tokens ever returned).
 export const getAccountingStatus = createServerFn({ method: "GET" })
@@ -54,8 +56,10 @@ export const startAccountingOAuth = createServerFn({ method: "POST" })
     z.object({ provider: providerSchema, origin: z.string().url() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { buildAuthorizeUrl, getCreds } = await import("./accounting.server");
+    const { buildAuthorizeUrl, getCreds, warmAccountingEnv } = await import("./accounting.server");
+    await warmAccountingEnv();
     getCreds(data.provider); // throws a clear error if not configured
+
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabaseAdmin = await getSupabaseAdmin();
     const { createOAuthState, resolveRedirectUri } = await import("./oauth-state.server");
@@ -83,9 +87,21 @@ export const syncAccounting = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { fetchAndNormalize } = await import("./accounting.server");
-    const datasets = await fetchAndNormalize(context.userId, data.provider);
-    return { datasets };
+    try {
+      const datasets = await fetchAndNormalize(context.userId, data.provider);
+      return { datasets };
+    } catch (error) {
+      // Never swallow: the wizard only ever showed "Authentication failed"
+      // because the real provider/runtime error was lost here.
+      console.error("[syncAccounting] failed", {
+        userId: context.userId,
+        provider: data.provider,
+        error,
+      });
+      throw new Error(error instanceof Error ? error.message : "Sync failed.");
+    }
   });
+
 
 export const disconnectAccounting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

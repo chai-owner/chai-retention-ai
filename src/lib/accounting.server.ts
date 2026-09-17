@@ -6,7 +6,24 @@
 // writes OAuth tokens via the service-role Supabase client. It must only ever
 // be imported from server code (server functions / server routes).
 import type { ExtractedDataset } from "./ingest.functions";
-import { encryptSecret, decryptSecret, decryptSecretOrNull } from "./connection-key-crypto.server";
+import {
+  encryptSecret,
+  decryptSecret,
+  decryptSecretOrNull,
+  warmSecretEnv,
+} from "./connection-key-crypto.server";
+import { readServerEnv, loadCloudflareEnv } from "./server-env";
+
+/**
+ * Loads the runtime env before any credential read. On the published site the
+ * app runs as a Cloudflare Worker where secrets are bindings, not
+ * `process.env` — reading `process.env` alone made every sync fail with
+ * "not configured" / "Authentication failed".
+ */
+export async function warmAccountingEnv(): Promise<void> {
+  await Promise.all([loadCloudflareEnv(), warmSecretEnv()]);
+}
+
 
 export type AccountingProvider = "quickbooks" | "xero" | "freshbooks";
 
@@ -34,8 +51,9 @@ export function getCreds(provider: AccountingProvider): Creds {
     freshbooks: ["FRESHBOOKS_CLIENT_ID", "FRESHBOOKS_CLIENT_SECRET"],
   };
   const [idKey, secretKey] = map[provider];
-  const clientId = process.env[idKey];
-  const clientSecret = process.env[secretKey];
+  const clientId = readServerEnv(idKey);
+  const clientSecret = readServerEnv(secretKey);
+
   if (!clientId || !clientSecret) {
     throw new Error(`${providerName(provider)} is not configured. Missing ${idKey}/${secretKey}.`);
   }
@@ -54,7 +72,7 @@ export function hasCreds(provider: AccountingProvider): boolean {
 // ---- OAuth config --------------------------------------------------------
 
 function qboApiBase(): string {
-  return process.env.QUICKBOOKS_ENVIRONMENT === "sandbox"
+  return readServerEnv("QUICKBOOKS_ENVIRONMENT") === "sandbox"
     ? "https://sandbox-quickbooks.api.intuit.com"
     : "https://quickbooks.api.intuit.com";
 }
@@ -844,7 +862,9 @@ export async function fetchAndNormalize(
   provider: AccountingProvider,
   sinceOverride?: string | null,
 ): Promise<ExtractedDataset[]> {
+  await warmAccountingEnv();
   const conn = await loadFreshConnection(userId, provider);
+
   const api = makeAccountingClient(userId, provider, conn);
   // Prefer explicit override (used by the daily cron); otherwise fall back to
   // the connection's own last_synced_at so manual "Sync now" is also delta.

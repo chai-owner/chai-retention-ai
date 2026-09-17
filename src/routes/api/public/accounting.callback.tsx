@@ -41,8 +41,10 @@ export const Route = createFileRoute("/api/public/accounting/callback")({
         try {
           const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
           const supabaseAdmin = await getSupabaseAdmin();
-          const { exchangeCode, resolveAccountInfo, saveConnection } =
+          const { exchangeCode, resolveAccountInfo, saveConnection, warmAccountingEnv } =
             await import("@/lib/accounting.server");
+          await warmAccountingEnv();
+
 
           // The provider is recovered from the state row itself, so a state
           // issued for one provider can never be replayed against another.
