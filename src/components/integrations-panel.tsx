@@ -49,6 +49,8 @@ import {
 } from "@/lib/accounting.functions";
 import { fetchConnectorConfig, startConnectorOAuth } from "@/lib/oauth-edge";
 import { useUploads } from "@/lib/uploads-store";
+import { useAuthUserId } from "@/lib/use-auth-state";
+import { useImpersonation } from "@/lib/impersonation";
 
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
 
@@ -1030,6 +1032,11 @@ function AccountingSection() {
       <p className="mt-1 text-xs text-muted-foreground">
         Your accounting system knows what customers actually buy and how often. Connect it so ChAi can pull customers and invoices to reveal spend, buying cadence and lifetime value. You authorize securely with OAuth — ChAi never sees your password.
       </p>
+      {statusError && (
+        <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+          We couldn't check your accounting connections: {statusError}
+        </p>
+      )}
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         {accountingIntegrations.map((it) => (
           <AccountingCard
