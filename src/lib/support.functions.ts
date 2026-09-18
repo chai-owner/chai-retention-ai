@@ -43,8 +43,21 @@ export const syncZendesk = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => SyncInput.parse(input))
   .handler(async ({ data, context }): Promise<SupportSyncResult> => {
-    const { since, rows } = await runSync(data.provider, context.userId, data.limit);
-    return { provider: data.provider, providerName: PROVIDER_NAME[data.provider], rows, since };
+    try {
+      const { since, rows } = await runSync(data.provider, context.userId, data.limit);
+      return { provider: data.provider, providerName: PROVIDER_NAME[data.provider], rows, since };
+    } catch (error) {
+      // Never swallow: log the real failure and re-throw it verbatim so the UI
+      // can show what actually went wrong.
+      console.error("[syncSupport] failed", {
+        userId: context.userId,
+        provider: data.provider,
+        name: error instanceof Error ? error.name : typeof error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack?.split("\n").slice(0, 5).join("\n") : undefined,
+      });
+      throw error;
+    }
   });
 
 // Generic name so the UI can call the same fn for any support provider.
