@@ -9,6 +9,7 @@
 import type { ExtractedDataset } from "./ingest.functions";
 import { encryptSecret, decryptSecret, decryptSecretOrNull } from "./connection-key-crypto.server";
 import { resolveRedirectUri } from "./oauth-state.server";
+import { readServerEnv } from "./server-env";
 
 export const ZENDESK_SCOPE = "tickets:read users:read organizations:read satisfaction_ratings:read";
 /** State older than this is rejected on callback. */
@@ -21,8 +22,8 @@ export type ZendeskConnectionStatus = "connected" | "needs_reauth" | "error";
 // ---------------------------------------------------------------- config ---
 
 export function getZendeskCreds(): { clientId: string; clientSecret: string } {
-  const clientId = process.env.ZENDESK_CLIENT_ID;
-  const clientSecret = process.env.ZENDESK_CLIENT_SECRET;
+  const clientId = readServerEnv("ZENDESK_CLIENT_ID");
+  const clientSecret = readServerEnv("ZENDESK_CLIENT_SECRET");
   if (!clientId || !clientSecret) {
     throw new Error(
       "ChAi could not start the Zendesk authorization process. Please verify the Zendesk connection configuration.",
