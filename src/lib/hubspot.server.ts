@@ -17,13 +17,18 @@ export const HUBSPOT_SCOPES = [
   "crm.objects.deals.read",
 ] as const;
 
-// HubSpot's required external uninstall endpoint for Marketplace apps.
+// HubSpot's external uninstall endpoint for Marketplace apps. NOTE: HubSpot
+// refuses this endpoint family for user-level OAuth tokens (403 "User level
+// OAuth token is not allowed for this endpoint"), which is the only token type
+// an App User Connector issues. We therefore attempt it best-effort and treat
+// that refusal as "not applicable" — revoking the connection at the gateway
+// invalidates the user's token, which is what ends access for this user.
 export const HUBSPOT_EXTERNAL_UNINSTALL_PATH = "/appinstalls/v3/external-install";
 
 export interface UninstallOutcome {
   /** The install was active and HubSpot accepted the uninstall. */
   uninstalled: boolean;
-  /** HubSpot reports no active install — treated as success (idempotent). */
+  /** HubSpot reports no active install, or refuses the endpoint for user-level tokens. */
   alreadyUninstalled: boolean;
 }
 
@@ -36,10 +41,15 @@ export function redactSecrets(text: string): string {
     .replace(/(access|refresh)_token"?\s*[:=]\s*"?[A-Za-z0-9._-]+/gi, "$1_token:[redacted]");
 }
 
+/** True when HubSpot refused the endpoint family for a user-level token. */
+export function isUserLevelTokenRefusal(status: number, body: string): boolean {
+  return status === 403 && /user level oauth token is not allowed/i.test(body);
+}
+
 /**
  * DELETE /appinstalls/v3/external-install through the connector gateway.
- * 404/410 means the install is already gone, which is a success for our
- * purposes so repeated disconnects stay safe.
+ * 404/410 means the install is already gone; 403 user-level refusal means the
+ * endpoint isn't callable with this token type at all. Both are non-fatal.
  */
 export async function hubspotExternalUninstall(connectionKey: string): Promise<UninstallOutcome> {
   const { callAsAppUser } = await import("@/integrations/lovable/appUserConnector");
@@ -56,6 +66,9 @@ export async function hubspotExternalUninstall(connectionKey: string): Promise<U
   }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
+    if (isUserLevelTokenRefusal(res.status, body)) {
+      return { uninstalled: false, alreadyUninstalled: true };
+    }
     throw new Error(
       `HubSpot uninstall failed [${res.status}]: ${redactSecrets(body).slice(0, 300)}`,
     );
@@ -70,9 +83,9 @@ export interface DisconnectResult {
 }
 
 /**
- * Full disconnect: uninstall on HubSpot first, then tear down local state.
- * If HubSpot rejects the uninstall we keep the local connection and throw, so
- * ChAi never reports "disconnected" while the HubSpot install is still active.
+ * Full disconnect: try HubSpot's uninstall (best-effort — see the note above),
+ * revoke the gateway connection so the user's token stops working, then clear
+ * local state.
  */
 export async function disconnectHubspotForUser(userId: string): Promise<DisconnectResult> {
   const { getConnectionKeyForUser, deleteConnectionForUser } = await import(
@@ -83,25 +96,24 @@ export async function disconnectHubspotForUser(userId: string): Promise<Disconne
   const key = await getConnectionKeyForUser(userId, CONNECTOR_ID);
 
   if (key) {
-    // Marketplace requirement — must succeed (or report no install) before we
-    // drop our own record of the connection.
-    outcome = await hubspotExternalUninstall(key);
-
-    // Best-effort: release the gateway-side connection too. A failure here
-    // doesn't leave HubSpot installed, so it must not block cleanup.
     try {
-      const { disconnectAppUser } = await import("@/integrations/lovable/appUserConnector");
-      await disconnectAppUser({
-        gatewayBaseUrl: GATEWAY_BASE_URL,
-        connectionAPIKey: key,
-        connectorId: CONNECTOR_ID,
-      });
+      outcome = await hubspotExternalUninstall(key);
     } catch (err) {
+      // Never block the user's disconnect on HubSpot's app-level endpoint.
       console.error(
-        "HubSpot gateway disconnect failed:",
+        "HubSpot external uninstall failed (continuing with revoke):",
         redactSecrets(err instanceof Error ? err.message : String(err)),
       );
     }
+
+    // Revoking at the gateway invalidates this user's HubSpot token — the step
+    // that actually ends access. A failure here must surface.
+    const { disconnectAppUser } = await import("@/integrations/lovable/appUserConnector");
+    await disconnectAppUser({
+      gatewayBaseUrl: GATEWAY_BASE_URL,
+      connectionAPIKey: key,
+      connectorId: CONNECTOR_ID,
+    });
   }
 
   await deleteConnectionForUser(userId, CONNECTOR_ID);
