@@ -14,6 +14,7 @@
 // Zendesk deliberately keeps its own hardened implementation and is NOT routed
 // through this module.
 import { createHash, randomBytes } from "node:crypto";
+import { readServerEnv } from "./server-env";
 
 export const OAUTH_STATE_TTL_MS = 15 * 60 * 1000;
 
@@ -83,7 +84,7 @@ export function resolveRedirectUri(
   callbackPath: string,
   originFallback: string,
 ): string {
-  const configured = process.env[envVar]?.trim();
+  const configured = readServerEnv(envVar)?.trim();
   if (configured) return normalizeOrigin(configured);
   const origin = normalizeOrigin(originFallback);
   if (!isAllowedOrigin(origin)) {

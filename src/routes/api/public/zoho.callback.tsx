@@ -34,8 +34,9 @@ export const Route = createFileRoute("/api/public/zoho/callback")({
         try {
           const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
           const supabaseAdmin = await getSupabaseAdmin();
-          const { exchangeZohoCode, saveZohoConnection, resolveOrgName } =
+          const { exchangeZohoCode, saveZohoConnection, resolveOrgName, warmZohoEnv } =
             await import("@/lib/zoho.server");
+          await warmZohoEnv();
 
           const outcome = await consumeOAuthState(supabaseAdmin as never, {
             table: "zoho_crm_oauth_states",

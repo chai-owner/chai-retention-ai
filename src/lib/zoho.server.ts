@@ -2,7 +2,23 @@
 // own Zoho account; we store their refresh token and refresh access tokens
 // as needed. Never import from client code.
 import type { ExtractedDataset } from "./ingest.functions";
-import { encryptSecret, decryptSecret, decryptSecretOrNull } from "./connection-key-crypto.server";
+import {
+  encryptSecret,
+  decryptSecret,
+  decryptSecretOrNull,
+  warmSecretEnv,
+} from "./connection-key-crypto.server";
+import { readServerEnv, loadCloudflareEnv } from "./server-env";
+
+/**
+ * Loads the runtime env before any credential read. On the published site the
+ * app runs as a Cloudflare Worker where secrets are bindings, not
+ * `process.env` — reading `process.env` alone would fail with "not
+ * configured" even though the secrets exist.
+ */
+export async function warmZohoEnv(): Promise<void> {
+  await Promise.all([loadCloudflareEnv(), warmSecretEnv()]);
+}
 
 export const ZOHO_SCOPES = [
   "ZohoCRM.modules.ALL",
@@ -12,9 +28,9 @@ export const ZOHO_SCOPES = [
 ].join(",");
 
 export function getZohoCreds(): { clientId: string; clientSecret: string; defaultDc: string } {
-  const clientId = process.env.ZOHO_CLIENT_ID;
-  const clientSecret = process.env.ZOHO_CLIENT_SECRET;
-  const defaultDc = process.env.ZOHO_DATA_CENTER || "com";
+  const clientId = readServerEnv("ZOHO_CLIENT_ID");
+  const clientSecret = readServerEnv("ZOHO_CLIENT_SECRET");
+  const defaultDc = readServerEnv("ZOHO_DATA_CENTER") || "com";
   if (!clientId || !clientSecret) {
     throw new Error("Zoho CRM isn't configured. Missing ZOHO_CLIENT_ID / ZOHO_CLIENT_SECRET.");
   }
@@ -283,6 +299,7 @@ interface Row {
 }
 
 async function loadFreshZohoConnection(userId: string): Promise<Row> {
+  await warmZohoEnv();
   const db = await admin();
   const { data, error } = await db
     .from("zoho_crm_connections")
