@@ -9,7 +9,7 @@ const cardShadow = "0 16px 40px rgba(0,0,0,0.14)";
 
 /** The real product panels for a representative at-risk account. */
 export const heroCompositeCustomer =
-  customers.find((c) => c.name === "Pied Piper Digital") ?? customers[0];
+  customers.find((c) => c.name === "Cascade Health") ?? customers[0];
 
 export function HeroComposite() {
   const c = heroCompositeCustomer;
