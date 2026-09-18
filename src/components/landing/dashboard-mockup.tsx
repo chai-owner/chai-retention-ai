@@ -1,9 +1,9 @@
 import { ArrowUpRight, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 
 const health = [
-  { name: "Northwind Trading", score: 92, tone: "bg-[#2C7A6B]" },
-  { name: "Halcyon Labs", score: 74, tone: "bg-[#C7962E]" },
-  { name: "Bright Fern Co.", score: 41, tone: "bg-[#B6423F]" },
+  { name: "Brightwell Software", score: 92, tone: "bg-[#2C7A6B]" },
+  { name: "Halcyon Cloud", score: 74, tone: "bg-[#C7962E]" },
+  { name: "Foxglove Media", score: 41, tone: "bg-[#B6423F]" },
 ];
 
 const bars = [38, 52, 44, 61, 55, 72, 66, 84];
@@ -90,7 +90,7 @@ export function DashboardMockup() {
         <div className="rounded-2xl border border-[#E4E9DE] p-4">
           <p className="text-xs font-semibold">Recommended actions</p>
           <ul className="mt-3 space-y-2.5 text-[11px] text-[#4A5A6B]">
-            {["Call Bright Fern Co. · $42k", "Send usage review · Halcyon", "Offer annual plan · Northwind"].map(
+            {["Call Foxglove Media · $42k", "Send usage review · Halcyon", "Offer annual plan · Brightwell"].map(
               (a) => (
                 <li key={a} className="flex items-center justify-between gap-2 rounded-lg bg-[#F7F9E1] px-2.5 py-2">
                   <span className="truncate">{a}</span>

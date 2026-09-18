@@ -90,7 +90,7 @@ export function buildCustomMetricDatasets(
         ` One row per customer per measurement date. ${IDENTIFIER_HINT}`,
       fields: [
         ...customerIdentifierFields(),
-        { name: "date", mandatory: true, description: "When the metric was measured (YYYY-MM-DD)", example: "2025-05-20" },
+        { name: "date", mandatory: true, description: "When the metric was measured (YYYY-MM-DD)", example: "2026-09-02" },
         {
           name: col,
           mandatory: true,
@@ -99,8 +99,8 @@ export function buildCustomMetricDatasets(
         },
       ],
       sampleRows: [
-        ["CUS-1001", "ops@northwind.com", "Northwind Labs", "2025-05-20", sample],
-        ["", "team@globex.com", "Globex Co", "2025-05-20", sample],
+        ["CUS-1001", "ops@brightwell.com", "Brightwell Software", "2026-09-02", sample],
+        ["", "team@harborline.com", "Harborline Systems", "2026-09-02", sample],
       ],
     });
   }
