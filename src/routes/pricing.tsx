@@ -148,7 +148,7 @@ const faqs = [
   },
   {
     q: "Which integrations do you support?",
-    a: "Zendesk, Intercom, Freshdesk, HubSpot, Salesforce, Zoho CRM, QuickBooks Online, FreshBooks and Xero — plus CSV and spreadsheet uploads for anything else.",
+    a: "Zendesk, Intercom, Freshdesk, HubSpot, Zoho CRM, QuickBooks Online, FreshBooks and Xero — plus CSV and spreadsheet uploads for anything else. Salesforce is coming soon.",
   },
   {
     q: "How long does setup take?",
