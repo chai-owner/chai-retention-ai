@@ -106,8 +106,8 @@ export interface Customer {
   winBackAction?: string; // the top recommended re-engagement move
 }
 
-const firstNames = ["Acme", "Northwind", "Globex", "Initech", "Umbrella", "Hooli", "Stark", "Wayne", "Soylent", "Vandelay", "Pied Piper", "Wonka", "Cyberdyne", "Tyrell", "Gekko", "Oscorp", "Bluth", "Massive Dynamic"];
-const suffixes = ["Labs", "Group", "Co", "Industries", "Studio", "Partners", "Digital", "Ventures"];
+const firstNames = ["Brightwell", "Harborline", "Copperleaf", "Northfield", "Silverpine", "Kestrel", "Lantern Bay", "Meridian", "Ardent", "Bluewater", "Cascade", "Foxglove", "Granite Peak", "Halcyon", "Ironwood", "Juniper", "Larkspur", "Mosaic"];
+const suffixes = ["Software", "Systems", "Analytics", "Networks", "Cloud", "Media", "Health", "Logistics"];
 const segments = ["Enterprise", "Mid-Market", "SMB", "Startup"];
 
 const factorPool: Factor[] = [
@@ -471,14 +471,14 @@ interface ChurnedSeed {
 }
 
 const churnedSeeds: ChurnedSeed[] = [
-  { name: "Vandelay Industries", segment: "Enterprise", revenue: 84000, sentiment: 34, churnedDate: daysAgoISO(35), tenureMonths: 33, reason: "No recent purchases", winBackScore: 78 },
-  { name: "Gekko Partners", segment: "Mid-Market", revenue: 46000, sentiment: 28, churnedDate: daysAgoISO(47), tenureMonths: 20, reason: "Unresolved support tickets", winBackScore: 64 },
-  { name: "Bluth Co", segment: "SMB", revenue: 19000, sentiment: 22, churnedDate: daysAgoISO(70), tenureMonths: 11, reason: "Negative sentiment detected", winBackScore: 31 },
-  { name: "Soylent Group", segment: "Enterprise", revenue: 72000, sentiment: 41, churnedDate: daysAgoISO(31), tenureMonths: 28, reason: "Competitor mentioned", winBackScore: 58 },
-  { name: "Oscorp Digital", segment: "Startup", revenue: 12000, sentiment: 19, churnedDate: daysAgoISO(98), tenureMonths: 8, reason: "Usage declining", winBackScore: 24 },
-  { name: "Wonka Studio", segment: "Mid-Market", revenue: 38000, sentiment: 47, churnedDate: daysAgoISO(39), tenureMonths: 24, reason: "Declining satisfaction", winBackScore: 71 },
+  { name: "Redwood Payroll", segment: "Enterprise", revenue: 84000, sentiment: 34, churnedDate: daysAgoISO(35), tenureMonths: 33, reason: "No recent purchases", winBackScore: 78 },
+  { name: "Tidewater Telecom", segment: "Mid-Market", revenue: 46000, sentiment: 28, churnedDate: daysAgoISO(47), tenureMonths: 20, reason: "Unresolved support tickets", winBackScore: 64 },
+  { name: "Quillstone Books", segment: "SMB", revenue: 19000, sentiment: 22, churnedDate: daysAgoISO(70), tenureMonths: 11, reason: "Negative sentiment detected", winBackScore: 31 },
+  { name: "Stonebridge Fitness", segment: "Enterprise", revenue: 72000, sentiment: 41, churnedDate: daysAgoISO(31), tenureMonths: 28, reason: "Competitor mentioned", winBackScore: 58 },
+  { name: "Palewood Security", segment: "Startup", revenue: 12000, sentiment: 19, churnedDate: daysAgoISO(98), tenureMonths: 8, reason: "Usage declining", winBackScore: 24 },
+  { name: "Verity Streaming", segment: "Mid-Market", revenue: 38000, sentiment: 47, churnedDate: daysAgoISO(39), tenureMonths: 24, reason: "Declining satisfaction", winBackScore: 71 },
   // A success story — a churned account that was re-won.
-  { name: "Massive Dynamic Labs", segment: "Enterprise", revenue: 68000, sentiment: 66, churnedDate: daysAgoISO(91), tenureMonths: 31, reason: "No recent purchases", winBackScore: 88, status: "won-back" },
+  { name: "Alder Creative Cloud", segment: "Enterprise", revenue: 68000, sentiment: 66, churnedDate: daysAgoISO(91), tenureMonths: 31, reason: "No recent purchases", winBackScore: 88, status: "won-back" },
 ];
 
 

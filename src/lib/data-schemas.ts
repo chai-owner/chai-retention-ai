@@ -45,14 +45,14 @@ export function customerIdentifierFields(): SchemaField[] {
       mandatory: false,
       identifier: true,
       description: `Contact email — used to match the row when the ID is missing or differs. ${IDENTIFIER_HINT}`,
-      example: "ops@northwind.com",
+      example: "ops@brightwell.com",
     },
     {
       name: "customer_name",
       mandatory: false,
       identifier: true,
       description: `Customer or company name — used to match the row when the ID is missing or differs. ${IDENTIFIER_HINT}`,
-      example: "Northwind Labs",
+      example: "Brightwell Software",
     },
   ];
 }
@@ -73,16 +73,16 @@ export const datasetSchemas: DatasetSchema[] = [
     fields: [
       // Identifier group: any ONE of these three makes the row valid.
       { name: "customer_id", mandatory: false, identifier: true, description: `Your ID for the customer. ${IDENTIFIER_HINT}`, example: "CUS-1001" },
-      { name: "name", mandatory: false, identifier: true, description: `Customer or company name. ${IDENTIFIER_HINT}`, example: "Northwind Labs" },
-      { name: "email", mandatory: false, identifier: true, description: `Primary contact email. ${IDENTIFIER_HINT}`, example: "ops@northwind.com" },
-      { name: "signup_date", mandatory: true, description: "When they became a customer (YYYY-MM-DD)", example: "2024-02-14" },
+      { name: "name", mandatory: false, identifier: true, description: `Customer or company name. ${IDENTIFIER_HINT}`, example: "Brightwell Software" },
+      { name: "email", mandatory: false, identifier: true, description: `Primary contact email. ${IDENTIFIER_HINT}`, example: "ops@brightwell.com" },
+      { name: "signup_date", mandatory: true, description: "When they became a customer (YYYY-MM-DD)", example: "2026-02-14" },
       { name: "monthly_revenue", mandatory: false, description: "Average revenue per month ($)", example: "1200" },
       { name: "plan", mandatory: false, description: "Plan or tier name", example: "Growth" },
       { name: "region", mandatory: false, description: "Country or region", example: "US" },
     ],
     sampleRows: [
-      ["CUS-1001", "Northwind Labs", "ops@northwind.com", "2024-02-14", "1200", "Growth", "US"],
-      ["CUS-1002", "Globex Co", "team@globex.com", "2023-11-03", "450", "Starter", "UK"],
+      ["CUS-1001", "Brightwell Software", "ops@brightwell.com", "2026-02-14", "1200", "Growth", "US"],
+      ["CUS-1002", "Harborline Systems", "team@harborline.com", "2025-11-03", "450", "Starter", "UK"],
     ],
   },
   {
@@ -93,13 +93,13 @@ export const datasetSchemas: DatasetSchema[] = [
       ...customerIdentifierFields(),
       { name: "transaction_id", mandatory: true, description: "Unique transaction ID", example: "TXN-90021" },
       { name: "amount", mandatory: true, description: "Transaction amount ($)", example: "1200" },
-      { name: "transaction_date", mandatory: true, description: "Date of transaction (YYYY-MM-DD)", example: "2025-05-01" },
+      { name: "transaction_date", mandatory: true, description: "Date of transaction (YYYY-MM-DD)", example: "2026-08-03" },
       { name: "product", mandatory: false, description: "Product or SKU purchased", example: "Annual plan" },
       { name: "currency", mandatory: false, description: "Currency code", example: "USD" },
     ],
     sampleRows: [
-      ["CUS-1001", "ops@northwind.com", "Northwind Labs", "TXN-90021", "1200", "2025-05-01", "Annual plan", "USD"],
-      ["", "team@globex.com", "Globex Co", "TXN-90022", "450", "2025-04-18", "Monthly plan", "USD"],
+      ["CUS-1001", "ops@brightwell.com", "Brightwell Software", "TXN-90021", "1200", "2026-08-03", "Annual plan", "USD"],
+      ["", "team@harborline.com", "Harborline Systems", "TXN-90022", "450", "2026-07-18", "Monthly plan", "USD"],
     ],
   },
   {
@@ -108,14 +108,14 @@ export const datasetSchemas: DatasetSchema[] = [
     description: "Engagement signals — one row per customer per day or week. " + IDENTIFIER_HINT,
     fields: [
       ...customerIdentifierFields(),
-      { name: "date", mandatory: true, description: "Activity date (YYYY-MM-DD)", example: "2025-05-20" },
+      { name: "date", mandatory: true, description: "Activity date (YYYY-MM-DD)", example: "2026-09-02" },
       { name: "logins", mandatory: false, description: "Number of logins", example: "12" },
       { name: "active_minutes", mandatory: false, description: "Active minutes in product", example: "340" },
       { name: "features_used", mandatory: false, description: "Distinct features used", example: "5" },
     ],
     sampleRows: [
-      ["CUS-1001", "ops@northwind.com", "Northwind Labs", "2025-05-20", "12", "340", "5"],
-      ["", "team@globex.com", "Globex Co", "2025-05-20", "1", "8", "1"],
+      ["CUS-1001", "ops@brightwell.com", "Brightwell Software", "2026-09-02", "12", "340", "5"],
+      ["", "team@harborline.com", "Harborline Systems", "2026-09-02", "1", "8", "1"],
     ],
   },
   {
@@ -125,14 +125,14 @@ export const datasetSchemas: DatasetSchema[] = [
     fields: [
       ...customerIdentifierFields(),
       { name: "ticket_id", mandatory: true, description: "Unique ticket ID", example: "TKT-5512" },
-      { name: "created_date", mandatory: true, description: "When the ticket was opened", example: "2025-05-12" },
+      { name: "created_date", mandatory: true, description: "When the ticket was opened", example: "2026-08-28" },
       { name: "status", mandatory: true, description: "open / resolved / reopened", example: "open" },
       { name: "category", mandatory: false, description: "Issue category", example: "Billing" },
       { name: "satisfaction_score", mandatory: false, description: "CSAT 1–5", example: "3" },
     ],
     sampleRows: [
-      ["CUS-1001", "ops@northwind.com", "Northwind Labs", "TKT-5512", "2025-05-12", "open", "Billing", "3"],
-      ["", "team@globex.com", "Globex Co", "TKT-5513", "2025-05-09", "resolved", "Technical", "5"],
+      ["CUS-1001", "ops@brightwell.com", "Brightwell Software", "TKT-5512", "2026-08-28", "open", "Billing", "3"],
+      ["", "team@harborline.com", "Harborline Systems", "TKT-5513", "2026-08-25", "resolved", "Technical", "5"],
     ],
   },
   {
@@ -141,14 +141,14 @@ export const datasetSchemas: DatasetSchema[] = [
     description: "Satisfaction and NPS responses — one row per response. " + IDENTIFIER_HINT,
     fields: [
       ...customerIdentifierFields(),
-      { name: "survey_date", mandatory: true, description: "Date of response", example: "2025-05-15" },
+      { name: "survey_date", mandatory: true, description: "Date of response", example: "2026-09-01" },
       { name: "score", mandatory: true, description: "NPS or CSAT score", example: "9" },
       { name: "type", mandatory: false, description: "NPS / CSAT", example: "NPS" },
       { name: "comment", mandatory: false, description: "Free-text feedback", example: "Great product" },
     ],
     sampleRows: [
-      ["CUS-1001", "ops@northwind.com", "Northwind Labs", "2025-05-15", "9", "NPS", "Great product"],
-      ["", "team@globex.com", "Globex Co", "2025-05-15", "4", "CSAT", "Support was slow"],
+      ["CUS-1001", "ops@brightwell.com", "Brightwell Software", "2026-09-01", "9", "NPS", "Great product"],
+      ["", "team@harborline.com", "Harborline Systems", "2026-09-01", "4", "CSAT", "Support was slow"],
     ],
   },
 ];
