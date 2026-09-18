@@ -213,6 +213,10 @@ function waitForSalesforceOAuth(popup: Window): Promise<string | null> {
   });
 }
 
+// Soft-disabled until Salesforce multi-org distribution is sorted out.
+// Flip to false to re-enable the connect flow — all wiring stays in place.
+const SALESFORCE_COMING_SOON = true;
+
 function SalesforceCard({ name, category, desc }: { name: string; category: string; desc: string }) {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [status, setStatus] = useState<SfStatus | null>(null);
@@ -313,9 +317,13 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
           <p className="text-sm font-semibold">{name}</p>
           <p className="text-[11px] text-muted-foreground">{category}</p>
         </div>
-        {connected && (
+        {connected ? (
           <span className="ml-auto flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
             <Check className="h-3 w-3" /> Connected
+          </span>
+        ) : (
+          <span className="ml-auto rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
+            Coming soon
           </span>
         )}
       </div>
@@ -347,6 +355,20 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
           {lastSynced && (
             <p className="mt-1 text-center text-[11px] italic text-success">Last synced {lastSynced}</p>
           )}
+        </>
+      ) : SALESFORCE_COMING_SOON ? (
+        <>
+          <button
+            disabled
+            title="Salesforce is coming soon"
+            className="mt-3 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium text-muted-foreground"
+          >
+            <Link2 className="h-4 w-4" />
+            Connect with Salesforce
+          </button>
+          <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
+            Salesforce isn&apos;t available yet — check back soon.
+          </p>
         </>
       ) : (
         <>
