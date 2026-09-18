@@ -7,7 +7,15 @@ import { supabase } from './client'
 export const attachSupabaseAuth = createMiddleware({ type: 'function' }).client(
   async ({ next }) => {
     const { data } = await supabase.auth.getSession()
-    const token = data.session?.access_token
+    let token = data.session?.access_token
+    if (!token) {
+      // A stale tab can hold an expired access token whose silent refresh never
+      // ran; without this the RPC goes out with no Authorization header and the
+      // server rejects it as "no authorization header provided".
+      const { data: refreshed } = await supabase.auth.refreshSession()
+      token = refreshed.session?.access_token
+      if (!token) console.error('[auth] no Supabase session; server function will be rejected')
+    }
     return next({
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })

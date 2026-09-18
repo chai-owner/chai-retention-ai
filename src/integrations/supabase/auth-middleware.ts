@@ -38,7 +38,7 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
     const authHeader = request.headers.get('authorization');
 
     if (!authHeader) {
-      throw new Error('Unauthorized: No authorization header provided');
+      throw new Error('Your session has expired. Please sign in again, then retry.');
     }
 
     if (!authHeader.startsWith('Bearer ')) {
