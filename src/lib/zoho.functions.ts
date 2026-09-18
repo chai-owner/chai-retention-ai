@@ -4,7 +4,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const getZohoConfig = createServerFn({ method: "GET" }).handler(async () => {
-  const { hasZohoCreds } = await import("./zoho.server");
+  const { hasZohoCreds, warmZohoEnv } = await import("./zoho.server");
+  await warmZohoEnv();
   return { configured: hasZohoCreds() };
 });
 
@@ -28,7 +29,8 @@ export const startZohoConnect = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { getZohoCreds, buildZohoAuthorizeUrl } = await import("./zoho.server");
+    const { getZohoCreds, buildZohoAuthorizeUrl, warmZohoEnv } = await import("./zoho.server");
+    await warmZohoEnv();
     const { defaultDc } = getZohoCreds();
     const dc = data.dc || defaultDc;
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -54,7 +56,10 @@ export const disconnectZoho = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const supabaseAdmin = await getSupabaseAdmin();
-    const { revokeZohoRefreshToken, deleteZohoConnection } = await import("./zoho.server");
+    const { revokeZohoRefreshToken, deleteZohoConnection, warmZohoEnv } = await import(
+      "./zoho.server"
+    );
+    await warmZohoEnv();
     const { decryptSecretOrNull } = await import("./connection-key-crypto.server");
     const { data } = await supabaseAdmin
       .from("zoho_crm_connections")

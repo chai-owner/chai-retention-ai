@@ -299,6 +299,7 @@ interface Row {
 }
 
 async function loadFreshZohoConnection(userId: string): Promise<Row> {
+  await warmZohoEnv();
   const db = await admin();
   const { data, error } = await db
     .from("zoho_crm_connections")
