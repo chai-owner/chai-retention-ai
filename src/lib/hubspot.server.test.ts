@@ -103,19 +103,38 @@ describe("disconnectHubspotForUser", () => {
     expect(supabaseMock.from).toHaveBeenCalledWith("crm_sync_state");
   });
 
-  it("keeps the local connection when HubSpot rejects the uninstall", async () => {
+  it("still disconnects when HubSpot refuses the uninstall for user-level tokens", async () => {
     connectedRow();
-    mockFetch([{ match: "external-install", status: 500, json: { message: "nope" } }]);
-    const before = supabaseMock.from.mock.calls.length;
+    mockFetch([
+      {
+        match: "external-install",
+        status: 403,
+        json: { status: "error", message: "User level OAuth token is not allowed for this endpoint." },
+      },
+      { match: "/api/v1/app-users/connection", status: 200, json: {} },
+    ]);
 
-    await expect(disconnectHubspotForUser("user-1")).rejects.toThrow(/HubSpot uninstall failed/);
-
-    // Only the read happened — no delete / sync-state clear.
-    const tables = supabaseMock.from.mock.calls.slice(before).map((c) => c[0]);
-    expect(tables).not.toContain("crm_sync_state");
+    await expect(disconnectHubspotForUser("user-1")).resolves.toEqual({
+      ok: true,
+      uninstalled: false,
+      alreadyUninstalled: true,
+    });
+    expect(supabaseMock.from).toHaveBeenCalledWith("crm_sync_state");
   });
 
-  it("still succeeds when the gateway disconnect fails after a good uninstall", async () => {
+  it("still disconnects when the uninstall endpoint errors", async () => {
+    connectedRow();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockFetch([
+      { match: "external-install", status: 500, json: { message: "nope" } },
+      { match: "/api/v1/app-users/connection", status: 200, json: {} },
+    ]);
+
+    await expect(disconnectHubspotForUser("user-1")).resolves.toMatchObject({ ok: true });
+    expect(supabaseMock.from).toHaveBeenCalledWith("crm_sync_state");
+  });
+
+  it("fails loudly when the gateway revoke fails", async () => {
     connectedRow();
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockFetch([
@@ -123,8 +142,7 @@ describe("disconnectHubspotForUser", () => {
       { match: "/api/v1/app-users/connection", status: 500, json: { message: "gateway down" } },
     ]);
 
-    await expect(disconnectHubspotForUser("user-1")).resolves.toMatchObject({ ok: true });
-    expect(supabaseMock.from).toHaveBeenCalledWith("crm_sync_state");
+    await expect(disconnectHubspotForUser("user-1")).rejects.toThrow(/disconnect failed/i);
   });
 
   it("is idempotent when no connection exists (repeated disconnect)", async () => {
