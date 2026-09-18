@@ -3,6 +3,7 @@
 // conversations into the ingested_support table. Never import from client.
 import type { ExtractedDataset } from "./ingest.functions";
 import { encryptSecret, decryptSecret } from "./connection-key-crypto.server";
+import { readServerEnv } from "./server-env";
 
 const INTERCOM_API_VERSION = "2.11";
 // Intercom hosts every workspace in exactly one data region. The API host is
@@ -47,8 +48,8 @@ export function resolveIntercomHost(
 }
 
 export function getIntercomCreds(): { clientId: string; clientSecret: string } {
-  const clientId = process.env.INTERCOM_CLIENT_ID;
-  const clientSecret = process.env.INTERCOM_CLIENT_SECRET;
+  const clientId = readServerEnv("INTERCOM_CLIENT_ID");
+  const clientSecret = readServerEnv("INTERCOM_CLIENT_SECRET");
   if (!clientId || !clientSecret) {
     throw new Error(
       "Intercom isn't configured. Missing INTERCOM_CLIENT_ID / INTERCOM_CLIENT_SECRET.",

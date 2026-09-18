@@ -24,7 +24,10 @@ const PROVIDER_NAME: Record<SupportProvider, string> = {
 };
 
 async function runSync(provider: SupportProvider, userId: string, limit: number) {
-  const { runSupportSync, getSupportSince, markSupportSynced } = await import("./support.server");
+  const { runSupportSync, getSupportSince, markSupportSynced, warmSupportEnv } = await import(
+    "./support.server"
+  );
+  await warmSupportEnv();
   const { persistDatasetsAdmin } = await import("./sync-persist.server");
   const since = await getSupportSince(userId, provider);
   const startedAt = new Date().toISOString();

@@ -51,12 +51,27 @@ export async function markSupportSynced(
   }
 }
 
+/**
+ * On the published site secrets arrive as Cloudflare worker bindings, which
+ * are only readable after an async load. Support syncs need the provider
+ * credentials (Zendesk token refresh) and the token-encryption key, so warm
+ * the env cache before any of that is read — otherwise every lookup reads as
+ * empty and surfaces as a misleading "authentication failed".
+ */
+export async function warmSupportEnv(): Promise<void> {
+  const { loadCloudflareEnv } = await import("./server-env");
+  const { warmSecretEnv } = await import("./connection-key-crypto.server");
+  await loadCloudflareEnv();
+  await warmSecretEnv();
+}
+
 export async function runSupportSync(
   provider: SupportProvider,
   userId: string,
   limit: number,
   since: string | null,
 ): Promise<{ datasets: ExtractedDataset[]; rows: number }> {
+  await warmSupportEnv();
   let datasets: ExtractedDataset[];
   if (provider === "zendesk") {
     const { syncZendeskForUser } = await import("./zendesk.server");
