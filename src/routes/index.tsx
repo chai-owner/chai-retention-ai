@@ -84,7 +84,7 @@ const integrations = [
   { name: "Intercom", Icon: IntercomIcon, color: IntercomColor, category: "Support" },
   { name: "Freshdesk", Icon: FreshdeskIcon, color: FreshdeskColor, category: "Support" },
   { name: "HubSpot", Icon: HubSpotIcon, color: HubSpotColor, category: "CRM" },
-  { name: "Salesforce", Icon: SalesforceIcon, color: SalesforceColor, category: "CRM" },
+  { name: "Salesforce", Icon: SalesforceIcon, color: SalesforceColor, category: "CRM", soon: true },
   { name: "Zoho CRM", Icon: ZohoIcon, color: ZohoColor, category: "CRM" },
   { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor, category: "Billing" },
   { name: "FreshBooks", Icon: FreshBooksIcon, color: FreshBooksColor, category: "Billing" },
@@ -373,8 +373,15 @@ function Landing() {
                 >
                   <it.Icon className="h-6 w-6" />
                 </span>
-                <div>
-                  <p className="font-extrabold tracking-[-0.02em]">{it.name}</p>
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 font-extrabold tracking-[-0.02em]">
+                    {it.name}
+                    {"soon" in it && it.soon ? (
+                      <span className="rounded-full bg-[#EEF7FB] px-2 py-0.5 text-[10px] font-semibold text-[#4A5A6B]">
+                        Coming soon
+                      </span>
+                    ) : null}
+                  </p>
                   <p className="text-sm text-[#4A5A6B]">{it.category}</p>
                 </div>
               </div>
