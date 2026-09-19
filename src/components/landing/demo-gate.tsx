@@ -1,11 +1,13 @@
 // Lead-capture gate in front of the public product demo. Visitors give their
 // name, email, company (and optional website) before ChAi opens the sample-data
-// demo. Rows land in public.demo_leads, which admins browse in /admin.
+// demo. The server records the lead in public.demo_leads (admins browse them in
+// /admin) and returns a short-lived token that unlocks the demo.
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { rememberVerifiedDemoToken } from "@/lib/demo-token";
+
 
 export function useDemoGate() {
   const [open, setOpen] = useState(false);
