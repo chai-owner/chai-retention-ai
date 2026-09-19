@@ -48,6 +48,7 @@ import { Route as OauthSalesforceReturnRouteImport } from './routes/oauth/salesf
 import { Route as AuthenticatedAppCustomersIndexRouteImport } from './routes/_authenticated.app.customers.index'
 import { Route as AuthenticatedAppCustomersIdRouteImport } from './routes/_authenticated.app.customers.$id'
 import { Route as ApiPublicAccountingCallbackRouteImport } from './routes/api/public/accounting.callback'
+import { Route as ApiPublicDemoAccessVerifyRouteImport } from './routes/api/public/demo-access.verify'
 import { Route as ApiPublicHooksDailyScoreRouteImport } from './routes/api/public/hooks/daily-score'
 import { Route as ApiPublicHooksDailySyncRouteImport } from './routes/api/public/hooks/daily-sync'
 import { Route as ApiPublicHooksPlanChangesRouteImport } from './routes/api/public/hooks/plan-changes'
@@ -266,6 +267,12 @@ const ApiPublicAccountingCallbackRoute =
     path: '/api/public/accounting/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDemoAccessVerifyRoute =
+  ApiPublicDemoAccessVerifyRouteImport.update({
+    id: '/verify',
+    path: '/verify',
+    getParentRoute: () => ApiPublicDemoAccessRoute,
+  } as any)
 const ApiPublicHooksDailyScoreRoute =
   ApiPublicHooksDailyScoreRouteImport.update({
     id: '/api/public/hooks/daily-score',
@@ -365,7 +372,7 @@ export interface FileRoutesByFullPath {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
-  '/api/public/demo-access': typeof ApiPublicDemoAccessRoute
+  '/api/public/demo-access': typeof ApiPublicDemoAccessRouteWithChildren
   '/api/public/version': typeof ApiPublicVersionRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
@@ -373,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
+  '/api/public/demo-access/verify': typeof ApiPublicDemoAccessVerifyRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
   '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
@@ -414,7 +422,7 @@ export interface FileRoutesByTo {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
-  '/api/public/demo-access': typeof ApiPublicDemoAccessRoute
+  '/api/public/demo-access': typeof ApiPublicDemoAccessRouteWithChildren
   '/api/public/version': typeof ApiPublicVersionRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
@@ -422,6 +430,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
+  '/api/public/demo-access/verify': typeof ApiPublicDemoAccessVerifyRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
   '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
@@ -468,7 +477,7 @@ export interface FileRoutesById {
   '/_authenticated/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
-  '/api/public/demo-access': typeof ApiPublicDemoAccessRoute
+  '/api/public/demo-access': typeof ApiPublicDemoAccessRouteWithChildren
   '/api/public/version': typeof ApiPublicVersionRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
@@ -476,6 +485,7 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/customers/$id': typeof AuthenticatedAppCustomersIdRoute
   '/api/public/accounting/callback': typeof ApiPublicAccountingCallbackRoute
+  '/api/public/demo-access/verify': typeof ApiPublicDemoAccessVerifyRoute
   '/api/public/hooks/daily-score': typeof ApiPublicHooksDailyScoreRoute
   '/api/public/hooks/daily-sync': typeof ApiPublicHooksDailySyncRoute
   '/api/public/hooks/plan-changes': typeof ApiPublicHooksPlanChangesRoute
@@ -530,6 +540,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
+    | '/api/public/demo-access/verify'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
     | '/api/public/hooks/plan-changes'
@@ -579,6 +590,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/customers/$id'
     | '/api/public/accounting/callback'
+    | '/api/public/demo-access/verify'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
     | '/api/public/hooks/plan-changes'
@@ -632,6 +644,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_authenticated/app/customers/$id'
     | '/api/public/accounting/callback'
+    | '/api/public/demo-access/verify'
     | '/api/public/hooks/daily-score'
     | '/api/public/hooks/daily-sync'
     | '/api/public/hooks/plan-changes'
@@ -659,7 +672,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   InviteTokenRoute: typeof InviteTokenRoute
-  ApiPublicDemoAccessRoute: typeof ApiPublicDemoAccessRoute
+  ApiPublicDemoAccessRoute: typeof ApiPublicDemoAccessRouteWithChildren
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   OauthSalesforceReturnRoute: typeof OauthSalesforceReturnRoute
@@ -953,6 +966,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAccountingCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/demo-access/verify': {
+      id: '/api/public/demo-access/verify'
+      path: '/verify'
+      fullPath: '/api/public/demo-access/verify'
+      preLoaderRoute: typeof ApiPublicDemoAccessVerifyRouteImport
+      parentRoute: typeof ApiPublicDemoAccessRoute
+    }
     '/api/public/hooks/daily-score': {
       id: '/api/public/hooks/daily-score'
       path: '/api/public/hooks/daily-score'
@@ -1125,6 +1145,17 @@ const HelpRouteChildren: HelpRouteChildren = {
 
 const HelpRouteWithChildren = HelpRoute._addFileChildren(HelpRouteChildren)
 
+interface ApiPublicDemoAccessRouteChildren {
+  ApiPublicDemoAccessVerifyRoute: typeof ApiPublicDemoAccessVerifyRoute
+}
+
+const ApiPublicDemoAccessRouteChildren: ApiPublicDemoAccessRouteChildren = {
+  ApiPublicDemoAccessVerifyRoute: ApiPublicDemoAccessVerifyRoute,
+}
+
+const ApiPublicDemoAccessRouteWithChildren =
+  ApiPublicDemoAccessRoute._addFileChildren(ApiPublicDemoAccessRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -1137,7 +1168,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   InviteTokenRoute: InviteTokenRoute,
-  ApiPublicDemoAccessRoute: ApiPublicDemoAccessRoute,
+  ApiPublicDemoAccessRoute: ApiPublicDemoAccessRouteWithChildren,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   OauthSalesforceReturnRoute: OauthSalesforceReturnRoute,
