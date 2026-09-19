@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfile } from "@/lib/profile.functions";
 import { isDemoValue } from "@/lib/use-demo-mode";
+import { clearVerifiedDemoToken, readDemoTokenFromUrl, verifyDemoToken } from "@/lib/demo-token";
+
 import { checkAiConfig, type AiConfigCheckResult } from "@/lib/ai.functions";
 import { resolveGuardedDestination } from "@/lib/post-login-destination";
 
