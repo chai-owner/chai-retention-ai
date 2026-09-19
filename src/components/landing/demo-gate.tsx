@@ -1,11 +1,13 @@
 // Lead-capture gate in front of the public product demo. Visitors give their
 // name, email, company (and optional website) before ChAi opens the sample-data
-// demo. Rows land in public.demo_leads, which admins browse in /admin.
+// demo. The server records the lead in public.demo_leads (admins browse them in
+// /admin) and returns a short-lived token that unlocks the demo.
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { rememberVerifiedDemoToken } from "@/lib/demo-token";
+
 
 export function useDemoGate() {
   const [open, setOpen] = useState(false);
@@ -39,20 +41,31 @@ export function DemoGateDialog({ open, onClose }: { open: boolean; onClose: () =
       return;
     }
     setBusy(true);
-    const { error } = await supabase.from("demo_leads").insert(trimmed);
-    setBusy(false);
-    if (error) {
-      // Duplicate email (unique index on lower(email)) — don't save again, just let them in.
-      if (error.code === "23505") {
-        toast.success("We've already got your details! You'll hear from us soon.");
-      } else {
-        toast.error("Couldn't start the demo. Please try again.");
-        return;
-      }
+    let payload: { token?: string; expiresAt?: string; error?: string } = {};
+    let ok = false;
+    try {
+      const res = await fetch("/api/public/demo-access", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(trimmed),
+      });
+      payload = (await res.json()) as typeof payload;
+      ok = res.ok;
+    } catch {
+      ok = false;
     }
+    setBusy(false);
+
+    if (!ok || !payload.token) {
+      toast.error(payload.error ?? "Couldn't start the demo. Please try again.");
+      return;
+    }
+
+    rememberVerifiedDemoToken(payload.token, payload.expiresAt ?? null);
     onClose();
-    navigate({ to: "/app/dashboard", search: { demo: true } });
+    navigate({ to: "/app/dashboard", search: { demo: true, demo_token: payload.token } });
   }
+
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

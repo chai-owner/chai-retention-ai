@@ -75,14 +75,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  // `demo` powers the public product demo. It's retained across navigation so
-  // every /app page keeps showing sample data while in demo mode.
-  validateSearch: (search: Record<string, unknown>): { demo?: boolean } => {
+  // `demo` powers the public product demo, and `demo_token` is the
+  // server-issued proof the visitor came through the lead form. Both are
+  // retained across navigation so the demo keeps working for that session.
+  validateSearch: (search: Record<string, unknown>): { demo?: boolean; demo_token?: string } => {
     const raw = search.demo;
     const on = raw === true || raw === "1" || raw === "true";
-    return on ? { demo: true } : {};
+    const token = typeof search.demo_token === "string" ? search.demo_token.trim() : "";
+    if (!on) return {};
+    return token ? { demo: true, demo_token: token } : { demo: true };
   },
-  search: { middlewares: [retainSearchParams(["demo"])] },
+  search: { middlewares: [retainSearchParams(["demo", "demo_token"])] },
+
   head: () => ({
     meta: [
       { charSet: "utf-8" },

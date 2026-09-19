@@ -275,29 +275,53 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_lead_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       demo_leads: {
         Row: {
+          access_token: string | null
           company: string
           created_at: string
           email: string
           id: string
           name: string
+          token_expires_at: string | null
           website: string | null
         }
         Insert: {
+          access_token?: string | null
           company: string
           created_at?: string
           email: string
           id?: string
           name: string
+          token_expires_at?: string | null
           website?: string | null
         }
         Update: {
+          access_token?: string | null
           company?: string
           created_at?: string
           email?: string
           id?: string
           name?: string
+          token_expires_at?: string | null
           website?: string | null
         }
         Relationships: []
