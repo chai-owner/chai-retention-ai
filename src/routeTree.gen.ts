@@ -40,6 +40,7 @@ import { Route as AuthenticatedAppTodayRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppTransactionsRouteImport } from './routes/_authenticated.app.transactions'
 import { Route as AuthenticatedAppWelcomeRouteImport } from './routes/_authenticated.app.welcome'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated.settings.account'
+import { Route as ApiPublicDemoAccessRouteImport } from './routes/api/public/demo-access'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 import { Route as HelpCategorySlugRouteImport } from './routes/help.$category.$slug'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
@@ -222,6 +223,11 @@ const AuthenticatedSettingsAccountRoute =
     path: '/settings/account',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicDemoAccessRoute = ApiPublicDemoAccessRouteImport.update({
+  id: '/api/public/demo-access',
+  path: '/api/public/demo-access',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicVersionRoute = ApiPublicVersionRouteImport.update({
   id: '/api/public/version',
   path: '/api/public/version',
@@ -359,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/api/public/demo-access': typeof ApiPublicDemoAccessRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
@@ -407,6 +414,7 @@ export interface FileRoutesByTo {
   '/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/api/public/demo-access': typeof ApiPublicDemoAccessRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/_authenticated/app/transactions': typeof AuthenticatedAppTransactionsRoute
   '/_authenticated/app/welcome': typeof AuthenticatedAppWelcomeRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/api/public/demo-access': typeof ApiPublicDemoAccessRoute
   '/api/public/version': typeof ApiPublicVersionRoute
   '/help/$category/$slug': typeof HelpCategorySlugRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
@@ -513,6 +522,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/app/welcome'
     | '/settings/account'
+    | '/api/public/demo-access'
     | '/api/public/version'
     | '/help/$category/$slug'
     | '/lovable/email/events'
@@ -561,6 +571,7 @@ export interface FileRouteTypes {
     | '/app/transactions'
     | '/app/welcome'
     | '/settings/account'
+    | '/api/public/demo-access'
     | '/api/public/version'
     | '/help/$category/$slug'
     | '/lovable/email/events'
@@ -613,6 +624,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/transactions'
     | '/_authenticated/app/welcome'
     | '/_authenticated/settings/account'
+    | '/api/public/demo-access'
     | '/api/public/version'
     | '/help/$category/$slug'
     | '/lovable/email/events'
@@ -647,6 +659,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiPublicDemoAccessRoute: typeof ApiPublicDemoAccessRoute
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   OauthSalesforceReturnRoute: typeof OauthSalesforceReturnRoute
@@ -884,6 +897,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/demo-access': {
+      id: '/api/public/demo-access'
+      path: '/api/public/demo-access'
+      fullPath: '/api/public/demo-access'
+      preLoaderRoute: typeof ApiPublicDemoAccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/version': {
       id: '/api/public/version'
       path: '/api/public/version'
@@ -1117,6 +1137,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ApiPublicDemoAccessRoute: ApiPublicDemoAccessRoute,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
   OauthSalesforceReturnRoute: OauthSalesforceReturnRoute,
