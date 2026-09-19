@@ -29,12 +29,14 @@ function AuthenticatedLayout() {
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location, search }) => {
-    // The /app/* pages run on sample data, so anyone can explore them as a
-    // public demo without signing in. Everything else still requires login.
-    const isDemo = location.pathname.startsWith("/app");
-    // Explicit demo mode (?demo=1): show the sample-data product demo even to a
-    // signed-in user, and never redirect them into onboarding/welcome.
-    const demoMode = isDemoValue((search as { demo?: unknown })?.demo);
+    // The /app/* pages can run on sample data for anonymous visitors, but only
+    // when they came through the demo lead form and hold a valid, unexpired
+    // server-issued token. Everything else requires login.
+    const isAppPath = location.pathname.startsWith("/app");
+    const demoFlag = isDemoValue((search as { demo?: unknown })?.demo);
+    const demoToken = typeof (search as { demo_token?: unknown })?.demo_token === "string"
+      ? ((search as { demo_token?: string }).demo_token ?? "").trim()
+      : readDemoTokenFromUrl();
 
     let user = null;
     try {
@@ -58,11 +60,14 @@ export const Route = createFileRoute("/_authenticated")({
     }
 
     if (!user) {
-      if (isDemo) return { user: null };
+      if (isAppPath && demoFlag && demoToken && (await verifyDemoToken(demoToken))) {
+        return { user: null };
+      }
+      clearVerifiedDemoToken();
       throw redirect({ to: "/auth", search: { redirect: location.href, mode: undefined, demo: false } });
     }
 
-    if (demoMode && !user) return { user: null };
+
 
 
 
