@@ -443,6 +443,13 @@ function BillingSection({ plan, role }: { plan: keyof typeof PLAN_LABELS; role: 
       {canManage && (
         <div className="flex flex-wrap items-center gap-3 border-t border-border px-5 py-4">
           <UpgradePlanButton plan={plan} />
+          {active && (
+            <ChangePlanButton
+              plan={plan}
+              period={sub?.period ?? null}
+              renewalDate={sub?.currentPeriodEnd ?? null}
+            />
+          )}
           {active ? (
             <Button variant="outline" size="sm" onClick={() => portal.mutate()} disabled={portal.isPending}>
               {portal.isPending ? (
