@@ -240,13 +240,21 @@ function TermsPage() {
             <h2 className="mt-14 text-2xl font-semibold tracking-tight">6. Subscription Plans, Billing, and Free Trial</h2>
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Subscription Plans</h3>
-            <p className="leading-relaxed text-muted-foreground">ChAi currently offers:</p>
+            <p className="leading-relaxed text-muted-foreground">ChAi currently offers the following subscription plans:</p>
             <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
-              <li><strong>Monthly Plan:</strong> $99 per month</li>
-              <li><strong>Annual Plan:</strong> $999 per year</li>
+              <li><strong>Core</strong> — $99/month or $1,069/year</li>
+              <li><strong>Standard</strong> — $249/month or $2,689/year</li>
+              <li><strong>Enterprise</strong> — $599/month or $6,469/year</li>
+              <li><strong>Custom</strong> — Bespoke pricing, contact us at <a href="mailto:hello@askchai.tech" className="text-primary hover:underline">hello@askchai.tech</a></li>
             </ul>
             <p className="leading-relaxed text-muted-foreground">
-              Subscription fees are billed in advance and automatically renew until cancelled. Prices are listed in US dollars and may be subject to applicable taxes.
+              All plans include a 14-day free trial. No credit card is required to start a trial.
+            </p>
+            <p className="leading-relaxed text-muted-foreground">
+              An optional Data Drop add-on is available on the Core plan for $39/month. Data Drop is included at no additional cost on Standard, Enterprise, and Custom plans.
+            </p>
+            <p className="leading-relaxed text-muted-foreground">
+              Annual plans are billed as a single upfront payment and represent a 10% saving over monthly billing. Subscription fees are billed in advance and automatically renew until cancelled. Prices are listed in US dollars and may be subject to applicable taxes depending on your location.
             </p>
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Merchant of Record</h3>
@@ -259,7 +267,7 @@ function TermsPage() {
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Free Trial</h3>
             <p className="leading-relaxed text-muted-foreground">
-              New Customers are eligible for one fourteen (14) day free trial per organization. A valid payment method is required to begin the trial. If you do not cancel before the trial ends, your selected Subscription will automatically begin and your payment method will be charged by Paddle.
+              New Customers are eligible for one fourteen (14) day free trial per organization. No credit card is required to start a trial. If you do not cancel before the trial ends, your selected Subscription will automatically begin and your payment method will be charged by Paddle.
             </p>
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Billing</h3>
