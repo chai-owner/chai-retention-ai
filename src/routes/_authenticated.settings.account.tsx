@@ -19,6 +19,7 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { UpgradePlanButton } from "@/components/plan-limits";
+import { ChangePlanButton } from "@/components/change-plan-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { TEAM_QUERY_KEY, useTeam } from "@/lib/use-team";
 import {
@@ -443,6 +444,13 @@ function BillingSection({ plan, role }: { plan: keyof typeof PLAN_LABELS; role: 
       {canManage && (
         <div className="flex flex-wrap items-center gap-3 border-t border-border px-5 py-4">
           <UpgradePlanButton plan={plan} />
+          {active && (
+            <ChangePlanButton
+              plan={plan}
+              period={sub?.period ?? null}
+              renewalDate={sub?.currentPeriodEnd ?? null}
+            />
+          )}
           {active ? (
             <Button variant="outline" size="sm" onClick={() => portal.mutate()} disabled={portal.isPending}>
               {portal.isPending ? (
