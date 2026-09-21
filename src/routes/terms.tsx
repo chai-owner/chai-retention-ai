@@ -245,7 +245,7 @@ function TermsPage() {
               <li><strong>Core</strong> — $99/month or $1,069/year</li>
               <li><strong>Standard</strong> — $249/month or $2,689/year</li>
               <li><strong>Enterprise</strong> — $599/month or $6,469/year</li>
-              <li><strong>Custom</strong> — Bespoke pricing, contact us at <a href="mailto:hello@askchai.tech" className="text-primary hover:underline">hello@askchai.tech</a></li>
+              <li><strong>Custom</strong> — Bespoke pricing, contact us at <a href="mailto:support@askchai.tech" className="text-primary hover:underline">support@askchai.tech</a></li>
             </ul>
             <p className="leading-relaxed text-muted-foreground">
               All plans include a 14-day free trial. No credit card is required to start a trial.

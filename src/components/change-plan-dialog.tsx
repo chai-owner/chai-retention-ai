@@ -29,7 +29,7 @@ import { requestPlanChange } from "@/utils/payments.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 
 export const CUSTOM_PLAN_MAILTO =
-  "mailto:hello@askchai.tech?subject=ChAi%20Custom%20Plan%20Enquiry";
+  "mailto:support@askchai.tech?subject=ChAi%20Custom%20Plan%20Enquiry";
 
 function limitText(value: number | null) {
   return value === null ? "Unlimited" : value.toLocaleString();
