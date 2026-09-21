@@ -48,7 +48,7 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "ChAi pricing: Core $99/mo, Standard $249/mo, Enterprise $599/mo and Custom custom pricing — save 10% with annual billing. AI churn prediction, health scores and native integrations.",
+          "ChAi pricing: Core $99/mo, Standard $249/mo, Enterprise $599/mo and a Custom plan quoted to your volume — save 10% with annual billing. AI churn prediction, health scores and native integrations.",
       },
       { property: "og:title", content: "ChAi Pricing — Core, Standard, Enterprise and Custom" },
       {
