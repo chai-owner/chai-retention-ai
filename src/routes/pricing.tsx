@@ -412,8 +412,8 @@ function PricingPage() {
 
                       {custom ? (
                         <div className="mt-6">
-                          <p className="text-4xl font-semibold tracking-[-0.04em] text-[#E0A93A]">
-                            Custom pricing
+                          <p className="text-base font-medium tracking-tight text-white/70">
+                            Bespoke Pricing
                           </p>
                           <p className="mt-2 text-sm text-white/60">Tailored to your volume</p>
                         </div>
