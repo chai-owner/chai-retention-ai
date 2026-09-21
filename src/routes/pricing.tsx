@@ -393,8 +393,7 @@ function PricingPage() {
                           Founder Plan
                         </span>
                       </div>
-                    ) : custom ? null
-                    ) : tier.highlight ? (
+                    ) : custom ? null : tier.highlight ? (
                       <div className="flex justify-center">
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[color:var(--accent-foreground)]">
                           <Sparkles className="h-3.5 w-3.5 text-[color:var(--gold)]" />
