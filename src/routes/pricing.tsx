@@ -412,10 +412,9 @@ function PricingPage() {
 
                       {custom ? (
                         <div className="mt-6">
-                          <p className="text-base font-medium tracking-tight text-white/70">
-                            Bespoke Pricing
+                          <p className="text-sm text-white/60">
+                            Custom pricing, tailored to your volume
                           </p>
-                          <p className="mt-2 text-sm text-white/60">Tailored to your volume</p>
                         </div>
                       ) : (
                       <div key={annual ? "y" : "m"} className="mt-6 animate-[fade-in_0.35s_ease-out]">
