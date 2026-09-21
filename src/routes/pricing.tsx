@@ -18,7 +18,7 @@ import {
   PLAN_PRICING,
   annualSaving,
   isCustomPricingPlan,
-  ELITE_CONTACT_MAILTO,
+  CUSTOM_CONTACT_MAILTO,
   type BillingPeriod,
   type OrgPlan,
 } from "@/lib/organisations";
@@ -44,13 +44,13 @@ export const Route = createFileRoute("/pricing")({
   }),
   head: () => ({
     meta: [
-      { title: "Pricing — ChAi | Core, Standard, Enterprise & Elite plans" },
+      { title: "Pricing — ChAi | Core, Standard, Enterprise & Custom plans" },
       {
         name: "description",
         content:
-          "ChAi pricing: Core $99/mo, Standard $249/mo, Enterprise $599/mo and Elite custom pricing — save 10% with annual billing. AI churn prediction, health scores and native integrations.",
+          "ChAi pricing: Core $99/mo, Standard $249/mo, Enterprise $599/mo and Custom custom pricing — save 10% with annual billing. AI churn prediction, health scores and native integrations.",
       },
-      { property: "og:title", content: "ChAi Pricing — Core, Standard, Enterprise and Elite" },
+      { property: "og:title", content: "ChAi Pricing — Core, Standard, Enterprise and Custom" },
       {
         property: "og:description",
         content: "Four plans from $99/month. Save 10% when you pay annually.",
@@ -115,7 +115,7 @@ const tiers: Array<{
     ],
   },
   {
-    plan: "elite",
+    plan: "custom",
     tagline: "For large teams with high customer volumes and complex needs.",
     features: [
       "Custom customer capacity",
@@ -460,7 +460,7 @@ function PricingPage() {
 
                       {custom ? (
                         <a
-                          href={ELITE_CONTACT_MAILTO}
+                          href={CUSTOM_CONTACT_MAILTO}
                           className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#E0A93A] px-6 py-3.5 text-base font-semibold text-[#152238] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#c9963090]"
                         >
                           Contact us <ArrowRight className="h-4 w-4" />

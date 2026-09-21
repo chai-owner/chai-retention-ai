@@ -6,7 +6,7 @@ const KEY = "chai.pending-plan";
 
 export type PendingPlan = { plan: OrgPlan; period: BillingPeriod; addon?: boolean };
 
-const PLANS = new Set(["core", "standard", "enterprise", "elite"]);
+const PLANS = new Set(["core", "standard", "enterprise", "custom"]);
 
 export function storePendingPlan(selection: PendingPlan): void {
   if (typeof window === "undefined") return;

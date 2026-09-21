@@ -2,11 +2,11 @@
 // invite expiry. Kept free of server/browser imports so it can be unit tested
 // and reused by both the UI and the server functions.
 
-export type OrgPlan = "core" | "standard" | "enterprise" | "elite";
+export type OrgPlan = "core" | "standard" | "enterprise" | "custom";
 export type OrgRole = "owner" | "admin" | "member";
 export type InviteRole = Exclude<OrgRole, "owner">;
 
-export const ORG_PLANS: OrgPlan[] = ["core", "standard", "enterprise", "elite"];
+export const ORG_PLANS: OrgPlan[] = ["core", "standard", "enterprise", "custom"];
 export const ORG_ROLES: OrgRole[] = ["owner", "admin", "member"];
 
 /** Legacy plan slugs stored before the Core/Standard/Enterprise rename. */
@@ -28,7 +28,7 @@ export const PLAN_SEATS: Record<OrgPlan, number | null> = {
   core: 1,
   standard: 5,
   enterprise: 10,
-  elite: null,
+  custom: null,
 };
 
 /** Customer records included with each plan. `null` means unlimited. */
@@ -36,7 +36,7 @@ export const PLAN_CUSTOMERS: Record<OrgPlan, number | null> = {
   core: 250,
   standard: 1500,
   enterprise: 10000,
-  elite: null,
+  custom: null,
 };
 
 export type BillingPeriod = "monthly" | "annual";
@@ -57,21 +57,21 @@ export const PLAN_PRICING: Record<OrgPlan, PlanPricing> = {
   core: { monthly: 99, annualMonthly: 89, annualTotal: 1069 },
   standard: { monthly: 249, annualMonthly: 224, annualTotal: 2689 },
   enterprise: { monthly: 599, annualMonthly: 539, annualTotal: 6469 },
-  // Elite is quoted per customer; the zeroes are placeholders never shown.
-  elite: { monthly: 0, annualMonthly: 0, annualTotal: 0 },
+  // Custom is quoted per customer; the zeroes are placeholders never shown.
+  custom: { monthly: 0, annualMonthly: 0, annualTotal: 0 },
 };
 
 /** Plans sold by enquiry rather than self-serve checkout. */
-export const CUSTOM_PRICING_PLANS: OrgPlan[] = ["elite"];
+export const CUSTOM_PRICING_PLANS: OrgPlan[] = ["custom"];
 
 export function isCustomPricingPlan(plan: OrgPlan): boolean {
   return CUSTOM_PRICING_PLANS.includes(plan);
 }
 
-export const ELITE_CONTACT_EMAIL = "support@askchai.tech";
-export const ELITE_CONTACT_SUBJECT = "ChAi Elite Plan Enquiry";
-export const ELITE_CONTACT_MAILTO =
-  `mailto:${ELITE_CONTACT_EMAIL}?subject=${encodeURIComponent(ELITE_CONTACT_SUBJECT)}`;
+export const CUSTOM_CONTACT_EMAIL = "support@askchai.tech";
+export const CUSTOM_CONTACT_SUBJECT = "ChAi Custom Plan Enquiry";
+export const CUSTOM_CONTACT_MAILTO =
+  `mailto:${CUSTOM_CONTACT_EMAIL}?subject=${encodeURIComponent(CUSTOM_CONTACT_SUBJECT)}`;
 
 /** Dollars saved per year by paying annually instead of monthly. */
 export function annualSaving(plan: OrgPlan): number {
@@ -129,7 +129,7 @@ export const PLAN_LABELS: Record<OrgPlan, string> = {
   core: "Core",
   standard: "Standard",
   enterprise: "Enterprise",
-  elite: "Elite",
+  custom: "Custom",
 };
 
 

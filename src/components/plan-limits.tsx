@@ -23,7 +23,7 @@ import {
   annualSaving,
   canManageMembers,
   isCustomPricingPlan,
-  ELITE_CONTACT_MAILTO,
+  CUSTOM_CONTACT_MAILTO,
   shouldWarnCustomerLimit,
   type OrgPlan,
   type BillingPeriod,
@@ -57,7 +57,7 @@ const PLAN_FEATURES: Record<OrgPlan, string[]> = {
     "Unlimited customers and seats",
     "Priority support and onboarding help",
   ],
-  elite: [
+  custom: [
     "Everything in Enterprise",
     "Custom customer capacity",
     "Custom team seats",
@@ -229,7 +229,7 @@ export function UpgradePlanDialog({
           </Button>
           {selected && isCustomPricingPlan(selected) ? (
             <Button asChild>
-              <a href={ELITE_CONTACT_MAILTO}>Contact us</a>
+              <a href={CUSTOM_CONTACT_MAILTO}>Contact us</a>
             </Button>
           ) : (
           <Button
