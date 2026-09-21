@@ -71,7 +71,7 @@ export function SmartIngestCard({ metrics }: { metrics?: PlannerMetric[] } = {})
   const hasAccess =
     planUsage?.plan === "standard" ||
     planUsage?.plan === "enterprise" ||
-    planUsage?.plan === "elite" ||
+    planUsage?.plan === "custom" ||
     (planUsage?.plan === "core" && planUsage?.smartIngestAddon === true);
   const isAddon = planUsage?.plan === "core" && planUsage?.smartIngestAddon === true;
   const profile = useProfile();
