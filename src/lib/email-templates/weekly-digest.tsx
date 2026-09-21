@@ -38,7 +38,18 @@ export interface WeeklyDigestEmailProps {
   todayUrl: string
 }
 
-const LOGO_URL = 'https://askchai.tech/logo-dark.png'
+const LOGO_URL = 'https://app.askchai.tech/logo-dark.png'
+
+// ChAi brand palette
+const NAVY = '#152238'
+const BODY_TEXT = '#1E3040'
+const MUTED_TEXT = '#5A7080'
+const MORNING_MIST = '#F7F9E1'
+const TEAL_SURFACE = '#E2EDF0'
+const CARD_SURFACE = '#F0F7F9'
+const TEAL = '#204654'
+const SPRING_MEADOW = '#CAFFA6'
+const CRITICAL_RED = '#B6423F'
 
 export const WeeklyDigestEmail = ({
   headline,
@@ -56,58 +67,69 @@ export const WeeklyDigestEmail = ({
     <Preview>{headline}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} alt="ChAi logo" width={120} style={logo} />
-        <Heading style={h1}>Your Monday brief</Heading>
-        <Text style={lead}>{headline}</Text>
-
-        <Section style={summary}>
-          <Text style={summaryLine}>
-            <strong>{needsAttention}</strong> customers need attention ({criticalCount} critical,{' '}
-            {atRiskCount} at risk)
-          </Text>
-          <Text style={summaryLine}>
-            <strong>{movedCount}</strong> health scores changed significantly ({declinedCount} down,{' '}
-            {improvedCount} up)
-          </Text>
+        {/* Navy header bar keeps the logo visible in every client */}
+        <Section style={headerBar}>
+          <Img src={LOGO_URL} alt="ChAi logo" width={100} style={logo} />
         </Section>
 
-        <Hr style={hr} />
+        <Section style={content}>
+          <Heading style={h1}>Your Monday brief</Heading>
+          <Text style={lead}>{headline}</Text>
 
-        <Heading as="h2" style={h2}>
-          Do these first
-        </Heading>
+          <Section style={summary}>
+            <Text style={summaryLine}>
+              <strong>{needsAttention}</strong> customers need attention ({criticalCount} critical,{' '}
+              {atRiskCount} at risk)
+            </Text>
+            <Text style={summaryLine}>
+              <strong>{movedCount}</strong> health scores changed significantly ({declinedCount}{' '}
+              down, {improvedCount} up)
+            </Text>
+          </Section>
 
-        {customers.length === 0 ? (
-          <Text style={text}>
-            Nothing needs chasing this week — every scored customer is in healthy territory.
+          <Hr style={hr} />
+
+          <Heading as="h2" style={h2}>
+            Do these first
+          </Heading>
+
+          {customers.length === 0 ? (
+            <Text style={text}>
+              Nothing needs chasing this week — every scored customer is in healthy territory.
+            </Text>
+          ) : (
+            customers.map((customer, index) => (
+              <Section key={`${customer.name}-${index}`} style={card}>
+                <Text
+                  style={{
+                    ...cardTitle,
+                    ...(customer.churnProbability > 60 ? { color: CRITICAL_RED } : {}),
+                  }}
+                >
+                  {index + 1}. {customer.name} — {customer.score}/100 · {customer.riskLabel}
+                </Text>
+                <Text style={cardMeta}>
+                  {customer.churnProbability}% probability of churning in the next 90 days ·{' '}
+                  {customer.confidenceLabel}
+                </Text>
+                {customer.topMetric ? (
+                  <Text style={cardMeta}>Driving the risk: {customer.topMetric}</Text>
+                ) : null}
+                <Text style={text}>{customer.action}</Text>
+              </Section>
+            ))
+          )}
+
+          <Button style={button} href={todayUrl}>
+            Open ChAi
+          </Button>
+
+          <Text style={footer}>
+            You're receiving this because you own a ChAi workspace. Reply to this email if you'd
+            rather not get the Monday brief.
           </Text>
-        ) : (
-          customers.map((customer, index) => (
-            <Section key={`${customer.name}-${index}`} style={card}>
-              <Text style={cardTitle}>
-                {index + 1}. {customer.name} — {customer.score}/100 · {customer.riskLabel}
-              </Text>
-              <Text style={cardMeta}>
-                {customer.churnProbability}% probability of churning in the next 90 days ·{' '}
-                {customer.confidenceLabel}
-              </Text>
-              {customer.topMetric ? (
-                <Text style={cardMeta}>Driving the risk: {customer.topMetric}</Text>
-              ) : null}
-              <Text style={text}>{customer.action}</Text>
-            </Section>
-          ))
-        )}
-
-        <Button style={button} href={todayUrl}>
-          Open ChAi
-        </Button>
-
-        <Text style={footer}>
-          You're receiving this because you own a ChAi workspace. Reply to this email if you'd
-          rather not get the Monday brief.
-        </Text>
-        <BrandFooter />
+          <BrandFooter />
+        </Section>
       </Container>
     </Body>
   </Html>
@@ -116,89 +138,100 @@ export const WeeklyDigestEmail = ({
 export default WeeklyDigestEmail
 
 const main: React.CSSProperties = {
-  backgroundColor: '#0f1115',
+  backgroundColor: MORNING_MIST,
   fontFamily:
     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
   padding: '32px 0',
 }
 
 const container: React.CSSProperties = {
-  backgroundColor: '#171a21',
+  backgroundColor: '#ffffff',
   borderRadius: '14px',
   margin: '0 auto',
   maxWidth: '560px',
-  padding: '32px',
+  padding: '0',
 }
 
-const logo: React.CSSProperties = { marginBottom: '24px' }
+const headerBar: React.CSSProperties = {
+  backgroundColor: NAVY,
+  borderRadius: '14px 14px 0 0',
+  padding: '20px 32px',
+}
+
+const logo: React.CSSProperties = { display: 'block' }
+
+const content: React.CSSProperties = {
+  padding: '28px 32px 32px',
+}
 
 const h1: React.CSSProperties = {
-  color: '#ffffff',
+  color: NAVY,
   fontSize: '24px',
   fontWeight: 600,
   margin: '0 0 12px',
 }
 
 const h2: React.CSSProperties = {
-  color: '#ffffff',
+  color: NAVY,
   fontSize: '16px',
   fontWeight: 600,
   margin: '0 0 12px',
 }
 
 const lead: React.CSSProperties = {
-  color: '#d6dae2',
+  color: BODY_TEXT,
   fontSize: '16px',
   lineHeight: '24px',
   margin: '0 0 20px',
 }
 
 const summary: React.CSSProperties = {
-  backgroundColor: '#1f232c',
+  backgroundColor: TEAL_SURFACE,
   borderRadius: '10px',
   padding: '16px',
 }
 
 const summaryLine: React.CSSProperties = {
-  color: '#d6dae2',
+  color: BODY_TEXT,
   fontSize: '14px',
   lineHeight: '22px',
   margin: '0 0 4px',
 }
 
-const hr: React.CSSProperties = { borderColor: '#2a2f3a', margin: '24px 0' }
+const hr: React.CSSProperties = { borderColor: TEAL_SURFACE, margin: '24px 0' }
 
 const card: React.CSSProperties = {
-  backgroundColor: '#1f232c',
-  borderRadius: '10px',
+  backgroundColor: CARD_SURFACE,
+  borderLeft: `3px solid ${TEAL}`,
+  borderRadius: '8px',
   marginBottom: '12px',
   padding: '14px 16px',
 }
 
 const cardTitle: React.CSSProperties = {
-  color: '#ffffff',
+  color: NAVY,
   fontSize: '15px',
   fontWeight: 600,
   margin: '0 0 4px',
 }
 
 const cardMeta: React.CSSProperties = {
-  color: '#9aa2b1',
+  color: MUTED_TEXT,
   fontSize: '13px',
   margin: '0 0 6px',
 }
 
 const text: React.CSSProperties = {
-  color: '#d6dae2',
+  color: BODY_TEXT,
   fontSize: '14px',
   lineHeight: '22px',
   margin: '0',
 }
 
 const button: React.CSSProperties = {
-  backgroundColor: '#6d5efc',
+  backgroundColor: SPRING_MEADOW,
   borderRadius: '8px',
-  color: '#ffffff',
+  color: NAVY,
   display: 'inline-block',
   fontSize: '15px',
   fontWeight: 600,
@@ -208,7 +241,7 @@ const button: React.CSSProperties = {
 }
 
 const footer: React.CSSProperties = {
-  color: '#7d8493',
+  color: MUTED_TEXT,
   fontSize: '12px',
   lineHeight: '18px',
   margin: '16px 0 0',
