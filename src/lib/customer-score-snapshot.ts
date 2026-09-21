@@ -34,22 +34,38 @@ function detailFor(entry: ScoreBreakdownEntry, metric?: PlannerMetric): string {
  * Risk factors, derived from the stored breakdown. A metric drags on the score
  * when its normalised value sits below the healthy band; the factor weight is
  * that shortfall, matching the client-side scale (0–100 contribution to risk).
+ *
+ * The band widens with the customer's overall health: at-risk (<70) and
+ * critical (<40) customers capture factors up to normalised 70, and a critical
+ * customer always shows the worst three entries even if none cross the band —
+ * a critical account must never render as "healthy".
  */
 export function factorsFromBreakdown(
   breakdown: unknown,
   metrics?: PlannerMetric[] | null,
+  healthScore?: number | null,
 ): Factor[] {
   const byName = new Map((metrics ?? []).map((m) => [m.name, m]));
-  return breakdownEntries(breakdown)
-    .filter((e) => Number.isFinite(e.normalised) && e.normalised < 50)
-    .map((e) => ({
-      label: e.metric,
-      weight: Math.max(0, Math.min(100, Math.round(100 - e.normalised))),
-      detail: detailFor(e, byName.get(e.metric)),
-      // Sorting key: shortfall scaled by how much the user weights the metric.
-      _rank: (100 - e.normalised) * (e.weight || 1),
-    }))
+  const threshold = healthScore != null && healthScore < 70 ? 70 : 50;
+  const toFactor = (e: ScoreBreakdownEntry) => ({
+    label: e.metric,
+    weight: Math.max(0, Math.min(100, Math.round(100 - e.normalised))),
+    detail: detailFor(e, byName.get(e.metric)),
+    // Sorting key: shortfall scaled by how much the user weights the metric.
+    _rank: (100 - e.normalised) * (e.weight || 1),
+  });
+  const ranked = breakdownEntries(breakdown)
+    .filter((e) => Number.isFinite(e.normalised) && e.normalised < threshold)
+    .map(toFactor)
     .sort((a, b) => b._rank - a._rank)
+    .slice(0, 3)
+    .map(({ label, weight, detail }) => ({ label, weight, detail }));
+  if (ranked.length > 0 || healthScore == null || healthScore >= 40) return ranked;
+  // Critical customer with no entries under the band: show the worst metrics.
+  return breakdownEntries(breakdown)
+    .filter((e) => Number.isFinite(e.normalised))
+    .map(toFactor)
+    .sort((a, b) => a.weight === b.weight ? 0 : b.weight - a.weight)
     .slice(0, 3)
     .map(({ label, weight, detail }) => ({ label, weight, detail }));
 }
