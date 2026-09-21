@@ -19,6 +19,7 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { UpgradePlanButton } from "@/components/plan-limits";
+import { ChangePlanButton } from "@/components/change-plan-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { TEAM_QUERY_KEY, useTeam } from "@/lib/use-team";
 import {
