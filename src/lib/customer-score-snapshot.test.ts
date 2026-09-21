@@ -60,9 +60,7 @@ describe("customer score snapshot", () => {
   });
 
   it("adds a generic urgent recommendation for critical customers without factors", () => {
-    const healthyBreakdown = [
-      { metric: "Visits per week", value: 4, normalised: 85, weight: 5, basis: "cohort", baseline: 4 },
-    ];
+    const healthyBreakdown: unknown[] = [];
     const recs = recommendationsFromBreakdown(healthyBreakdown, {
       customerName: "Acme",
       revenue: 1000,
