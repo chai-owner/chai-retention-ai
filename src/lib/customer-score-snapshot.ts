@@ -78,6 +78,7 @@ export function recommendationsFromBreakdown(
     revenue: number;
     churnProbability: number;
     metrics?: PlannerMetric[] | null;
+    healthScore?: number | null;
   },
 ): Recommendation[] {
   const byName = new Map((opts.metrics ?? []).map((m) => [m.name, m]));
@@ -85,7 +86,27 @@ export function recommendationsFromBreakdown(
   const baselines = new Map(
     breakdownEntries(breakdown).map((e) => [e.metric, e.baseline ?? null]),
   );
-  return factorsFromBreakdown(breakdown, opts.metrics).map((f) => {
+  const factors = factorsFromBreakdown(breakdown, opts.metrics, opts.healthScore);
+  if (factors.length === 0 && opts.healthScore != null && opts.healthScore < 40) {
+    // Critical account with no identifiable factors still needs an action.
+    return [
+      {
+        title: "Contact this customer urgently",
+        reasoning:
+          "Their health score indicates a high risk of churning. Review their recent activity and reach out this week.",
+        priority: "High",
+        difficulty: "Easy",
+        impact: "High",
+        revenueSaved: Math.round(((opts.revenue * opts.churnProbability) / 100) * 0.5),
+        steps: [
+          "Review this customer's recent activity and support history.",
+          "Reach out personally this week — call or email their main contact.",
+          "Offer help with any outstanding issues and confirm next steps.",
+        ],
+      },
+    ];
+  }
+  return factors.map((f) => {
     const m = byName.get(f.label);
     const lowerIsBetter =
       m?.valueAt0 != null && m?.valueAt100 != null && m.valueAt0 > m.valueAt100;
