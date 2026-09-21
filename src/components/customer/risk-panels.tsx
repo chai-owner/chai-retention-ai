@@ -56,7 +56,11 @@ export function RiskFactorsCard({
         ))}
         {c.factors.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            No significant risk factors — this is a healthy account.
+            {c.health < 40
+              ? "ChAi detected elevated risk for this customer. Check the metrics below and consider reaching out."
+              : c.health < 70
+                ? "ChAi is still analysing the risk signals for this customer — check back after the next nightly scoring run."
+                : "No significant risk factors — this is a healthy account."}
           </p>
         )}
       </div>

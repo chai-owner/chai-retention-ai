@@ -136,13 +136,14 @@ function CustomerDetail() {
         dataCategories:
           meta?.data_categories ??
           new Set(breakdownEntries(snapshot.breakdown).map((e) => e.metric)).size,
-        factors: factorsFromBreakdown(snapshot.breakdown, metrics),
+        factors: factorsFromBreakdown(snapshot.breakdown, metrics, snapshot.score),
         recommendations: recommendationsFromBreakdown(snapshot.breakdown, {
           customerName: live.name,
           revenue: live.revenue,
           churnProbability:
             meta?.churn_probability ?? churnProbabilityFromHealth(snapshot.score),
           metrics,
+          healthScore: snapshot.score,
         }),
       }
     : live;
