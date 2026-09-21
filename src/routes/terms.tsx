@@ -267,7 +267,7 @@ function TermsPage() {
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Free Trial</h3>
             <p className="leading-relaxed text-muted-foreground">
-              New Customers are eligible for one fourteen (14) day free trial per organization. A valid payment method is required to begin the trial. If you do not cancel before the trial ends, your selected Subscription will automatically begin and your payment method will be charged by Paddle.
+              New Customers are eligible for one fourteen (14) day free trial per organization. No credit card is required to start a trial. If you do not cancel before the trial ends, your selected Subscription will automatically begin and your payment method will be charged by Paddle.
             </p>
 
             <h3 className="mt-6 text-lg font-semibold tracking-tight">Billing</h3>
