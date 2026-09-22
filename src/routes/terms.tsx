@@ -4,6 +4,7 @@ import { Sparkles, ArrowRight } from "lucide-react";
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
+import { canonicalHead } from "@/lib/site";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -22,7 +23,9 @@ export const Route = createFileRoute("/terms")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      ...canonicalHead("/terms").meta,
     ],
+    links: canonicalHead("/terms").links,
   }),
   component: TermsPage,
 });

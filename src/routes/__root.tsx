@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { OG_IMAGE_URL } from "@/lib/site";
 
 function NotFoundComponent() {
   return (
@@ -91,7 +92,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ChAi — Your AI Customer Retention Analyst" },
+      { title: "ChAi — AI Customer Retention & Churn Analytics" },
       {
         name: "description",
         content:
@@ -110,8 +111,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Chai is an AI-powered platform that helps businesses understand customer health and improve retention." },
       { property: "og:description", content: "Chai is an AI-powered platform that helps businesses understand customer health and improve retention." },
       { name: "twitter:description", content: "Chai is an AI-powered platform that helps businesses understand customer health and improve retention." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/62079a6d-d5dd-4f0c-92d8-d5c00829fecf/id-preview-04c8db1a--474ecf99-b3f5-49b5-b07d-bc012f8f0622.lovable.app-1782733572895.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/62079a6d-d5dd-4f0c-92d8-d5c00829fecf/id-preview-04c8db1a--474ecf99-b3f5-49b5-b07d-bc012f8f0622.lovable.app-1782733572895.png" },
+      { property: "og:image", content: OG_IMAGE_URL },
+      { name: "twitter:image", content: OG_IMAGE_URL },
     ],
     links: [
       { rel: "icon", type: "image/png", href: "/favicon.png" },

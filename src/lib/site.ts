@@ -12,3 +12,19 @@ export const EMAIL_SENDER_DOMAIN = "notify.askchai.tech";
 
 /** From domain used for transactional emails. */
 export const EMAIL_FROM_DOMAIN = "askchai.tech";
+
+/** Canonical marketing host (www) used for canonical/og:url tags. */
+export const MARKETING_WWW_ORIGIN = "https://www.askchai.tech";
+
+/** Default social share image (1200x630-ish product screenshot). */
+export const OG_IMAGE_URL = `${MARKETING_WWW_ORIGIN}/screenshots/top-retention-recommendations.png`;
+
+/** Self-referencing canonical + og:url tags for a marketing path (e.g. "/pricing"). */
+export function canonicalHead(path: string) {
+  const url = `${MARKETING_WWW_ORIGIN}${path === "/" ? "/" : path}`;
+  return {
+    meta: [{ property: "og:url", content: url }],
+    links: [{ rel: "canonical", href: url }],
+    url,
+  };
+}

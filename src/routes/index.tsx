@@ -16,6 +16,7 @@ import {
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 import { HeroComposite } from "@/components/landing/hero-composite";
+import { canonicalHead, MARKETING_WWW_ORIGIN } from "@/lib/site";
 // Homepage imagery is served from /public so it resolves on any domain.
 const recommendationsPanelSrc = "/screenshots/top-retention-recommendations.png";
 
@@ -30,7 +31,8 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ChAi — Know who's about to leave, before they do" },
+      { title: "ChAi — AI Customer Retention & Churn Analytics" },
+      ...canonicalHead("/").meta,
       {
         name: "description",
         content:
@@ -43,6 +45,31 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: canonicalHead("/").links,
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "ChAi",
+          url: `${MARKETING_WWW_ORIGIN}/`,
+          logo: `${MARKETING_WWW_ORIGIN}/logo-light.png`,
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "ChAi",
+          applicationCategory: "BusinessApplication",
+          operatingSystem: "Web",
+          description:
+            "AI-powered customer retention and churn analytics platform that scores customer health, predicts churn, and recommends next actions.",
+        }),
+      },
     ],
   }),
   component: Landing,
