@@ -122,7 +122,7 @@ const integrations = [
   { name: "Zoho CRM", Icon: ZohoIcon, color: ZohoColor, category: "CRM" },
   { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor, category: "Billing", href: "/integrations/quickbooks" },
   { name: "FreshBooks", Icon: FreshBooksIcon, color: FreshBooksColor, category: "Billing" },
-  { name: "Xero", Icon: XeroIcon, color: XeroColor, category: "Billing" },
+  { name: "Xero", Icon: XeroIcon, color: XeroColor, category: "Billing", href: "/integrations/xero" },
 ];
 
 const focusRing =

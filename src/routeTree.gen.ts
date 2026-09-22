@@ -25,6 +25,7 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.ap
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as HelpIndexRouteImport } from './routes/help.index'
 import { Route as IntegrationsQuickbooksRouteImport } from './routes/integrations.quickbooks'
+import { Route as IntegrationsXeroRouteImport } from './routes/integrations.xero'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as AuthenticatedAppChurnedRouteImport } from './routes/_authenticated.app.churned'
@@ -141,6 +142,11 @@ const HelpIndexRoute = HelpIndexRouteImport.update({
 const IntegrationsQuickbooksRoute = IntegrationsQuickbooksRouteImport.update({
   id: '/integrations/quickbooks',
   path: '/integrations/quickbooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntegrationsXeroRoute = IntegrationsXeroRouteImport.update({
+  id: '/integrations/xero',
+  path: '/integrations/xero',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
@@ -369,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/integrations/quickbooks': typeof IntegrationsQuickbooksRoute
+  '/integrations/xero': typeof IntegrationsXeroRoute
   '/invite/$token': typeof InviteTokenRoute
   '/help/': typeof HelpIndexRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
@@ -422,6 +429,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/integrations/quickbooks': typeof IntegrationsQuickbooksRoute
+  '/integrations/xero': typeof IntegrationsXeroRoute
   '/invite/$token': typeof InviteTokenRoute
   '/help': typeof HelpIndexRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
@@ -478,6 +486,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/integrations/quickbooks': typeof IntegrationsQuickbooksRoute
+  '/integrations/xero': typeof IntegrationsXeroRoute
   '/invite/$token': typeof InviteTokenRoute
   '/help/': typeof HelpIndexRoute
   '/_authenticated/app/churned': typeof AuthenticatedAppChurnedRoute
@@ -535,6 +544,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/onboarding'
     | '/integrations/quickbooks'
+    | '/integrations/xero'
     | '/invite/$token'
     | '/help/'
     | '/app/churned'
@@ -588,6 +598,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/onboarding'
     | '/integrations/quickbooks'
+    | '/integrations/xero'
     | '/invite/$token'
     | '/help'
     | '/app/churned'
@@ -643,6 +654,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/_authenticated/onboarding'
     | '/integrations/quickbooks'
+    | '/integrations/xero'
     | '/invite/$token'
     | '/help/'
     | '/_authenticated/app/churned'
@@ -697,6 +709,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   IntegrationsQuickbooksRoute: typeof IntegrationsQuickbooksRoute
+  IntegrationsXeroRoute: typeof IntegrationsXeroRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicDemoAccessRoute: typeof ApiPublicDemoAccessRouteWithChildren
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
@@ -829,6 +842,13 @@ declare module '@tanstack/react-router' {
       path: '/integrations/quickbooks'
       fullPath: '/integrations/quickbooks'
       preLoaderRoute: typeof IntegrationsQuickbooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/integrations/xero': {
+      id: '/integrations/xero'
+      path: '/integrations/xero'
+      fullPath: '/integrations/xero'
+      preLoaderRoute: typeof IntegrationsXeroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -1209,6 +1229,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   IntegrationsQuickbooksRoute: IntegrationsQuickbooksRoute,
+  IntegrationsXeroRoute: IntegrationsXeroRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiPublicDemoAccessRoute: ApiPublicDemoAccessRouteWithChildren,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
