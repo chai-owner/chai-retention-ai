@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { storePromoCode, validatePromoCode } from "@/lib/promo-codes";
+import { canonicalHead } from "@/lib/site";
 
 const APP_ORIGIN = "https://app.askchai.tech";
 
@@ -24,7 +25,9 @@ export const Route = createFileRoute("/founder")({
       { property: "og:description", content: "Standard at $99/mo with your Founder invite." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      ...canonicalHead("/founder").meta,
     ],
+    links: canonicalHead("/founder").links,
   }),
   component: FounderInvite,
 });

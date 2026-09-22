@@ -26,6 +26,7 @@ import { useSignedIn, useAuthUserId } from "@/lib/use-auth-state";
 import { PromoCodeField } from "@/components/promo-code-field";
 import { FOUNDER_MONTHLY_PRICE, FOUNDER_PLAN, readStoredPromoCode } from "@/lib/promo-codes";
 import { storePendingPlan } from "@/lib/pending-plan";
+import { canonicalHead } from "@/lib/site";
 
 
 type PricingSearch = { plan?: OrgPlan; period?: "monthly" | "annual"; addon?: true };
@@ -57,7 +58,9 @@ export const Route = createFileRoute("/pricing")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      ...canonicalHead("/pricing").meta,
     ],
+    links: canonicalHead("/pricing").links,
   }),
   component: PricingPage,
 });
