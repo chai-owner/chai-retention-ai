@@ -16,8 +16,8 @@ export const EMAIL_FROM_DOMAIN = "askchai.tech";
 /** Canonical marketing host (www) used for canonical/og:url tags. */
 export const MARKETING_WWW_ORIGIN = "https://www.askchai.tech";
 
-/** Default social share image (1200x630-ish product screenshot). */
-export const OG_IMAGE_URL = `${MARKETING_WWW_ORIGIN}/screenshots/top-retention-recommendations.png`;
+/** Default social share image exported from the live homepage hero at 1200x630. */
+export const OG_IMAGE_URL = `${MARKETING_WWW_ORIGIN}/social-share-hero.png`;
 
 /** Self-referencing canonical + og:url tags for a marketing path (e.g. "/pricing"). */
 export function canonicalHead(path: string) {
