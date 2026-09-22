@@ -120,7 +120,7 @@ const integrations = [
   { name: "HubSpot", Icon: HubSpotIcon, color: HubSpotColor, category: "CRM" },
   { name: "Salesforce", Icon: SalesforceIcon, color: SalesforceColor, category: "CRM", soon: true },
   { name: "Zoho CRM", Icon: ZohoIcon, color: ZohoColor, category: "CRM" },
-  { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor, category: "Billing" },
+  { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor, category: "Billing", href: "/integrations/quickbooks" },
   { name: "FreshBooks", Icon: FreshBooksIcon, color: FreshBooksColor, category: "Billing" },
   { name: "Xero", Icon: XeroIcon, color: XeroColor, category: "Billing" },
 ];
@@ -400,25 +400,41 @@ function Landing() {
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {integrations.map((it, i) => (
             <Reveal key={it.name} delay={(i % 3) * 70}>
-              <div className="flex h-full items-center gap-4 rounded-[16px] bg-white p-5">
-                <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#EEF7FB]"
-                  style={{ color: it.color }}
-                >
-                  <it.Icon className="h-6 w-6" />
-                </span>
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-2 font-extrabold tracking-[-0.02em]">
-                    {it.name}
-                    {"soon" in it && it.soon ? (
-                      <span className="rounded-full bg-[#EEF7FB] px-2 py-0.5 text-[10px] font-semibold text-[#4A5A6B]">
-                        Coming soon
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="text-sm text-[#4A5A6B]">{it.category}</p>
-                </div>
-              </div>
+              {(() => {
+                const inner = (
+                  <>
+                    <span
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#EEF7FB]"
+                      style={{ color: it.color }}
+                    >
+                      <it.Icon className="h-6 w-6" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-2 font-extrabold tracking-[-0.02em]">
+                        {it.name}
+                        {"soon" in it && it.soon ? (
+                          <span className="rounded-full bg-[#EEF7FB] px-2 py-0.5 text-[10px] font-semibold text-[#4A5A6B]">
+                            Coming soon
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="text-sm text-[#4A5A6B]">{it.category}</p>
+                    </div>
+                  </>
+                );
+                const base = "flex h-full items-center gap-4 rounded-[16px] bg-white p-5";
+                const href = "href" in it ? (it.href as string) : null;
+                return href ? (
+                  <Link
+                    to={href}
+                    className={`${base} transition-shadow hover:shadow-md ${focusRing}`}
+                  >
+                    {inner}
+                  </Link>
+                ) : (
+                  <div className={base}>{inner}</div>
+                );
+              })()}
             </Reveal>
           ))}
         </div>
