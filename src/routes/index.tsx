@@ -120,7 +120,7 @@ const integrations = [
   { name: "HubSpot", Icon: HubSpotIcon, color: HubSpotColor, category: "CRM" },
   { name: "Salesforce", Icon: SalesforceIcon, color: SalesforceColor, category: "CRM", soon: true },
   { name: "Zoho CRM", Icon: ZohoIcon, color: ZohoColor, category: "CRM" },
-  { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor, category: "Billing" },
+  { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor, category: "Billing", href: "/integrations/quickbooks" },
   { name: "FreshBooks", Icon: FreshBooksIcon, color: FreshBooksColor, category: "Billing" },
   { name: "Xero", Icon: XeroIcon, color: XeroColor, category: "Billing" },
 ];
