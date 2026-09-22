@@ -90,7 +90,7 @@ const navItems = [
 
 const standardFeatures = [
   { icon: Target, title: "Stop guessing which numbers matter", desc: "ChAi learns how your business works and generates custom metrics that you should be measuring — no generic templates, no vanity numbers." },
-  { icon: Gauge, title: "A health score you can actually trust", desc: "You decide what matters most. ChAi builds your health score around your judgment, not a predetermined black-box formula." },
+  { icon: Gauge, title: "Not a black box. Not a bot, either.", desc: "ChAi's scoring and analysis are built around how your business actually thinks about customers. No auto-replies, no scripted outreach. Just a clearer picture, handed to a human." },
   { icon: Share2, title: "One customer, one true picture", desc: "Data from different sources? No problem. ChAi figures out how to merge them — so you're never acting on only part of the story." },
   { icon: ShieldOff, title: "Delete data without losing insight", desc: "Honour a customer's erasure request in seconds, without punching a hole in your historical retention intelligence." },
 ];
