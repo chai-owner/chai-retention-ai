@@ -49,11 +49,6 @@ export function HeroComposite() {
           </p>
         </div>
       </div>
-
-      {/* Caption — deliberately outside the panels so it doesn't read as part of the mockup */}
-      <p className="mt-2 border-l-2 border-[#C3FFA5]/60 pl-3 text-sm leading-relaxed text-white/55">
-        ChAi tells you who's at risk, and why. The conversation itself is still yours.
-      </p>
     </div>
   );
 }
