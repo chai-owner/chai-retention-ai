@@ -38,13 +38,20 @@ export const Route = createFileRoute("/")({
         content:
           "ChAi is an AI retention analyst that scores customer health, predicts churn, explains why customers leave and recommends what to do next — in plain English.",
       },
-      { property: "og:title", content: "ChAi — Your AI Customer Retention Analyst" },
+      { property: "og:title", content: "ChAi — AI Customer Retention & Churn Analytics" },
       {
         property: "og:description",
-        content: "Understand customer health, spot churn risk, and keep more revenue.",
+        content:
+          "ChAi scores customer health, predicts churn, explains why customers leave, and recommends what to do next — in plain English.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "ChAi — AI Customer Retention & Churn Analytics" },
+      {
+        name: "twitter:description",
+        content:
+          "ChAi scores customer health, predicts churn, explains why customers leave, and recommends what to do next — in plain English.",
+      },
     ],
     links: canonicalHead("/").links,
     scripts: [
