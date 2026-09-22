@@ -99,18 +99,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "ChAi is an AI retention analyst that scores customer health, predicts churn, and gives plain-English recommendations to keep more revenue.",
       },
       { name: "author", content: "ChAi" },
-      { property: "og:title", content: "ChAi — Your AI Customer Retention Analyst" },
+      { property: "og:title", content: "ChAi — AI Customer Retention & Churn Analytics" },
       {
         property: "og:description",
         content:
-          "Understand customer health, spot churn risk, and act on it — no analytics expertise required.",
+          "ChAi scores customer health, predicts churn, explains why customers leave, and recommends what to do next — in plain English.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "ChAi — Your AI Customer Retention Analyst" },
-      { name: "description", content: "Chai is an AI-powered platform that helps businesses understand customer health and improve retention." },
-      { property: "og:description", content: "Chai is an AI-powered platform that helps businesses understand customer health and improve retention." },
-      { name: "twitter:description", content: "Chai is an AI-powered platform that helps businesses understand customer health and improve retention." },
+      { name: "twitter:title", content: "ChAi — AI Customer Retention & Churn Analytics" },
+      {
+        name: "twitter:description",
+        content:
+          "ChAi scores customer health, predicts churn, explains why customers leave, and recommends what to do next — in plain English.",
+      },
       { property: "og:image", content: OG_IMAGE_URL },
       { name: "twitter:image", content: OG_IMAGE_URL },
     ],
