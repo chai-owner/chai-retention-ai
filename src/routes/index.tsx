@@ -16,6 +16,7 @@ import {
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
 import { HeroComposite } from "@/components/landing/hero-composite";
+import { canonicalHead, MARKETING_WWW_ORIGIN } from "@/lib/site";
 // Homepage imagery is served from /public so it resolves on any domain.
 const recommendationsPanelSrc = "/screenshots/top-retention-recommendations.png";
 
@@ -30,7 +31,8 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ChAi — Know who's about to leave, before they do" },
+      { title: "ChAi — AI Customer Retention & Churn Analytics" },
+      ...canonicalHead("/").meta,
       {
         name: "description",
         content:
