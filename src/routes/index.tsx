@@ -42,7 +42,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "ChAi scores customer health, predicts churn, explains why customers leave, and recommends what to do next — in plain English.",
+          "ChAi is an AI retention analyst that scores customer health, predicts churn, explains why customers leave and recommends what to do next — in plain English.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/")({
       {
         name: "twitter:description",
         content:
-          "ChAi scores customer health, predicts churn, explains why customers leave, and recommends what to do next — in plain English.",
+          "ChAi is an AI retention analyst that scores customer health, predicts churn, explains why customers leave and recommends what to do next — in plain English.",
       },
     ],
     links: canonicalHead("/").links,
