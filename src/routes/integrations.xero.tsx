@@ -25,6 +25,10 @@ const faqs = [
     a: "Yes — connected through Xero's official OAuth, encrypted with AES-256, and every sync runs server-side. Your Xero password never touches ChAi.",
   },
   {
+    q: "What if I have multiple organizations in Xero?",
+    a: "No problem — you'll choose which organization ChAi connects to during setup.",
+  },
+  {
     q: "How long does setup take?",
     a: "A few minutes to connect. ChAi starts learning your business immediately after.",
   },
