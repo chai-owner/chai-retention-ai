@@ -3,17 +3,17 @@ import { ArrowRight, Plug, Brain, Rocket, Clock, TrendingDown, MessageSquareOff 
 
 import { Reveal } from "@/components/landing/reveal";
 import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
-import { QuickBooksIcon, QuickBooksColor } from "@/components/landing/brand-icons";
+import { XeroIcon, XeroColor } from "@/components/landing/brand-icons";
 import { canonicalHead } from "@/lib/site";
 
 const PATH = "/integrations/xero";
-const META_TITLE = "Churn Analytics for QuickBooks Online Users | ChAi";
+const META_TITLE = "Churn Analytics for Xero Users | ChAi";
 const META_DESCRIPTION =
-  "Connect QuickBooks Online and see which customers are at risk — and why — in minutes. No spreadsheets, no data team, no setup.";
+  "Connect Xero and see which customers are at risk — and why — in minutes. No spreadsheets, no data team, no setup.";
 
 const faqs = [
   {
-    q: "Do I need to clean up my QuickBooks data first?",
+    q: "Do I need to clean up my Xero data first?",
     a: "No. Messy, incomplete, or inconsistent data is fine — ChAi is built to work with what you've already got.",
   },
   {
@@ -21,8 +21,8 @@ const faqs = [
     a: "No — and that's on purpose. ChAi's scoring and analysis are built around how your business actually thinks about customers. No auto-replies, no scripted outreach. Just a clearer picture, handed to a human.",
   },
   {
-    q: "Is my QuickBooks data secure?",
-    a: "Yes — connected through Intuit's official OAuth, encrypted with AES-256, and every sync runs server-side. Your QuickBooks password never touches ChAi.",
+    q: "Is my Xero data secure?",
+    a: "Yes — connected through Xero's official OAuth, encrypted with AES-256, and every sync runs server-side. Your Xero password never touches ChAi.",
   },
   {
     q: "How long does setup take?",
@@ -34,14 +34,14 @@ const steps = [
   {
     n: "01",
     icon: Plug,
-    title: "Connect QuickBooks Online",
-    desc: "A few clicks, no CSV exports, no mapping fields yourself.",
+    title: "Connect Xero",
+    desc: "A few clicks, no CSV exports, no manual field mapping.",
   },
   {
     n: "02",
     icon: Brain,
     title: "ChAi learns your business",
-    desc: "Payment history becomes one signal among several, weighted the way your business actually works.",
+    desc: "Billing activity becomes one signal among several, weighted the way your business actually works.",
   },
   {
     n: "03",
@@ -94,7 +94,7 @@ export const Route = createFileRoute("/integrations/xero")({
       },
     ],
   }),
-  component: QuickBooksIntegrationPage,
+  component: XeroIntegrationPage,
 });
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
@@ -105,7 +105,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-function QuickBooksIntegrationPage() {
+function XeroIntegrationPage() {
   const { open: demoOpen, openGate, closeGate } = useDemoGate();
 
   return (
@@ -153,18 +153,18 @@ function QuickBooksIntegrationPage() {
         <div className="mx-auto mt-10 max-w-[900px] px-6 text-center lg:mt-16 lg:px-8">
           <Reveal>
             <span className="inline-flex items-center gap-2 rounded-[10px] bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white/85">
-              <span className="flex h-5 w-5 items-center justify-center rounded-[6px] bg-white" style={{ color: QuickBooksColor }}>
-                <QuickBooksIcon className="h-3.5 w-3.5" />
+              <span className="flex h-5 w-5 items-center justify-center rounded-[6px] bg-white" style={{ color: XeroColor }}>
+                <XeroIcon className="h-3.5 w-3.5" />
               </span>
-              QuickBooks Online integration
+              Xero integration
             </span>
             <h1 className="mt-6 text-[2.4rem] font-extrabold leading-[1.05] tracking-[-0.02em] text-white sm:text-5xl lg:text-[3.6rem]">
-              Your QuickBooks data already knows who's leaving. ChAi shows you.
+              The churn signals are already in your Xero data. ChAi finds them.
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/65">
-              Late payments, shrinking invoices, gaps in billing history — the signals are already
-              sitting in QuickBooks. ChAi connects in minutes and turns them into a clear picture of
-              who's at risk, why, and what to do about it.
+              Overdue invoices, shrinking order sizes, customers who've gone quiet on billing — Xero
+              already has the story. ChAi connects in minutes and turns it into a clear picture of
+              who's at risk, why, and what to do next.
             </p>
             <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <a
@@ -192,13 +192,12 @@ function QuickBooksIntegrationPage() {
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>The whole picture</Eyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-            Why QuickBooks alone doesn't tell the whole story
+            Billing data alone doesn't tell the whole story
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-[#4A5A6B]">
-            Billing data is honest, but it's not the whole picture. A customer can pay on time right
-            up until the month they cancel. ChAi combines what's happening in QuickBooks with support
-            tickets, usage, and CRM activity — so a change in payment pattern gets read alongside
-            everything else, not in isolation.
+            A customer can stay current on invoices right up until the month they leave. ChAi combines
+            what's happening in Xero with support tickets, usage, and CRM activity — so a change in
+            billing pattern gets read alongside everything else, not in isolation.
           </p>
         </Reveal>
       </section>
@@ -237,7 +236,7 @@ function QuickBooksIntegrationPage() {
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>Signals</Eyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-            What ChAi looks for in your QuickBooks data
+            What ChAi looks for in your Xero data
           </h2>
         </Reveal>
 
@@ -260,7 +259,7 @@ function QuickBooksIntegrationPage() {
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>FAQ</Eyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-            Questions QuickBooks users ask us
+            Questions Xero users ask us
           </h2>
         </Reveal>
 
