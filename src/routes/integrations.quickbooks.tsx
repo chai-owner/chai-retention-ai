@@ -52,7 +52,7 @@ const steps = [
 ];
 
 const signals = [
-  { icon: Clock, text: "Payment timing drifting later than usual" },
+  { icon: Clock, text: "Invoices slipping past their due date, and staying there" },
   { icon: TrendingDown, text: "Invoice or order values trending down" },
   { icon: MessageSquareOff, text: "Long-standing customers going quiet on billing activity" },
 ];
