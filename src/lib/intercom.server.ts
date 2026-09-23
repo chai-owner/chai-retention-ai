@@ -1,3 +1,4 @@
+import { laggedSinceMs } from "./sync-cursor";
 // Server-only helpers for Intercom per-user OAuth. Each user connects their
 // own Intercom workspace; we store a long-lived access token and sync
 // conversations into the ingested_support table. Never import from client.

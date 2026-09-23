@@ -1,3 +1,4 @@
+import { laggedSinceMs } from "@/lib/sync-cursor";
 // Intercom fetch adapter for the content pipeline.
 //
 // This is the ONLY Intercom-aware file in the content-signals system. It turns
