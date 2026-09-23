@@ -395,3 +395,21 @@ function ConnectedIdentities({ customerId }: { customerId: string }) {
     </Card>
   );
 }
+
+// Conversation-derived flags for this customer, looked up by every platform id
+// that rolls up to them, plus their name as a last-resort reference.
+function CustomerContentSignals({
+  customerId,
+  customerName,
+}: {
+  customerId: string;
+  customerName: string;
+}) {
+  const ingested = useIngested();
+  const aliases = useCustomerAliases();
+  const identities = customerIdentities(ingested, aliases, customerId);
+  const refs = [...new Set([customerId, customerName, ...identities.map((i) => i.source_id)])].filter(
+    Boolean,
+  );
+  return <ContentSignalsCard customerRefs={refs} />;
+}
