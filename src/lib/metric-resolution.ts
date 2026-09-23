@@ -6,7 +6,10 @@ const DAY = 86400000;
 const IDENTIFIERS = new Set([
   "customer_id", "email", "customer_email", "customer_name", "name", "transaction_id", "ticket_id",
   "__source", "date", "occurred_at", "submitted_at", "created_at", "transaction_date", "survey_date",
+  "event_id",
 ]);
+/** Frequency metrics counted over a rolling window rather than all time. */
+const ACTIVITY_WINDOW_DAYS = 90;
 const DATE_WORDS = new Set(["date", "time", "at", "since", "last", "signup", "joined", "created", "visit"]);
 const DATASET_KEYS = ["customers", "transactions", "usage", "support", "surveys"] as const;
 
@@ -224,6 +227,13 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
     } else if (operation === "ratio") {
       const flags = entries.map((entry) => conditionValue(entry.value, metric)).filter((flag): flag is number => flag != null);
       if (flags.length > 0) value = (flags.reduce((sum, flag) => sum + flag, 0) / flags.length) * 100;
+    } else if (operation === "sum" && /activity frequency|activities per/.test(metricText(metric).toLowerCase())) {
+      // Counted against a fixed recent window from today, so an account that
+      // has gone silent scores zero rather than keeping its historic total.
+      const cutoff = now - ACTIVITY_WINDOW_DAYS * DAY;
+      value = entries
+        .filter((entry) => entry.date != null && (entry.date as number) >= cutoff)
+        .reduce((sum, entry) => sum + (numeric(entry.value) ?? 0), 0);
     } else {
       let usable = entries;
       if (operation === "sum" && /weekly/.test(metricText(metric).toLowerCase())) {

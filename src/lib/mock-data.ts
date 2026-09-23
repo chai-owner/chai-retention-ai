@@ -642,6 +642,11 @@ export const plannerMetrics: PlannerMetric[] = [
   { name: "Resolution time", why: "How long customers wait for help.", churn: "Slow resolutions erode trust and raise cancellation risk.", cadence: "Weekly", benchmark: "< 24 hours", benchmarkScore: 60, category: "Support", unit: "h", decimals: 0, valueAt0: 72, valueAt100: 4 },
   { name: "CSAT / NPS", why: "Direct measure of how customers feel.", churn: "Declining scores reliably lead the churn that follows.", cadence: "Per interaction", benchmark: "CSAT ≥ 4.3", benchmarkScore: 75, category: "Satisfaction", unit: " / 5", decimals: 1, valueAt0: 2.5, valueAt100: 5 },
   { name: "Contract renewal date", why: "Marks the moments where churn actually happens.", churn: "Renewals concentrate risk into a single decision point.", cadence: "Monthly", benchmark: "90-day lead time", benchmarkScore: 70, category: "Retention", unit: " days", decimals: 0, valueAt0: 10, valueAt100: 120 },
+  // Relationship-engagement signals from CRM activity. Weighted modestly by
+  // default: a quiet account can be a happy low-touch one, so silence alone
+  // should never carry the weight of an overdue invoice.
+  { name: "Days since last activity", why: "Shows how long it has been since anyone called, met, or logged anything against the account.", churn: "Accounts nobody has touched for months slip away quietly — though some low-touch customers are perfectly healthy.", cadence: "Daily", benchmark: "< 30 days", benchmarkScore: 55, category: "Engagement", unit: " days", decimals: 0, valueAt0: 120, valueAt100: 3, weight: 2 },
+  { name: "Activity frequency", why: "Counts the calls, meetings, tasks and notes logged against the account over the last 90 days.", churn: "A thinning relationship often comes before a quiet non-renewal, but a low count is not automatically a problem.", cadence: "Monthly", benchmark: "≥ 4 per quarter", benchmarkScore: 55, category: "Engagement", unit: " / 90d", decimals: 0, valueAt0: 0, valueAt100: 12, weight: 2 },
 ];
 
 // Convert a 0–100 sub-score into the metric's real-world value for display.

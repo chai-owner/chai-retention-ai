@@ -694,6 +694,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           data: Json
+          event_id: string | null
           id: string
           occurred_at: string | null
           user_id: string
@@ -703,6 +704,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           data?: Json
+          event_id?: string | null
           id?: string
           occurred_at?: string | null
           user_id: string
@@ -712,6 +714,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           data?: Json
+          event_id?: string | null
           id?: string
           occurred_at?: string | null
           user_id?: string
