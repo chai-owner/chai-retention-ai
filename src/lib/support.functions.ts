@@ -36,6 +36,15 @@ async function runSync(provider: SupportProvider, userId: string, limit: number)
     await persistDatasetsAdmin(userId, "support", provider, datasets);
   }
   await markSupportSynced(userId, provider, startedAt);
+  // Link new requesters to their customer company (email domain, then
+  // support-tool organisation). Never blocks the sync itself.
+  try {
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { autoLinkSupportRequesters } = await import("./support-company-matching.server");
+    await autoLinkSupportRequesters(await getSupabaseAdmin(), userId);
+  } catch (err) {
+    console.error("[syncSupport] auto-link failed", (err as Error).message);
+  }
   return { since, rows };
 }
 

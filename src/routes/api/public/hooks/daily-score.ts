@@ -136,13 +136,33 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
             const normalize = (rows: Array<Record<string, unknown>>, key: string) =>
               rows.map((row) => normalizeIngestRow(row, INGEST_COLUMNS[key]!, fallback(row)));
 
-            const data: IngestedData = {
+            const rawData: IngestedData = {
               customers: normalize(customers, "customers"),
               transactions: normalize(transactions, "transactions"),
               support: normalize(support, "support"),
               usage: normalize(usage, "usage"),
               surveys: normalize(surveys, "surveys"),
             };
+
+            // Resolve identities exactly as the app does: saved links (manual
+            // and automatic) route tickets, invoices and activity to the
+            // customer they belong to, and merged duplicate records fold into
+            // one. Without this the stored score ignored every saved link.
+            const { loadAliases, autoLinkWithData } = await import(
+              "@/lib/support-company-matching.server"
+            );
+            const { applyAliases, resolveIdentities } = await import("@/lib/customer-matching");
+            const { mergeRoster } = await import("@/lib/customer-merge");
+            const { aliases } = await autoLinkWithData(
+              supabaseAdmin,
+              userId,
+              rawData,
+              await loadAliases(supabaseAdmin, userId),
+            );
+            const data: IngestedData = mergeRoster(
+              applyAliases(resolveIdentities(rawData), aliases),
+              aliases,
+            );
 
             // Baseline history: the last 90 days of stored per-metric values
             // for this account, flattened out of score_breakdown.

@@ -17,7 +17,7 @@ export const listCustomerAliases = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("customer_id_aliases")
-      .select("source, source_id, customer_id, status")
+      .select("source, source_id, customer_id, status, match_method, match_reason")
       .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
     return (data ?? []) as {
@@ -25,6 +25,8 @@ export const listCustomerAliases = createServerFn({ method: "GET" })
       source_id: string;
       customer_id: string | null;
       status: string;
+      match_method: string | null;
+      match_reason: string | null;
     }[];
   });
 
@@ -39,6 +41,8 @@ export const saveCustomerAlias = createServerFn({ method: "POST" })
         source_id: data.source_id,
         customer_id: data.status === "ignored" ? null : data.customer_id,
         status: data.status,
+        match_method: null,
+        match_reason: null,
       },
       { onConflict: "user_id,source,source_id" },
     );
