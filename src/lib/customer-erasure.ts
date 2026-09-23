@@ -42,11 +42,35 @@ export function erasureKeysFor(
   rows: ErasableCustomerRow[],
   identifier: string,
 ): string[] {
-  const keys = new Set<string>();
   const raw = String(identifier ?? "").trim();
-  if (raw) keys.add(raw);
-  for (const row of rows) {
-    if (customerRowMatches(row, identifier) && row.customer_id) keys.add(row.customer_id);
+  if (!raw) return [];
+
+  const keys = new Set<string>([raw]);
+  // The same person often exists under more than one key (an id from the CRM
+  // and a name-derived key from a spreadsheet). Follow shared identity values
+  // — id, name, email — until nothing new is found, so an erasure request does
+  // not leave a duplicate record behind. Bounded so it always terminates.
+  const identifiers = new Set<string>([normaliseIdentifier(raw)]);
+  const claimed = new Set<ErasableCustomerRow>();
+
+  for (let pass = 0; pass < 5; pass++) {
+    let grew = false;
+    for (const row of rows) {
+      if (claimed.has(row)) continue;
+      const matches = [...identifiers].some((id) => customerRowMatches(row, id));
+      if (!matches) continue;
+      claimed.add(row);
+      grew = true;
+      if (row.customer_id) {
+        keys.add(row.customer_id);
+        identifiers.add(normaliseIdentifier(row.customer_id));
+      }
+      for (const k of IDENTITY_KEYS) {
+        const v = normaliseIdentifier((row.data ?? {})[k]);
+        if (v) identifiers.add(v);
+      }
+    }
+    if (!grew) break;
   }
   return [...keys];
 }
