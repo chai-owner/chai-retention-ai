@@ -101,10 +101,24 @@ export function normaliseZendeskTicket(
   };
 }
 
+/**
+ * Zendesk rejects an incremental `start_time` within the last minute with a
+ * 400 ("too recent"). Two runs close together would otherwise fail outright,
+ * so the cursor is always held at least this far back.
+ */
+export const START_TIME_LAG_SECONDS = 70;
+
+export function zendeskStartTime(since: string | null, now: Date = new Date()): number {
+  const requested = Math.floor(new Date(since ?? 0).getTime() / 1000);
+  const latest = Math.floor(now.getTime() / 1000) - START_TIME_LAG_SECONDS;
+  return Math.max(0, Math.min(Number.isFinite(requested) ? requested : 0, latest));
+}
+
 async function admin() {
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
   return getSupabaseAdmin();
 }
+
 
 export const zendeskContentAdapter: ContentSourceAdapter = {
   id: "zendesk",
@@ -125,7 +139,7 @@ export const zendeskContentAdapter: ContentSourceAdapter = {
   async fetchConversations(ctx: FetchContext): Promise<NormalisedConversation[]> {
     const { zendeskApi } = await import("@/lib/zendesk.server");
 
-    const startTime = Math.floor(new Date(ctx.since ?? 0).getTime() / 1000);
+    const startTime = zendeskStartTime(ctx.since);
     const tickets: ZendeskTicket[] = [];
     const nameByAuthorId = new Map<string, string>();
     const emailByUserId = new Map<string, string>();
