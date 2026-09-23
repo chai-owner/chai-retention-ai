@@ -155,3 +155,134 @@ export function describeErasure(counts: ErasureCounts): string {
   }
   return `${parts.join(", ")}.`;
 }
+
+// ---------------------------------------------------------------------------
+// Search + preview for the "Forget a customer" picker. Read-only: nothing here
+// deletes. The chosen candidate's `key` is what gets passed to the erasure.
+
+export interface ErasureCandidate {
+  /** Stored customer key — passed verbatim to the erasure when confirmed. */
+  key: string;
+  name: string | null;
+  email: string | null;
+  /** Source labels, e.g. ["HubSpot"], ["Zendesk"]. */
+  sources: string[];
+  /** ISO date of the latest stored activity we cheaply know about. */
+  lastActivity: string | null;
+  /** True when the query equals the key or email exactly (fast path). */
+  exact: boolean;
+}
+
+export interface CandidateSourceRow {
+  customer_id: string | null;
+  data: Record<string, unknown> | null;
+  source?: string | null;
+  at?: string | null;
+}
+
+const SOURCE_NAMES: Record<string, string> = {
+  hubspot: "HubSpot", salesforce: "Salesforce", zoho: "Zoho", zoho_crm: "Zoho",
+  quickbooks: "QuickBooks", xero: "Xero", freshbooks: "FreshBooks",
+  zendesk: "Zendesk", intercom: "Intercom", freshdesk: "Freshdesk",
+  csv: "Upload", xlsx: "Upload", upload: "Upload",
+};
+
+export function sourceLabel(raw: unknown): string | null {
+  const s = normaliseIdentifier(raw);
+  if (!s) return null;
+  return SOURCE_NAMES[s] ?? s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function str(v: unknown): string | null {
+  const s = String(v ?? "").trim();
+  return s ? s : null;
+}
+
+export const MIN_QUERY_LENGTH = 2;
+export const MAX_CANDIDATES = 25;
+
+/**
+ * Case-insensitive substring search over name and email, plus exact match on
+ * the stored key or email (the original fast path). Customer records and
+ * support-only requesters (tickets whose requester has no customer record)
+ * are both searchable. Exact matches sort first.
+ */
+export function findErasureCandidates(
+  customers: CandidateSourceRow[],
+  support: CandidateSourceRow[],
+  query: string,
+): ErasureCandidate[] {
+  const q = normaliseIdentifier(query);
+  if (q.length < MIN_QUERY_LENGTH) return [];
+
+  const byKey = new Map<string, ErasureCandidate>();
+  const add = (row: CandidateSourceRow, nameKeys: string[]) => {
+    const key = str(row.customer_id);
+    if (!key || isPseudonym(key)) return;
+    const d = row.data ?? {};
+    const name = nameKeys.map((k) => str(d[k])).find(Boolean) ?? null;
+    const email = str(d.email);
+    const src = sourceLabel(d.__source ?? row.source);
+    const existing = byKey.get(key);
+    const c: ErasureCandidate = existing ?? {
+      key, name: null, email: null, sources: [], lastActivity: null, exact: false,
+    };
+    c.name = c.name ?? name;
+    c.email = c.email ?? email;
+    if (src && !c.sources.includes(src)) c.sources.push(src);
+    const at = str(row.at);
+    if (at && (!c.lastActivity || at > c.lastActivity)) c.lastActivity = at;
+    byKey.set(key, c);
+  };
+  for (const r of customers) add(r, ["name", "customer_name", "company"]);
+  for (const r of support) add(r, ["customer_name", "requester_name", "name"]);
+
+  const out: ErasureCandidate[] = [];
+  for (const c of byKey.values()) {
+    const key = normaliseIdentifier(c.key);
+    const email = normaliseIdentifier(c.email);
+    const name = normaliseIdentifier(c.name);
+    const exact = key === q || (!!email && email === q);
+    const partial = (!!name && name.includes(q)) || (!!email && email.includes(q));
+    if (!exact && !partial) continue;
+    out.push({ ...c, exact });
+  }
+  out.sort((a, b) =>
+    a.exact !== b.exact ? (a.exact ? -1 : 1)
+      : (a.name ?? a.email ?? a.key).localeCompare(b.name ?? b.email ?? b.key));
+  return out.slice(0, MAX_CANDIDATES);
+}
+
+export interface ErasurePreview {
+  keys: string[];
+  customers: number;
+  transactions: number;
+  support: number;
+  usage: number;
+  surveys: number;
+  aliases: number;
+  conversations: number;
+  signals: number;
+  scores: number;
+}
+
+/** "3 tickets, 1 conversation, 2 signals" — same shape as the result toast. */
+export function describePreview(p: ErasurePreview): string {
+  const parts: [number, string, string][] = [
+    [p.customers, "customer record", "customer records"],
+    [p.transactions, "invoice", "invoices"],
+    [p.support, "ticket", "tickets"],
+    [p.usage, "activity record", "activity records"],
+    [p.surveys, "survey response", "survey responses"],
+    [p.conversations, "conversation", "conversations"],
+    [p.signals, "signal", "signals"],
+    [p.aliases, "saved link", "saved links"],
+  ];
+  const listed = parts.filter(([n]) => n > 0).map(([n, one, many]) => `${n} ${n === 1 ? one : many}`);
+  return listed.length ? listed.join(", ") : "No records found";
+}
+
+export function previewTotal(p: ErasurePreview): number {
+  return p.customers + p.transactions + p.support + p.usage + p.surveys + p.aliases +
+    p.conversations + p.signals;
+}
