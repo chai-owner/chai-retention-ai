@@ -311,7 +311,7 @@ function CustomerDetail() {
 
       <ConnectedIdentities customerId={c.id} />
 
-      <CustomerContentSignals customerId={c.id} customerEmail={c.email} />
+      <CustomerContentSignals customerId={c.id} customerName={c.name} />
 
 
 
