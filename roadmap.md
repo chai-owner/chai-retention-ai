@@ -13,3 +13,6 @@
 - [x] Verify fresh-signup onboarding auth and metric-generation wiring
 - [x] Run diagnostic tests, full tests, and the production build
 - [x] Remove cached privileged client initialization and verify production-safe env lookup
+- [x] Phase 1 content signals: source-agnostic pipeline, adapter contract, Intercom adapter, separate conversation-bodies table
+- [x] Phase 1: customer-page flag card, erasure sweep of content stores, nightly extraction pass with spend ceiling
+- [ ] Re-run Phase 0 against real conversations once any account reaches 20+ (constructed-set result is not real-data validation)
