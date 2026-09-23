@@ -168,7 +168,7 @@ describe("HubSpot sync", () => {
     expect(body.filterGroups[0].filters[0]).toEqual({
       propertyName: "hs_lastmodifieddate",
       operator: "GTE",
-      value: String(new Date(since).getTime()),
+      value: String(new Date(since).getTime() - 5 * 60 * 1000),
     });
   });
 
