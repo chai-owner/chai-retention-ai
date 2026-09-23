@@ -24,8 +24,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { removePersistedBatch, hydrateIngestFromServer } from "@/lib/ingest-persistence";
-import { forgetCustomer } from "@/lib/customer-erasure.functions";
-import { describeErasure, totalDeleted } from "@/lib/customer-erasure";
+import {
+  forgetCustomer,
+  searchForgetCandidates,
+  previewForgetCustomer,
+} from "@/lib/customer-erasure.functions";
+import {
+  describeErasure,
+  describePreview,
+  totalDeleted,
+  type ErasureCandidate,
+  type ErasurePreview,
+} from "@/lib/customer-erasure";
+import { Search } from "lucide-react";
 import { useSignedIn } from "@/lib/use-auth-state";
 
 
@@ -61,13 +72,46 @@ function DataQualityPage() {
   const isReal = signedIn === true;
   const [forgetId, setForgetId] = useState("");
   const [forgetting, setForgetting] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [searchedFor, setSearchedFor] = useState("");
+  const [candidates, setCandidates] = useState<ErasureCandidate[] | null>(null);
+  const [previewing, setPreviewing] = useState<string | null>(null);
+  const [selected, setSelected] = useState<
+    { candidate: ErasureCandidate; preview: ErasurePreview } | null
+  >(null);
 
+  async function handleSearch() {
+    const q = forgetId.trim();
+    if (q.length < 2 || searching) return;
+    setSearching(true);
+    try {
+      setCandidates(await searchForgetCandidates({ data: { query: q } }));
+      setSearchedFor(q);
+    } catch (err) {
+      toast.error("Search failed", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setSearching(false);
+    }
+  }
 
-
-
+  async function handleSelect(candidate: ErasureCandidate) {
+    setPreviewing(candidate.key);
+    try {
+      const preview = await previewForgetCustomer({ data: { identifier: candidate.key } });
+      setSelected({ candidate, preview });
+    } catch (err) {
+      toast.error("Could not check this customer's records", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setPreviewing(null);
+    }
+  }
 
   async function handleForgetCustomer() {
-    const id = forgetId.trim();
+    const id = selected?.candidate.key;
     if (!id || forgetting) return;
     setForgetting(true);
     try {
@@ -78,6 +122,8 @@ function DataQualityPage() {
         return;
       }
       setForgetId("");
+      setCandidates(null);
+      setSelected(null);
       // Re-read the account so the dashboard, insights and customer screens
       // immediately stop showing the erased customer.
       await hydrateIngestFromServer();
@@ -270,46 +316,117 @@ function DataQualityPage() {
               </p>
             </div>
           </div>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <form
+            className="mt-4 flex flex-col gap-2 sm:flex-row"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSearch();
+            }}
+          >
             <Input
               value={forgetId}
               onChange={(e) => setForgetId(e.target.value)}
-              placeholder="Customer ID or email"
-              aria-label="Customer ID or email to forget"
+              placeholder="Name, email or customer ID"
+              aria-label="Search for a customer to forget"
             />
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button
-                  disabled={forgetId.trim().length === 0 || forgetting}
-                  className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:border-danger/40 hover:text-danger disabled:pointer-events-none disabled:opacity-50"
+            <button
+              type="submit"
+              disabled={forgetId.trim().length < 2 || searching}
+              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:border-primary/40 disabled:pointer-events-none disabled:opacity-50"
+            >
+              <Search className="h-4 w-4" /> {searching ? "Searching…" : "Search"}
+            </button>
+          </form>
+
+          {candidates !== null && (
+            <div className="mt-3">
+              {candidates.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No customers match "{searchedFor}".
+                </p>
+              ) : (
+                <>
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    {candidates.length} match{candidates.length === 1 ? "" : "es"} — choose the
+                    right person.
+                  </p>
+                  <ul className="max-h-72 space-y-1.5 overflow-y-auto">
+                    {candidates.map((c) => (
+                      <li
+                        key={c.key}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
+                      >
+                        <div className="min-w-0 text-xs">
+                          <div className="truncate text-sm font-medium">
+                            {c.name ?? c.email ?? c.key}
+                          </div>
+                          <div className="truncate text-muted-foreground">
+                            {c.email ?? "No email"} · {c.sources.join(", ") || "Unknown source"}
+                            {c.lastActivity ? ` · last activity ${c.lastActivity.slice(0, 10)}` : ""}
+                          </div>
+                          <div className="truncate text-muted-foreground">ID {c.key}</div>
+                        </div>
+                        <button
+                          onClick={() => void handleSelect(c)}
+                          disabled={previewing !== null}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:border-danger/40 hover:text-danger disabled:opacity-50"
+                        >
+                          <UserX className="h-3.5 w-3.5" />
+                          {previewing === c.key ? "Checking…" : "Select"}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+
+          <AlertDialog open={selected !== null} onOpenChange={(o) => !o && !forgetting && setSelected(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Forget this customer?</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>
+                      <span className="font-medium text-foreground">
+                        {selected?.candidate.name ?? selected?.candidate.email ?? selected?.candidate.key}
+                      </span>
+                      {selected?.candidate.email ? ` (${selected.candidate.email})` : ""}
+                    </p>
+                    <p>
+                      About to permanently delete:{" "}
+                      <span className="font-medium text-foreground">
+                        {selected ? describePreview(selected.preview) : ""}
+                      </span>
+                      .
+                    </p>
+                    {selected && selected.preview.scores > 0 && (
+                      <p>
+                        {selected.preview.scores} past health score
+                        {selected.preview.scores === 1 ? "" : "s"} will be kept under an anonymous
+                        ID so your trends don't change.
+                      </p>
+                    )}
+                    <p>This can't be undone.</p>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={forgetting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void handleForgetCustomer();
+                  }}
+                  disabled={forgetting}
+                  className="bg-danger text-danger-foreground hover:bg-danger/90"
                 >
-                  <UserX className="h-4 w-4" /> Forget
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Forget this customer?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    We'll permanently delete every record linked to{" "}
-                    <span className="font-medium text-foreground">{forgetId.trim()}</span> —
-                    customer details, invoices, tickets, activity and survey responses. Their past
-                    health scores are kept under an anonymous ID so your trends don't change. This
-                    can't be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => void handleForgetCustomer()}
-                    disabled={forgetting}
-                    className="bg-danger text-danger-foreground hover:bg-danger/90"
-                  >
-                    {forgetting ? "Erasing…" : "Forget customer"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+                  {forgetting ? "Erasing…" : "Forget customer"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </Card>
 
         {/* Audit log */}
