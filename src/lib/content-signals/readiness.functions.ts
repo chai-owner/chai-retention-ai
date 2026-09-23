@@ -15,7 +15,7 @@ export const getRealDataReadiness = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Forbidden: admin access required");
 
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = getSupabaseAdmin();
+    const admin = await getSupabaseAdmin();
 
     // Only conversations that arrived from a connected support integration
     // count — manual CSV uploads carry no conversation text.
