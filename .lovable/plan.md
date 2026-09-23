@@ -71,6 +71,24 @@ wired into the health score yet.
 Also lands here because it cannot be deferred: the erasure mechanism (see point 5), the
 retention window for bodies, and the per-account cost ceiling.
 
+**Source-agnostic by construction (confirmed decision).** Two things are explicit Phase 1
+deliverables, not byproducts of building the first connector:
+
+1. **A written adapter interface.** One documented contract every source implements:
+   fetch conversations for an account since a cursor and return them in one normalised
+   shape (`source`, `external_id`, `customer_ref`, `subject`, `body`, `occurred_at`).
+   Everything downstream — storage, pre-filter, extraction, signal store, UI, erasure,
+   cost ceiling — is written against that shape and never against Intercom's. Adding
+   Zendesk, Freshdesk, Zoho or Data Drop later means writing one adapter and registering
+   it, with no change to the pipeline. The interface lands with a registry and at least
+   one adapter (Intercom), and the pipeline is unit-tested against a fake adapter to
+   prove no provider-specific assumption leaked in.
+2. **Conversation bodies get their own table**, separate from the existing
+   subject/status/dates support table. The existing table stays exactly as it is —
+   metrics and Data Quality keep reading it untouched. Bodies are keyed by
+   `(source, external_id)`, so re-fetching updates in place, and carry their own
+   90-day retention and their own erasure sweep.
+
 **Depends on:** Phase 0 gate met.
 **Effort:** 2.5 weeks (2 weeks pipeline, half a week erasure).
 
