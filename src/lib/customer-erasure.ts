@@ -171,6 +171,11 @@ export interface ErasureCandidate {
   lastActivity: string | null;
   /** True when the query equals the key or email exactly (fast path). */
   exact: boolean;
+  /**
+   * Every stored key the erasure would sweep for this person — the same set
+   * eraseCustomerData resolves. >1 means several linked records, one identity.
+   */
+  linkedKeys: string[];
 }
 
 export interface CandidateSourceRow {
@@ -225,7 +230,7 @@ export function findErasureCandidates(
     const src = sourceLabel(d.__source ?? row.source);
     const existing = byKey.get(key);
     const c: ErasureCandidate = existing ?? {
-      key, name: null, email: null, sources: [], lastActivity: null, exact: false,
+      key, name: null, email: null, sources: [], lastActivity: null, exact: false, linkedKeys: [key],
     };
     c.name = c.name ?? name;
     c.email = c.email ?? email;
@@ -237,15 +242,43 @@ export function findErasureCandidates(
   for (const r of customers) add(r, ["name", "customer_name", "company"]);
   for (const r of support) add(r, ["customer_name", "requester_name", "name"]);
 
-  const out: ErasureCandidate[] = [];
-  for (const c of byKey.values()) {
+  // Group by true identity: the exact key set the erasure itself would sweep,
+  // so the list never shows one person as several independent choices.
+  const erasable: ErasableCustomerRow[] = customers.map((r) => ({
+    customer_id: r.customer_id, data: r.data,
+  }));
+  const matches = (c: ErasureCandidate) => {
     const key = normaliseIdentifier(c.key);
     const email = normaliseIdentifier(c.email);
     const name = normaliseIdentifier(c.name);
     const exact = key === q || (!!email && email === q);
     const partial = (!!name && name.includes(q)) || (!!email && email.includes(q));
-    if (!exact && !partial) continue;
-    out.push({ ...c, exact });
+    return { exact, hit: exact || partial };
+  };
+  const out: ErasureCandidate[] = [];
+  const seen = new Set<string>();
+  for (const c of byKey.values()) {
+    if (seen.has(c.key)) continue;
+    const m = matches(c);
+    if (!m.hit) continue;
+    const keys = erasureKeysFor(erasable, c.key).filter((k) => !isPseudonym(k));
+    const members = keys.map((k) => byKey.get(k)).filter((x): x is ErasureCandidate => !!x);
+    const group: ErasureCandidate = {
+      ...c, sources: [], linkedKeys: [], exact: false,
+    };
+    for (const mem of members) {
+      seen.add(mem.key);
+      group.linkedKeys.push(mem.key);
+      group.name = group.name ?? mem.name;
+      group.email = group.email ?? mem.email;
+      for (const s of mem.sources) if (!group.sources.includes(s)) group.sources.push(s);
+      if (mem.lastActivity && (!group.lastActivity || mem.lastActivity > group.lastActivity)) {
+        group.lastActivity = mem.lastActivity;
+      }
+      if (matches(mem).exact) group.exact = true;
+    }
+    if (group.linkedKeys.length === 0) group.linkedKeys = [c.key];
+    out.push(group);
   }
   out.sort((a, b) =>
     a.exact !== b.exact ? (a.exact ? -1 : 1)

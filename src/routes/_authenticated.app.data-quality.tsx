@@ -359,12 +359,21 @@ function DataQualityPage() {
                         <div className="min-w-0 text-xs">
                           <div className="truncate text-sm font-medium">
                             {c.name ?? c.email ?? c.key}
+                            {c.linkedKeys.length > 1 && (
+                              <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                {c.linkedKeys.length} linked records
+                              </span>
+                            )}
                           </div>
                           <div className="truncate text-muted-foreground">
                             {c.email ?? "No email"} · {c.sources.join(", ") || "Unknown source"}
                             {c.lastActivity ? ` · last activity ${c.lastActivity.slice(0, 10)}` : ""}
                           </div>
-                          <div className="truncate text-muted-foreground">ID {c.key}</div>
+                          <div className="truncate text-muted-foreground">
+                            {c.linkedKeys.length > 1
+                              ? `One person across ${c.linkedKeys.length} records (IDs ${c.linkedKeys.join(", ")}) — all are removed together`
+                              : `ID ${c.key}`}
+                          </div>
                         </div>
                         <button
                           onClick={() => void handleSelect(c)}

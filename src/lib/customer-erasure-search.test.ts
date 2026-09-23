@@ -11,6 +11,18 @@ const support = [
 ];
 
 describe("findErasureCandidates", () => {
+  it("groups linked records into one line", () => {
+    const dup = [
+      { customer_id: "950755", data: { name: "North Star Legal", email: "m@nsl.com" }, source: "freshbooks" },
+      { customer_id: "32", data: { name: "North Star Legal", email: "m@nsl.com" }, source: "quickbooks" },
+      { customer_id: "other", data: { name: "Northwind" }, source: "hubspot" },
+    ];
+    const r = findErasureCandidates(dup, [], "north");
+    expect(r).toHaveLength(2);
+    const nsl = r.find((c) => c.name === "North Star Legal")!;
+    expect(nsl.linkedKeys.sort()).toEqual(["32", "950755"]);
+    expect(nsl.sources.sort()).toEqual(["FreshBooks", "QuickBooks"]);
+  });
   it("partial, case-insensitive on name and email", () => {
     const r = findErasureCandidates(customers, support, "BEKAH");
     expect(r.map((c) => c.key)).toEqual(["392"]);
