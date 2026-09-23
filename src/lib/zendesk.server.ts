@@ -566,15 +566,31 @@ function mapZendeskStatus(status: string): string {
   return status;
 }
 
+/**
+ * Zendesk rejects an incremental start_time inside the last 60 seconds with
+ * StartTimeTooRecent (surfaced as a misleading "check your subdomain" error),
+ * so the cursor is always held back a little over a minute. The small overlap
+ * is harmless: rows upsert by ticket id.
+ */
+export const ZENDESK_START_TIME_LAG_SECONDS = 70;
+
+export function zendeskStartTime(since: string | null, now: number = Date.now()): number {
+  const nowSec = Math.floor(now / 1000);
+  const latest = nowSec - ZENDESK_START_TIME_LAG_SECONDS;
+  if (!since) return nowSec - 365 * 24 * 60 * 60; // 1 year back if no prior sync
+  const parsed = Math.floor(new Date(since).getTime() / 1000);
+  if (!Number.isFinite(parsed)) return nowSec - 365 * 24 * 60 * 60;
+  return Math.min(parsed, latest);
+}
+
 export async function syncZendeskForUser(
   userId: string,
   limit: number,
   since: string | null,
 ): Promise<ExtractedDataset[]> {
   const cap = Math.min(limit, 1000);
-  const startTime = since
-    ? Math.floor(new Date(since).getTime() / 1000)
-    : Math.floor(Date.now() / 1000) - 365 * 24 * 60 * 60; // 1 year ago if no prior sync
+  const startTime = zendeskStartTime(since);
+
 
   const j = await zendeskApi<any>(
     userId,
