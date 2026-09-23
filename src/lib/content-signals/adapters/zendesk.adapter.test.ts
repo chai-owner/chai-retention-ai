@@ -58,3 +58,19 @@ describe("zendesk content adapter normalisation", () => {
     });
   });
 });
+
+describe("zendesk incremental cursor", () => {
+  it("never asks for a start_time inside the last minute (Zendesk 400s on that)", async () => {
+    const { zendeskStartTime } = await import("./zendesk.adapter.server");
+    const now = new Date("2026-09-23T18:40:00Z");
+    // A cursor from seconds ago is held back.
+    expect(zendeskStartTime("2026-09-23T18:39:50Z", now)).toBe(
+      Math.floor(now.getTime() / 1000) - 70,
+    );
+    // An older cursor is used as-is.
+    expect(zendeskStartTime("2026-09-01T00:00:00Z", now)).toBe(
+      Math.floor(new Date("2026-09-01T00:00:00Z").getTime() / 1000),
+    );
+    expect(zendeskStartTime(null, now)).toBe(0);
+  });
+});
