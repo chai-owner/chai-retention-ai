@@ -280,7 +280,7 @@ function DataQualityPage() {
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <button
-                  disabled={forgetId.trim().length === 0}
+                  disabled={forgetId.trim().length === 0 || forgetting}
                   className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:border-danger/40 hover:text-danger disabled:pointer-events-none disabled:opacity-50"
                 >
                   <UserX className="h-4 w-4" /> Forget
@@ -298,10 +298,11 @@ function DataQualityPage() {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={forgetCustomer}
+                    onClick={() => void handleForgetCustomer()}
+                    disabled={forgetting}
                     className="bg-danger text-danger-foreground hover:bg-danger/90"
                   >
-                    Forget customer
+                    {forgetting ? "Erasing…" : "Forget customer"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
