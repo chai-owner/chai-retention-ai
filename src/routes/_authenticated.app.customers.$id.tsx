@@ -51,7 +51,7 @@ import { useIngestHydrated } from "@/lib/ingested-data-store";
 import { churnStore, useChurnOverrides, type ChurnOverride } from "@/lib/churn-store";
 import { ChurnReasonDialog } from "@/components/churn-reason-dialog";
 import { useIngested } from "@/lib/ingested-data-store";
-import { useCustomerAliases } from "@/lib/customer-aliases";
+import { useCustomerAliases, ignoreSourceId } from "@/lib/customer-aliases";
 import { sourceLabel, identityCardTitle } from "@/lib/customer-matching";
 import { customerIdentities } from "@/lib/customer-merge";
 import { worstOverdueInvoice } from "@/lib/payment-health";
@@ -383,6 +383,29 @@ function ConnectedIdentities({ customerId }: { customerId: string }) {
           >
             <span className="font-medium">{sourceLabel(i.source)}</span>
             <span className="font-mono text-[11px] text-muted-foreground">{i.source_id}</span>
+            {(() => {
+              const a = aliases.find(
+                (x) => x.source === i.source && x.source_id === i.source_id && x.method,
+              );
+              if (!a) return null;
+              return (
+                <>
+                  <span
+                    title={a.reason ?? undefined}
+                    className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                  >
+                    {a.method === "auto_domain" ? "auto · email domain" : "auto · organisation"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void ignoreSourceId(i.source, i.source_id)}
+                    className="text-[10px] font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                  >
+                    Not this company
+                  </button>
+                </>
+              );
+            })()}
             {multiple && i.primary && (
 
               <span className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">

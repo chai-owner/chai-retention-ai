@@ -25,6 +25,10 @@ export interface CustomerAlias {
   source_id: string;
   customer_id: string | null;
   status: AliasStatus;
+  /** null/undefined = linked by a person; auto_domain / auto_organisation = automatic. */
+  method?: string | null;
+  /** Why an automatic link was made, shown next to it. */
+  reason?: string | null;
 }
 
 export interface CustomerOption {

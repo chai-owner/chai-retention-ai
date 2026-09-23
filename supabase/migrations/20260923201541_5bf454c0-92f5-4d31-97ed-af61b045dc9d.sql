@@ -1,0 +1,2 @@
+ALTER TABLE public.customer_id_aliases ADD COLUMN IF NOT EXISTS match_method text, ADD COLUMN IF NOT EXISTS match_reason text;
+COMMENT ON COLUMN public.customer_id_aliases.match_method IS 'null = linked by a person; auto_domain / auto_organisation = linked automatically by support-company matching';

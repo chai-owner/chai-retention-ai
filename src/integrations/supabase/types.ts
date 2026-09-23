@@ -360,6 +360,8 @@ export type Database = {
           created_at: string
           customer_id: string | null
           id: string
+          match_method: string | null
+          match_reason: string | null
           source: string
           source_id: string
           status: string
@@ -370,6 +372,8 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           id?: string
+          match_method?: string | null
+          match_reason?: string | null
           source?: string
           source_id: string
           status?: string
@@ -380,6 +384,8 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           id?: string
+          match_method?: string | null
+          match_reason?: string | null
           source?: string
           source_id?: string
           status?: string

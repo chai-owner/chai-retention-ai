@@ -55,6 +55,8 @@ export async function hydrateCustomerAliases() {
         source_id: r.source_id,
         customer_id: r.customer_id,
         status: (r.status === "ignored" ? "ignored" : "linked") as AliasStatus,
+        method: r.match_method,
+        reason: r.match_reason,
       })),
     );
   } catch {
