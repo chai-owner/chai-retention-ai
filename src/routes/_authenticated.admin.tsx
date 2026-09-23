@@ -37,6 +37,8 @@ import {
   type PlanFilter,
 } from "@/lib/admin-filters";
 import { impersonationStore } from "@/lib/impersonation";
+import { getRealDataReadiness } from "@/lib/content-signals/readiness.functions";
+import type { ReadinessSummary } from "@/lib/content-signals/readiness";
 import { AdminBilling } from "@/components/admin-billing";
 import {
   AlertDialog,
@@ -81,6 +83,8 @@ function AdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<AdminCustomer | null>(null);
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const fetchDemoLeads = useServerFn(listDemoLeads);
+  const fetchReadiness = useServerFn(getRealDataReadiness);
+  const [readiness, setReadiness] = useState<ReadinessSummary | null>(null);
   const [demoLeads, setDemoLeads] = useState<DemoLead[]>([]);
   const [customerSearch, setCustomerSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("all");
