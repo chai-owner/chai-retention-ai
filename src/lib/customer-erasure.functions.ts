@@ -77,15 +77,37 @@ export const forgetCustomer = createServerFn({ method: "POST" })
       scoresAnonymised: 0,
     };
 
+    const perBatch: Record<string, number> = {};
+
     for (const [table, key] of tables) {
       const { data: deleted, error } = await supabase
         .from(table)
         .delete()
         .eq("user_id", userId)
         .in("customer_id", keys)
-        .select("id");
+        .select("id, batch_id");
       if (error) throw new Error(`${table}: ${error.message}`);
       counts[key] = (deleted ?? []).length;
+      tallyBatchDeletions((deleted ?? []) as { batch_id?: string | null }[], perBatch);
+    }
+
+    // Upload history counts how many rows each file contributed; bring those
+    // down so they don't keep advertising rows that no longer exist.
+    for (const [batchId, removed] of Object.entries(perBatch)) {
+      const { data: batch, error: readError } = await supabase
+        .from("ingest_batches")
+        .select("row_count")
+        .eq("user_id", userId)
+        .eq("id", batchId)
+        .maybeSingle();
+      if (readError) throw new Error(`ingest_batches: ${readError.message}`);
+      if (!batch) continue;
+      const { error: writeError } = await supabase
+        .from("ingest_batches")
+        .update({ row_count: remainingRowCount(batch.row_count, removed) })
+        .eq("user_id", userId)
+        .eq("id", batchId);
+      if (writeError) throw new Error(`ingest_batches: ${writeError.message}`);
     }
 
     // Saved identity mappings point at the person from both directions.
