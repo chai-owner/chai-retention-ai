@@ -154,6 +154,7 @@ export function findSupportAutoLinks(
 
   const saved = new Set(aliases.map((a) => aliasKey(a.source, a.source_id)));
   const candidates = new Map<string, AutoLink | null>();
+  const conflicted = new Set<string>();
 
   for (const row of data.support ?? []) {
     const source = rowSource(row);
@@ -193,15 +194,21 @@ export function findSupportAutoLinks(
       }
     }
 
-    if (!candidates.has(key)) {
+    if (conflicted.has(key) || !link) {
+      if (!candidates.has(key)) candidates.set(key, null);
+      continue;
+    }
+    const prev = candidates.get(key);
+    // Tickets from the same requester disagree → leave it for a person.
+    if (prev && prev.customer_id !== link.customer_id) {
+      conflicted.add(key);
+      candidates.set(key, null);
+    } else if (!prev) {
       candidates.set(key, link);
-    } else {
-      const prev = candidates.get(key);
-      // Tickets from the same requester disagree → leave it for a person.
-      if (link && prev && prev.customer_id !== link.customer_id) candidates.set(key, null);
-      else if (link && !prev) candidates.set(key, link);
     }
   }
 
-  return [...candidates.values()].filter((l): l is AutoLink => l !== null);
+  return [...candidates.entries()]
+    .filter(([k, l]) => l !== null && !conflicted.has(k))
+    .map(([, l]) => l as AutoLink);
 }
