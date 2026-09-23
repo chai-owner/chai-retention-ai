@@ -42,8 +42,8 @@ export const getRealDataReadiness = createServerFn({ method: "GET" })
       .from("profiles")
       .select("id, email, company")
       .in("id", [...byUser.keys()]);
-    const labels = new Map(
-      (profiles ?? []).map((p) => [p.id as string, (p.company as string) || (p.email as string) || (p.id as string)]),
+    const labels = new Map<string, string>(
+      (profiles ?? []).map((p) => [p.id, p.company || p.email || p.id] as [string, string]),
     );
 
     const accounts: AccountSupportVolume[] = [...byUser.entries()].map(([userId, count]) => ({
