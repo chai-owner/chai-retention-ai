@@ -26,3 +26,19 @@ export const forgetCustomer = createServerFn({ method: "POST" })
     const { eraseCustomerData } = await import("@/lib/customer-erasure.server");
     return eraseCustomerData(context.supabase, context.userId, data.identifier);
   });
+
+export const searchForgetCandidates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => z.object({ query: z.string().trim().min(2).max(320) }).parse(v))
+  .handler(async ({ data, context }) => {
+    const { searchErasureCandidates } = await import("@/lib/customer-erasure-search.server");
+    return searchErasureCandidates(context.supabase, context.userId, data.query);
+  });
+
+export const previewForgetCustomer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => ForgetInput.parse(v))
+  .handler(async ({ data, context }) => {
+    const { previewErasure } = await import("@/lib/customer-erasure-search.server");
+    return previewErasure(context.supabase, context.userId, data.identifier);
+  });
