@@ -365,49 +365,148 @@ const TRANSACTION_HEADERS = [
   "product",
   "currency",
 ];
+// Activities land in the shared "usage" store. `date` is what the persistence
+// layer reads for occurred_at; `activity_date` is the column the scoring engine
+// matches on for "days since last activity" (plain `date` is treated as a
+// row identifier and skipped there). `activity_count` is always 1 so frequency
+// metrics can sum rows over a window.
+const ACTIVITY_HEADERS = [
+  "customer_id",
+  "event_id",
+  "date",
+  "activity_date",
+  "activity_type",
+  "activity_subject",
+  "activity_owner",
+  "activity_count",
+];
 
-export async function syncZohoForUser(
-  userId: string,
-  limit: number,
-  since: string | null,
-): Promise<ExtractedDataset[]> {
-  const conn = await loadFreshZohoConnection(userId);
-  const auth: Record<string, string> = {
-    Authorization: `Zoho-oauthtoken ${conn.access_token}`,
-    Accept: "application/json",
-  };
-  if (since) auth["If-Modified-Since"] = new Date(since).toUTCString();
+/** Zoho's hard per-request maximum. */
+export const ZOHO_PAGE_SIZE = 200;
+/** Safety rail so a huge org can never spin the sync forever. */
+const MAX_PAGES = 200;
 
-  const cap = Math.min(limit, 200);
-  const accFields = "Account_Name,Website,Created_Time,Annual_Revenue,Industry,Billing_Country";
-  const dealFields = "Deal_Name,Account_Name,Amount,Closing_Date,Stage";
+interface ActivityModule {
+  module: string;
+  type: string;
+  fields: string[];
+  /** Date fields in priority order — first parseable one wins. */
+  dateFields: string[];
+  titleField: string;
+  /** Notes hang off Parent_Id; Calls/Events/Tasks off What_Id. */
+  parentField: "What_Id" | "Parent_Id";
+}
 
-  async function get(path: string) {
-    const res = await fetch(`${conn.api_domain}/crm/v6${path}`, { headers: auth });
-    if (res.status === 204 || res.status === 304) return null;
-    const body = await res.text();
-    if (!res.ok) throw new Error(`Zoho request failed [${res.status}]: ${body.slice(0, 300)}`);
-    return body ? JSON.parse(body) : null;
+export const ZOHO_ACTIVITY_MODULES: ActivityModule[] = [
+  {
+    module: "Calls",
+    type: "call",
+    fields: ["Subject", "Call_Start_Time", "Call_Duration", "Owner", "What_Id", "Who_Id"],
+    dateFields: ["Call_Start_Time", "Created_Time"],
+    titleField: "Subject",
+    parentField: "What_Id",
+  },
+  {
+    module: "Events",
+    type: "meeting",
+    fields: ["Event_Title", "Start_DateTime", "Owner", "What_Id", "Who_Id", "Created_Time"],
+    dateFields: ["Start_DateTime", "Created_Time"],
+    titleField: "Event_Title",
+    parentField: "What_Id",
+  },
+  {
+    module: "Tasks",
+    type: "task",
+    fields: ["Subject", "Due_Date", "Closed_Time", "Status", "Owner", "What_Id", "Who_Id"],
+    dateFields: ["Closed_Time", "Due_Date", "Created_Time"],
+    titleField: "Subject",
+    parentField: "What_Id",
+  },
+  {
+    module: "Notes",
+    type: "note",
+    fields: ["Note_Title", "Created_Time", "Owner", "Parent_Id"],
+    dateFields: ["Created_Time"],
+    titleField: "Note_Title",
+    parentField: "Parent_Id",
+  },
+];
+
+type ZohoRecord = Record<string, unknown>;
+type ZohoGet = (path: string) => Promise<{ data?: ZohoRecord[]; info?: Record<string, unknown> } | null>;
+
+function lookupId(value: unknown): string {
+  if (value && typeof value === "object") return toStr((value as { id?: string }).id);
+  return "";
+}
+function lookupName(value: unknown): string {
+  if (value && typeof value === "object") return toStr((value as { name?: string }).name);
+  return toStr(value);
+}
+
+/**
+ * Pages through a Zoho module until the records run out or `max` is reached.
+ * v6 returns `info.more_records` plus, on large result sets, a
+ * `next_page_token` that must be used instead of `page` past 2,000 records.
+ */
+export async function fetchZohoPages(
+  get: ZohoGet,
+  module: string,
+  fields: string[],
+  max: number,
+): Promise<ZohoRecord[]> {
+  const rows: ZohoRecord[] = [];
+  let page = 1;
+  let pageToken: string | null = null;
+  for (let i = 0; i < MAX_PAGES && rows.length < max; i++) {
+    const perPage = Math.min(ZOHO_PAGE_SIZE, max - rows.length);
+    const params = [
+      `fields=${encodeURIComponent(fields.join(","))}`,
+      `per_page=${perPage}`,
+      pageToken ? `page_token=${encodeURIComponent(pageToken)}` : `page=${page}`,
+    ];
+    const json = await get(`/${module}?${params.join("&")}`);
+    // 204 (empty module) and 304 (nothing changed since last sync) both stop here.
+    if (!json) break;
+    const batch = (json.data ?? []) as ZohoRecord[];
+    rows.push(...batch);
+    const info = (json.info ?? {}) as { more_records?: boolean; next_page_token?: string | null };
+    if (!info.more_records || batch.length === 0) break;
+    pageToken = info.next_page_token ? String(info.next_page_token) : null;
+    page += 1;
   }
+  return rows;
+}
 
-  const [acc, deals, contacts] = await Promise.all([
-    get(`/Accounts?fields=${encodeURIComponent(accFields)}&per_page=${cap}`),
-    get(`/Deals?fields=${encodeURIComponent(dealFields)}&per_page=${cap}`),
-    // Primary contact email per account — the strongest cross-platform signal.
-    get(`/Contacts?fields=${encodeURIComponent("Email,Account_Name")}&per_page=${cap}`).catch(
-      () => null,
-    ),
-  ]);
+export interface ZohoRawData {
+  accounts: ZohoRecord[];
+  deals: ZohoRecord[];
+  contacts: ZohoRecord[];
+  activities: Array<{ type: string; module: ActivityModule; records: ZohoRecord[] }>;
+}
 
+/** Pure mapping step — kept separate from fetching so it can be tested directly. */
+export function buildZohoDatasets(raw: ZohoRawData): ExtractedDataset[] {
   const emailByAccount = new Map<string, string>();
-  for (const c of (contacts?.data ?? []) as Record<string, unknown>[]) {
-    const account = c.Account_Name as { id?: string } | undefined;
-    const accId = account && typeof account === "object" ? toStr(account.id) : "";
+  const accountByContact = new Map<string, string>();
+  for (const c of raw.contacts) {
+    const accId = lookupId(c.Account_Name);
+    if (!accId) continue;
+    const contactId = toStr(c.id);
+    if (contactId) accountByContact.set(contactId, accId);
     const email = toStr(c.Email);
-    if (accId && email && !emailByAccount.has(accId)) emailByAccount.set(accId, email);
+    if (email && !emailByAccount.has(accId)) emailByAccount.set(accId, email);
   }
 
-  const customers: string[][] = (acc?.data ?? []).map((r: Record<string, unknown>) => [
+  const accountIds = new Set(raw.accounts.map((r) => toStr(r.id)).filter(Boolean));
+  const accountByDeal = new Map<string, string>();
+  for (const d of raw.deals) {
+    const dealId = toStr(d.id);
+    const accId = lookupId(d.Account_Name);
+    if (dealId && accId) accountByDeal.set(dealId, accId);
+  }
+
+  const customers: string[][] = raw.accounts.map((r) => [
     toStr(r.id),
     toStr(r.Account_Name),
     emailByAccount.get(toStr(r.id)) ?? domainEmailHint(toStr(r.Website)),
@@ -416,18 +515,56 @@ export async function syncZohoForUser(
     toStr(r.Industry),
     toStr(r.Billing_Country),
   ]);
-  const transactions: string[][] = (deals?.data ?? []).map((r: Record<string, unknown>) => {
-    const account = r.Account_Name as { id?: string } | string | undefined;
-    const accountId = typeof account === "object" && account ? toStr(account.id) : "";
-    return [
-      accountId,
-      toStr(r.id),
-      num(r.Amount),
-      dateOnly(r.Closing_Date),
-      toStr(r.Deal_Name),
-      "USD",
-    ];
-  });
+
+  const transactions: string[][] = raw.deals.map((r) => [
+    lookupId(r.Account_Name),
+    toStr(r.id),
+    num(r.Amount),
+    dateOnly(r.Closing_Date),
+    toStr(r.Deal_Name),
+    "USD",
+  ]);
+
+  // An activity can hang off an account, a deal or a contact. Resolve all three
+  // down to the owning account so engagement is measured per customer.
+  function accountFor(rec: ZohoRecord, mod: ActivityModule): string {
+    const parentId = lookupId(rec[mod.parentField]);
+    if (parentId) {
+      const se = toStr(rec["$se_module"]);
+      if (se === "Accounts" || accountIds.has(parentId)) return parentId;
+      const viaDeal = accountByDeal.get(parentId);
+      if (viaDeal) return viaDeal;
+    }
+    const whoId = lookupId(rec.Who_Id);
+    if (whoId) return accountByContact.get(whoId) ?? "";
+    return "";
+  }
+
+  const activities: string[][] = [];
+  for (const group of raw.activities) {
+    const mod = group.module;
+    for (const rec of group.records) {
+      const customerId = accountFor(rec, mod);
+      const recId = toStr(rec.id);
+      if (!customerId || !recId) continue;
+      let when = "";
+      for (const field of mod.dateFields) {
+        when = dateOnly(rec[field]);
+        if (when) break;
+      }
+      if (!when) continue;
+      activities.push([
+        customerId,
+        `zoho-${mod.type}-${recId}`,
+        when,
+        when,
+        mod.type,
+        toStr(rec[mod.titleField]),
+        lookupName(rec.Owner),
+        "1",
+      ]);
+    }
+  }
 
   const out: ExtractedDataset[] = [];
   if (customers.length) {
@@ -450,7 +587,74 @@ export async function syncZohoForUser(
       note: "Imported from Zoho CRM deals.",
     });
   }
+  if (activities.length) {
+    out.push({
+      key: "usage",
+      label: "Activity",
+      headers: ACTIVITY_HEADERS,
+      rows: activities,
+      confidence: 88,
+      note: "Calls, meetings, tasks and notes logged in Zoho CRM.",
+    });
+  }
   return out;
+}
+
+export async function syncZohoForUser(
+  userId: string,
+  limit: number,
+  since: string | null,
+): Promise<ExtractedDataset[]> {
+  const conn = await loadFreshZohoConnection(userId);
+  const auth: Record<string, string> = {
+    Authorization: `Zoho-oauthtoken ${conn.access_token}`,
+    Accept: "application/json",
+  };
+  // Zoho filters the module list to records touched since this timestamp, so
+  // nightly runs pull the day's changes instead of the whole org again.
+  if (since) auth["If-Modified-Since"] = new Date(since).toUTCString();
+
+  const accFields = [
+    "Account_Name",
+    "Website",
+    "Created_Time",
+    "Annual_Revenue",
+    "Industry",
+    "Billing_Country",
+  ];
+  const dealFields = ["Deal_Name", "Account_Name", "Amount", "Closing_Date", "Stage"];
+
+  const get: ZohoGet = async (path: string) => {
+    const res = await fetch(`${conn.api_domain}/crm/v6${path}`, { headers: auth });
+    if (res.status === 204 || res.status === 304) return null;
+    const body = await res.text();
+    if (!res.ok) throw new Error(`Zoho request failed [${res.status}]: ${body.slice(0, 300)}`);
+    return body ? JSON.parse(body) : null;
+  };
+
+  // Activities run at several per account, so they get a much higher ceiling
+  // than the record modules.
+  const activityMax = limit * 4;
+
+  const [accounts, deals, contacts] = await Promise.all([
+    fetchZohoPages(get, "Accounts", accFields, limit),
+    fetchZohoPages(get, "Deals", dealFields, limit),
+    // Primary contact email per account — the strongest cross-platform signal,
+    // and the fallback route from an activity to its account.
+    fetchZohoPages(get, "Contacts", ["Email", "Account_Name"], limit).catch(() => []),
+  ]);
+
+  const activityGroups = await Promise.all(
+    ZOHO_ACTIVITY_MODULES.map(async (mod) => ({
+      type: mod.type,
+      module: mod,
+      // One unavailable module (permissions, disabled feature) must not sink
+      // the whole sync.
+      records: await fetchZohoPages(get, mod.module, mod.fields, activityMax).catch(() => []),
+    })),
+  );
+
+  return buildZohoDatasets({ accounts, deals, contacts, activities: activityGroups });
 }
 
 export async function getZohoStatusRow(userId: string) {
