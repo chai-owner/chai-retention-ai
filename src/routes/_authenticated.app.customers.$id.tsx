@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
 import { RiskFactorsCard, RecommendedActionsCard } from "@/components/customer/risk-panels";
+import { ContentSignalsCard } from "@/components/customer/content-signals-card";
 import {
   getCustomer,
   categoryFromHealth,
