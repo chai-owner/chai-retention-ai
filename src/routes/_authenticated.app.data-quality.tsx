@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { removePersistedBatch, hydrateIngestFromServer } from "@/lib/ingest-persistence";
+import { forgetCustomer } from "@/lib/customer-erasure.functions";
+import { describeErasure, totalDeleted } from "@/lib/customer-erasure";
 import { useSignedIn } from "@/lib/use-auth-state";
 
 
@@ -58,18 +60,35 @@ function DataQualityPage() {
   const signedIn = useSignedIn();
   const isReal = signedIn === true;
   const [forgetId, setForgetId] = useState("");
+  const [forgetting, setForgetting] = useState(false);
 
 
 
 
 
-  function forgetCustomer() {
+  async function handleForgetCustomer() {
     const id = forgetId.trim();
-    if (!id) return;
-    setForgetId("");
-    toast.success("Erasure request logged", {
-      description: `Records for ${id} will be anonymised.`,
-    });
+    if (!id || forgetting) return;
+    setForgetting(true);
+    try {
+      const result = await forgetCustomer({ data: { identifier: id } });
+      const description = describeErasure(result);
+      if (totalDeleted(result) === 0 && result.scoresAnonymised === 0) {
+        toast.error("Nothing to forget", { description });
+        return;
+      }
+      setForgetId("");
+      // Re-read the account so the dashboard, insights and customer screens
+      // immediately stop showing the erased customer.
+      await hydrateIngestFromServer();
+      toast.success("Customer erased", { description });
+    } catch (err) {
+      toast.error("Could not erase this customer", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setForgetting(false);
+    }
   }
 
 
