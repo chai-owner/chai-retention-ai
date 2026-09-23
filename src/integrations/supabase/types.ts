@@ -179,6 +179,155 @@ export type Database = {
         }
         Relationships: []
       }
+      content_conversations: {
+        Row: {
+          body: string
+          body_expires_at: string
+          created_at: string
+          customer_ref: string | null
+          external_id: string
+          extracted_at: string | null
+          extraction_model: string | null
+          fetched_at: string
+          id: string
+          occurred_at: string | null
+          skipped_reason: string | null
+          source: string
+          subject: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          body_expires_at?: string
+          created_at?: string
+          customer_ref?: string | null
+          external_id: string
+          extracted_at?: string | null
+          extraction_model?: string | null
+          fetched_at?: string
+          id?: string
+          occurred_at?: string | null
+          skipped_reason?: string | null
+          source: string
+          subject?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          body_expires_at?: string
+          created_at?: string
+          customer_ref?: string | null
+          external_id?: string
+          extracted_at?: string | null
+          extraction_model?: string | null
+          fetched_at?: string
+          id?: string
+          occurred_at?: string | null
+          skipped_reason?: string | null
+          source?: string
+          subject?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      content_extraction_usage: {
+        Row: {
+          conversations_extracted: number
+          created_at: string
+          estimated_cost_usd: number
+          id: string
+          input_tokens: number
+          output_tokens: number
+          paused_at: string | null
+          period: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversations_extracted?: number
+          created_at?: string
+          estimated_cost_usd?: number
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          paused_at?: string | null
+          period: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversations_extracted?: number
+          created_at?: string
+          estimated_cost_usd?: number
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          paused_at?: string | null
+          period?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      content_risk_signals: {
+        Row: {
+          confidence: number
+          conversation_id: string | null
+          created_at: string
+          customer_ref: string | null
+          detected_at: string
+          dismissed_at: string | null
+          external_id: string
+          id: string
+          occurred_at: string | null
+          quote: string
+          signal: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number
+          conversation_id?: string | null
+          created_at?: string
+          customer_ref?: string | null
+          detected_at?: string
+          dismissed_at?: string | null
+          external_id: string
+          id?: string
+          occurred_at?: string | null
+          quote: string
+          signal: string
+          source: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number
+          conversation_id?: string | null
+          created_at?: string
+          customer_ref?: string | null
+          detected_at?: string
+          dismissed_at?: string | null
+          external_id?: string
+          id?: string
+          occurred_at?: string | null
+          quote?: string
+          signal?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_risk_signals_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "content_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_sync_state: {
         Row: {
           created_at: string
