@@ -96,7 +96,7 @@ describe("syncIntercomForUser", () => {
     expect(body.query).toEqual({
       field: "updated_at",
       operator: ">",
-      value: Math.floor(new Date(since).getTime() / 1000),
+      value: Math.floor((new Date(since).getTime() - 5 * 60 * 1000) / 1000),
     });
     expect(http.requests[0].headers.authorization).toBe("Bearer at-intercom");
   });

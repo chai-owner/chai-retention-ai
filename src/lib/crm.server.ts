@@ -1,3 +1,4 @@
+import { laggedSinceMs } from "./sync-cursor";
 // Server-only core for CRM syncs. Fetches accounts/companies + deals from
 // Salesforce, HubSpot or Zoho CRM through the Lovable connector gateway, and
 // supports delta pulls when a `since` timestamp is provided.
@@ -200,7 +201,7 @@ async function syncHubspot(
 
   if (since) {
     // Delta pulls use the Search API which supports filters.
-    const sinceMs = new Date(since).getTime();
+    const sinceMs = laggedSinceMs(since);
     const searchBody = (properties: string[]) => ({
       filterGroups: [
         {

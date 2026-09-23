@@ -1,3 +1,4 @@
+import { laggedSinceMs } from "./sync-cursor";
 // Server-only helpers for Intercom per-user OAuth. Each user connects their
 // own Intercom workspace; we store a long-lived access token and sync
 // conversations into the ingested_support table. Never import from client.
@@ -296,7 +297,7 @@ export async function syncIntercomForUser(
   const conn = await loadIntercomConnection(userId);
   const cap = Math.min(limit, 500);
   const sinceEpoch = since
-    ? Math.floor(new Date(since).getTime() / 1000)
+    ? Math.floor(laggedSinceMs(since) / 1000)
     : Math.floor(Date.now() / 1000) - 365 * 24 * 60 * 60;
 
   // Search conversations updated since `sinceEpoch`, newest first.

@@ -1,3 +1,4 @@
+import { laggedSinceMs } from "@/lib/sync-cursor";
 // Intercom fetch adapter for the content pipeline.
 //
 // This is the ONLY Intercom-aware file in the content-signals system. It turns
@@ -138,7 +139,7 @@ export const intercomContentAdapter: ContentSourceAdapter = {
       "Content-Type": "application/json",
       "Intercom-Version": INTERCOM_API_VERSION,
     };
-    const sinceEpoch = Math.floor(new Date(ctx.since ?? 0).getTime() / 1000);
+    const sinceEpoch = Math.floor(laggedSinceMs(ctx.since) / 1000);
 
     // Page the search endpoint until we hit the limit or run out.
     const ids: string[] = [];
