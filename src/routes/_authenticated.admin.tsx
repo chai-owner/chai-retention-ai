@@ -37,6 +37,8 @@ import {
   type PlanFilter,
 } from "@/lib/admin-filters";
 import { impersonationStore } from "@/lib/impersonation";
+import { getRealDataReadiness } from "@/lib/content-signals/readiness.functions";
+import type { ReadinessSummary } from "@/lib/content-signals/readiness";
 import { AdminBilling } from "@/components/admin-billing";
 import {
   AlertDialog,
@@ -81,6 +83,8 @@ function AdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<AdminCustomer | null>(null);
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const fetchDemoLeads = useServerFn(listDemoLeads);
+  const fetchReadiness = useServerFn(getRealDataReadiness);
+  const [readiness, setReadiness] = useState<ReadinessSummary | null>(null);
   const [demoLeads, setDemoLeads] = useState<DemoLead[]>([]);
   const [customerSearch, setCustomerSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("all");
@@ -97,6 +101,11 @@ function AdminPage() {
         setDemoLeads((await fetchDemoLeads()) as DemoLead[]);
       } catch {
         setDemoLeads([]);
+      }
+      try {
+        setReadiness((await fetchReadiness()) as ReadinessSummary);
+      } catch {
+        setReadiness(null);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -530,6 +539,31 @@ function AdminPage() {
               value={String(customers.filter((c) => c.onboarded).length)}
             />
           </div>
+
+          {readiness && (
+            <Card className="mb-6">
+              <div className="flex items-start gap-3">
+                <Badge
+                  tone={readiness.ready ? "success" : "muted"}
+                  label={readiness.ready ? "Ready" : "Not ready"}
+                />
+                <div className="text-sm">
+                  <p className="font-medium">Content risk signals — real-data validation</p>
+                  <p className="mt-1 text-muted-foreground">{readiness.message}</p>
+                  {readiness.readyAccounts.length > 0 && (
+                    <ul className="mt-2 list-disc pl-5 text-muted-foreground">
+                      {readiness.readyAccounts.map((a) => (
+                        <li key={a.userId}>
+                          {a.label} — {a.connectedConversations} conversations
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </Card>
+          )}
+
           <Card className="overflow-hidden p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
