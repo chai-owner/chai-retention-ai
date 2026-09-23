@@ -539,6 +539,31 @@ function AdminPage() {
               value={String(customers.filter((c) => c.onboarded).length)}
             />
           </div>
+
+          {readiness && (
+            <Card className="mb-6">
+              <div className="flex items-start gap-3">
+                <Badge
+                  tone={readiness.ready ? "success" : "muted"}
+                  label={readiness.ready ? "Ready" : "Not ready"}
+                />
+                <div className="text-sm">
+                  <p className="font-medium">Content risk signals — real-data validation</p>
+                  <p className="mt-1 text-muted-foreground">{readiness.message}</p>
+                  {readiness.readyAccounts.length > 0 && (
+                    <ul className="mt-2 list-disc pl-5 text-muted-foreground">
+                      {readiness.readyAccounts.map((a) => (
+                        <li key={a.userId}>
+                          {a.label} — {a.connectedConversations} conversations
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </Card>
+          )}
+
           <Card className="overflow-hidden p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
