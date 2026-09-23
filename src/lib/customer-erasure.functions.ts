@@ -13,6 +13,8 @@ import {
   erasureKeysFor,
   pseudonymFor,
   isPseudonym,
+  tallyBatchDeletions,
+  remainingRowCount,
   type ErasableCustomerRow,
   type ErasureCounts,
 } from "@/lib/customer-erasure";
