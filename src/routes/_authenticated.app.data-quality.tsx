@@ -290,9 +290,11 @@ function DataQualityPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Forget this customer?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    We'll anonymise all records linked to{" "}
-                    <span className="font-medium text-foreground">{forgetId.trim()}</span>. Their
-                    personal details will no longer be recoverable.
+                    We'll permanently delete every record linked to{" "}
+                    <span className="font-medium text-foreground">{forgetId.trim()}</span> —
+                    customer details, invoices, tickets, activity and survey responses. Their past
+                    health scores are kept under an anonymous ID so your trends don't change. This
+                    can't be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
