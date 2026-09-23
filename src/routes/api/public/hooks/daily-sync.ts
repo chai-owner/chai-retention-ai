@@ -153,6 +153,11 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
             .from("intercom_connections")
             .select("user_id");
           for (const r of intercomRows ?? []) userIds.add(r.user_id as string);
+          const { data: zendeskRows } = await supabaseAdmin
+            .from("zendesk_connections")
+            .select("user_id");
+          for (const r of zendeskRows ?? []) userIds.add(r.user_id as string);
+
 
           for (const userId of userIds) {
             try {
