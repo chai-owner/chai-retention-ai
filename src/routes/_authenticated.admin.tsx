@@ -102,6 +102,11 @@ function AdminPage() {
       } catch {
         setDemoLeads([]);
       }
+      try {
+        setReadiness((await fetchReadiness()) as ReadinessSummary);
+      } catch {
+        setReadiness(null);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setIsAdmin(false);
