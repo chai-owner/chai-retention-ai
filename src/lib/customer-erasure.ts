@@ -106,6 +106,27 @@ export interface ErasureCounts {
   scoresAnonymised: number;
 }
 
+/**
+ * Upload history shows how many rows a file contributed. Erasing a customer
+ * removes some of those rows, so the stored count has to come down with them.
+ */
+export function tallyBatchDeletions(
+  rows: ReadonlyArray<{ batch_id?: string | null }>,
+  into: Record<string, number> = {},
+): Record<string, number> {
+  for (const row of rows) {
+    const id = row?.batch_id;
+    if (!id) continue;
+    into[id] = (into[id] ?? 0) + 1;
+  }
+  return into;
+}
+
+/** Row counts never go negative, even if stored metadata was already off. */
+export function remainingRowCount(current: number | null | undefined, deleted: number): number {
+  return Math.max(0, (Number(current) || 0) - deleted);
+}
+
 export function totalDeleted(counts: ErasureCounts): number {
   return (
     counts.customers +
