@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { removePersistedBatch, hydrateIngestFromServer } from "@/lib/ingest-persistence";
+import { forgetCustomer } from "@/lib/customer-erasure.functions";
+import { describeErasure, totalDeleted } from "@/lib/customer-erasure";
 import { useSignedIn } from "@/lib/use-auth-state";
 
 
@@ -58,18 +60,35 @@ function DataQualityPage() {
   const signedIn = useSignedIn();
   const isReal = signedIn === true;
   const [forgetId, setForgetId] = useState("");
+  const [forgetting, setForgetting] = useState(false);
 
 
 
 
 
-  function forgetCustomer() {
+  async function handleForgetCustomer() {
     const id = forgetId.trim();
-    if (!id) return;
-    setForgetId("");
-    toast.success("Erasure request logged", {
-      description: `Records for ${id} will be anonymised.`,
-    });
+    if (!id || forgetting) return;
+    setForgetting(true);
+    try {
+      const result = await forgetCustomer({ data: { identifier: id } });
+      const description = describeErasure(result);
+      if (totalDeleted(result) === 0 && result.scoresAnonymised === 0) {
+        toast.error("Nothing to forget", { description });
+        return;
+      }
+      setForgetId("");
+      // Re-read the account so the dashboard, insights and customer screens
+      // immediately stop showing the erased customer.
+      await hydrateIngestFromServer();
+      toast.success("Customer erased", { description });
+    } catch (err) {
+      toast.error("Could not erase this customer", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setForgetting(false);
+    }
   }
 
 
@@ -261,7 +280,7 @@ function DataQualityPage() {
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <button
-                  disabled={forgetId.trim().length === 0}
+                  disabled={forgetId.trim().length === 0 || forgetting}
                   className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:border-danger/40 hover:text-danger disabled:pointer-events-none disabled:opacity-50"
                 >
                   <UserX className="h-4 w-4" /> Forget
@@ -271,18 +290,21 @@ function DataQualityPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Forget this customer?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    We'll anonymise all records linked to{" "}
-                    <span className="font-medium text-foreground">{forgetId.trim()}</span>. Their
-                    personal details will no longer be recoverable.
+                    We'll permanently delete every record linked to{" "}
+                    <span className="font-medium text-foreground">{forgetId.trim()}</span> —
+                    customer details, invoices, tickets, activity and survey responses. Their past
+                    health scores are kept under an anonymous ID so your trends don't change. This
+                    can't be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={forgetCustomer}
+                    onClick={() => void handleForgetCustomer()}
+                    disabled={forgetting}
                     className="bg-danger text-danger-foreground hover:bg-danger/90"
                   >
-                    Forget customer
+                    {forgetting ? "Erasing…" : "Forget customer"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
