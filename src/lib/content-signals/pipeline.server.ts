@@ -20,11 +20,15 @@ import { readServerEnv } from "@/lib/server-env";
  */
 export async function contentAdapters(): Promise<ContentSourceAdapter[]> {
   const { intercomContentAdapter } = await import("./adapters/intercom.adapter.server");
-  return [intercomContentAdapter];
-  // Phase 2: zendeskContentAdapter, freshdeskContentAdapter
+  const { zendeskContentAdapter } = await import("./adapters/zendesk.adapter.server");
+  return [intercomContentAdapter, zendeskContentAdapter];
+  // Phase 2 (deferred): freshdeskContentAdapter — Freshdesk's basic Connect +
+  // Sync has never been successfully tested, so no content work is scheduled
+  // against it.
   // Phase 4: zohoContentAdapter, hubspotContentAdapter, salesforceContentAdapter
   // Phase 5: dataDropContentAdapter
 }
+
 
 async function admin() {
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
