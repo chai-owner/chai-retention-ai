@@ -6,8 +6,24 @@ import {
   isPseudonym,
   describeErasure,
   totalDeleted,
+  tallyBatchDeletions,
+  remainingRowCount,
   type ErasureCounts,
 } from "./customer-erasure";
+
+describe("upload history counts", () => {
+  it("tallies deleted rows per upload across tables", () => {
+    const tally = tallyBatchDeletions([{ batch_id: "a" }, { batch_id: "b" }, { batch_id: "a" }]);
+    tallyBatchDeletions([{ batch_id: "a" }, { batch_id: null }, {}], tally);
+    expect(tally).toEqual({ a: 3, b: 1 });
+  });
+
+  it("subtracts erased rows and never goes negative", () => {
+    expect(remainingRowCount(10, 3)).toBe(7);
+    expect(remainingRowCount(2, 5)).toBe(0);
+    expect(remainingRowCount(null, 1)).toBe(0);
+  });
+});
 
 const rows = [
   { customer_id: "CUST-1", data: { name: "Acme Labs", email: "ops@acme.test" } },
