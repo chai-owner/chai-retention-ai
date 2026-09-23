@@ -227,6 +227,13 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
     } else if (operation === "ratio") {
       const flags = entries.map((entry) => conditionValue(entry.value, metric)).filter((flag): flag is number => flag != null);
       if (flags.length > 0) value = (flags.reduce((sum, flag) => sum + flag, 0) / flags.length) * 100;
+    } else if (operation === "sum" && /activity frequency|activities per/.test(metricText(metric).toLowerCase())) {
+      // Counted against a fixed recent window from today, so an account that
+      // has gone silent scores zero rather than keeping its historic total.
+      const cutoff = now - ACTIVITY_WINDOW_DAYS * DAY;
+      value = entries
+        .filter((entry) => entry.date != null && (entry.date as number) >= cutoff)
+        .reduce((sum, entry) => sum + (numeric(entry.value) ?? 0), 0);
     } else {
       let usable = entries;
       if (operation === "sum" && /weekly/.test(metricText(metric).toLowerCase())) {
