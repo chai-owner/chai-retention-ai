@@ -55,6 +55,16 @@ describe("erasureKeysFor", () => {
     );
   });
 
+  it("follows a shared name from an email to the person's duplicate record", () => {
+    expect(erasureKeysFor(rows, "ops@acme.test").sort()).toEqual(
+      ["CUST-1", "acme-labs", "ops@acme.test"].sort(),
+    );
+  });
+
+  it("does not drag in an unrelated customer", () => {
+    expect(erasureKeysFor(rows, "ops@acme.test")).not.toContain("CUST-2");
+  });
+
   it("keeps the raw identifier so orphaned rows are removed too", () => {
     expect(erasureKeysFor(rows, "CUST-999")).toEqual(["CUST-999"]);
   });
