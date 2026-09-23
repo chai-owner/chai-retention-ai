@@ -78,6 +78,24 @@ interface Rule {
 // Ordered most-specific first.
 const RULES: Rule[] = [
   {
+    // CRM relationship activity (calls, meetings, tasks, notes) — deliberately
+    // worded as "check whether this matters" rather than "they are churning",
+    // because plenty of healthy accounts are simply low-touch.
+    test: /(days since last activity|activity frequency|activities per|last contact|last touch|outreach)/,
+    difficulty: "Easy",
+    play: (i) => ({
+      title: `Re-open the conversation with ${i.customerName}`,
+      impact: "Moderate",
+      reasoning: `Nobody has logged a call, meeting, task or note against this account recently. ${measured(i)} That is worth a check — quiet can mean self-sufficient, or it can mean drifting.`,
+      steps: [
+        `Send one short personal message this week asking how the last quarter went for them — no pitch, no template.`,
+        `Book a 20-minute review call and log it against the account so the next person can see the relationship is alive.`,
+        `If they reply that everything is fine, note them as low-touch by design${targetPhrase(i) ? ` rather than chasing ${targetPhrase(i)}` : ""} so this stops resurfacing.`,
+      ],
+      difficulty: "Easy",
+    }),
+  },
+  {
     test: /(attendance|check-?in|visit|frequency|session count|classes?)/,
     difficulty: "Easy",
     play: (i) => ({
