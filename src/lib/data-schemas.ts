@@ -112,6 +112,14 @@ export const datasetSchemas: DatasetSchema[] = [
       { name: "logins", mandatory: false, description: "Number of logins", example: "12" },
       { name: "active_minutes", mandatory: false, description: "Active minutes in product", example: "340" },
       { name: "features_used", mandatory: false, description: "Distinct features used", example: "5" },
+      // Relationship-activity fields (CRM calls / meetings / tasks / notes).
+      // Optional so plain product-usage uploads are unaffected, but preserved
+      // through the review-and-map flow instead of being silently dropped.
+      { name: "event_id", mandatory: false, description: "Unique activity ID (used to avoid duplicates on re-sync)", example: "zoho-call-4471" },
+      { name: "activity_type", mandatory: false, description: "Call / meeting / task / note", example: "call" },
+      { name: "activity_subject", mandatory: false, description: "What the activity was about", example: "Quarterly check-in call" },
+      { name: "activity_owner", mandatory: false, description: "Who logged the activity", example: "Sam Patel" },
+      { name: "activity_count", mandatory: false, description: "Number of activities this row represents", example: "1" },
     ],
     sampleRows: [
       ["CUS-1001", "ops@brightwell.com", "Brightwell Software", "2026-09-02", "12", "340", "5"],

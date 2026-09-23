@@ -166,11 +166,20 @@ export const saveIngestBatch = createServerFn({ method: "POST" })
         const payload = data.rows.map((r) => ({
           user_id: userId,
           batch_id: batchId,
+          event_id: r["event_id"] || null,
           customer_id: r["customer_id"] || null,
-          occurred_at: toDateOrNull(r["date"]),
+          occurred_at: toDateOrNull(r["date"] ?? r["activity_date"]),
           data: r,
         }));
-        await chunkedUpsert(payload, (chunk) =>
+        // Rows carrying a stable activity ID (CRM calls/meetings/tasks/notes)
+        // upsert so re-syncing updates them instead of duplicating; anonymous
+        // product-usage rows keep the plain insert behaviour.
+        const withId = payload.filter((p) => p.event_id);
+        const withoutId = payload.filter((p) => !p.event_id);
+        await chunkedUpsert(withId, (chunk) =>
+          supabase.from("ingested_usage").upsert(chunk, { onConflict: "user_id,event_id" }),
+        );
+        await chunkedUpsert(withoutId, (chunk) =>
           supabase.from("ingested_usage").insert(chunk),
         );
       } else if (dataset === "surveys") {
