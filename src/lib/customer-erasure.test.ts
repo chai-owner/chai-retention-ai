@@ -38,6 +38,7 @@ const emptyCounts: ErasureCounts = {
   usage: 0,
   surveys: 0,
   aliases: 0,
+  content: 0,
   scoresAnonymised: 0,
 };
 

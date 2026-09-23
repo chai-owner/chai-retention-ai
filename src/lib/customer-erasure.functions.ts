@@ -56,6 +56,7 @@ export const forgetCustomer = createServerFn({ method: "POST" })
         usage: 0,
         surveys: 0,
         aliases: 0,
+        content: 0,
         scoresAnonymised: 0,
       };
     }
@@ -76,6 +77,7 @@ export const forgetCustomer = createServerFn({ method: "POST" })
       usage: 0,
       surveys: 0,
       aliases: 0,
+      content: 0,
       scoresAnonymised: 0,
     };
 
@@ -122,6 +124,20 @@ export const forgetCustomer = createServerFn({ method: "POST" })
         .select("id");
       if (error) throw new Error(`customer_id_aliases: ${error.message}`);
       counts.aliases += (deleted ?? []).length;
+    }
+
+    // Conversation text and the signals read out of it are content about the
+    // person too — every source's content store is swept by customer reference,
+    // whichever connector it arrived from.
+    for (const table of ["content_risk_signals", "content_conversations"] as const) {
+      const { data: deleted, error } = await supabase
+        .from(table)
+        .delete()
+        .eq("user_id", userId)
+        .in("customer_ref", keys)
+        .select("id");
+      if (error) throw new Error(`${table}: ${error.message}`);
+      counts.content += (deleted ?? []).length;
     }
 
     // 3. Pseudonymise the scoring history instead of deleting it, so risk

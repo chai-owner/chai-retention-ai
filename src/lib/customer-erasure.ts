@@ -103,6 +103,8 @@ export interface ErasureCounts {
   usage: number;
   surveys: number;
   aliases: number;
+  /** Conversation bodies and extracted content signals (all sources). */
+  content: number;
   scoresAnonymised: number;
 }
 
@@ -134,7 +136,8 @@ export function totalDeleted(counts: ErasureCounts): number {
     counts.support +
     counts.usage +
     counts.surveys +
-    counts.aliases
+    counts.aliases +
+    counts.content
   );
 }
 

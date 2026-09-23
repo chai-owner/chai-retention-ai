@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { PageHeader, StatCard, Card, HealthBadge } from "@/components/ui/chai";
 import { RiskFactorsCard, RecommendedActionsCard } from "@/components/customer/risk-panels";
+import { ContentSignalsCard } from "@/components/customer/content-signals-card";
 import {
   getCustomer,
   categoryFromHealth,
@@ -310,6 +311,9 @@ function CustomerDetail() {
 
       <ConnectedIdentities customerId={c.id} />
 
+      <CustomerContentSignals customerId={c.id} customerName={c.name} />
+
+
 
 
 
@@ -390,4 +394,22 @@ function ConnectedIdentities({ customerId }: { customerId: string }) {
       </ul>
     </Card>
   );
+}
+
+// Conversation-derived flags for this customer, looked up by every platform id
+// that rolls up to them, plus their name as a last-resort reference.
+function CustomerContentSignals({
+  customerId,
+  customerName,
+}: {
+  customerId: string;
+  customerName: string;
+}) {
+  const ingested = useIngested();
+  const aliases = useCustomerAliases();
+  const identities = customerIdentities(ingested, aliases, customerId);
+  const refs = [...new Set([customerId, customerName, ...identities.map((i) => i.source_id)])].filter(
+    Boolean,
+  );
+  return <ContentSignalsCard customerRefs={refs} />;
 }

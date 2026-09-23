@@ -36,10 +36,11 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
 
         type Summary = {
           user_id: string;
-          source: "accounting" | "crm" | "support";
+          source: "accounting" | "crm" | "support" | "content";
           provider: string;
           ok: boolean;
           rows?: number;
+          signals?: number;
           error?: string;
         };
         const summaries: Summary[] = [];
@@ -132,6 +133,57 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
               error: (err as Error).message,
             });
           }
+        }
+
+        // -------- Content risk signals --------
+        // Reads conversation text from every connected content source and
+        // extracts risk signals. Each account has its own monthly spend
+        // ceiling; a paused account is skipped until the next period.
+        // NOTE: the extraction prompt has only been validated against
+        // constructed test examples, never against real customer language.
+        try {
+          const { runContentExtractionForUser, expireConversationBodies } = await import(
+            "@/lib/content-signals/pipeline.server"
+          );
+          await expireConversationBodies();
+          const userIds = new Set<string>(
+            (supportRows ?? []).map((r) => r.user_id as string),
+          );
+          const { data: intercomRows } = await supabaseAdmin
+            .from("intercom_connections")
+            .select("user_id");
+          for (const r of intercomRows ?? []) userIds.add(r.user_id as string);
+
+          for (const userId of userIds) {
+            try {
+              const result = await runContentExtractionForUser(userId);
+              summaries.push({
+                user_id: userId,
+                source: "content",
+                provider: result.sources.join(",") || "none",
+                ok: result.errors.length === 0,
+                rows: result.extracted,
+                signals: result.signals,
+                error: result.errors.join("; ") || undefined,
+              });
+            } catch (err) {
+              summaries.push({
+                user_id: userId,
+                source: "content",
+                provider: "content",
+                ok: false,
+                error: (err as Error).message,
+              });
+            }
+          }
+        } catch (err) {
+          summaries.push({
+            user_id: "-",
+            source: "content",
+            provider: "content",
+            ok: false,
+            error: (err as Error).message,
+          });
         }
 
         return new Response(

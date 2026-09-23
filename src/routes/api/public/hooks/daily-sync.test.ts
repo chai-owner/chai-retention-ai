@@ -90,10 +90,13 @@ describe("daily sync run", () => {
 
     const body = await (await call("test-cron-secret")).json();
 
-    // One accounting + one CRM + one support connection from the stubbed rows.
-    expect(body.results).toHaveLength(3);
-    expect(body.results.every((r: { ok: boolean }) => r.ok)).toBe(true);
-    expect(body.results.map((r: { rows: number }) => r.rows)).toEqual([4, 4, 4]);
+    // One accounting + one CRM + one support connection from the stubbed rows,
+    // plus the content risk-signal pass that follows them.
+    const syncResults = body.results.filter((r: { source: string }) => r.source !== "content");
+    expect(syncResults).toHaveLength(3);
+    expect(syncResults.every((r: { ok: boolean }) => r.ok)).toBe(true);
+    expect(syncResults.map((r: { rows: number }) => r.rows)).toEqual([4, 4, 4]);
+    expect(body.results.some((r: { source: string }) => r.source === "content")).toBe(true);
   });
 
   it("passes the stored cursor so only changed records are pulled", async () => {
