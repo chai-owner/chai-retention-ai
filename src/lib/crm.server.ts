@@ -200,7 +200,7 @@ async function syncHubspot(
 
   if (since) {
     // Delta pulls use the Search API which supports filters.
-    const sinceMs = new Date(since).getTime();
+    const sinceMs = laggedSinceMs(since);
     const searchBody = (properties: string[]) => ({
       filterGroups: [
         {

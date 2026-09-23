@@ -296,7 +296,7 @@ export async function syncIntercomForUser(
   const conn = await loadIntercomConnection(userId);
   const cap = Math.min(limit, 500);
   const sinceEpoch = since
-    ? Math.floor(new Date(since).getTime() / 1000)
+    ? Math.floor(laggedSinceMs(since) / 1000)
     : Math.floor(Date.now() / 1000) - 365 * 24 * 60 * 60;
 
   // Search conversations updated since `sinceEpoch`, newest first.
