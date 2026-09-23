@@ -136,6 +136,25 @@ export async function persistDatasetsAdmin(
             .upsert(c, { onConflict: "user_id,ticket_id" });
           if (error) throw new Error(error.message);
         });
+      } else if (ds.key === "usage") {
+        // Automated activity rows carry a stable event_id so re-syncing the
+        // same call/meeting/task/note updates it instead of duplicating it.
+        const payload = rowObjs
+          .filter((r) => r["event_id"])
+          .map((r) => ({
+            user_id: userId,
+            batch_id: batchId,
+            event_id: r["event_id"],
+            customer_id: r["customer_id"] || null,
+            occurred_at: toDateOrNull(r["date"] ?? r["activity_date"]),
+            data: r,
+          }));
+        await inChunks(payload, async (c) => {
+          const { error } = await supabaseAdmin
+            .from("ingested_usage")
+            .upsert(c, { onConflict: "user_id,event_id" });
+          if (error) throw new Error(error.message);
+        });
       }
     } catch (err) {
       await supabaseAdmin

@@ -6,7 +6,10 @@ const DAY = 86400000;
 const IDENTIFIERS = new Set([
   "customer_id", "email", "customer_email", "customer_name", "name", "transaction_id", "ticket_id",
   "__source", "date", "occurred_at", "submitted_at", "created_at", "transaction_date", "survey_date",
+  "event_id",
 ]);
+/** Frequency metrics counted over a rolling window rather than all time. */
+const ACTIVITY_WINDOW_DAYS = 90;
 const DATE_WORDS = new Set(["date", "time", "at", "since", "last", "signup", "joined", "created", "visit"]);
 const DATASET_KEYS = ["customers", "transactions", "usage", "support", "surveys"] as const;
 
