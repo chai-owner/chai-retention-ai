@@ -16,3 +16,4 @@
 - [x] Phase 1 content signals: source-agnostic pipeline, adapter contract, Intercom adapter, separate conversation-bodies table
 - [x] Phase 1: customer-page flag card, erasure sweep of content stores, nightly extraction pass with spend ceiling
 - [ ] Re-run Phase 0 against real conversations once any account reaches 20+ (constructed-set result is not real-data validation)
+- [x] Support ticket → company matching (email domain, then organisation, manual fallback) + nightly scoring now applies saved links
