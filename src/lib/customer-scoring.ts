@@ -4,9 +4,9 @@
 // app already computes in the browser.
 //
 // Scoring is baseline-relative: each customer is compared against their own
-// recent history (from previous `customer_scores` rows) rather than against
-// whoever happens to be best or worst in the cohort today. Cohort min-max is
-// kept as the no-history fallback.
+// history, worked out from their dated records (see personal-baseline.ts —
+// the same logic the in-app score uses). Customers with too little history
+// fall back to a cadence horizon or today's cohort, blended in while thin.
 import {
   blendScore,
   compareRhythm,
@@ -107,6 +107,7 @@ export interface HistoryPoint {
 }
 
 export interface ScoringOptions {
+  /** @deprecated Ignored — personal baselines now come from dated records. */
   history?: HistoryPoint[];
   /** profiles.cadence — free text describing how often customers buy/engage. */
   cadence?: string;
@@ -238,10 +239,11 @@ function subjectFor(name: string, kind: "trend" | "rhythm" | undefined): string 
  * Scores every customer in `data.customers` against `metrics`.
  *
  * Per metric, per customer, in order of preference:
- *  1. the customer's own 30-day average from `customer_scores`
- *  2. their 90-day average when 30 days of history is not there yet
+ *  1. their own history from dated records: last 30 days vs the prior 90
+ *     (values, counts, rates) or their usual gap ("days since last …")
+ *  2. blended with 3/4 while that history is thin
  *  3. a cadence-derived horizon for elapsed-time metrics ("days since last…")
- *  4. cohort min-max across today's customer base (the original behaviour)
+ *  4. cohort min-max across today's customer base
  *
  * Each normalised value is weighted by the metric's `weight` (default 1) and
  * averaged into a 0–100 health score.
