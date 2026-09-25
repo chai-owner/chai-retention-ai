@@ -7,6 +7,7 @@
 // recent history (from previous `customer_scores` rows) rather than against
 // whoever happens to be best or worst in the cohort today. Cohort min-max is
 // kept as the no-history fallback.
+import { withCountableTransactions } from "@/lib/countable-transactions";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { resolveMetric } from "@/lib/metric-resolution";
@@ -247,9 +248,11 @@ function scoreAgainstBaseline(value: number, baseline: number, direction: "highe
  */
 export function scoreCustomers(
   metrics: PlannerMetric[],
-  data: IngestedData,
+  rawData: IngestedData,
   options: ScoringOptions = {},
 ): CustomerScore[] {
+  // Open and lost CRM deals are not sales.
+  const data = withCountableTransactions(rawData);
   const now = options.now ?? Date.now();
   const horizon = horizonDays(options.cadence, options.lifespan);
 

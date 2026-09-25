@@ -2,6 +2,7 @@
 // uploaded or synced (see ingested-data-store.ts). No demo data is involved:
 // if a signal is absent for a customer, that metric is simply excluded from
 // their weighted health score rather than being invented.
+import { withCountableTransactions } from "@/lib/countable-transactions";
 import {
   type Customer,
   type ScoredDataset,
@@ -231,10 +232,12 @@ function segmentFor(monthly: number | null, segs: ProfileSegment[]): string {
 }
 
 export function buildRealDataset(
-  data: IngestedData,
+  rawData: IngestedData,
   weights: MetricWeights,
   profile: OnboardingProfile | null,
 ): ScoredDataset {
+  // Open and lost CRM deals are not sales.
+  const data = withCountableTransactions(rawData);
   const customerRows = data.customers ?? [];
   const now = Date.now();
   const segs = profile?.segments ?? [];
