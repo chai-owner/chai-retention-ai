@@ -1,9 +1,10 @@
 // Server functions for content risk signals: run a pass, read a customer's
 // flags, dismiss a wrong one.
 //
-// Signals are shown as flags with their quote. They do NOT move the health
-// score — scoring is Phase 3, and the extraction mechanism has so far only
-// been validated against constructed test examples, not real customer language.
+// Phase 3: active signals now feed the health score with a modest, decaying
+// weight (see scoring.ts). Dismissing one removes its contribution from the
+// stored score immediately, not just from the card. Every source is still only
+// provisionally validated (constructed/hand-written test conversations).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -51,14 +52,19 @@ export const getCustomerContentSignals = createServerFn({ method: "POST" })
 export const dismissContentSignal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v: unknown) => z.object({ id: z.string().uuid() }).parse(v))
-  .handler(async ({ data, context }): Promise<{ dismissed: boolean }> => {
-    const { error } = await context.supabase
+  .handler(async ({ data, context }): Promise<{ dismissed: boolean; rescored: number }> => {
+    const { data: updated, error } = await context.supabase
       .from("content_risk_signals")
       .update({ dismissed_at: new Date().toISOString() })
       .eq("user_id", context.userId)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id");
     if (error) throw new Error(error.message);
-    return { dismissed: true };
+    // Ownership verified above (RLS + user filter). Nothing updated → nothing to rescore.
+    if (!updated || updated.length === 0) return { dismissed: false, rescored: 0 };
+    const { rescoreAfterDismissal } = await import("./dismissal.server");
+    const rescored = await rescoreAfterDismissal(context.userId, data.id);
+    return { dismissed: true, rescored };
   });
 
 /** Manual "read my conversations now" for the connected account. */
