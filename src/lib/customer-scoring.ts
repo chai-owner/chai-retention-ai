@@ -280,9 +280,10 @@ export function scoreCustomers(
       max: values.length ? Math.max(...values) : 0,
       direction: metricDirection(metric),
       elapsed: isElapsedMetric(metric),
-      // Which data category this metric draws on — used for the confidence
-      // indicator on the churn probability.
-      category: (metric.category ?? result.dataset ?? metric.name).toLowerCase(),
+      // Which data SOURCE this metric draws on (transactions, support, usage,
+      // surveys…) — the confidence indicator counts distinct sources, so two
+      // metrics from the same source never inflate it.
+      category: dataSourceFor(result.dataset),
     };
   });
 
@@ -338,7 +339,7 @@ export function scoreCustomers(
         basis,
         baseline: baseline == null ? null : round(baseline),
       });
-      categories.add(entry.category);
+      if (entry.category) categories.add(entry.category);
       weighted += normalised * weight;
       totalWeight += weight;
     }
@@ -354,7 +355,7 @@ export function scoreCustomers(
         basis: "payment",
         baseline: null,
       });
-      categories.add("payments");
+      categories.add("transactions"); // overdue invoices come from the invoice data
       weighted += normalised * PAYMENT_HEALTH_WEIGHT;
       totalWeight += PAYMENT_HEALTH_WEIGHT;
     }

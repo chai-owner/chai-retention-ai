@@ -22,6 +22,7 @@ import { playbookFor } from "@/lib/metric-playbooks";
 import {
   churnConfidenceFor,
   churnProbabilityFromHealth,
+  dataSourceFor,
   type ChurnConfidence,
 } from "@/lib/churn-probability";
 
@@ -295,6 +296,7 @@ export function buildRealDataset(
     (cm) => !(METRIC_NAMES as readonly string[]).includes(cm.metric.name),
   );
   const customLatest = new Map<string, Map<string, number>>();
+  const customDataset = new Map<string, string | null>();
   const customMax = new Map<string, number>();
   const customMin = new Map<string, number>();
   const peerTarget = new Map<string, number>();
@@ -302,6 +304,7 @@ export function buildRealDataset(
     const resolved = resolveMetric(cm.metric, data, now);
     if (resolved.values.size > 0) {
       customLatest.set(cm.metric.name, resolved.values);
+      customDataset.set(cm.metric.name, resolved.dataset ?? null);
       const vals = [...resolved.values.values()];
       customMax.set(cm.metric.name, Math.max(...vals));
       customMin.set(cm.metric.name, Math.min(...vals));
@@ -425,14 +428,18 @@ export function buildRealDataset(
     const churnProbability = churnProbabilityFromHealth(health);
     // Confidence reflects data completeness: how many distinct data categories
     // this customer actually has signals in.
+    // Counts distinct data SOURCES, not metric labels: ticket volume and
+    // ticket satisfaction are both "support"; satisfaction only counts as its
+    // own source when it comes from survey data.
     const dataCategories = new Set<string>();
     if (txg) dataCategories.add("transactions");
     if (loginAvgByCust.has(cid) || featAvgByCust.has(cid)) dataCategories.add("usage");
     if (supg) dataCategories.add("support");
-    if (cs != null) dataCategories.add("satisfaction");
+    if ((srv.get(cid)?.length ?? 0) > 0) dataCategories.add("surveys");
     for (const cm of customMetrics) {
       if (customLatest.get(cm.metric.name)?.get(cid) != null) {
-        dataCategories.add((cm.metric.category ?? cm.metric.name).toLowerCase());
+        const src = dataSourceFor(customDataset.get(cm.metric.name));
+        if (src) dataCategories.add(src);
       }
     }
     const churnConfidence: ChurnConfidence = churnConfidenceFor(dataCategories.size);
