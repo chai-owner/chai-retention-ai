@@ -26,6 +26,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as HelpIndexRouteImport } from './routes/help.index'
 import { Route as IntegrationsQuickbooksRouteImport } from './routes/integrations.quickbooks'
 import { Route as IntegrationsXeroRouteImport } from './routes/integrations.xero'
+import { Route as IntegrationsZohoCrmRouteImport } from './routes/integrations.zoho-crm'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated.app.index'
 import { Route as AuthenticatedAppChurnedRouteImport } from './routes/_authenticated.app.churned'
@@ -147,6 +148,11 @@ const IntegrationsQuickbooksRoute = IntegrationsQuickbooksRouteImport.update({
 const IntegrationsXeroRoute = IntegrationsXeroRouteImport.update({
   id: '/integrations/xero',
   path: '/integrations/xero',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntegrationsZohoCrmRoute = IntegrationsZohoCrmRouteImport.update({
+  id: '/integrations/zoho-crm',
+  path: '/integrations/zoho-crm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
@@ -376,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/integrations/quickbooks': typeof IntegrationsQuickbooksRoute
   '/integrations/xero': typeof IntegrationsXeroRoute
+  '/integrations/zoho-crm': typeof IntegrationsZohoCrmRoute
   '/invite/$token': typeof InviteTokenRoute
   '/help/': typeof HelpIndexRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
@@ -430,6 +437,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/integrations/quickbooks': typeof IntegrationsQuickbooksRoute
   '/integrations/xero': typeof IntegrationsXeroRoute
+  '/integrations/zoho-crm': typeof IntegrationsZohoCrmRoute
   '/invite/$token': typeof InviteTokenRoute
   '/help': typeof HelpIndexRoute
   '/app/churned': typeof AuthenticatedAppChurnedRoute
@@ -487,6 +495,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/integrations/quickbooks': typeof IntegrationsQuickbooksRoute
   '/integrations/xero': typeof IntegrationsXeroRoute
+  '/integrations/zoho-crm': typeof IntegrationsZohoCrmRoute
   '/invite/$token': typeof InviteTokenRoute
   '/help/': typeof HelpIndexRoute
   '/_authenticated/app/churned': typeof AuthenticatedAppChurnedRoute
@@ -545,6 +554,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/integrations/quickbooks'
     | '/integrations/xero'
+    | '/integrations/zoho-crm'
     | '/invite/$token'
     | '/help/'
     | '/app/churned'
@@ -599,6 +609,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/integrations/quickbooks'
     | '/integrations/xero'
+    | '/integrations/zoho-crm'
     | '/invite/$token'
     | '/help'
     | '/app/churned'
@@ -655,6 +666,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/integrations/quickbooks'
     | '/integrations/xero'
+    | '/integrations/zoho-crm'
     | '/invite/$token'
     | '/help/'
     | '/_authenticated/app/churned'
@@ -710,6 +722,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   IntegrationsQuickbooksRoute: typeof IntegrationsQuickbooksRoute
   IntegrationsXeroRoute: typeof IntegrationsXeroRoute
+  IntegrationsZohoCrmRoute: typeof IntegrationsZohoCrmRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicDemoAccessRoute: typeof ApiPublicDemoAccessRouteWithChildren
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
@@ -849,6 +862,13 @@ declare module '@tanstack/react-router' {
       path: '/integrations/xero'
       fullPath: '/integrations/xero'
       preLoaderRoute: typeof IntegrationsXeroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/integrations/zoho-crm': {
+      id: '/integrations/zoho-crm'
+      path: '/integrations/zoho-crm'
+      fullPath: '/integrations/zoho-crm'
+      preLoaderRoute: typeof IntegrationsZohoCrmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -1230,6 +1250,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   IntegrationsQuickbooksRoute: IntegrationsQuickbooksRoute,
   IntegrationsXeroRoute: IntegrationsXeroRoute,
+  IntegrationsZohoCrmRoute: IntegrationsZohoCrmRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiPublicDemoAccessRoute: ApiPublicDemoAccessRouteWithChildren,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
