@@ -13,7 +13,7 @@ import {
   compareTrend,
   describeComparison,
 } from "@/lib/personal-baseline";
-import { withCountableTransactions } from "@/lib/countable-transactions";
+import { withCountableTransactions, dealOnlyCustomers, MIN_DEAL_PEERS } from "@/lib/countable-transactions";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { resolveMetric } from "@/lib/metric-resolution";
@@ -267,14 +267,31 @@ export function scoreCustomers(
   ];
   if (customerIds.length === 0 || metrics.length === 0) return [];
 
+  // Deal sizes and invoice sizes are different kinds of number. For spend /
+  // order-size measures on sales data, deal-only customers are compared only
+  // with each other — and only when there are at least MIN_DEAL_PEERS of them.
+  const dealOnly = dealOnlyCustomers(data);
+  const range = (vals: number[]) => ({
+    min: vals.length ? Math.min(...vals) : 0,
+    max: vals.length ? Math.max(...vals) : 0,
+  });
+
   const resolved = metrics.map((metric) => {
     const result = resolveMetric(metric, data, now);
-    const values = [...result.values.values()];
+    const category = dataSourceFor(result.dataset);
+    const elapsedOp = result.operation === "days_since_last" || result.operation === "months_since";
+    const splitDeals = category === "transactions" && !elapsedOp && !isElapsedMetric(metric) && dealOnly.size > 0;
+    const entries = [...result.values.entries()];
+    const all = range(entries.map(([, v]) => v));
+    const invoiceRange = splitDeals ? range(entries.filter(([id]) => !dealOnly.has(id)).map(([, v]) => v)) : all;
+    const dealRange = splitDeals ? range(entries.filter(([id]) => dealOnly.has(id)).map(([, v]) => v)) : all;
     return {
       metric,
       values: result.values,
-      min: values.length ? Math.min(...values) : 0,
-      max: values.length ? Math.max(...values) : 0,
+      min: invoiceRange.min,
+      max: invoiceRange.max,
+      splitDeals,
+      dealRange,
       direction: metricDirection(metric),
       elapsed: isElapsedMetric(metric),
       operation: result.operation,
@@ -282,7 +299,7 @@ export function scoreCustomers(
       // Which data SOURCE this metric draws on (transactions, support, usage,
       // surveys…) — the confidence indicator counts distinct sources, so two
       // metrics from the same source never inflate it.
-      category: dataSourceFor(result.dataset),
+      category,
     };
   });
 
@@ -304,6 +321,9 @@ export function scoreCustomers(
 
       const value = entry.values.get(customerId);
       if (value == null || !Number.isFinite(value)) continue;
+      const isDealOnly = entry.splitDeals && dealOnly.has(customerId);
+      if (isDealOnly && dealOnly.size < MIN_DEAL_PEERS) continue;
+      const peers = isDealOnly ? entry.dealRange : { min: entry.min, max: entry.max };
       const weight = Number(entry.metric.weight ?? 1) || 1;
 
       let normalised: number;
@@ -320,9 +340,9 @@ export function scoreCustomers(
         fallback = clamp(100 - (value / horizon) * 100);
       } else {
         fallbackBasis = "cohort";
-        const spread = entry.max - entry.min;
+        const spread = peers.max - peers.min;
         // A flat distribution carries no signal — treat everyone as mid-range.
-        let n = spread === 0 ? 50 : ((value - entry.min) / spread) * 100;
+        let n = spread === 0 ? 50 : ((value - peers.min) / spread) * 100;
         if (entry.direction === "lower") n = 100 - n;
         fallback = clamp(n);
       }

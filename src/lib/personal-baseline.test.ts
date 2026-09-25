@@ -63,7 +63,7 @@ describe("won deals only", () => {
     expect(isCountableTransaction({ deal_status: "open" })).toBe(false);
     expect(isCountableTransaction({ deal_status: "lost" })).toBe(false);
     const out = withCountableTransactions({
-      transactions: [{ transaction_id: "1", deal_status: "won" }, { transaction_id: "2", deal_status: "open" }, { transaction_id: "3" }],
+      transactions: [{ transaction_id: "1", customer_id: "X", deal_status: "won" }, { transaction_id: "2", customer_id: "X", deal_status: "open" }, { transaction_id: "3", customer_id: "Y" }],
     } as never);
     expect((out as { transactions: Array<{ transaction_id: string }> }).transactions.map((t) => t.transaction_id)).toEqual(["1", "3"]);
   });
