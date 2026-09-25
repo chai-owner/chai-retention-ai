@@ -8,7 +8,7 @@ import {
 import { CHURN_META_METRIC } from "@/lib/customer-scoring";
 
 const breakdown = [
-  { metric: "Visits per week", value: 1, normalised: 20, weight: 5, basis: "cohort", baseline: 4 },
+  { metric: "Visits per week", value: 1, normalised: 20, weight: 5, basis: "baseline-30d", baseline: 4 },
   { metric: "Spend", value: 90, normalised: 45, weight: 1, basis: "cohort", baseline: null },
   { metric: "Tenure", value: 12, normalised: 80, weight: 3, basis: "cohort", baseline: null },
   {

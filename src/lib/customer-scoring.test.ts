@@ -5,7 +5,6 @@ import {
   riskLevelFor,
   metricDirection,
   horizonDays,
-  type HistoryPoint,
   type ScoreBreakdownEntry,
 } from "@/lib/customer-scoring";
 import type { PlannerMetric } from "@/lib/mock-data";
@@ -103,38 +102,45 @@ describe("scoreCustomers", () => {
     expect(entries(scores.a!)[0]!.basis).toBe("cohort");
   });
 
-  it("scores against the customer's own 30-day baseline when history exists", () => {
-    const history: HistoryPoint[] = [
-      { customer_id: "a", metric: metric.name, value: 5, scored_at: NOW - 2 * DAY },
-      { customer_id: "a", metric: metric.name, value: 5, scored_at: NOW - 10 * DAY },
-    ];
-    const scores = byId(scoreCustomers([metric], data, { now: NOW, history }));
-    // a resolves to 10 against a baseline of 5 — improving, so well above 50.
-    expect(scores.a!.score).toBe(100);
-    expect(entries(scores.a!)[0]).toMatchObject({ basis: "baseline-30d", baseline: 5 });
-    // c has no history and still uses the cohort fallback.
-    expect(entries(scores.c!)[0]!.basis).toBe("cohort");
+  it("compares recent 30 days to the customer's own prior 90 days", () => {
+    const d = (n: number) => new Date(NOW - n * DAY).toISOString().slice(0, 10);
+    const trendData: IngestedData = {
+      customers: [{ customer_id: "a" }, { customer_id: "b" }],
+      usage: [
+        // a: 60-minute sessions for months, now 30 → halved.
+        ...[40, 60, 80, 100, 110, 115].map((n) => ({ customer_id: "a", workout_duration_minutes: "60", occurred_at: d(n) })),
+        { customer_id: "a", workout_duration_minutes: "30", occurred_at: d(5) },
+        // b: short history (one record) → no personal baseline.
+        { customer_id: "b", workout_duration_minutes: "20", occurred_at: d(5) },
+      ],
+    };
+    const scores = byId(scoreCustomers([metric], trendData, { now: NOW }));
+    const a = entries(scores.a!)[0]!;
+    expect(a.basis).toBe("personal");
+    expect(a.baseline).toBe(60);
+    expect(a.normalised).toBe(25);
+    expect(a.comparison).toContain("down 50%");
+    expect(a.comparison).toContain("own previous 90 days");
+    expect(entries(scores.b!)[0]!.basis).toBe("cohort");
+    expect(entries(scores.b!)[0]!.comparison).toBeUndefined();
   });
 
-  it("sits at 50 when the value matches the baseline", () => {
-    const history: HistoryPoint[] = [
-      { customer_id: "b", metric: metric.name, value: 50, scored_at: NOW - DAY },
-    ];
-    const scores = byId(scoreCustomers([metric], data, { now: NOW, history }));
-    expect(scores.b!.score).toBe(50);
+  it("blends thin personal history with the fallback", () => {
+    const d = (n: number) => new Date(NOW - n * DAY).toISOString().slice(0, 10);
+    const thin: IngestedData = {
+      customers: [{ customer_id: "a" }, { customer_id: "b" }],
+      usage: [
+        ...[40, 60, 80].map((n) => ({ customer_id: "a", workout_duration_minutes: "60", occurred_at: d(n) })),
+        { customer_id: "a", workout_duration_minutes: "60", occurred_at: d(5) },
+        { customer_id: "b", workout_duration_minutes: "90", occurred_at: d(5) },
+      ],
+    };
+    const a = entries(byId(scoreCustomers([metric], thin, { now: NOW })).a!)[0]!;
+    expect(a.basis).toBe("blended");
+    expect(a.comparison).toContain("limited history");
   });
 
-  it("uses the 90-day baseline when there is nothing in the last 30 days", () => {
-    const history: HistoryPoint[] = [
-      { customer_id: "b", metric: metric.name, value: 100, scored_at: NOW - 60 * DAY },
-    ];
-    const scores = byId(scoreCustomers([metric], data, { now: NOW, history }));
-    expect(entries(scores.b!)[0]).toMatchObject({ basis: "baseline-90d", baseline: 100 });
-    // 50 against a baseline of 100 is a decline for a higher-is-better metric.
-    expect(scores.b!.score).toBe(25);
-  });
-
-  it("rewards lower-is-better metrics that improve toward zero", () => {
+  it("judges days-since-last against the customer's own rhythm", () => {
     const lower: PlannerMetric = {
       name: "Days Since Last Payment",
       why: "Payment recency",
@@ -142,17 +148,17 @@ describe("scoreCustomers", () => {
       category: "Transactions",
       weight: 1,
     };
+    const d = (n: number) => new Date(NOW - n * DAY).toISOString().slice(0, 10);
+    // Pays every ~10 days; last payment 30 days ago → 3x usual gap.
     const payData: IngestedData = {
       customers: [{ customer_id: "a" }],
-      transactions: [{ customer_id: "a", amount: "10", payment_date: "2026-08-21" }],
+      transactions: [30, 40, 50, 60, 70, 80, 90].map((n, i) => ({ customer_id: "a", transaction_id: `t${i}`, amount: "10", payment_date: d(n) })),
     };
-    const history: HistoryPoint[] = [
-      { customer_id: "a", metric: lower.name, value: 40, scored_at: NOW - 3 * DAY },
-    ];
-    const scores = byId(scoreCustomers([lower], payData, { now: NOW, history }));
-    // 10 days since payment against a 40-day baseline is a big improvement.
-    expect(scores.a!.score).toBeGreaterThan(50);
-    expect(entries(scores.a!)[0]!.basis).toBe("baseline-30d");
+    const e = entries(byId(scoreCustomers([lower], payData, { now: NOW })).a!)[0]!;
+    expect(e.basis).toBe("personal");
+    expect(e.baseline).toBe(10);
+    expect(e.normalised).toBe(0);
+    expect(e.comparison).toContain("usually goes about 10 days");
   });
 
   it("uses the cadence horizon for elapsed metrics without history", () => {
