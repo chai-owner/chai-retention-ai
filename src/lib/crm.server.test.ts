@@ -154,22 +154,57 @@ describe("HubSpot sync", () => {
     }
   });
 
-  it("uses the search API with a last-modified filter for delta pulls", async () => {
+  it("never calls HubSpot's search endpoint and uses dated API paths", async () => {
     const http = mockFetch([
-      { match: "/companies/search", json: companies },
-      { match: "/deals/search", json: deals },
+      { match: "/objects/2026-09/companies", json: companies },
+      { match: "/objects/2026-09/deals", json: deals },
     ]);
-    const since = "2026-05-01T00:00:00.000Z";
-    await runCrmSync("hubspot", "user-1", 100, since);
+    await runCrmSync("hubspot", "user-1", 100, "2026-05-01T00:00:00.000Z");
+    for (const req of http.requests) {
+      expect(req.method ?? "GET").toBe("GET");
+      expect(req.url).not.toMatch(/\/search|\/crm\/v3\//);
+    }
+  });
 
-    const req = http.find("/companies/search")!;
-    expect(req.method).toBe("POST");
-    const body = JSON.parse(req.body!);
-    expect(body.filterGroups[0].filters[0]).toEqual({
-      propertyName: "hs_lastmodifieddate",
-      operator: "GTE",
-      value: String(new Date(since).getTime() - 5 * 60 * 1000),
+  it("applies 'changed since' (minus the 5-minute lag) in code on delta pulls", async () => {
+    const since = "2026-05-01T00:00:00.000Z";
+    const mk = (id: string, mod: string) => ({
+      id,
+      properties: { name: id, hs_lastmodifieddate: mod },
     });
+    mockFetch([
+      {
+        match: "/objects/2026-09/companies",
+        json: {
+          results: [
+            mk("old", "2026-04-01T00:00:00Z"),
+            mk("inLag", "2026-04-30T23:57:00Z"),
+            mk("new", "2026-05-02T00:00:00Z"),
+          ],
+        },
+      },
+      { match: "/objects/2026-09/deals", json: { results: [] } },
+    ]);
+    const datasets = await runCrmSync("hubspot", "user-1", 100, since);
+    const ids = datasets.find((d) => d.key === "customers")!.rows.map((r) => r[0]);
+    expect(ids).toEqual(["inLag", "new"]);
+  });
+
+  it("pages past the first 100 records until HubSpot stops returning a cursor", async () => {
+    const { pageHubspotList } = await import("./crm.server");
+    const urls: string[] = [];
+    const pages = [
+      { results: Array.from({ length: 100 }, (_, i) => ({ id: `a${i}` })), paging: { next: { after: "100" } } },
+      { results: Array.from({ length: 100 }, (_, i) => ({ id: `b${i}` })), paging: { next: { after: "200" } } },
+      { results: [{ id: "c0" }] },
+    ];
+    const rows = await pageHubspotList("https://gw/hubspot", {}, "companies", ["name"], undefined, async (u) => {
+      urls.push(u);
+      return pages[urls.length - 1];
+    });
+    expect(rows).toHaveLength(201);
+    expect(urls[1]).toContain("after=100");
+    expect(urls[2]).toContain("after=200");
   });
 
   it("explains rate limiting in plain language", async () => {
