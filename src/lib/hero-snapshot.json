@@ -1,0 +1,113 @@
+{
+  "capturedAt": "2026-09-25T11:41:09.422Z",
+  "engine": "buildRealDataset (src/lib/real-scoring.ts) with DEFAULT_METRIC_WEIGHTS",
+  "seed": "scripts/hero-snapshot/generate.ts — 8 fictional demo accounts",
+  "customer": {
+    "id": "ACC-105",
+    "name": "Meadowbank Logistics",
+    "contact": "",
+    "segment": "Unsegmented",
+    "health": 30,
+    "risk": 70,
+    "churnProbability": 55,
+    "churnConfidence": "high",
+    "dataCategories": 4,
+    "revenue": 25200,
+    "sentiment": 45,
+    "lastActivity": "118 days ago",
+    "subScores": {
+      "Login frequency": 14.96062992125984,
+      "Feature adoption": 25,
+      "Days since last purchase": 34.17393632973251,
+      "Average order value": 90,
+      "Support ticket volume": 0,
+      "Resolution time": 25,
+      "CSAT / NPS": 45
+    },
+    "metricValues": {},
+    "factors": [
+      {
+        "label": "High support volume",
+        "weight": 100,
+        "detail": "4 support tickets logged."
+      },
+      {
+        "label": "Usage declining",
+        "weight": 85,
+        "detail": "Login activity is well below your most active accounts."
+      },
+      {
+        "label": "Unresolved support tickets",
+        "weight": 75,
+        "detail": "3 of 4 tickets are open or reopened."
+      }
+    ],
+    "recommendations": [
+      {
+        "title": "Resolve open support issues",
+        "priority": "High",
+        "difficulty": "Easy",
+        "impact": "Strong",
+        "reasoning": "A spike in tickets is a leading churn signal. Closing them removes the most immediate source of frustration.",
+        "steps": [
+          "Assign one named owner to this account and consolidate every open issue into a single thread.",
+          "Give the customer a written summary of what is being fixed and by when.",
+          "Review the ticket themes for a root cause and fix it so the volume does not return."
+        ],
+        "revenueSaved": 6930
+      },
+      {
+        "title": "Provide additional onboarding & training",
+        "priority": "Medium",
+        "difficulty": "Moderate",
+        "impact": "Strong",
+        "reasoning": "Login activity is well below your healthiest accounts — hands-on training re-establishes the habit that drives retention.",
+        "steps": [
+          "Book a 20-minute guided session focused on the one outcome they signed up for.",
+          "Set up or complete one thing for them live so they leave with a result.",
+          "Check usage weekly for a month and intervene again if it stays flat."
+        ],
+        "revenueSaved": 6930
+      },
+      {
+        "title": "Clear the open ticket backlog",
+        "priority": "High",
+        "difficulty": "Easy",
+        "impact": "Strong",
+        "reasoning": "Open and reopened tickets are the top churn driver here — resolving them rebuilds confidence fast.",
+        "steps": [
+          "Resolve or formally answer every open ticket on this account today, oldest first.",
+          "Send one recap message confirming each item is closed and what changed.",
+          "Follow up 7 days later to confirm nothing reopened."
+        ],
+        "revenueSaved": 6930
+      }
+    ],
+    "timeline": [
+      {
+        "date": "2025-04-03",
+        "type": "signup",
+        "title": "Became a customer",
+        "detail": "Meadowbank Logistics joined."
+      },
+      {
+        "date": "2026-05-30",
+        "type": "purchase",
+        "title": "Most recent purchase",
+        "detail": "Latest transaction on record."
+      },
+      {
+        "date": "2026-09-25",
+        "type": "support",
+        "title": "Support activity",
+        "detail": "4 tickets logged, 3 open."
+      },
+      {
+        "date": "2026-09-25",
+        "type": "score",
+        "title": "Risk flagged",
+        "detail": "Health score 30, churn probability 55%."
+      }
+    ]
+  }
+}
