@@ -193,46 +193,23 @@ async function syncHubspot(
   }
   const headers = gatewayHeaders(connectionKey, lovableKey);
   const base = `${GATEWAY_BASE}/hubspot`;
-  const cap = Math.min(limit, 100);
-  const companyProps = ["name", "domain", "createdate", "annualrevenue", "industry", "country"];
-  const dealProps = ["dealname", "amount", "closedate", "pipeline", "dealstage"];
+  const companyProps = ["name", "domain", "createdate", "annualrevenue", "industry", "country", "hs_lastmodifieddate"];
+  const dealProps = ["dealname", "amount", "closedate", "pipeline", "dealstage", "hs_lastmodifieddate"];
+  void limit; // HubSpot now pages the whole portal; `limit` only capped Salesforce/Zoho-style pulls.
 
-  let companies: unknown, deals: unknown;
-
-  if (since) {
-    // Delta pulls use the Search API which supports filters.
-    const sinceMs = laggedSinceMs(since);
-    const searchBody = (properties: string[]) => ({
-      filterGroups: [
-        {
-          filters: [
-            { propertyName: "hs_lastmodifieddate", operator: "GTE", value: String(sinceMs) },
-          ],
-        },
-      ],
-      properties,
-      limit: cap,
-      sorts: [{ propertyName: "hs_lastmodifieddate", direction: "DESCENDING" }],
-    });
-    [companies, deals] = await Promise.all([
-      gwPost(`${base}/crm/v3/objects/companies/search`, headers, searchBody(companyProps)),
-      gwPost(`${base}/crm/v3/objects/deals/search`, headers, {
-        ...searchBody(dealProps),
-        associations: ["companies"],
-      }),
-    ]);
-  } else {
-    [companies, deals] = await Promise.all([
-      gwGet(
-        `${base}/crm/v3/objects/companies?limit=${cap}&properties=${companyProps.join(",")}`,
-        headers,
-      ),
-      gwGet(
-        `${base}/crm/v3/objects/deals?limit=${cap}&properties=${dealProps.join(",")}&associations=companies`,
-        headers,
-      ),
-    ]);
-  }
+  // Per-user tokens can't use HubSpot's search endpoint, so "changed since"
+  // is applied in code over the full paged list (see hubspot-api.ts).
+  const sinceMs = since ? laggedSinceMs(since) : null;
+  const companiesList = await pageHubspotList(base, headers, "companies", companyProps);
+  const dealsList = await pageHubspotList(base, headers, "deals", dealProps, "companies");
+  const changed = (r: Record<string, unknown>) => {
+    if (sinceMs == null) return true;
+    const p = (r.properties ?? {}) as Record<string, unknown>;
+    const t = Date.parse(toStr(p.hs_lastmodifieddate) || toStr(r.updatedAt));
+    return isNaN(t) || t >= sinceMs;
+  };
+  const companies = { results: companiesList.filter(changed) };
+  const deals = { results: dealsList.filter(changed) };
 
   const customers: string[][] = (
     (companies as { results?: Record<string, unknown>[] } | null)?.results ?? []
