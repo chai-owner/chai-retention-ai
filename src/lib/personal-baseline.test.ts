@@ -65,7 +65,7 @@ describe("won deals only", () => {
     const out = withCountableTransactions({
       transactions: [{ transaction_id: "1", deal_status: "won" }, { transaction_id: "2", deal_status: "open" }, { transaction_id: "3" }],
     } as never);
-    expect(out.transactions!.map((t) => t.transaction_id)).toEqual(["1", "3"]);
+    expect((out as { transactions: Array<{ transaction_id: string }> }).transactions.map((t) => t.transaction_id)).toEqual(["1", "3"]);
   });
 });
 
