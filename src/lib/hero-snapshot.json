@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-25T11:41:23.048Z",
+  "capturedAt": "2026-09-25T11:41:29.834Z",
   "engine": "buildRealDataset (src/lib/real-scoring.ts) with DEFAULT_METRIC_WEIGHTS",
   "seed": "scripts/hero-snapshot/generate.ts — 8 fictional demo accounts",
   "customer": {
@@ -16,7 +16,7 @@
     "sentiment": 45,
     "lastActivity": "118 days ago",
     "subScores": {
-      "Days since last purchase": 34.17384870756173,
+      "Days since last purchase": 34.173805073302475,
       "Average order value": 90,
       "Support ticket volume": 0,
       "Resolution time": 25,
