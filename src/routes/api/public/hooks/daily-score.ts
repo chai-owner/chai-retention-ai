@@ -191,11 +191,58 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
               }
             }
 
-            const scores = scoreCustomers(metrics, data, {
+            let scores = scoreCustomers(metrics, data, {
               history,
               cadence: (profile.cadence as string | null) ?? undefined,
               lifespan: (profile.lifespan as string | null) ?? undefined,
             });
+
+            // Phase 3: active (not dismissed) conversation signals nudge the
+            // score modestly and fade with age. Same weight for every source.
+            if (scores.length > 0) {
+              const { data: signalRows, error: signalError } = await supabaseAdmin
+                .from("content_risk_signals")
+                .select("id, signal, source, confidence, occurred_at, detected_at, customer_ref")
+                .eq("user_id", userId)
+                .is("dismissed_at", null);
+              if (signalError) throw new Error(`content_risk_signals: ${signalError.message}`);
+              if ((signalRows ?? []).length > 0) {
+                const { applyContentSignals, buildRefResolver, groupSignalsByCustomer } =
+                  await import("@/lib/content-signals/scoring");
+                const names: Record<string, string> = {};
+                for (const row of data.customers ?? []) {
+                  const id = String(row.customer_id ?? "");
+                  const name = String((row as Record<string, unknown>)["name"] ?? "");
+                  if (id && name) names[id] = name;
+                }
+                const resolve = buildRefResolver(
+                  scores.map((s) => s.customer_id),
+                  aliases.map((a) => ({
+                    source_id: a.source_id,
+                    customer_id: a.customer_id,
+                    status: a.status,
+                  })),
+                  names,
+                );
+                const bySignal = groupSignalsByCustomer(
+                  (signalRows ?? []).map((r) => ({
+                    id: r.id as string,
+                    signal: r.signal as string,
+                    source: r.source as string,
+                    confidence: Number(r.confidence ?? 0),
+                    occurred_at: (r.occurred_at as string | null) ?? null,
+                    detected_at: (r.detected_at as string | null) ?? null,
+                    customer_ref: (r.customer_ref as string | null) ?? null,
+                  })),
+                  resolve,
+                );
+                scores = scores.map((s) =>
+                  bySignal.has(s.customer_id)
+                    ? applyContentSignals(s, bySignal.get(s.customer_id)!)
+                    : s,
+                );
+              }
+            }
             if (scores.length === 0) {
               results.push({ user_id: userId, ok: true, customers: 0 });
               await logRun(userId, true);
