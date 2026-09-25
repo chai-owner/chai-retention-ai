@@ -54,7 +54,7 @@ export function contentFactorFromBreakdown(breakdown: unknown): Factor | null {
   const sources = [...new Set(labels.map((l) => l.source))];
   return {
     label: types.join(", "),
-    weight: Math.max(0, Math.min(100, Math.round(100 - entry.normalised))),
+    weight: Math.max(0, Math.min(100, Math.round(entry.strength ?? 100 - entry.normalised))),
     detail: `Picked up by AI from ${sources.join(" and ")} conversations. Weighted modestly and fades as it gets older — see the quotes below.`,
     aiDetected: true,
   };

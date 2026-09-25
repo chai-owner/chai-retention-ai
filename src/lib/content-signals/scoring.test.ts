@@ -77,7 +77,14 @@ describe("content signal weighting", () => {
     const out = applyContentSignals(base(), many, NOW);
     // Worst case: content entry at 0 with weight 1.5 against 6 of metric weight.
     expect(out.score).toBeCloseTo((80 * 6) / (6 + CONTENT_SIGNAL_WEIGHT), 1);
+    expect(out.score).toBe(64);
     expect(out.score).toBeGreaterThan(60);
+  });
+
+  it("a weak signal never lifts a low score", () => {
+    const low = { ...base(), score_breakdown: base().score_breakdown.map((e) => ("normalised" in e ? { ...e, normalised: 20 } : e)) };
+    const out = applyContentSignals(low, [sig({ occurred_at: ago(150), confidence: 0.3 })], NOW);
+    expect(out.score).toBeLessThanOrEqual(20);
   });
 
   it("no signals → no content entry and an unchanged score", () => {

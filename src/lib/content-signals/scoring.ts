@@ -52,6 +52,8 @@ export interface ContentSignalContribution {
 
 export interface ContentBreakdownEntry extends ScoreBreakdownEntry {
   basis: "content";
+  /** Combined signal strength 0–100 (sum of decayed penalties, capped). */
+  strength: number;
   signals: ContentSignalContribution[];
 }
 
@@ -122,7 +124,10 @@ export function buildContentEntry(
   return {
     metric: CONTENT_SIGNAL_METRIC,
     value: contributions.length,
+    // Placeholder; applyContentSignals sets it relative to the metric score so
+    // a signal can only ever pull a score DOWN, never lift it.
     normalised: round2(Math.max(0, 100 - total)),
+    strength: round2(total),
     weight: CONTENT_SIGNAL_WEIGHT,
     basis: "content",
     baseline: null,
@@ -149,18 +154,26 @@ export function applyContentSignals(
     (e) => (e as { metric?: unknown }).metric !== CHURN_META_METRIC && !isContentEntry(e),
   ) as ScoreBreakdownEntry[];
 
-  const content = buildContentEntry(signals, now);
-  const entries: ScoreBreakdownEntry[] = content ? [...metricEntries, content] : metricEntries;
-
   let weighted = 0;
   let total = 0;
-  for (const e of entries) {
+  for (const e of metricEntries) {
     const w = Number(e.weight) || 0;
     if (!Number.isFinite(e.normalised) || w <= 0) continue;
     weighted += e.normalised * w;
     total += w;
   }
-  const newScore = total > 0 ? round2(weighted / total) : Number(score.score ?? 0);
+  const metricScore = total > 0 ? weighted / total : Number(score.score ?? 0);
+
+  // The content entry sits at the metric score scaled down by its strength:
+  // strength 0 leaves the score untouched, strength 100 costs at most
+  // weight/(Σweights + weight) of it. It can never raise a score.
+  const content = buildContentEntry(signals, now);
+  let newScore = round2(metricScore);
+  if (content) {
+    content.normalised = round2(metricScore * (1 - content.strength / 100));
+    newScore = round2((weighted + content.normalised * content.weight) / (total + content.weight));
+  }
+  const entries: ScoreBreakdownEntry[] = content ? [...metricEntries, content] : metricEntries;
   const churn = churnProbabilityFromHealth(newScore);
   // Content is not a data category — confidence stays with the hard data.
   const categories = oldMeta?.data_categories ?? new Set(metricEntries.map((e) => e.metric)).size;

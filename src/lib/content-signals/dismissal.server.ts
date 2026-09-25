@@ -22,7 +22,7 @@ export async function rescoreAfterDismissal(userId: string, signalId: string): P
       {
         customer_id: row.customer_id as string,
         score: Number(row.score),
-        score_breakdown: (row.score_breakdown ?? []) as CustomerScore["score_breakdown"],
+        score_breakdown: (row.score_breakdown ?? []) as unknown as CustomerScore["score_breakdown"],
       },
       signalId,
     );
