@@ -40,7 +40,22 @@ export function churnProbabilityFromHealth(health: number): number {
   return Math.round(prob);
 }
 
-/** Confidence in the probability, based on how many metric categories have data. */
+/**
+ * The data SOURCE a signal came from, for counting "kinds of data" behind a
+ * confidence level. Two signals from the same source (e.g. ticket volume and
+ * ticket satisfaction ratings, or overdue invoices and invoice amounts) count
+ * once. The customer list itself is the base record, not a signal source, so
+ * it returns null. Surveys are their own source only when they come from
+ * survey data; a satisfaction rating on a ticket belongs to "support".
+ */
+export function dataSourceFor(dataset: string | null | undefined): string | null {
+  const d = (dataset ?? "").toLowerCase();
+  if (!d || d === "customers") return null;
+  if (d === "payments" || d === "invoices") return "transactions";
+  return d;
+}
+
+/** Confidence in the probability, based on how many distinct data sources have signals. */
 export function churnConfidenceFor(categoryCount: number): ChurnConfidence {
   if (categoryCount >= 3) return "high";
   if (categoryCount === 2) return "moderate";
