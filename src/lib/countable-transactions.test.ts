@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { IngestedData } from "@/lib/ingested-data-store";
 import { withCountableTransactions, dealOnlyCustomers } from "./countable-transactions";
 
 const rows = [
@@ -11,11 +12,11 @@ const rows = [
 
 describe("invoices first", () => {
   it("drops open/lost deals and won deals for customers with invoices", () => {
-    const out = withCountableTransactions({ transactions: rows } as never);
-    expect(out.transactions!.map((r) => [r.customer_id, r.amount])).toEqual([["A", "5000"], ["B", "35000"]]);
+    const out = withCountableTransactions({ transactions: rows } as unknown as IngestedData);
+    expect((out.transactions as Array<Record<string, unknown>>).map((r) => [r.customer_id, r.amount])).toEqual([["A", "5000"], ["B", "35000"]]);
   });
   it("identifies deal-only customers", () => {
-    const out = withCountableTransactions({ transactions: rows } as never);
+    const out = withCountableTransactions({ transactions: rows } as unknown as IngestedData);
     expect([...dealOnlyCustomers(out)]).toEqual(["B"]);
   });
 });
