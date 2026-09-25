@@ -62,7 +62,7 @@ export function RiskFactorsCard({
                 className={cn(
                   "h-full rounded-full",
                   f.aiDetected
-                    ? "bg-[repeating-linear-gradient(45deg,var(--color-primary)_0_4px,transparent_4px_7px)]"
+                    ? "bg-primary/70"
                     : "bg-danger",
                 )}
                 style={{ width: `${Math.min(100, f.aiDetected ? f.weight : f.weight * 2.6)}%` }}
