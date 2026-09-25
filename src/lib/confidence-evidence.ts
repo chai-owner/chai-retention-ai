@@ -12,11 +12,11 @@ type Row = Record<string, unknown>;
 
 const DATE_FIELDS: Record<string, string[]> = {
   transactions: ["transaction_date", "date", "occurred_at", "invoice_date", "paid_date"],
-  support: ["created_at", "date", "opened_at", "occurred_at"],
+  support: ["created_at", "created_date", "date", "opened_at", "occurred_at"],
   usage: ["date", "activity_date", "visit_date", "occurred_at"],
   surveys: ["submitted_at", "date", "created_at", "occurred_at"],
 };
-const GENERIC_DATE_FIELDS = ["date", "occurred_at", "created_at", "submitted_at"];
+const GENERIC_DATE_FIELDS = ["date", "occurred_at", "created_at", "created_date", "submitted_at"];
 
 function hasDate(row: Row, fields: string[]): boolean {
   for (const f of fields) {
