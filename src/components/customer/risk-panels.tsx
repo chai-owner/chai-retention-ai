@@ -24,10 +24,16 @@ export function RiskFactorsCard({
   customer: c,
   analyzedCopy,
   className,
+  factorScale = "share",
+  confidenceNote,
 }: {
   customer: Customer;
   analyzedCopy: string;
   className?: string;
+  /** "severity" labels each factor as 100 − metric score (what the engine computes). */
+  factorScale?: "share" | "severity";
+  /** Replaces the confidence callout; null hides it. */
+  confidenceNote?: string | null;
 }) {
   return (
     <Card className={className}>
@@ -54,7 +60,11 @@ export function RiskFactorsCard({
                 )}
               </span>
               <span className="shrink-0 text-xs text-muted-foreground">
-                {f.aiDetected ? `${f.weight}/100 signal strength` : `${f.weight}% of risk`}
+                {f.aiDetected
+                  ? `${f.weight}/100 signal strength`
+                  : factorScale === "severity"
+                    ? `${f.weight}/100 severity`
+                    : `${f.weight}% of risk`}
               </span>
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary">
@@ -65,7 +75,7 @@ export function RiskFactorsCard({
                     ? "bg-primary/70"
                     : "bg-danger",
                 )}
-                style={{ width: `${Math.min(100, f.aiDetected ? f.weight : f.weight * 2.6)}%` }}
+                style={{ width: `${Math.min(100, f.aiDetected || factorScale === "severity" ? f.weight : f.weight * 2.6)}%` }}
               />
             </div>
             <p className="mt-1.5 text-xs text-muted-foreground">{f.detail}</p>
@@ -81,10 +91,16 @@ export function RiskFactorsCard({
           </p>
         )}
       </div>
-      <div className="mt-4 rounded-lg bg-accent/50 p-3 text-xs text-accent-foreground">
-        <span className="font-medium">Confidence:</span> {Math.round(72 + c.risk / 5)}% — based on
-        the volume and quality of data available for this customer.
-      </div>
+      {confidenceNote === undefined ? (
+        <div className="mt-4 rounded-lg bg-accent/50 p-3 text-xs text-accent-foreground">
+          <span className="font-medium">Confidence:</span> {Math.round(72 + c.risk / 5)}% — based on
+          the volume and quality of data available for this customer.
+        </div>
+      ) : confidenceNote ? (
+        <div className="mt-4 rounded-lg bg-accent/50 p-3 text-xs text-accent-foreground">
+          {confidenceNote}
+        </div>
+      ) : null}
     </Card>
   );
 }
@@ -95,7 +111,9 @@ export function RecommendedActionsCard({
   limit,
   showSteps = true,
   className,
+  subtitle = "Ranked by expected revenue saved.",
 }: {
+  subtitle?: string;
   customer: Customer;
   limit?: number;
   showSteps?: boolean;
@@ -106,7 +124,7 @@ export function RecommendedActionsCard({
   return (
     <Card className={className}>
       <h3 className="font-semibold">Recommended actions</h3>
-      <p className="mt-1 text-xs text-muted-foreground">Ranked by expected revenue saved.</p>
+      <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
       <div className="mt-4 space-y-3">
         {recommendations.map((r) => (
           <div key={r.title} className="rounded-lg border border-border p-3">

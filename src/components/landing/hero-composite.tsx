@@ -3,13 +3,18 @@ import {
   RecommendedActionsCard,
   analyzedCopyFor,
 } from "@/components/customer/risk-panels";
-import { customers } from "@/lib/mock-data";
+import { churnConfidenceLabel } from "@/lib/churn-probability";
+import type { Customer } from "@/lib/mock-data";
+import heroSnapshot from "@/lib/hero-snapshot.json";
 
 const cardShadow = "0 16px 40px rgba(0,0,0,0.14)";
 
-/** The real product panels for a representative at-risk account. */
-export const heroCompositeCustomer =
-  customers.find((c) => c.name === "Cascade Health") ?? customers[0];
+/**
+ * A one-time snapshot of real engine output: a seeded demo account run through
+ * buildRealDataset (see scripts/hero-snapshot/generate.ts). Displayed as-is —
+ * never hand-edited. Re-run the script to refresh it.
+ */
+export const heroCompositeCustomer = heroSnapshot.customer as unknown as Customer;
 
 export function HeroComposite() {
   const c = heroCompositeCustomer;
@@ -22,6 +27,12 @@ export function HeroComposite() {
           <RiskFactorsCard
             customer={c}
             analyzedCopy={analyzedCopyFor(c.factors.map((f) => f.label))}
+            factorScale="severity"
+            confidenceNote={
+              c.churnConfidence
+                ? `${churnConfidenceLabel(c.churnConfidence)} — based on how many kinds of data this customer has.`
+                : null
+            }
             className="rounded-[16px] border-0 bg-transparent"
           />
         </div>
@@ -35,6 +46,7 @@ export function HeroComposite() {
             customer={c}
             limit={2}
             showSteps={false}
+            subtitle="Est. saved is one estimate per customer, shared by each action."
             className="rounded-[16px] border-0 bg-transparent pt-14"
           />
         </div>
