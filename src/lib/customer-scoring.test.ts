@@ -200,8 +200,8 @@ describe("churn probability meta", () => {
     expect(meta.churn_probability).toBe(scores.a!.churn_probability);
     // Score 0 → deep in the critical band.
     expect(scores.a!.churn_probability).toBe(85);
-    // Only one metric category present.
-    expect(meta.data_categories).toBe(1);
+    // One kind of data, but too few dated records to count toward confidence.
+    expect(meta.data_categories).toBe(0);
     expect(scores.a!.churn_confidence).toBe("low");
     expect(scores.c!.churn_probability).toBe(2);
   });

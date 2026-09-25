@@ -13,6 +13,7 @@ import {
   compareTrend,
   describeComparison,
 } from "@/lib/personal-baseline";
+import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
 import { withCountableTransactions, dealOnlyCustomers, MIN_DEAL_PEERS } from "@/lib/countable-transactions";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
@@ -72,6 +73,8 @@ export interface ChurnMetaEntry {
   churn_horizon_days: number;
   confidence: ChurnConfidence;
   data_categories: number;
+  /** Plain reason when a kind of data was held back for thin evidence. */
+  confidence_reason?: string | null;
 }
 
 export function isChurnMeta(entry: unknown): entry is ChurnMetaEntry {
@@ -271,6 +274,7 @@ export function scoreCustomers(
   // order-size measures on sales data, deal-only customers are compared only
   // with each other — and only when there are at least MIN_DEAL_PEERS of them.
   const dealOnly = dealOnlyCustomers(data);
+  const evidence = datedRecordCounts(data as unknown as Record<string, unknown>);
   const range = (vals: number[]) => ({
     min: vals.length ? Math.min(...vals) : 0,
     max: vals.length ? Math.max(...vals) : 0,
@@ -404,13 +408,16 @@ export function scoreCustomers(
 
     const score = round(weighted / totalWeight);
     const churnProbability = churnProbabilityFromHealth(score);
-    const confidence = churnConfidenceFor(categories.size);
+    // Evidence weighting: a kind only counts with ≥3 dated records.
+    const assessed = assessConfidence(categories, (src) => evidence.get(src)?.get(customerId) ?? 0);
+    const confidence = assessed.confidence;
     breakdown.push({
       metric: CHURN_META_METRIC,
       churn_probability: churnProbability,
       churn_horizon_days: CHURN_HORIZON_DAYS,
       confidence,
-      data_categories: categories.size,
+      data_categories: assessed.dataCategories,
+      ...(assessed.reason ? { confidence_reason: assessed.reason } : {}),
     });
     scores.push({
       customer_id: customerId,

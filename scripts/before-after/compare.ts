@@ -56,7 +56,7 @@ const { data: profiles, error } = await db
 if (error) throw error;
 
 const report: string[] = [];
-const csv: string[] = ["account,customer,customer_id,app_before,app_after,nightly_before,nightly_after,why"];
+const csv: string[] = ["account,customer,customer_id,app_before,app_after,nightly_before,nightly_after,confidence_before,confidence_after,confidence_reason,why"];
 const log = (s = "") => report.push(s);
 
 for (const p of profiles ?? []) {
@@ -128,6 +128,7 @@ for (const p of profiles ?? []) {
   log(`nightly scores before ${nOld.size}, after ${nNew.size}`);
 
   let moved = 0;
+  let confMovedCount = 0;
   const basisCount: Record<string, number> = {};
   for (const [id, a1] of aNew) {
     const a0 = aOld.get(id);
@@ -136,7 +137,14 @@ for (const p of profiles ?? []) {
     for (const e of n1 ? metricEntries(n1.score_breakdown) : []) basisCount[e.basis!] = (basisCount[e.basis!] ?? 0) + 1;
     const appDelta = a0 ? a1.health - a0.health : 0;
     const nDelta = n0 && n1 ? Number(n1.score) - Number(n0.score) : 0;
-    if (Math.abs(appDelta) < 1 && Math.abs(nDelta) < 1 && !!n0 === !!n1) continue;
+    const c0 = a0?.churnConfidence ?? "";
+    const c1 = a1.churnConfidence ?? "";
+    const nc0 = n0?.churn_confidence ?? "";
+    const nc1 = n1?.churn_confidence ?? "";
+    const confMoved = c0 !== c1 || nc0 !== nc1;
+    if (confMoved) confMovedCount++;
+    const reason = a1.confidenceReason ?? "";
+    if (Math.abs(appDelta) < 1 && Math.abs(nDelta) < 1 && !!n0 === !!n1 && !confMoved && !reason) continue;
     moved++;
     const why: string[] = [];
     for (const [k, v] of Object.entries(a1.subScores)) {
@@ -154,11 +162,12 @@ for (const p of profiles ?? []) {
       }
     }
     log(`- ${a1.name} [${id}] — customer page ${a0?.health ?? "—"}→${a1.health}; nightly ${n0 ? Math.round(Number(n0.score)) : "—"}→${n1 ? Math.round(Number(n1.score)) : "—"}`);
+    log(`    · confidence (customer page): ${c0 || "—"}→${c1 || "—"}${reason ? ` — "${reason}"` : ""}${n1 || n0 ? `; nightly: ${nc0 || "—"}→${nc1 || "—"}` : ""}`);
     for (const x of why) log(`    · ${x}`);
     for (const d of personalDetails) log(`    » reason shown: ${d}`);
-    csv.push([account, a1.name, id, a0?.health ?? "", a1.health, n0 ? Math.round(Number(n0.score)) : "", n1 ? Math.round(Number(n1.score)) : "", why.join(" | ")].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
+    csv.push([account, a1.name, id, a0?.health ?? "", a1.health, n0 ? Math.round(Number(n0.score)) : "", n1 ? Math.round(Number(n1.score)) : "", c0, c1, reason, why.join(" | ")].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
   }
-  log(`moved: ${moved} of ${aNew.size}; nightly comparison used: ${JSON.stringify(basisCount)}`);
+  log(`listed: ${moved} of ${aNew.size} (score or confidence changed, or a thin-evidence reason now shows); confidence label changed: ${confMovedCount}; nightly comparison used: ${JSON.stringify(basisCount)}`);
   log();
 }
 

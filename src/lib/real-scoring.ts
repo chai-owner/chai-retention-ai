@@ -2,6 +2,7 @@
 // uploaded or synced (see ingested-data-store.ts). No demo data is involved:
 // if a signal is absent for a customer, that metric is simply excluded from
 // their weighted health score rather than being invented.
+import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
 import { withCountableTransactions, dealOnlyCustomers, MIN_DEAL_PEERS } from "@/lib/countable-transactions";
 import {
   type Customer,
@@ -264,6 +265,7 @@ export function buildRealDataset(
   // Customers whose only sales data is CRM deals (see countable-transactions).
   const dealOnly = dealOnlyCustomers(data);
   const dealPeersOk = dealOnly.size >= MIN_DEAL_PEERS;
+  const evidence = datedRecordCounts(data as unknown as Record<string, unknown>);
   const customerRows = data.customers ?? [];
   const now = Date.now();
   const segs = profile?.segments ?? [];
@@ -534,7 +536,9 @@ export function buildRealDataset(
         if (src) dataCategories.add(src);
       }
     }
-    const churnConfidence: ChurnConfidence = churnConfidenceFor(dataCategories.size);
+    // Evidence weighting: a kind only counts with ≥3 dated records.
+    const assessed = assessConfidence(dataCategories, (src) => evidence.get(src)?.get(cid) ?? 0);
+    const churnConfidence: ChurnConfidence = assessed.confidence;
     const sentiment = cs != null ? Math.round(cs) : Math.round(clamp(40 + health * 0.5));
     const lastTs = txg?.lastDate ?? parseDate(r.signup_date);
     const lastActivity = lastTs ? `${Math.max(0, Math.round((now - lastTs) / DAY))} days ago` : "—";
@@ -592,7 +596,8 @@ export function buildRealDataset(
       risk,
       churnProbability,
       churnConfidence,
-      dataCategories: dataCategories.size,
+      dataCategories: assessed.dataCategories,
+      confidenceReason: assessed.reason,
       revenue,
       sentiment,
       lastActivity,

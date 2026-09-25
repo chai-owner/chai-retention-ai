@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   churnConfidenceFor,
   churnConfidenceLabel,
+  churnConfidenceText,
   churnProbabilityFromHealth,
   churnProbabilityPhrase,
 } from "@/lib/churn-probability";
@@ -134,6 +135,7 @@ function CustomerDetail() {
           churnConfidenceFor(
             new Set(breakdownEntries(snapshot.breakdown).map((e) => e.metric)).size,
           ),
+        confidenceReason: meta ? (meta.confidence_reason ?? null) : live.confidenceReason,
         dataCategories:
           meta?.data_categories ??
           new Set(breakdownEntries(snapshot.breakdown).map((e) => e.metric)).size,
@@ -303,7 +305,7 @@ function CustomerDetail() {
           value={`${c.churnProbability}%`}
           icon={AlertTriangle}
           tone="danger"
-          hint={`${churnProbabilityPhrase(c.churnProbability)} · ${churnConfidenceLabel(c.churnConfidence ?? churnConfidenceFor(c.dataCategories ?? 0))}`}
+          hint={`${churnProbabilityPhrase(c.churnProbability)} · ${c.confidenceReason ? churnConfidenceText(c.churnConfidence ?? churnConfidenceFor(c.dataCategories ?? 0), c.confidenceReason) : churnConfidenceLabel(c.churnConfidence ?? churnConfidenceFor(c.dataCategories ?? 0))}`}
         />
         <StatCard label="Revenue value" value={formatCurrency(c.revenue)} icon={DollarSign} />
         <StatCard label="Sentiment" value={sentimentLabel} icon={Smile} tone={c.sentiment >= 60 ? "success" : c.sentiment >= 40 ? "warning" : "danger"} hint={`Score ${c.sentiment}/100`} />

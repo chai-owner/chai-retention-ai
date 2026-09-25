@@ -184,6 +184,7 @@ export function applyContentSignals(
     churn_horizon_days: CHURN_HORIZON_DAYS,
     confidence,
     data_categories: categories,
+    ...(oldMeta?.confidence_reason ? { confidence_reason: oldMeta.confidence_reason } : {}),
   };
   return {
     customer_id: score.customer_id,

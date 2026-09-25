@@ -72,6 +72,21 @@ export function churnConfidenceLabel(confidence: ChurnConfidence): string {
   return CONFIDENCE_LABELS[confidence];
 }
 
+const SHORT_LABELS: Record<ChurnConfidence, string> = {
+  high: "High confidence",
+  moderate: "Moderate confidence",
+  low: "Low confidence",
+};
+
+/**
+ * Full confidence sentence. With a thin-evidence reason ("based on a single
+ * sale") that reason replaces the generic explanation.
+ */
+export function churnConfidenceText(confidence: ChurnConfidence, reason?: string | null): string {
+  if (reason) return `${SHORT_LABELS[confidence]} — ${reason}.`;
+  return `${CONFIDENCE_LABELS[confidence]} — based on how many kinds of data this customer has.`;
+}
+
 /** The only approved phrasing for a churn probability. */
 export function churnProbabilityPhrase(probability: number): string {
   return `${Math.round(probability)}% probability of churning in the next ${CHURN_HORIZON_DAYS} days`;
