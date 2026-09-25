@@ -119,7 +119,7 @@ const integrations = [
   { name: "Freshdesk", Icon: FreshdeskIcon, color: FreshdeskColor, category: "Support" },
   { name: "HubSpot", Icon: HubSpotIcon, color: HubSpotColor, category: "CRM" },
   { name: "Salesforce", Icon: SalesforceIcon, color: SalesforceColor, category: "CRM", soon: true },
-  { name: "Zoho CRM", Icon: ZohoIcon, color: ZohoColor, category: "CRM" },
+  { name: "Zoho CRM", Icon: ZohoIcon, color: ZohoColor, category: "CRM", href: "/integrations/zoho-crm" },
   { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor, category: "Billing", href: "/integrations/quickbooks" },
   { name: "FreshBooks", Icon: FreshBooksIcon, color: FreshBooksColor, category: "Billing" },
   { name: "Xero", Icon: XeroIcon, color: XeroColor, category: "Billing", href: "/integrations/xero" },
