@@ -1,3 +1,4 @@
+import { churnConfidenceLabel } from "@/lib/churn-probability";
 import { Sparkles } from "lucide-react";
 
 import { Card } from "@/components/ui/chai";
@@ -24,7 +25,7 @@ export function RiskFactorsCard({
   customer: c,
   analyzedCopy,
   className,
-  factorScale = "share",
+  factorScale = "severity",
   confidenceNote,
 }: {
   customer: Customer;
@@ -91,14 +92,15 @@ export function RiskFactorsCard({
           </p>
         )}
       </div>
-      {confidenceNote === undefined ? (
+      {(confidenceNote === undefined
+        ? c.churnConfidence
+          ? `${churnConfidenceLabel(c.churnConfidence)} — based on how many kinds of data this customer has.`
+          : null
+        : confidenceNote) ? (
         <div className="mt-4 rounded-lg bg-accent/50 p-3 text-xs text-accent-foreground">
-          <span className="font-medium">Confidence:</span> {Math.round(72 + c.risk / 5)}% — based on
-          the volume and quality of data available for this customer.
-        </div>
-      ) : confidenceNote ? (
-        <div className="mt-4 rounded-lg bg-accent/50 p-3 text-xs text-accent-foreground">
-          {confidenceNote}
+          {confidenceNote === undefined
+            ? `${churnConfidenceLabel(c.churnConfidence!)} — based on how many kinds of data this customer has.`
+            : confidenceNote}
         </div>
       ) : null}
     </Card>
@@ -111,7 +113,7 @@ export function RecommendedActionsCard({
   limit,
   showSteps = true,
   className,
-  subtitle = "Ranked by expected revenue saved.",
+  subtitle = "Est. saved is one estimate per customer, shared by each action.",
 }: {
   subtitle?: string;
   customer: Customer;
