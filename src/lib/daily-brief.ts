@@ -10,6 +10,7 @@ import {
 } from "@/lib/customer-scoring";
 import { churnConfidenceFor, churnProbabilityFromHealth, type ChurnConfidence } from "@/lib/churn-probability";
 import { playbookFor } from "@/lib/metric-playbooks";
+import { contentSignalLabels } from "@/lib/customer-score-snapshot";
 
 /** A row as stored in `customer_scores`. */
 export interface SnapshotRow {

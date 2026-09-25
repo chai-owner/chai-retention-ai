@@ -20,6 +20,8 @@ export interface WeeklyDigestCustomer {
   score: number
   riskLabel: string
   topMetric: string | null
+  /** AI-detected conversation signals, e.g. { label: "Competitor mentioned", source: "HubSpot" }. */
+  aiFactors?: Array<{ label: string; source: string }>
   action: string
   /** e.g. "73% probability of churning in the next 90 days" */
   churnProbability: number
@@ -113,8 +115,13 @@ export const WeeklyDigestEmail = ({
                   {customer.confidenceLabel}
                 </Text>
                 {customer.topMetric ? (
-                  <Text style={cardMeta}>Driving the risk: {customer.topMetric}</Text>
+                  <Text style={cardMeta}>Driving the risk (metric): {customer.topMetric}</Text>
                 ) : null}
+                {(customer.aiFactors ?? []).map((f) => (
+                  <Text key={`${f.label}-${f.source}`} style={cardMeta}>
+                    <span style={aiTag}>AI-detected</span> {f.label} · from {f.source}
+                  </Text>
+                ))}
                 <Text style={text}>{customer.action}</Text>
               </Section>
             ))
@@ -213,6 +220,16 @@ const cardTitle: React.CSSProperties = {
   fontSize: '15px',
   fontWeight: 600,
   margin: '0 0 4px',
+}
+
+const aiTag: React.CSSProperties = {
+  display: 'inline-block',
+  border: `1px solid ${MUTED_TEXT}`,
+  borderRadius: '9px',
+  padding: '0 6px',
+  fontSize: '11px',
+  fontWeight: 600,
+  marginRight: '4px',
 }
 
 const cardMeta: React.CSSProperties = {

@@ -115,6 +115,7 @@ export const Route = createFileRoute("/api/public/hooks/weekly-digest")({
                 action: a.action,
                 churnProbability: a.churnProbability,
                 confidenceLabel: churnConfidenceLabel(a.churnConfidence),
+                aiFactors: a.aiFactors,
               })),
               todayUrl: TODAY_URL,
             });
