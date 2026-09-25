@@ -26,15 +26,16 @@ function connectedRow() {
 }
 
 describe("HubSpot scopes", () => {
-  it("requests only companies + deals read", () => {
+  it("requests read-only companies, deals, and contacts (the engagements umbrella)", () => {
     expect([...HUBSPOT_SCOPES]).toEqual([
       "crm.objects.companies.read",
       "crm.objects.deals.read",
+      "crm.objects.contacts.read",
     ]);
   });
 
-  it("no longer requests the contacts scope anywhere", () => {
-    expect([...HUBSPOT_SCOPES]).not.toContain("crm.objects.contacts.read");
+  it("never requests a write scope", () => {
+    expect([...HUBSPOT_SCOPES].some((s) => s.endsWith(".write"))).toBe(false);
   });
 });
 
