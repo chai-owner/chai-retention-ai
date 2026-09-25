@@ -61,6 +61,8 @@ export interface Factor {
   label: string;
   weight: number; // 0-100 contribution to risk
   detail: string;
+  /** True for factors extracted by AI from conversations, not hard metrics. */
+  aiDetected?: boolean;
 }
 
 export interface Recommendation {

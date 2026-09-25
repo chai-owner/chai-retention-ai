@@ -1,11 +1,12 @@
 // Content risk signals for one customer: what was said, in their words.
 //
-// These are flags only — they do not move the health score (that's Phase 3),
-// and the extraction behind them has so far been validated against constructed
-// test examples rather than real customer language.
+// Phase 3: active flags nudge the health score modestly and fade with age.
+// "Not right" removes a flag's score contribution immediately. The extraction
+// is still only provisionally validated (constructed / hand-written test
+// conversations), which the card says plainly.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { MessageSquareWarning, X } from "lucide-react";
+import { MessageSquareWarning, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/chai";
 import { cn } from "@/lib/utils";
@@ -44,8 +45,9 @@ export function ContentSignalsCard({ customerRefs }: { customerRefs: string[] })
         <div>
           <h3 className="font-semibold">What this customer has said</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Picked up from conversations in your connected tools. Shown as flags for you to
-            judge — they don't change the health score.
+            Picked up by AI from conversations in your connected tools. Each flag nudges the
+            health score a little and fades as it gets older. Still being validated — mark
+            anything wrong as "Not right" and it stops counting straight away.
           </p>
         </div>
       </div>
@@ -63,6 +65,9 @@ export function ContentSignalsCard({ customerRefs }: { customerRefs: string[] })
           >
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-semibold">{signalLabel(s.signal)}</span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-accent px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                <Sparkles className="h-2.5 w-2.5" /> AI-detected
+              </span>
               <span className="text-xs text-muted-foreground">
                 {sourceLabelFor(s.source)}
                 {formatDate(s.occurredAt) ? ` · ${formatDate(s.occurredAt)}` : ""}
@@ -70,9 +75,18 @@ export function ContentSignalsCard({ customerRefs }: { customerRefs: string[] })
               <button
                 type="button"
                 onClick={async () => {
-                  await dismiss({ data: { id: s.id } });
-                  toast.success("Flag dismissed", { description: "Marked as not a real signal." });
+                  try {
+                    await dismiss({ data: { id: s.id } });
+                    toast.success("Flag dismissed", {
+                      description: "Marked as not a real signal and removed from the health score.",
+                    });
+                  } catch (err) {
+                    toast.error("Couldn't dismiss this flag", {
+                      description: (err as Error).message,
+                    });
+                  }
                   queryClient.invalidateQueries({ queryKey: ["content-signals"] });
+                  queryClient.invalidateQueries({ queryKey: ["customer-score"] });
                 }}
                 className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent"
               >

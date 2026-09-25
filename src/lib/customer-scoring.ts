@@ -25,7 +25,14 @@ import {
 
 export type RiskLevel = "healthy" | "at-risk" | "critical";
 
-export type ScoreBasis = "baseline-30d" | "baseline-90d" | "horizon" | "cohort" | "payment";
+export type ScoreBasis =
+  | "baseline-30d"
+  | "baseline-90d"
+  | "horizon"
+  | "cohort"
+  | "payment"
+  /** AI-detected conversation signals (see content-signals/scoring.ts). */
+  | "content";
 
 export interface ScoreBreakdownEntry {
   metric: string;

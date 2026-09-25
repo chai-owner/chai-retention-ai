@@ -20,3 +20,5 @@
 - [x] HubSpot: page companies/deals through the whole portal (was capped at 100), dated API paths, no search endpoint
 - [x] HubSpot activity content adapter (notes, calls, meetings, tasks, emails) + reconnect prompt
 - [ ] HubSpot live checks: search-endpoint refusal, real extraction, email vs notes accuracy (blocked: HubSpot app provisioning approval)
+- [x] Phase 3: content signals feed the health score (modest weight 1.5, 30-day half-life, off after 180 days, dismissal rescored instantly, AI-detected labels on customer page + digest)
+- [ ] Phase 3 live proof: test account produces no nightly score (none of its 8 metrics resolve against its data), and the Zendesk requester isn't linked to a company — blocked on real scoreable data
