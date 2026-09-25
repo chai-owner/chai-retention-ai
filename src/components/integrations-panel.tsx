@@ -253,9 +253,6 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
     return latest;
   }, [uploads, name]);
 
-  const needsReconnect =
-    status?.connected === true && (status.missingScopes?.length ?? 0) > 0;
-
   async function handleConnect() {
     setConnecting(true);
     // Open the popup during the user gesture, then point it at Lovable's
@@ -338,24 +335,6 @@ function SalesforceCard({ name, category, desc }: { name: string; category: stri
         </div>
       ) : connected ? (
         <>
-          {needsReconnect && (
-            <div role="alert" className="mt-3 rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs">
-              <p className="font-medium text-foreground">Reconnect HubSpot to read activity</p>
-              <p className="mt-1 text-muted-foreground">
-                ChAi now reads notes, calls, meetings, tasks and emails to spot risk in what customers
-                say. Your connection was made before that, so HubSpot needs your approval again.
-                Company and deal syncing keeps working in the meantime.
-              </p>
-              <button
-                onClick={handleConnect}
-                disabled={connecting}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60"
-              >
-                {connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
-                {connecting ? "Reconnecting…" : "Reconnect HubSpot"}
-              </button>
-            </div>
-          )}
           <button
             onClick={() => setWizardOpen(true)}
             className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
@@ -478,6 +457,9 @@ function HubspotCard({ name, category, desc }: { name: string; category: string;
     return latest;
   }, [uploads, name]);
 
+  const needsReconnect =
+    status?.connected === true && (status.missingScopes?.length ?? 0) > 0;
+
   async function handleConnect() {
     setConnecting(true);
     try {
@@ -555,6 +537,24 @@ function HubspotCard({ name, category, desc }: { name: string; category: string;
         </div>
       ) : connected ? (
         <>
+          {needsReconnect && (
+            <div role="alert" className="mt-3 rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs">
+              <p className="font-medium text-foreground">Reconnect HubSpot to read activity</p>
+              <p className="mt-1 text-muted-foreground">
+                ChAi now reads notes, calls, meetings, tasks and emails to spot risk in what customers
+                say. Your connection was made before that, so HubSpot needs your approval again.
+                Company and deal syncing keeps working in the meantime.
+              </p>
+              <button
+                onClick={handleConnect}
+                disabled={connecting}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60"
+              >
+                {connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+                {connecting ? "Reconnecting…" : "Reconnect HubSpot"}
+              </button>
+            </div>
+          )}
           <button
             onClick={() => setWizardOpen(true)}
             className="mt-3 w-full rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent"
