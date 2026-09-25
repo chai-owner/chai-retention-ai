@@ -273,7 +273,8 @@ async function syncHubspot(
   // HubSpot deals carry a status (same approach as Zoho).
   let fullDeals = false;
   if (sinceMs != null) {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = getSupabaseAdmin();
     const { data: legacy } = await supabaseAdmin
       .from("ingested_transactions")
       .select("id, batch:ingest_batches!inner(source_provider)")

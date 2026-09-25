@@ -246,3 +246,18 @@ describe("unsupported providers", () => {
     ).rejects.toThrow(/Unsupported CRM provider/);
   });
 });
+
+import { hubspotDealStatus } from "./crm.server";
+describe("hubspotDealStatus", () => {
+  it("uses HubSpot's closed-won / closed flags for any pipeline", () => {
+    expect(hubspotDealStatus({ dealstage: "123456", hs_is_closed_won: "true", hs_is_closed: "true" })).toBe("won");
+    expect(hubspotDealStatus({ dealstage: "123457", hs_is_closed_won: "false", hs_is_closed: "true" })).toBe("lost");
+    expect(hubspotDealStatus({ dealstage: "appointmentscheduled", hs_is_closed_won: "false", hs_is_closed: "false" })).toBe("open");
+  });
+  it("falls back to the default stage ids when flags are missing", () => {
+    expect(hubspotDealStatus({ dealstage: "closedwon" })).toBe("won");
+    expect(hubspotDealStatus({ dealstage: "closedlost" })).toBe("lost");
+    expect(hubspotDealStatus({ dealstage: "presentationscheduled" })).toBe("open");
+    expect(hubspotDealStatus({})).toBe("open");
+  });
+});
