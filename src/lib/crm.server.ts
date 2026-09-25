@@ -177,6 +177,46 @@ async function syncSalesforce(
 
 // ---------------- HubSpot ----------------
 
+/** Safety stop: 500 pages × 100 = 50,000 records per object type. */
+export const HUBSPOT_MAX_PAGES = 500;
+
+/**
+ * Walks a HubSpot object list via `paging.next.after` until exhausted (or the
+ * safety stop). Replaces the old first-page-only fetch that silently capped
+ * every portal at 100 companies and 100 deals.
+ */
+export async function pageHubspotList(
+  base: string,
+  headers: Record<string, string>,
+  objectType: string,
+  properties: string[],
+  associations?: string,
+  fetchPage: (url: string) => Promise<unknown> = (url) => gwGet(url, headers),
+): Promise<Record<string, unknown>[]> {
+  const { hubspotPaths } = await import("./hubspot-api");
+  const out: Record<string, unknown>[] = [];
+  let after: string | undefined;
+  for (let page = 0; page < HUBSPOT_MAX_PAGES; page++) {
+    const url =
+      base +
+      hubspotPaths.list(objectType, {
+        limit: "100",
+        properties: properties.join(","),
+        associations,
+        after,
+      });
+    const body = (await fetchPage(url)) as {
+      results?: Record<string, unknown>[];
+      paging?: { next?: { after?: string } };
+    } | null;
+    out.push(...(body?.results ?? []));
+    after = body?.paging?.next?.after;
+    if (!after) return out;
+  }
+  console.warn(`HubSpot ${objectType}: stopped at safety cap of ${HUBSPOT_MAX_PAGES} pages`);
+  return out;
+}
+
 async function syncHubspot(
   userId: string,
   limit: number,
