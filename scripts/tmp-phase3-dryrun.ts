@@ -36,3 +36,6 @@ for (const [id, list] of g) {
   console.log("after dismissing all ->", cur.score);
   for (const days of [0, 30, 90, 180]) { const aged = applyContentSignals(before, list.map((x) => ({ ...x, occurred_at: new Date(Date.now() - days * 86400000).toISOString() }))); console.log(`  if ${days}d old -> ${aged.score}`); }
 }
+console.log("metrics", (profile!.metrics as any[])?.map((m) => m.name), "customers", data.customers?.length, "tx", data.transactions?.length, "support", data.support?.length, "usage", data.usage?.length);
+import { resolveMetric } from "@/lib/metric-resolution";
+for (const m of (profile!.metrics as any[]) ?? []) { const r = resolveMetric(m, data, Date.now()); console.log(m.name, "->", r.values.size, r.dataset); }
