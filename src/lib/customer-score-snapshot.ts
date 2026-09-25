@@ -9,13 +9,55 @@ import type { Factor, Recommendation, PlannerMetric } from "@/lib/mock-data";
 import { playbookFor, inferUnit } from "@/lib/metric-playbooks";
 import type { ScoreBreakdownEntry } from "@/lib/customer-scoring";
 import { isChurnMeta } from "@/lib/customer-scoring";
+import { contentEntryOf, isContentEntry } from "@/lib/content-signals/scoring";
+import { signalLabel, sourceLabelFor } from "@/lib/content-signals/labels";
 
-/** Metric contribution entries only — the churn meta sentinel is skipped. */
+/**
+ * Hard-metric contribution entries only — the churn meta sentinel and the
+ * AI-detected content entry are skipped (see `contentFactorFromBreakdown`).
+ */
 export function breakdownEntries(breakdown: unknown): ScoreBreakdownEntry[] {
   if (!Array.isArray(breakdown)) return [];
   return breakdown.filter(
-    (e) => !isChurnMeta(e) && e && typeof e === "object" && "metric" in (e as object),
+    (e) =>
+      !isChurnMeta(e) &&
+      !isContentEntry(e) &&
+      e &&
+      typeof e === "object" &&
+      "metric" in (e as object),
   ) as ScoreBreakdownEntry[];
+}
+
+/** Distinct "Competitor mentioned · HubSpot" style labels for AI-detected signals. */
+export function contentSignalLabels(breakdown: unknown): Array<{ label: string; source: string }> {
+  const entry = contentEntryOf(breakdown);
+  if (!entry) return [];
+  const seen = new Set<string>();
+  const out: Array<{ label: string; source: string }> = [];
+  for (const s of entry.signals) {
+    const label = signalLabel(s.signal);
+    const source = sourceLabelFor(s.source);
+    const k = `${label}\u0000${source}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({ label, source });
+  }
+  return out;
+}
+
+/** One AI-detected factor summarising the content entry, or null. */
+export function contentFactorFromBreakdown(breakdown: unknown): Factor | null {
+  const entry = contentEntryOf(breakdown);
+  if (!entry) return null;
+  const labels = contentSignalLabels(breakdown);
+  const types = [...new Set(labels.map((l) => l.label))];
+  const sources = [...new Set(labels.map((l) => l.source))];
+  return {
+    label: types.join(", "),
+    weight: Math.max(0, Math.min(100, Math.round(100 - entry.normalised))),
+    detail: `Picked up by AI from ${sources.join(" and ")} conversations. Weighted modestly and fades as it gets older — see the quotes below.`,
+    aiDetected: true,
+  };
 }
 
 const fmt = (n: number): string =>
@@ -39,12 +81,17 @@ function detailFor(entry: ScoreBreakdownEntry, metric?: PlannerMetric): string {
  * critical (<40) customers capture factors up to normalised 70, and a critical
  * customer always shows the worst three entries even if none cross the band —
  * a critical account must never render as "healthy".
+ *
+ * An AI-detected content factor, when present, is appended after the metric
+ * factors and flagged `aiDetected` so it never looks like a hard metric.
  */
 export function factorsFromBreakdown(
   breakdown: unknown,
   metrics?: PlannerMetric[] | null,
   healthScore?: number | null,
 ): Factor[] {
+  const content = contentFactorFromBreakdown(breakdown);
+  const withContent = (list: Factor[]) => (content ? [...list, content] : list);
   const byName = new Map((metrics ?? []).map((m) => [m.name, m]));
   const threshold = healthScore != null && healthScore < 70 ? 70 : 50;
   const toFactor = (e: ScoreBreakdownEntry) => ({
@@ -60,14 +107,16 @@ export function factorsFromBreakdown(
     .sort((a, b) => b._rank - a._rank)
     .slice(0, 3)
     .map(({ label, weight, detail }) => ({ label, weight, detail }));
-  if (ranked.length > 0 || healthScore == null || healthScore >= 40) return ranked;
+  if (ranked.length > 0 || healthScore == null || healthScore >= 40) return withContent(ranked);
   // Critical customer with no entries under the band: show the worst metrics.
-  return breakdownEntries(breakdown)
-    .filter((e) => Number.isFinite(e.normalised))
-    .map(toFactor)
-    .sort((a, b) => a.weight === b.weight ? 0 : b.weight - a.weight)
-    .slice(0, 3)
-    .map(({ label, weight, detail }) => ({ label, weight, detail }));
+  return withContent(
+    breakdownEntries(breakdown)
+      .filter((e) => Number.isFinite(e.normalised))
+      .map(toFactor)
+      .sort((a, b) => (a.weight === b.weight ? 0 : b.weight - a.weight))
+      .slice(0, 3)
+      .map(({ label, weight, detail }) => ({ label, weight, detail })),
+  );
 }
 
 /** Recommended actions for the snapshot's risk factors. */
