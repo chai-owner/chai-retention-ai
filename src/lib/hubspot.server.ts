@@ -10,12 +10,8 @@ import type { CrmProvider } from "./crm.server";
 export const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
 export const CONNECTOR_ID = "hubspot";
 
-// Minimal scope set: ChAi reads companies (customer roster) and deals
-// (transactions). Nothing reads contacts, so no contacts scope is requested.
-export const HUBSPOT_SCOPES = [
-  "crm.objects.companies.read",
-  "crm.objects.deals.read",
-] as const;
+// Canonical scope list lives in hubspot-api.ts (shared with the connect flow).
+export { HUBSPOT_SCOPES } from "./hubspot-api";
 
 // HubSpot's external uninstall endpoint for Marketplace apps. NOTE: HubSpot
 // refuses this endpoint family for user-level OAuth tokens (403 "User level

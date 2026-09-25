@@ -9,11 +9,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
 const CONNECTOR_ID = "hubspot";
 
-// Minimal scopes: ChAi reads companies and deals only.
-const HUBSPOT_SCOPE_LIST: string[] = [
-  "crm.objects.companies.read",
-  "crm.objects.deals.read",
-];
+import { HUBSPOT_SCOPES, hubspotPaths, missingHubspotScopes } from "./hubspot-api";
+
+// Companies + deals for the customer roster, plus contacts.read — HubSpot's
+// umbrella scope for notes, calls, meetings, tasks and emails.
+const HUBSPOT_SCOPE_LIST: string[] = [...HUBSPOT_SCOPES];
 
 
 
@@ -62,7 +62,7 @@ export const saveHubspotConnection = createServerFn({ method: "POST" })
         gatewayBaseUrl: GATEWAY_BASE_URL,
         connectionAPIKey: data.connectionAPIKey,
         connectorId: CONNECTOR_ID,
-        path: "/account-info/v3/details",
+        path: hubspotPaths.accountDetails(),
       });
       if (!res.ok) {
         const body = await res.text();
@@ -89,6 +89,8 @@ export const saveHubspotConnection = createServerFn({ method: "POST" })
 
     await saveConnectionKeyForUser(context.userId, CONNECTOR_ID, data.connectionAPIKey, {
       portal_name: portalName,
+      // Recorded so a later scope change can prompt existing connections to reconnect.
+      scopes: HUBSPOT_SCOPE_LIST,
     });
     await ensureCrmSyncState(context.userId, "hubspot");
     return { ok: true, portalName };
@@ -105,6 +107,7 @@ export const getHubspotStatus = createServerFn({ method: "GET" })
       connected: true as const,
       portalName: (meta.metadata.portal_name as string | null) ?? null,
       connectedAt: meta.connectedAt,
+      missingScopes: missingHubspotScopes(meta.metadata.scopes),
     };
   });
 

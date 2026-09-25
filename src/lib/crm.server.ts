@@ -96,13 +96,6 @@ async function gwGet(url: string, headers: Record<string, string>) {
   if (!res.ok) throw new Error(`CRM request failed [${res.status}]: ${body.slice(0, 300)}`);
   return body ? JSON.parse(body) : null;
 }
-async function gwPost(url: string, headers: Record<string, string>, body: unknown) {
-  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-  if (res.status === 429) throw new Error("CRM rate limit hit — please try again in a moment.");
-  const text = await res.text();
-  if (!res.ok) throw new Error(`CRM request failed [${res.status}]: ${text.slice(0, 300)}`);
-  return text ? JSON.parse(text) : null;
-}
 
 // ---------------- Salesforce ----------------
 
@@ -177,6 +170,46 @@ async function syncSalesforce(
 
 // ---------------- HubSpot ----------------
 
+/** Safety stop: 500 pages × 100 = 50,000 records per object type. */
+export const HUBSPOT_MAX_PAGES = 500;
+
+/**
+ * Walks a HubSpot object list via `paging.next.after` until exhausted (or the
+ * safety stop). Replaces the old first-page-only fetch that silently capped
+ * every portal at 100 companies and 100 deals.
+ */
+export async function pageHubspotList(
+  base: string,
+  headers: Record<string, string>,
+  objectType: string,
+  properties: string[],
+  associations?: string,
+  fetchPage: (url: string) => Promise<unknown> = (url) => gwGet(url, headers),
+): Promise<Record<string, unknown>[]> {
+  const { hubspotPaths } = await import("./hubspot-api");
+  const out: Record<string, unknown>[] = [];
+  let after: string | undefined;
+  for (let page = 0; page < HUBSPOT_MAX_PAGES; page++) {
+    const url =
+      base +
+      hubspotPaths.list(objectType, {
+        limit: "100",
+        properties: properties.join(","),
+        associations,
+        after,
+      });
+    const body = (await fetchPage(url)) as {
+      results?: Record<string, unknown>[];
+      paging?: { next?: { after?: string } };
+    } | null;
+    out.push(...(body?.results ?? []));
+    after = body?.paging?.next?.after;
+    if (!after) return out;
+  }
+  console.warn(`HubSpot ${objectType}: stopped at safety cap of ${HUBSPOT_MAX_PAGES} pages`);
+  return out;
+}
+
 async function syncHubspot(
   userId: string,
   limit: number,
@@ -193,46 +226,23 @@ async function syncHubspot(
   }
   const headers = gatewayHeaders(connectionKey, lovableKey);
   const base = `${GATEWAY_BASE}/hubspot`;
-  const cap = Math.min(limit, 100);
-  const companyProps = ["name", "domain", "createdate", "annualrevenue", "industry", "country"];
-  const dealProps = ["dealname", "amount", "closedate", "pipeline", "dealstage"];
+  const companyProps = ["name", "domain", "createdate", "annualrevenue", "industry", "country", "hs_lastmodifieddate"];
+  const dealProps = ["dealname", "amount", "closedate", "pipeline", "dealstage", "hs_lastmodifieddate"];
+  void limit; // HubSpot now pages the whole portal; `limit` only capped Salesforce/Zoho-style pulls.
 
-  let companies: unknown, deals: unknown;
-
-  if (since) {
-    // Delta pulls use the Search API which supports filters.
-    const sinceMs = laggedSinceMs(since);
-    const searchBody = (properties: string[]) => ({
-      filterGroups: [
-        {
-          filters: [
-            { propertyName: "hs_lastmodifieddate", operator: "GTE", value: String(sinceMs) },
-          ],
-        },
-      ],
-      properties,
-      limit: cap,
-      sorts: [{ propertyName: "hs_lastmodifieddate", direction: "DESCENDING" }],
-    });
-    [companies, deals] = await Promise.all([
-      gwPost(`${base}/crm/v3/objects/companies/search`, headers, searchBody(companyProps)),
-      gwPost(`${base}/crm/v3/objects/deals/search`, headers, {
-        ...searchBody(dealProps),
-        associations: ["companies"],
-      }),
-    ]);
-  } else {
-    [companies, deals] = await Promise.all([
-      gwGet(
-        `${base}/crm/v3/objects/companies?limit=${cap}&properties=${companyProps.join(",")}`,
-        headers,
-      ),
-      gwGet(
-        `${base}/crm/v3/objects/deals?limit=${cap}&properties=${dealProps.join(",")}&associations=companies`,
-        headers,
-      ),
-    ]);
-  }
+  // Per-user tokens can't use HubSpot's search endpoint, so "changed since"
+  // is applied in code over the full paged list (see hubspot-api.ts).
+  const sinceMs = since ? laggedSinceMs(since) : null;
+  const companiesList = await pageHubspotList(base, headers, "companies", companyProps);
+  const dealsList = await pageHubspotList(base, headers, "deals", dealProps, "companies");
+  const changed = (r: Record<string, unknown>) => {
+    if (sinceMs == null) return true;
+    const p = (r.properties ?? {}) as Record<string, unknown>;
+    const t = Date.parse(toStr(p.hs_lastmodifieddate) || toStr(r.updatedAt));
+    return isNaN(t) || t >= sinceMs;
+  };
+  const companies = { results: companiesList.filter(changed) };
+  const deals = { results: dealsList.filter(changed) };
 
   const customers: string[][] = (
     (companies as { results?: Record<string, unknown>[] } | null)?.results ?? []
