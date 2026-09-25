@@ -157,6 +157,11 @@ export const Route = createFileRoute("/api/public/hooks/daily-sync")({
             .from("zendesk_connections")
             .select("user_id");
           for (const r of zendeskRows ?? []) userIds.add(r.user_id as string);
+          const { data: hubspotRows } = await supabaseAdmin
+            .from("app_user_connections")
+            .select("user_id")
+            .eq("connector_id", "hubspot");
+          for (const r of hubspotRows ?? []) userIds.add(r.user_id as string);
 
 
           for (const userId of userIds) {

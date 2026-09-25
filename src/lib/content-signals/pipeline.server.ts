@@ -21,11 +21,12 @@ import { readServerEnv } from "@/lib/server-env";
 export async function contentAdapters(): Promise<ContentSourceAdapter[]> {
   const { intercomContentAdapter } = await import("./adapters/intercom.adapter.server");
   const { zendeskContentAdapter } = await import("./adapters/zendesk.adapter.server");
-  return [intercomContentAdapter, zendeskContentAdapter];
+  const { hubspotContentAdapter } = await import("./adapters/hubspot.adapter.server");
+  return [intercomContentAdapter, zendeskContentAdapter, hubspotContentAdapter];
   // Phase 2 (deferred): freshdeskContentAdapter — Freshdesk's basic Connect +
   // Sync has never been successfully tested, so no content work is scheduled
   // against it.
-  // Phase 4: zohoContentAdapter, hubspotContentAdapter, salesforceContentAdapter
+  // Phase 4: zohoContentAdapter, salesforceContentAdapter (HubSpot added)
   // Phase 5: dataDropContentAdapter
 }
 
