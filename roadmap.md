@@ -22,4 +22,8 @@
 - [ ] HubSpot live checks: search-endpoint refusal, real extraction, email vs notes accuracy (blocked: HubSpot app provisioning approval)
 - [x] Phase 3: content signals feed the health score (modest weight 1.5, 30-day half-life, off after 180 days, dismissal rescored instantly, AI-detected labels on customer page + digest)
 - [ ] Phase 3 live proof: test account produces no nightly score (none of its 8 metrics resolve against its data), and the Zendesk requester isn't linked to a company — blocked on real scoreable data
-- [ ] Zoho scoring: pass deal stage through so only closed-won deals count as sales (open and lost deals currently treated the same as closed-won)
+- [x] Zoho scoring: only closed-won deals count as sales (stage + status stored; open/lost excluded in both scoring paths; one full deal re-read for old rows)
+- [x] Per-customer baseline: recent 30 vs prior 90 days, rhythm-based "going quiet", evidence minimums, blending, fallback, reason text — shared by customer page and nightly
+- [x] Before/after comparison on real account data (read-only)
+- [ ] Review gate: user reviews before/after results — nothing publishes until approved
+- [ ] Decide: HubSpot deals have the same open/lost issue (31 deals) — not changed
