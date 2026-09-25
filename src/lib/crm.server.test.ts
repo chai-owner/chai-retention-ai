@@ -136,7 +136,7 @@ describe("HubSpot sync", () => {
       "701", "Globex", "", "2025-09-10", "20000", "Manufacturing", "CA",
     ]);
     expect(datasets.find((d) => d.key === "transactions")!.rows[0]).toEqual([
-      "701", "D1", "7500", "2026-02-01", "Expansion", "USD",
+      "701", "D1", "7500", "2026-02-01", "Expansion", "USD", "", "open",
     ]);
   });
 
