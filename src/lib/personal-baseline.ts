@@ -168,5 +168,11 @@ export function describeComparison(
   }
   const pct = personal.changePct ?? 0;
   const dir = pct === 0 ? "unchanged" : pct > 0 ? `up ${pct}%` : `down ${Math.abs(pct)}%`;
-  return `${what[0].toUpperCase()}${what.slice(1)} ${dir} in the last 30 days versus this customer's own previous 90 days${partly}.`;
+  const head = `${what[0].toUpperCase()}${what.slice(1)} ${dir} in the last 30 days versus this customer's own previous 90 days`;
+  // Steady or improving against their own history: any remaining risk comes
+  // from the cross-customer comparison, so say that rather than imply a drop.
+  if (basis === "blended" && personal.score >= 75) {
+    return `${head}; with limited history it's also weighed against your other customers, where it sits lower.`;
+  }
+  return `${head}${partly}.`;
 }
