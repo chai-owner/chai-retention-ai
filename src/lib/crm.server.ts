@@ -63,7 +63,33 @@ const TRANSACTION_HEADERS = [
   "currency",
 ];
 
-function buildDatasets(customers: string[][], transactions: string[][]): ExtractedDataset[] {
+const DEAL_TRANSACTION_HEADERS = [...TRANSACTION_HEADERS, "deal_stage", "deal_status"];
+
+/**
+ * Classifies a HubSpot deal as won / lost / open. Only won deals count as
+ * sales in scoring (see countable-transactions.ts). HubSpot's own calculated
+ * properties `hs_is_closed_won` / `hs_is_closed` work for every pipeline,
+ * including custom ones whose stage ids are numeric; the default stage ids
+ * `closedwon` / `closedlost` are the fallback when those are missing.
+ */
+export function hubspotDealStatus(p: Record<string, unknown>): "won" | "lost" | "open" {
+  const flag = (v: unknown) => String(v ?? "").trim().toLowerCase();
+  const won = flag(p.hs_is_closed_won);
+  const closed = flag(p.hs_is_closed);
+  if (won === "true") return "won";
+  if (closed === "true") return "lost";
+  if (won === "false" && closed === "false") return "open";
+  const stage = flag(p.dealstage);
+  if (/closed[\s_-]*won/.test(stage)) return "won";
+  if (/closed[\s_-]*lost/.test(stage)) return "lost";
+  return "open";
+}
+
+function buildDatasets(
+  customers: string[][],
+  transactions: string[][],
+  transactionHeaders: string[] = TRANSACTION_HEADERS,
+): ExtractedDataset[] {
   const out: ExtractedDataset[] = [];
   if (customers.length) {
     out.push({
@@ -79,7 +105,7 @@ function buildDatasets(customers: string[][], transactions: string[][]): Extract
     out.push({
       key: "transactions",
       label: "Transactions",
-      headers: TRANSACTION_HEADERS,
+      headers: transactionHeaders,
       rows: transactions,
       confidence: 92,
       note: "Imported from CRM deals / opportunities.",
@@ -227,7 +253,7 @@ async function syncHubspot(
   const headers = gatewayHeaders(connectionKey, lovableKey);
   const base = `${GATEWAY_BASE}/hubspot`;
   const companyProps = ["name", "domain", "createdate", "annualrevenue", "industry", "country", "hs_lastmodifieddate"];
-  const dealProps = ["dealname", "amount", "closedate", "pipeline", "dealstage", "hs_lastmodifieddate"];
+  const dealProps = ["dealname", "amount", "closedate", "pipeline", "dealstage", "hs_is_closed_won", "hs_is_closed", "hs_lastmodifieddate"];
   void limit; // HubSpot now pages the whole portal; `limit` only capped Salesforce/Zoho-style pulls.
 
   // Per-user tokens can't use HubSpot's search endpoint, so "changed since"
@@ -242,7 +268,23 @@ async function syncHubspot(
     return isNaN(t) || t >= sinceMs;
   };
   const companies = { results: companiesList.filter(changed) };
-  const deals = { results: dealsList.filter(changed) };
+  // Deals stored before stage tracking have no status. The delta filter would
+  // never revisit unchanged deals, so re-send every deal once until all stored
+  // HubSpot deals carry a status (same approach as Zoho).
+  let fullDeals = false;
+  if (sinceMs != null) {
+    const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { data: legacy } = await supabaseAdmin
+      .from("ingested_transactions")
+      .select("id, batch:ingest_batches!inner(source_provider)")
+      .eq("user_id", userId)
+      .eq("batch.source_provider", "hubspot")
+      .is("data->>deal_status", null)
+      .limit(1);
+    fullDeals = (legacy?.length ?? 0) > 0;
+  }
+  const deals = { results: fullDeals ? dealsList : dealsList.filter(changed) };
 
   const customers: string[][] = (
     (companies as { results?: Record<string, unknown>[] } | null)?.results ?? []
@@ -271,9 +313,11 @@ async function syncHubspot(
       dateOnly(p.closedate),
       toStr(p.dealname),
       "USD",
+      toStr(p.dealstage),
+      hubspotDealStatus(p),
     ];
   });
-  return buildDatasets(customers, transactions);
+  return buildDatasets(customers, transactions, DEAL_TRANSACTION_HEADERS);
 }
 
 // ---------------- Zoho CRM (per-user OAuth) ----------------
