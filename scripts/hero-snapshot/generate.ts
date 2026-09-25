@@ -16,7 +16,8 @@ const DAY = 86400000;
 const iso = (daysAgo: number) => new Date(NOW - daysAgo * DAY).toISOString().slice(0, 10);
 
 // Seeded demo account: eight fictional B2B customers with a year of invoices,
-// support tickets and product usage. Deterministic, no randomness.
+// support tickets (billing + support only: both have live connectors today;
+// usage is upload-only, so it is left out of the seed on purpose).
 const accounts = [
   { id: "ACC-101", name: "Harbour & Finch Accounting", monthly: 1200, lastInvoice: 12, invoices: [1200, 1200, 1200, 1200, 1200, 1200], tickets: [["closed", 9], ["closed", 8]], logins: [42, 40, 45], features: [9, 9, 10] },
   { id: "ACC-102", name: "Ridgeway Physio Group", monthly: 850, lastInvoice: 20, invoices: [850, 850, 850, 850, 850, 850], tickets: [["closed", 8]], logins: [30, 28, 31], features: [7, 8, 7] },
@@ -41,7 +42,7 @@ for (const a of accounts) {
   a.tickets.forEach(([status, csat], i) => {
     support.push({ ticket_id: `${a.id}-T-${i}`, customer_id: a.id, status, satisfaction_score: String(csat) } as IngestRow);
   });
-  a.logins.forEach((l, i) => {
+  if (false) a.logins.forEach((l, i) => {
     usage.push({ customer_id: a.id, logins: String(l), features_used: String(a.features[i]) } as IngestRow);
   });
 }

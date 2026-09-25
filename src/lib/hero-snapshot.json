@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-25T11:41:09.422Z",
+  "capturedAt": "2026-09-25T11:41:23.048Z",
   "engine": "buildRealDataset (src/lib/real-scoring.ts) with DEFAULT_METRIC_WEIGHTS",
   "seed": "scripts/hero-snapshot/generate.ts — 8 fictional demo accounts",
   "customer": {
@@ -7,18 +7,16 @@
     "name": "Meadowbank Logistics",
     "contact": "",
     "segment": "Unsegmented",
-    "health": 30,
-    "risk": 70,
-    "churnProbability": 55,
+    "health": 37,
+    "risk": 63,
+    "churnProbability": 48,
     "churnConfidence": "high",
-    "dataCategories": 4,
+    "dataCategories": 3,
     "revenue": 25200,
     "sentiment": 45,
     "lastActivity": "118 days ago",
     "subScores": {
-      "Login frequency": 14.96062992125984,
-      "Feature adoption": 25,
-      "Days since last purchase": 34.17393632973251,
+      "Days since last purchase": 34.17384870756173,
       "Average order value": 90,
       "Support ticket volume": 0,
       "Resolution time": 25,
@@ -32,14 +30,14 @@
         "detail": "4 support tickets logged."
       },
       {
-        "label": "Usage declining",
-        "weight": 85,
-        "detail": "Login activity is well below your most active accounts."
-      },
-      {
         "label": "Unresolved support tickets",
         "weight": 75,
         "detail": "3 of 4 tickets are open or reopened."
+      },
+      {
+        "label": "No recent purchases",
+        "weight": 66,
+        "detail": "Last purchase was 118 days ago."
       }
     ],
     "recommendations": [
@@ -54,20 +52,7 @@
           "Give the customer a written summary of what is being fixed and by when.",
           "Review the ticket themes for a root cause and fix it so the volume does not return."
         ],
-        "revenueSaved": 6930
-      },
-      {
-        "title": "Provide additional onboarding & training",
-        "priority": "Medium",
-        "difficulty": "Moderate",
-        "impact": "Strong",
-        "reasoning": "Login activity is well below your healthiest accounts — hands-on training re-establishes the habit that drives retention.",
-        "steps": [
-          "Book a 20-minute guided session focused on the one outcome they signed up for.",
-          "Set up or complete one thing for them live so they leave with a result.",
-          "Check usage weekly for a month and intervene again if it stays flat."
-        ],
-        "revenueSaved": 6930
+        "revenueSaved": 6048
       },
       {
         "title": "Clear the open ticket backlog",
@@ -80,7 +65,20 @@
           "Send one recap message confirming each item is closed and what changed.",
           "Follow up 7 days later to confirm nothing reopened."
         ],
-        "revenueSaved": 6930
+        "revenueSaved": 6048
+      },
+      {
+        "title": "Launch a re-engagement campaign",
+        "priority": "High",
+        "difficulty": "Moderate",
+        "impact": "Strong",
+        "reasoning": "Buying activity has stalled well past this account's normal cadence — a guided campaign brings them back before the gap becomes a cancellation.",
+        "steps": [
+          "Call or message this customer within 48 hours with a specific reason to return — a booked appointment, reserved slot or held offer.",
+          "Send a time-boxed win-back incentive tied to a deadline rather than an open-ended discount.",
+          "If there is no response in 7 days, escalate to a personal call from the owner or account lead."
+        ],
+        "revenueSaved": 6048
       }
     ],
     "timeline": [
@@ -106,7 +104,7 @@
         "date": "2026-09-25",
         "type": "score",
         "title": "Risk flagged",
-        "detail": "Health score 30, churn probability 55%."
+        "detail": "Health score 37, churn probability 48%."
       }
     ]
   }
