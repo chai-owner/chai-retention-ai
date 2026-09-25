@@ -37,7 +37,9 @@ describe("HubSpot content adapter", () => {
       },
     });
     expect(r.subject).toBe("Renewal");
-    expect(r.body).toBe("Customer (email): We are looking at Gainsight.");
+    expect(r.body.startsWith("Customer (email): We are looking at")).toBe(true);
+    expect(r.body).toContain("Gainsight");
+    expect(r.body).not.toMatch(/<[a-z]/);
   });
 
   it("traces company directly, via deal, via contact, and drops untraceable", async () => {

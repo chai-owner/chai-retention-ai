@@ -127,8 +127,8 @@ describe("HubSpot sync", () => {
 
   it("normalizes companies and deals, linking deals to their company", async () => {
     mockFetch([
-      { match: "/objects/companies", json: companies },
-      { match: "/objects/deals", json: deals },
+      { match: "/objects/2026-09/companies", json: companies },
+      { match: "/objects/2026-09/deals", json: deals },
     ]);
     const datasets = await runCrmSync("hubspot", "user-1", 100, null);
 
@@ -142,8 +142,8 @@ describe("HubSpot sync", () => {
 
   it("authenticates against the Lovable gateway, never HubSpot directly", async () => {
     const http = mockFetch([
-      { match: "/objects/companies", json: companies },
-      { match: "/objects/deals", json: deals },
+      { match: "/objects/2026-09/companies", json: companies },
+      { match: "/objects/2026-09/deals", json: deals },
     ]);
     await runCrmSync("hubspot", "user-1", 100, null);
 
