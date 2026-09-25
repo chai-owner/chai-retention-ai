@@ -5,7 +5,7 @@
 //
 // Run: bun scripts/before-after/compare.ts
 import { createClient } from "@supabase/supabase-js";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { INGEST_COLUMNS, INGEST_PAGE, normalizeIngestRow, batchSource } from "@/lib/ingest-row-normalize";
 import { applyAliases, resolveIdentities, type CustomerAlias } from "@/lib/customer-matching";
 import { mergeRoster } from "@/lib/customer-merge";
@@ -15,6 +15,13 @@ import * as NewNightly from "@/lib/customer-scoring";
 import * as NewApp from "@/lib/real-scoring";
 import * as OldNightly from "./old/customer-scoring";
 import * as OldApp from "./old/real-scoring";
+
+let zohoStatus: Record<string, Record<string, string>> = {};
+try {
+  zohoStatus = JSON.parse(readFileSync("/tmp/zoho_status.json", "utf8"));
+} catch {
+  /* no overlay */
+}
 
 const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false },
@@ -79,7 +86,16 @@ for (const p of profiles ?? []) {
     .select("source, source_id, customer_id, status, match_method, match_reason")
     .eq("user_id", userId);
   const aliases = (aliasRows ?? []) as unknown as CustomerAlias[];
-  const data = mergeRoster(applyAliases(resolveIdentities(raw), aliases), aliases);
+  const merged = mergeRoster(applyAliases(resolveIdentities(raw), aliases), aliases);
+  // Stored Zoho deals predate stage tracking; overlay the real stages read
+  // live from Zoho (zoho-check.ts) — exactly what the next sync will store.
+  const data: IngestedData = {
+    ...merged,
+    transactions: (merged.transactions ?? []).map((t) => {
+      const st = zohoStatus[String((t as Record<string, string>).transaction_id)];
+      return st ? { ...t, ...st } : t;
+    }),
+  };
 
   // Old nightly used past stored scores as its "own history".
   const since = new Date(Date.now() - 90 * 86_400_000).toISOString();
