@@ -274,7 +274,7 @@ async function syncHubspot(
   let fullDeals = false;
   if (sinceMs != null) {
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const supabaseAdmin = getSupabaseAdmin();
+    const supabaseAdmin = await getSupabaseAdmin();
     const { data: legacy } = await supabaseAdmin
       .from("ingested_transactions")
       .select("id, batch:ingest_batches!inner(source_provider)")
