@@ -234,30 +234,6 @@ function subjectFor(name: string, kind: "trend" | "rhythm" | undefined): string 
   return n.toLowerCase();
 }
 
-/** Average of a customer's observations for a metric inside a day window. */
-function baselineFor(
-  points: HistoryPoint[] | undefined,
-  now: number,
-  windowDays: number,
-): number | null {
-  if (!points || points.length === 0) return null;
-  const cutoff = now - windowDays * DAY;
-  const inWindow = points.filter((p) => p.scored_at >= cutoff && Number.isFinite(p.value));
-  if (inWindow.length === 0) return null;
-  return inWindow.reduce((sum, p) => sum + p.value, 0) / inWindow.length;
-}
-
-/** Score a value against the customer's own baseline; baseline itself sits at 50. */
-function scoreAgainstBaseline(value: number, baseline: number, direction: "higher" | "lower"): number {
-  if (direction === "lower") {
-    if (value <= 0) return 100;
-    if (baseline <= 0) return value <= 0 ? 100 : 0;
-    return clamp(50 * (baseline / value));
-  }
-  if (baseline <= 0) return value > 0 ? 100 : 50;
-  return clamp(50 * (value / baseline));
-}
-
 /**
  * Scores every customer in `data.customers` against `metrics`.
  *
@@ -288,15 +264,6 @@ export function scoreCustomers(
     ),
   ];
   if (customerIds.length === 0 || metrics.length === 0) return [];
-
-  // history indexed by "customerId\u0000metricName"
-  const history = new Map<string, HistoryPoint[]>();
-  for (const point of options.history ?? []) {
-    const key = `${point.customer_id}\u0000${point.metric}`;
-    const bucket = history.get(key);
-    if (bucket) bucket.push(point);
-    else history.set(key, [point]);
-  }
 
   const resolved = metrics.map((metric) => {
     const result = resolveMetric(metric, data, now);
@@ -336,7 +303,6 @@ export function scoreCustomers(
       const value = entry.values.get(customerId);
       if (value == null || !Number.isFinite(value)) continue;
       const weight = Number(entry.metric.weight ?? 1) || 1;
-      const points = history.get(`${customerId}\u0000${entry.metric.name}`);
 
       let normalised: number;
       let basis: ScoreBasis;
