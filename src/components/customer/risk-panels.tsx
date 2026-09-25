@@ -1,4 +1,4 @@
-import { churnConfidenceLabel } from "@/lib/churn-probability";
+import { churnConfidenceText } from "@/lib/churn-probability";
 import { Sparkles } from "lucide-react";
 
 import { Card } from "@/components/ui/chai";
@@ -94,12 +94,12 @@ export function RiskFactorsCard({
       </div>
       {(confidenceNote === undefined
         ? c.churnConfidence
-          ? `${churnConfidenceLabel(c.churnConfidence)} — based on how many kinds of data this customer has.`
+          ? churnConfidenceText(c.churnConfidence, c.confidenceReason)
           : null
         : confidenceNote) ? (
         <div className="mt-4 rounded-lg bg-accent/50 p-3 text-xs text-accent-foreground">
           {confidenceNote === undefined
-            ? `${churnConfidenceLabel(c.churnConfidence!)} — based on how many kinds of data this customer has.`
+            ? churnConfidenceText(c.churnConfidence!, c.confidenceReason)
             : confidenceNote}
         </div>
       ) : null}

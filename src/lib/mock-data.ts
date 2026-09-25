@@ -90,6 +90,8 @@ export interface Customer {
   churnConfidence?: ChurnConfidence;
   /** Number of distinct data categories with signals for this customer. */
   dataCategories?: number;
+  /** Why confidence is limited by thin evidence, e.g. "based on a single sale". */
+  confidenceReason?: string | null;
   revenue: number;
   sentiment: number;
   lastActivity: string;

@@ -134,6 +134,7 @@ function CustomerDetail() {
           churnConfidenceFor(
             new Set(breakdownEntries(snapshot.breakdown).map((e) => e.metric)).size,
           ),
+        confidenceReason: meta ? (meta.confidence_reason ?? null) : live.confidenceReason,
         dataCategories:
           meta?.data_categories ??
           new Set(breakdownEntries(snapshot.breakdown).map((e) => e.metric)).size,
