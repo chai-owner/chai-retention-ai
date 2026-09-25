@@ -52,9 +52,9 @@ const steps = [
 ];
 
 const signals = [
-  { icon: Clock, text: "Longer gaps than usual since the last closed deal" },
-  { icon: TrendingDown, text: "Deal sizes trending smaller over time" },
-  { icon: MessageSquareOff, text: "Long-standing accounts with no recent closed activity at all" },
+  { icon: Clock, text: "Longer gaps than usual since the last deal" },
+  { icon: TrendingDown, text: "Deal sizes getting smaller" },
+  { icon: MessageSquareOff, text: "Long-standing accounts that have gone quiet" },
 ];
 
 const navItems = [
@@ -162,9 +162,10 @@ function ZohoCrmIntegrationPage() {
               Your Zoho CRM already shows who's going quiet. ChAi makes it obvious.
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/65">
-              A longer gap since the last closed deal, a shrinking deal size, an account that's
-              stopped buying — the signs are already sitting in Zoho. ChAi connects in minutes and
-              turns them into a clear picture of who's at risk, why, and what to do next.
+              A longer gap since the last deal, a shrinking deal size, an account
+              that's gone quiet — the signs are already sitting in Zoho. ChAi
+              connects in minutes and turns them into a clear picture of who's at
+              risk, why, and what to do next.
             </p>
             <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <a
