@@ -261,6 +261,9 @@ export function buildRealDataset(
 ): ScoredDataset {
   // Open and lost CRM deals are not sales.
   const data = withCountableTransactions(rawData);
+  // Customers whose only sales data is CRM deals (see countable-transactions).
+  const dealOnly = dealOnlyCustomers(data);
+  const dealPeersOk = dealOnly.size >= MIN_DEAL_PEERS;
   const customerRows = data.customers ?? [];
   const now = Date.now();
   const segs = profile?.segments ?? [];
@@ -336,6 +339,10 @@ export function buildRealDataset(
   const customMax = new Map<string, number>();
   const customMin = new Map<string, number>();
   const customResolved = new Map<string, ReturnType<typeof resolveMetric>>();
+  // Spend / order-size measures on sales data: deal-only customers get their
+  // own range (and none at all below MIN_DEAL_PEERS).
+  const customSplit = new Set<string>();
+  const customDealRange = new Map<string, { min: number; max: number }>();
   const peerTarget = new Map<string, number>();
   for (const cm of customMetrics) {
     const resolved = resolveMetric(cm.metric, data, now);
@@ -343,7 +350,18 @@ export function buildRealDataset(
       customLatest.set(cm.metric.name, resolved.values);
       customDataset.set(cm.metric.name, resolved.dataset ?? null);
       customResolved.set(cm.metric.name, resolved);
-      const vals = [...resolved.values.values()];
+      const op = resolved.operation;
+      const split =
+        dataSourceFor(resolved.dataset) === "transactions" &&
+        op !== "days_since_last" && op !== "months_since" && dealOnly.size > 0;
+      const entries = [...resolved.values.entries()];
+      const vals = (split ? entries.filter(([id]) => !dealOnly.has(id)) : entries).map(([, v]) => v);
+      if (split) {
+        customSplit.add(cm.metric.name);
+        const dv = entries.filter(([id]) => dealOnly.has(id)).map(([, v]) => v);
+        if (dv.length) customDealRange.set(cm.metric.name, { min: Math.min(...dv), max: Math.max(...dv) });
+      }
+      if (!vals.length) vals.push(...entries.map(([, v]) => v));
       customMax.set(cm.metric.name, Math.max(...vals));
       customMin.set(cm.metric.name, Math.min(...vals));
       // Peer target = what a healthy customer looks like on this metric
@@ -363,15 +381,16 @@ export function buildRealDataset(
   // valueAt100 anchors (invert automatically when "lower is better"). Falls
   // back to relative scoring against the customer-base max when anchors are
   // missing.
-  const customSubScore = (cm: CustomMetricKey, v: number): number => {
+  const customSubScore = (cm: CustomMetricKey, v: number, cid: string): number => {
     const a0 = cm.metric.valueAt0;
     const a100 = cm.metric.valueAt100;
     if (a0 != null && a100 != null && a0 !== a100) {
       const pct = ((v - a0) / (a100 - a0)) * 100;
       return clamp(pct);
     }
-    const mx = customMax.get(cm.metric.name) ?? 1;
-    const mn = customMin.get(cm.metric.name) ?? 0;
+    const dealRange = customSplit.has(cm.metric.name) && dealOnly.has(cid) ? customDealRange.get(cm.metric.name) : null;
+    const mx = dealRange?.max ?? customMax.get(cm.metric.name) ?? 1;
+    const mn = dealRange?.min ?? customMin.get(cm.metric.name) ?? 0;
     if (mx === mn) return 60;
     return clamp(((v - mn) / (mx - mn)) * 100);
   };
@@ -380,8 +399,6 @@ export function buildRealDataset(
   // Deal sizes and invoice sizes are different kinds of number: deal-only
   // customers are compared only with each other, and only when there are
   // enough of them (MIN_DEAL_PEERS); otherwise they get no order-value score.
-  const dealOnly = dealOnlyCustomers(data);
-  const dealPeersOk = dealOnly.size >= MIN_DEAL_PEERS;
   const aovByCust = new Map<string, number>();
   for (const [id, g] of tx) {
     if (dealOnly.has(id) && !dealPeersOk) continue;
@@ -458,7 +475,8 @@ export function buildRealDataset(
     // has an uploaded value for.
     for (const cm of customMetrics) {
       const v = customLatest.get(cm.metric.name)?.get(cid);
-      if (v != null) {
+      const dealSkip = customSplit.has(cm.metric.name) && dealOnly.has(cid) && !dealPeersOk;
+      if (v != null && !dealSkip) {
         metricValues[cm.metric.name] = v;
         const res = customResolved.get(cm.metric.name);
         const pts = res?.series?.get(cid);
@@ -475,7 +493,7 @@ export function buildRealDataset(
           op === "days_since_last"
             ? (cm.metric.name.match(/since\s+(?:the\s+)?(?:last|most recent)\s+(.+)$/i)?.[1] ?? "recorded activity").toLowerCase()
             : cm.metric.name.toLowerCase();
-        personalise(cm.metric.name, customSubScore(cm, v), personal, what);
+        personalise(cm.metric.name, customSubScore(cm, v, cid), personal, what);
       }
     }
 
