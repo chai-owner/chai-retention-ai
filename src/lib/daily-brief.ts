@@ -36,6 +36,8 @@ export interface BriefAction {
   /** Probability of churning within the next 90 days, derived from the score. */
   churnProbability: number;
   churnConfidence: ChurnConfidence;
+  /** AI-detected conversation signals feeding the score, labelled by type and source. */
+  aiFactors: Array<{ label: string; source: string }>;
 }
 
 export interface DailyBrief {
@@ -73,8 +75,13 @@ function displayName(id: string, names?: Record<string, string>): string {
 
 /** The breakdown entry hurting a customer's score the most (lowest weighted contribution). */
 export function topDragEntry(row: SnapshotRow): ScoreBreakdownEntry | null {
+  // Hard metrics only — AI-detected content signals are listed separately.
   const entries = ((row.score_breakdown ?? []) as ScoreBreakdownEntry[]).filter(
-    (e) => e && typeof e.metric === "string" && Number.isFinite(e.normalised),
+    (e) =>
+      e &&
+      typeof e.metric === "string" &&
+      Number.isFinite(e.normalised) &&
+      e.basis !== "content",
   );
   if (entries.length === 0) return null;
   let worst = entries[0]!;
@@ -191,6 +198,7 @@ export function buildDailyBrief(input: BriefInput): DailyBrief {
       actionTitle: play.title,
       churnProbability: meta?.churn_probability ?? churnProbabilityFromHealth(row.score),
       churnConfidence: meta?.confidence ?? churnConfidenceFor(new Set((row.score_breakdown ?? []).map((e) => (e as ScoreBreakdownEntry).metric)).size),
+      aiFactors: contentSignalLabels(row.score_breakdown),
     };
   });
 

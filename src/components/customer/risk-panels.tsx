@@ -41,14 +41,31 @@ export function RiskFactorsCard({
       <div className="mt-4 space-y-4">
         {c.factors.map((f) => (
           <div key={f.label}>
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">{f.label}</span>
-              <span className="text-xs text-muted-foreground">{f.weight}% of risk</span>
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="flex flex-wrap items-center gap-1.5 font-medium">
+                {f.label}
+                {f.aiDetected && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-accent px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                    title="Extracted by AI from conversations — not a hard metric"
+                  >
+                    <Sparkles className="h-2.5 w-2.5" /> AI-detected
+                  </span>
+                )}
+              </span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {f.aiDetected ? `${f.weight}/100 signal strength` : `${f.weight}% of risk`}
+              </span>
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary">
               <div
-                className="h-full rounded-full bg-danger"
-                style={{ width: `${Math.min(100, f.weight * 2.6)}%` }}
+                className={cn(
+                  "h-full rounded-full",
+                  f.aiDetected
+                    ? "bg-[repeating-linear-gradient(45deg,var(--color-primary)_0_4px,transparent_4px_7px)]"
+                    : "bg-danger",
+                )}
+                style={{ width: `${Math.min(100, f.aiDetected ? f.weight : f.weight * 2.6)}%` }}
               />
             </div>
             <p className="mt-1.5 text-xs text-muted-foreground">{f.detail}</p>
