@@ -13,6 +13,7 @@ import { resolveMetric } from "@/lib/metric-resolution";
 import {
   CHURN_HORIZON_DAYS,
   churnConfidenceFor,
+  dataSourceFor,
   churnProbabilityFromHealth,
   type ChurnConfidence,
 } from "@/lib/churn-probability";
