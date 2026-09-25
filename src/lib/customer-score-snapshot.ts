@@ -65,8 +65,9 @@ const fmt = (n: number): string =>
 
 function detailFor(entry: ScoreBreakdownEntry, metric?: PlannerMetric): string {
   const unit = inferUnit(entry.metric, metric?.unit);
+  if (entry.comparison) return entry.comparison;
   const value = `Currently ${fmt(entry.value)} ${unit}`.trim();
-  if (entry.baseline != null && Number.isFinite(entry.baseline)) {
+  if ((entry.basis === "baseline-30d" || entry.basis === "baseline-90d") && entry.baseline != null && Number.isFinite(entry.baseline)) {
     return `${value} versus a baseline of ${fmt(entry.baseline)} ${unit}.`.replace(/\s+\./, ".");
   }
   return `${value} — below the healthy range for ${entry.metric}.`;

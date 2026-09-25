@@ -4,19 +4,12 @@
 // app already computes in the browser.
 //
 // Scoring is baseline-relative: each customer is compared against their own
-// history, worked out from their dated records (see personal-baseline.ts —
-// the same logic the in-app score uses). Customers with too little history
-// fall back to a cadence horizon or today's cohort, blended in while thin.
-import {
-  blendScore,
-  compareRhythm,
-  compareTrend,
-  describeComparison,
-} from "@/lib/personal-baseline";
-import { withCountableTransactions } from "@/lib/countable-transactions";
+// recent history (from previous `customer_scores` rows) rather than against
+// whoever happens to be best or worst in the cohort today. Cohort min-max is
+// kept as the no-history fallback.
 import type { IngestedData } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
-import { resolveMetric } from "@/lib/metric-resolution";
+import { resolveMetric } from "./metric-resolution";
 import {
   CHURN_HORIZON_DAYS,
   churnConfidenceFor,
@@ -34,11 +27,6 @@ import {
 export type RiskLevel = "healthy" | "at-risk" | "critical";
 
 export type ScoreBasis =
-  /** Judged against this customer's own history (enough of it to trust). */
-  | "personal"
-  /** Thin personal history, mixed with the horizon/cohort fallback. */
-  | "blended"
-  /** Legacy stored rows only — no longer produced. */
   | "baseline-30d"
   | "baseline-90d"
   | "horizon"
@@ -53,10 +41,7 @@ export interface ScoreBreakdownEntry {
   normalised: number;
   weight: number;
   basis: ScoreBasis;
-  /** Personal comparisons: the customer's own normal (value or usual gap). */
   baseline: number | null;
-  /** Plain-language reason naming the comparison used, when personal. */
-  comparison?: string;
 }
 
 /**
@@ -107,7 +92,6 @@ export interface HistoryPoint {
 }
 
 export interface ScoringOptions {
-  /** @deprecated Ignored — personal baselines now come from dated records. */
   history?: HistoryPoint[];
   /** profiles.cadence — free text describing how often customers buy/engage. */
   cadence?: string;
@@ -225,36 +209,47 @@ export function horizonDays(cadence?: string, lifespan?: string): number {
   return DEFAULT_HORIZON_DAYS;
 }
 
-/** Noun used in reason text: "days since last deal" → "deal". */
-function subjectFor(name: string, kind: "trend" | "rhythm" | undefined): string {
-  const n = name.trim();
-  if (kind === "rhythm") {
-    const m = n.match(/since\s+(?:the\s+)?(?:last|most recent)\s+(.+)$/i);
-    return (m?.[1] ?? "recorded activity").toLowerCase();
+/** Average of a customer's observations for a metric inside a day window. */
+function baselineFor(
+  points: HistoryPoint[] | undefined,
+  now: number,
+  windowDays: number,
+): number | null {
+  if (!points || points.length === 0) return null;
+  const cutoff = now - windowDays * DAY;
+  const inWindow = points.filter((p) => p.scored_at >= cutoff && Number.isFinite(p.value));
+  if (inWindow.length === 0) return null;
+  return inWindow.reduce((sum, p) => sum + p.value, 0) / inWindow.length;
+}
+
+/** Score a value against the customer's own baseline; baseline itself sits at 50. */
+function scoreAgainstBaseline(value: number, baseline: number, direction: "higher" | "lower"): number {
+  if (direction === "lower") {
+    if (value <= 0) return 100;
+    if (baseline <= 0) return value <= 0 ? 100 : 0;
+    return clamp(50 * (baseline / value));
   }
-  return n.toLowerCase();
+  if (baseline <= 0) return value > 0 ? 100 : 50;
+  return clamp(50 * (value / baseline));
 }
 
 /**
  * Scores every customer in `data.customers` against `metrics`.
  *
  * Per metric, per customer, in order of preference:
- *  1. their own history from dated records: last 30 days vs the prior 90
- *     (values, counts, rates) or their usual gap ("days since last …")
- *  2. blended with 3/4 while that history is thin
+ *  1. the customer's own 30-day average from `customer_scores`
+ *  2. their 90-day average when 30 days of history is not there yet
  *  3. a cadence-derived horizon for elapsed-time metrics ("days since last…")
- *  4. cohort min-max across today's customer base
+ *  4. cohort min-max across today's customer base (the original behaviour)
  *
  * Each normalised value is weighted by the metric's `weight` (default 1) and
  * averaged into a 0–100 health score.
  */
 export function scoreCustomers(
   metrics: PlannerMetric[],
-  rawData: IngestedData,
+  data: IngestedData,
   options: ScoringOptions = {},
 ): CustomerScore[] {
-  // Open and lost CRM deals are not sales.
-  const data = withCountableTransactions(rawData);
   const now = options.now ?? Date.now();
   const horizon = horizonDays(options.cadence, options.lifespan);
 
@@ -267,6 +262,15 @@ export function scoreCustomers(
   ];
   if (customerIds.length === 0 || metrics.length === 0) return [];
 
+  // history indexed by "customerId\u0000metricName"
+  const history = new Map<string, HistoryPoint[]>();
+  for (const point of options.history ?? []) {
+    const key = `${point.customer_id}\u0000${point.metric}`;
+    const bucket = history.get(key);
+    if (bucket) bucket.push(point);
+    else history.set(key, [point]);
+  }
+
   const resolved = metrics.map((metric) => {
     const result = resolveMetric(metric, data, now);
     const values = [...result.values.values()];
@@ -277,8 +281,6 @@ export function scoreCustomers(
       max: values.length ? Math.max(...values) : 0,
       direction: metricDirection(metric),
       elapsed: isElapsedMetric(metric),
-      operation: result.operation,
-      series: result.series,
       // Which data SOURCE this metric draws on (transactions, support, usage,
       // surveys…) — the confidence indicator counts distinct sources, so two
       // metrics from the same source never inflate it.
@@ -305,45 +307,28 @@ export function scoreCustomers(
       const value = entry.values.get(customerId);
       if (value == null || !Number.isFinite(value)) continue;
       const weight = Number(entry.metric.weight ?? 1) || 1;
+      const points = history.get(`${customerId}\u0000${entry.metric.name}`);
 
       let normalised: number;
       let basis: ScoreBasis;
-      let baseline: number | null = null;
-      let comparison: string | null = null;
+      let baseline: number | null = baselineFor(points, now, 30);
 
-      // Fallback first: what today's scoring would say without the
-      // customer's own history.
-      let fallback: number;
-      let fallbackBasis: ScoreBasis;
-      if (entry.elapsed) {
-        fallbackBasis = "horizon";
-        fallback = clamp(100 - (value / horizon) * 100);
+      if (baseline != null) {
+        basis = "baseline-30d";
+        normalised = scoreAgainstBaseline(value, baseline, entry.direction);
+      } else if ((baseline = baselineFor(points, now, 90)) != null) {
+        basis = "baseline-90d";
+        normalised = scoreAgainstBaseline(value, baseline, entry.direction);
+      } else if (entry.elapsed) {
+        basis = "horizon";
+        normalised = clamp(100 - (value / horizon) * 100);
       } else {
-        fallbackBasis = "cohort";
+        basis = "cohort";
         const spread = entry.max - entry.min;
         // A flat distribution carries no signal — treat everyone as mid-range.
-        let n = spread === 0 ? 50 : ((value - entry.min) / spread) * 100;
-        if (entry.direction === "lower") n = 100 - n;
-        fallback = clamp(n);
-      }
-
-      // Then this customer's own history: recent-vs-normal trend, or their
-      // usual rhythm for "days since last …" metrics.
-      const points = entry.series?.get(customerId);
-      const personal =
-        entry.operation === "days_since_last"
-          ? compareRhythm(points?.map((p) => p.date), now)
-          : entry.operation === "average" || entry.operation === "sum" || entry.operation === "ratio"
-            ? compareTrend(points, entry.operation, entry.direction, now)
-            : null;
-      const blended = blendScore(personal, fallback);
-      normalised = blended.score;
-      if (blended.basis === "fallback") {
-        basis = fallbackBasis;
-      } else {
-        basis = blended.basis;
-        baseline = personal ? personal.normal : null;
-        comparison = describeComparison(personal, blended.basis, subjectFor(entry.metric.name, personal?.kind));
+        normalised = spread === 0 ? 50 : ((value - entry.min) / spread) * 100;
+        if (entry.direction === "lower") normalised = 100 - normalised;
+        normalised = clamp(normalised);
       }
 
       normalised = clamp(round(normalised));
@@ -354,7 +339,6 @@ export function scoreCustomers(
         weight,
         basis,
         baseline: baseline == null ? null : round(baseline),
-        ...(comparison ? { comparison } : {}),
       });
       if (entry.category) categories.add(entry.category);
       weighted += normalised * weight;

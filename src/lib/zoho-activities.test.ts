@@ -110,7 +110,7 @@ describe("Zoho activity mapping", () => {
     const customers = datasets.find((d) => d.key === "customers")!;
     expect(customers.rows).toHaveLength(2);
     const transactions = datasets.find((d) => d.key === "transactions")!;
-    expect(transactions.rows[0]).toEqual(["ACC1", "DEAL1", "1200", "2026-08-01", "Renewal", "USD"]);
+    expect(transactions.rows[0]).toEqual(["ACC1", "DEAL1", "1200", "2026-08-01", "Renewal", "USD", expect.any(String), expect.stringMatching(/^(won|lost|open)$/)]);
   });
 
   it("groups activities onto the owning account via account, deal and contact", () => {

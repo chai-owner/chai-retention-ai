@@ -164,35 +164,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
               aliases,
             );
 
-            // Baseline history: the last 90 days of stored per-metric values
-            // for this account, flattened out of score_breakdown.
-            const since = new Date(Date.now() - 90 * 86_400_000).toISOString();
-            const { data: historyRows } = await supabaseAdmin
-              .from("customer_scores")
-              .select("customer_id, scored_at, score_breakdown")
-              .eq("user_id", userId)
-              .gte("scored_at", since);
-
-            const history: HistoryPoint[] = [];
-            for (const row of historyRows ?? []) {
-              const at = Date.parse(String(row.scored_at));
-              if (!Number.isFinite(at)) continue;
-              const entries = Array.isArray(row.score_breakdown) ? row.score_breakdown : [];
-              for (const raw of entries) {
-                const entry = raw as { metric?: unknown; value?: unknown };
-                const value = Number(entry.value);
-                if (typeof entry.metric !== "string" || !Number.isFinite(value)) continue;
-                history.push({
-                  customer_id: String(row.customer_id),
-                  metric: entry.metric,
-                  value,
-                  scored_at: at,
-                });
-              }
-            }
-
             let scores = scoreCustomers(metrics, data, {
-              history,
               cadence: (profile.cadence as string | null) ?? undefined,
               lifespan: (profile.lifespan as string | null) ?? undefined,
             });

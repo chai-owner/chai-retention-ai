@@ -364,7 +364,29 @@ const TRANSACTION_HEADERS = [
   "transaction_date",
   "product",
   "currency",
+  "deal_stage",
+  "deal_status",
 ];
+
+/**
+ * Classifies a Zoho deal stage as won / lost / open. Only won deals count as
+ * sales in scoring (see countable-transactions.ts); open and lost deals are
+ * still stored so a stage change on a later sync overwrites the old status.
+ * Default Zoho stages are "Closed Won" / "Closed Lost"; custom pipelines are
+ * recognised by name, falling back to Zoho's stage probability (100 = won,
+ * 0 on a closed stage = lost).
+ */
+export function zohoDealStatus(stage: unknown, probability: unknown): "won" | "lost" | "open" {
+  const s = String(stage ?? "").toLowerCase().trim();
+  if (/closed[\s_-]*won|^won$|\bwon\b/.test(s)) return "won";
+  if (/closed[\s_-]*lost|\blost\b|lost to competition|dead|disqualified/.test(s)) return "lost";
+  const p = Number(probability);
+  if (Number.isFinite(p) && String(probability ?? "") !== "") {
+    if (p >= 100) return "won";
+    if (p <= 0 && /closed/.test(s)) return "lost";
+  }
+  return "open";
+}
 // Activities land in the shared "usage" store. `date` is what the persistence
 // layer reads for occurred_at; `activity_date` is the column the scoring engine
 // matches on for "days since last activity" (plain `date` is treated as a
@@ -523,6 +545,8 @@ export function buildZohoDatasets(raw: ZohoRawData): ExtractedDataset[] {
     dateOnly(r.Closing_Date),
     toStr(r.Deal_Name),
     "USD",
+    toStr(r.Stage),
+    zohoDealStatus(r.Stage, r.Probability),
   ]);
 
   // An activity can hang off an account, a deal or a contact. Resolve all three
@@ -622,7 +646,32 @@ export async function syncZohoForUser(
     "Industry",
     "Billing_Country",
   ];
-  const dealFields = ["Deal_Name", "Account_Name", "Amount", "Closing_Date", "Stage"];
+  const dealFields = ["Deal_Name", "Account_Name", "Amount", "Closing_Date", "Stage", "Probability"];
+
+  // Deals stored before stage tracking have no status. An incremental sync
+  // would never revisit unchanged deals, so re-read every deal once until all
+  // stored Zoho deals carry a status.
+  let fullDeals = false;
+  if (since) {
+    const sb = await admin();
+    const { data: legacy } = await sb
+      .from("ingested_transactions")
+      .select("id, batch:ingest_batches!inner(source_provider)")
+      .eq("user_id", userId)
+      .eq("batch.source_provider", "zoho_crm")
+      .is("data->>deal_status", null)
+      .limit(1);
+    fullDeals = (legacy?.length ?? 0) > 0;
+  }
+  const fullAuth = { ...auth };
+  delete fullAuth["If-Modified-Since"];
+  const getFull: ZohoGet = async (path: string) => {
+    const res = await fetch(`${conn.api_domain}/crm/v6${path}`, { headers: fullAuth });
+    if (res.status === 204 || res.status === 304) return null;
+    const body = await res.text();
+    if (!res.ok) throw new Error(`Zoho request failed [${res.status}]: ${body.slice(0, 300)}`);
+    return body ? JSON.parse(body) : null;
+  };
 
   const get: ZohoGet = async (path: string) => {
     const res = await fetch(`${conn.api_domain}/crm/v6${path}`, { headers: auth });
@@ -638,7 +687,7 @@ export async function syncZohoForUser(
 
   const [accounts, deals, contacts] = await Promise.all([
     fetchZohoPages(get, "Accounts", accFields, limit),
-    fetchZohoPages(get, "Deals", dealFields, limit),
+    fetchZohoPages(fullDeals ? getFull : get, "Deals", dealFields, limit),
     // Primary contact email per account — the strongest cross-platform signal,
     // and the fallback route from an activity to its account.
     fetchZohoPages(get, "Contacts", ["Email", "Account_Name"], limit).catch(() => []),

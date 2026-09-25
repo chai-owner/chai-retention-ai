@@ -2,7 +2,6 @@
 // uploaded or synced (see ingested-data-store.ts). No demo data is involved:
 // if a signal is absent for a customer, that metric is simply excluded from
 // their weighted health score rather than being invented.
-import { withCountableTransactions } from "@/lib/countable-transactions";
 import {
   type Customer,
   type ScoredDataset,
@@ -18,16 +17,8 @@ import {
 import type { OnboardingProfile, ProfileSegment } from "@/lib/profile-store";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import { customMetricKeys, type CustomMetricKey } from "@/lib/personalize-data";
-import { resolveMetric } from "@/lib/metric-resolution";
+import { resolveMetric } from "./metric-resolution";
 import { playbookFor } from "@/lib/metric-playbooks";
-import {
-  blendScore,
-  compareRhythm,
-  compareTrend,
-  describeComparison,
-  type PersonalComparison,
-  type SeriesPoint,
-} from "@/lib/personal-baseline";
 import {
   churnConfidenceFor,
   churnProbabilityFromHealth,
@@ -190,26 +181,11 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
 
 function buildFactors(
   sub: Record<string, number>,
-  ctx: {
-    days: number | null;
-    supg?: { count: number; open: number };
-    customMetrics?: CustomMetricKey[];
-    /** Personal-comparison reason per sub-score label; replaces the generic detail. */
-    notes?: Record<string, string>;
-  },
+  ctx: { days: number | null; supg?: { count: number; open: number }; customMetrics?: CustomMetricKey[] },
 ): Factor[] {
   const out: Factor[] = [];
-  const subKey: Record<string, string> = {
-    "No recent purchases": "Days since last purchase",
-    "Unresolved support tickets": "Resolution time",
-    "High support volume": "Support ticket volume",
-    "Declining satisfaction": "CSAT / NPS",
-    "Usage declining": "Login frequency",
-    "Low feature adoption": "Feature adoption",
-    "Low spend": "Average order value",
-  };
   const push = (label: string, score: number, detail: string) =>
-    out.push({ label, weight: Math.round(clamp(100 - score)), detail: ctx.notes?.[subKey[label] ?? label] ?? detail });
+    out.push({ label, weight: Math.round(clamp(100 - score)), detail });
 
   if (sub["Days since last purchase"] != null && sub["Days since last purchase"] < 50 && ctx.days != null)
     push("No recent purchases", sub["Days since last purchase"], `Last purchase was ${Math.round(ctx.days)} days ago.`);
@@ -255,59 +231,47 @@ function segmentFor(monthly: number | null, segs: ProfileSegment[]): string {
 }
 
 export function buildRealDataset(
-  rawData: IngestedData,
+  data: IngestedData,
   weights: MetricWeights,
   profile: OnboardingProfile | null,
 ): ScoredDataset {
-  // Open and lost CRM deals are not sales.
-  const data = withCountableTransactions(rawData);
   const customerRows = data.customers ?? [];
   const now = Date.now();
   const segs = profile?.segments ?? [];
 
   // ---- aggregate signals per customer ----
-  const tx = new Map<string, { amounts: number[]; lastDate: number | null; dates: number[]; dated: SeriesPoint[] }>();
+  const tx = new Map<string, { amounts: number[]; lastDate: number | null }>();
   for (const r of data.transactions ?? []) {
     const id = r.customer_id;
     if (!id) continue;
-    const g = tx.get(id) ?? { amounts: [], lastDate: null, dates: [], dated: [] };
+    const g = tx.get(id) ?? { amounts: [], lastDate: null };
     const a = num(r.amount);
     if (a != null) g.amounts.push(a);
     const d = parseDate(r.transaction_date);
-    if (d != null) {
-      g.lastDate = Math.max(g.lastDate ?? 0, d);
-      g.dates.push(d);
-      if (a != null) g.dated.push({ date: d, value: a });
-    }
+    if (d != null) g.lastDate = Math.max(g.lastDate ?? 0, d);
     tx.set(id, g);
   }
-  const sup = new Map<string, { count: number; open: number; sat: number[]; dated: SeriesPoint[] }>();
+  const sup = new Map<string, { count: number; open: number; sat: number[] }>();
   for (const r of data.support ?? []) {
     const id = r.customer_id;
     if (!id) continue;
-    const g = sup.get(id) ?? { count: 0, open: 0, sat: [], dated: [] };
+    const g = sup.get(id) ?? { count: 0, open: 0, sat: [] };
     g.count++;
-    const td = parseDate(r.created_at) ?? parseDate(r.date) ?? parseDate(r.opened_at) ?? parseDate(r.occurred_at);
-    if (td != null) g.dated.push({ date: td, value: 1 });
     const st = (r.status || "").toLowerCase();
     if (st.includes("open") || st.includes("reopen")) g.open++;
     const s = num(r.satisfaction_score);
     if (s != null) g.sat.push(s);
     sup.set(id, g);
   }
-  const usg = new Map<string, { logins: number[]; features: number[]; dated: SeriesPoint[] }>();
+  const usg = new Map<string, { logins: number[]; features: number[] }>();
   for (const r of data.usage ?? []) {
     const id = r.customer_id;
     if (!id) continue;
-    const g = usg.get(id) ?? { logins: [], features: [], dated: [] };
+    const g = usg.get(id) ?? { logins: [], features: [] };
     // Industry uploads commonly call a usage event a visit/check-in rather
     // than a login. Both are engagement-frequency signals.
     const l = num(r.logins) ?? num(r.check_in_count) ?? num(r.visit_count);
-    if (l != null) {
-      g.logins.push(l);
-      const ud = parseDate(r.date) ?? parseDate(r.activity_date) ?? parseDate(r.visit_date) ?? parseDate(r.occurred_at);
-      if (ud != null) g.dated.push({ date: ud, value: l });
-    }
+    if (l != null) g.logins.push(l);
     const f = num(r.features_used);
     if (f != null) g.features.push(f);
     usg.set(id, g);
@@ -335,14 +299,12 @@ export function buildRealDataset(
   const customDataset = new Map<string, string | null>();
   const customMax = new Map<string, number>();
   const customMin = new Map<string, number>();
-  const customResolved = new Map<string, ReturnType<typeof resolveMetric>>();
   const peerTarget = new Map<string, number>();
   for (const cm of customMetrics) {
     const resolved = resolveMetric(cm.metric, data, now);
     if (resolved.values.size > 0) {
       customLatest.set(cm.metric.name, resolved.values);
       customDataset.set(cm.metric.name, resolved.dataset ?? null);
-      customResolved.set(cm.metric.name, resolved);
       const vals = [...resolved.values.values()];
       customMax.set(cm.metric.name, Math.max(...vals));
       customMin.set(cm.metric.name, Math.min(...vals));
@@ -420,28 +382,14 @@ export function buildRealDataset(
 
     const subScores: Record<string, number> = {};
     const metricValues: Record<string, number> = {};
-    // Reason text for signals judged against this customer's own history.
-    const personalNotes: Record<string, string> = {};
-    // Compare to the customer's own history where there is enough of it;
-    // otherwise keep the cross-customer / fixed-window score (blended while thin).
-    const personalise = (label: string, fallback: number, personal: PersonalComparison | null, what: string) => {
-      const b = blendScore(personal, fallback);
-      subScores[label] = b.score;
-      const note = describeComparison(personal, b.basis, what);
-      if (note) personalNotes[label] = note;
-    };
-    const usgg = usg.get(cid);
-    if (loginAvgByCust.has(cid))
-      personalise("Login frequency", clamp((loginAvgByCust.get(cid)! / maxLogin) * 100), compareTrend(usgg?.dated, "average", "higher", now), "activity per record");
+    if (loginAvgByCust.has(cid)) subScores["Login frequency"] = clamp((loginAvgByCust.get(cid)! / maxLogin) * 100);
     if (featAvgByCust.has(cid)) subScores["Feature adoption"] = clamp((featAvgByCust.get(cid)! / maxFeat) * 100);
     const days = txg?.lastDate ? (now - txg.lastDate) / DAY : null;
-    if (days != null)
-      personalise("Days since last purchase", clamp(100 - (days / 180) * 100), compareRhythm(txg?.dates, now), "purchase");
-    if (aovByCust.has(cid))
-      personalise("Average order value", clamp((aovByCust.get(cid)! / maxAov) * 100), compareTrend(txg?.dated, "average", "higher", now), "average order value");
+    if (days != null) subScores["Days since last purchase"] = clamp(100 - (days / 180) * 100);
+    if (aovByCust.has(cid)) subScores["Average order value"] = clamp((aovByCust.get(cid)! / maxAov) * 100);
     const supg = sup.get(cid);
     if (supg) {
-      personalise("Support ticket volume", clamp(100 - (supg.count / maxTickets) * 100), compareTrend(supg.dated, "sum", "lower", now), "support tickets");
+      subScores["Support ticket volume"] = clamp(100 - (supg.count / maxTickets) * 100);
       subScores["Resolution time"] = clamp(100 - (supg.count ? (supg.open / supg.count) * 100 : 0));
     }
     const cs = csatScore(cid);
@@ -453,22 +401,7 @@ export function buildRealDataset(
       const v = customLatest.get(cm.metric.name)?.get(cid);
       if (v != null) {
         metricValues[cm.metric.name] = v;
-        const res = customResolved.get(cm.metric.name);
-        const pts = res?.series?.get(cid);
-        const lowerBetter =
-          cm.metric.valueAt0 != null && cm.metric.valueAt100 != null && cm.metric.valueAt0 > cm.metric.valueAt100;
-        const op = res?.operation;
-        const personal =
-          op === "days_since_last"
-            ? compareRhythm(pts?.map((p) => p.date), now)
-            : op === "average" || op === "sum" || op === "ratio"
-              ? compareTrend(pts, op, lowerBetter ? "lower" : "higher", now)
-              : null;
-        const what =
-          op === "days_since_last"
-            ? (cm.metric.name.match(/since\s+(?:the\s+)?(?:last|most recent)\s+(.+)$/i)?.[1] ?? "recorded activity").toLowerCase()
-            : cm.metric.name.toLowerCase();
-        personalise(cm.metric.name, customSubScore(cm, v), personal, what);
+        subScores[cm.metric.name] = customSubScore(cm, v);
       }
     }
 
@@ -514,7 +447,7 @@ export function buildRealDataset(
     const lastTs = txg?.lastDate ?? parseDate(r.signup_date);
     const lastActivity = lastTs ? `${Math.max(0, Math.round((now - lastTs) / DAY))} days ago` : "—";
 
-    const factors = buildFactors(subScores, { days, supg, customMetrics, notes: personalNotes });
+    const factors = buildFactors(subScores, { days, supg, customMetrics });
     const recommendations = factors
       .map((f) => {
         // Known churn drivers have hand-written playbooks; anything else
