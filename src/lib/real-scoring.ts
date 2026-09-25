@@ -2,7 +2,7 @@
 // uploaded or synced (see ingested-data-store.ts). No demo data is involved:
 // if a signal is absent for a customer, that metric is simply excluded from
 // their weighted health score rather than being invented.
-import { withCountableTransactions } from "@/lib/countable-transactions";
+import { withCountableTransactions, dealOnlyCustomers, MIN_DEAL_PEERS } from "@/lib/countable-transactions";
 import {
   type Customer,
   type ScoredDataset,
@@ -377,11 +377,19 @@ export function buildRealDataset(
   };
 
   // ---- reference maxima for relative scoring ----
+  // Deal sizes and invoice sizes are different kinds of number: deal-only
+  // customers are compared only with each other, and only when there are
+  // enough of them (MIN_DEAL_PEERS); otherwise they get no order-value score.
+  const dealOnly = dealOnlyCustomers(data);
+  const dealPeersOk = dealOnly.size >= MIN_DEAL_PEERS;
   const aovByCust = new Map<string, number>();
   for (const [id, g] of tx) {
+    if (dealOnly.has(id) && !dealPeersOk) continue;
     const a = avg(g.amounts);
     if (a != null) aovByCust.set(id, a);
   }
+  const maxAovDeals = Math.max(1, ...[...aovByCust].filter(([id]) => dealOnly.has(id)).map(([, v]) => v));
+  const maxAovInvoices = Math.max(1, ...[...aovByCust].filter(([id]) => !dealOnly.has(id)).map(([, v]) => v));
   const loginAvgByCust = new Map<string, number>();
   const featAvgByCust = new Map<string, number>();
   for (const [id, g] of usg) {
@@ -390,7 +398,6 @@ export function buildRealDataset(
     const fa = avg(g.features);
     if (fa != null) featAvgByCust.set(id, fa);
   }
-  const maxAov = Math.max(1, ...aovByCust.values());
   const maxLogin = Math.max(1, ...loginAvgByCust.values());
   const maxFeat = Math.max(1, ...featAvgByCust.values());
   const maxTickets = Math.max(1, ...[...sup.values()].map((g) => g.count));
@@ -438,7 +445,7 @@ export function buildRealDataset(
     if (days != null)
       personalise("Days since last purchase", clamp(100 - (days / 180) * 100), compareRhythm(txg?.dates, now), "purchase");
     if (aovByCust.has(cid))
-      personalise("Average order value", clamp((aovByCust.get(cid)! / maxAov) * 100), compareTrend(txg?.dated, "average", "higher", now), "average order value");
+      personalise("Average order value", clamp((aovByCust.get(cid)! / (dealOnly.has(cid) ? maxAovDeals : maxAovInvoices)) * 100), compareTrend(txg?.dated, "average", "higher", now), "average order value");
     const supg = sup.get(cid);
     if (supg) {
       personalise("Support ticket volume", clamp(100 - (supg.count / maxTickets) * 100), compareTrend(supg.dated, "sum", "lower", now), "support tickets");
