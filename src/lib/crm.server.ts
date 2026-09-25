@@ -96,13 +96,6 @@ async function gwGet(url: string, headers: Record<string, string>) {
   if (!res.ok) throw new Error(`CRM request failed [${res.status}]: ${body.slice(0, 300)}`);
   return body ? JSON.parse(body) : null;
 }
-async function gwPost(url: string, headers: Record<string, string>, body: unknown) {
-  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-  if (res.status === 429) throw new Error("CRM rate limit hit — please try again in a moment.");
-  const text = await res.text();
-  if (!res.ok) throw new Error(`CRM request failed [${res.status}]: ${text.slice(0, 300)}`);
-  return text ? JSON.parse(text) : null;
-}
 
 // ---------------- Salesforce ----------------
 

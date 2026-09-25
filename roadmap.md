@@ -17,3 +17,6 @@
 - [x] Phase 1: customer-page flag card, erasure sweep of content stores, nightly extraction pass with spend ceiling
 - [ ] Re-run Phase 0 against real conversations once any account reaches 20+ (constructed-set result is not real-data validation)
 - [x] Support ticket → company matching (email domain, then organisation, manual fallback) + nightly scoring now applies saved links
+- [x] HubSpot: page companies/deals through the whole portal (was capped at 100), dated API paths, no search endpoint
+- [x] HubSpot activity content adapter (notes, calls, meetings, tasks, emails) + reconnect prompt
+- [ ] HubSpot live checks: search-endpoint refusal, real extraction, email vs notes accuracy (blocked: HubSpot app provisioning approval)
