@@ -189,6 +189,16 @@ export interface ResolvedMetric {
   rowCount: number;
   latestDate: number | null;
   values: Map<string, number>;
+  /** How the value was computed from the records. */
+  operation?: Operation;
+  /**
+   * Dated per-record observations per customer, for comparing a customer to
+   * their own history (personal-baseline.ts). For average/sum/ratio metrics
+   * the value is the record's value (ratio: 0 or 100); for "days since last"
+   * metrics the date is the event date itself. Empty for metrics that have no
+   * meaningful history (latest values, customer age, direct metric uploads).
+   */
+  series?: Map<string, Array<{ date: number; value: number }>>;
 }
 
 export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = Date.now()): ResolvedMetric {
@@ -199,7 +209,7 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
   const selected = directRows.length > 0
     ? { dataset: custom?.key ?? "", field: custom?.column ?? "", score: 100 }
     : selectField(metric, data);
-  if (!selected) return { dataset: preferredDatasets(metric)[0] ?? null, field: null, rowCount: 0, latestDate: null, values: new Map() };
+  if (!selected) return { dataset: preferredDatasets(metric)[0] ?? null, field: null, rowCount: 0, latestDate: null, values: new Map(), series: new Map() };
 
   const operation = usesDirectMetricDataset ? "latest" : operationFor(metric);
   const grouped = new Map<string, Array<{ value: string; date: number | null }>>();
@@ -254,7 +264,25 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
     }
     if (value != null && Number.isFinite(value)) values.set(id, value);
   }
-  return { dataset: selected.dataset, field: selected.field, rowCount: [...grouped.values()].reduce((sum, rows) => sum + rows.length, 0), latestDate, values };
+  const series = new Map<string, Array<{ date: number; value: number }>>();
+  const trendable = operation === "average" || operation === "sum" || operation === "ratio" || operation === "days_since_last";
+  if (trendable) {
+    for (const [id, entries] of grouped) {
+      const pts: Array<{ date: number; value: number }> = [];
+      for (const entry of entries) {
+        if (operation === "days_since_last") {
+          const d = timestamp(entry.value);
+          if (d != null) pts.push({ date: d, value: 1 });
+          continue;
+        }
+        if (entry.date == null) continue;
+        const v = operation === "ratio" ? (() => { const f = conditionValue(entry.value, metric); return f == null ? null : f * 100; })() : numeric(entry.value);
+        if (v != null && Number.isFinite(v)) pts.push({ date: entry.date, value: v });
+      }
+      if (pts.length) series.set(id, pts);
+    }
+  }
+  return { dataset: selected.dataset, field: selected.field, rowCount: [...grouped.values()].reduce((sum, rows) => sum + rows.length, 0), latestDate, values, operation, series };
 }
 
 export function metricDatasetDependencies(metric: PlannerMetric, data: IngestedData): string[] {
