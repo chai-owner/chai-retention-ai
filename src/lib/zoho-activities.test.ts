@@ -167,8 +167,12 @@ describe("engagement metrics over activity rows", () => {
     expect(resolved.values.get("B")).toBe(150);
   });
 
+  it("leaves activity frequency out while too few customers have 3+ activities", () => {
+    expect(resolveMetric(frequency, data, now).values.size).toBe(0);
+  });
+
   it("counts activity over a 90-day window, so a silent account reads zero", () => {
-    const resolved = resolveMetric(frequency, data, now);
+    const resolved = resolveMetric(frequency, data, now, { raw: true });
     expect(resolved.values.get("A")).toBe(2);
     expect(resolved.values.get("B")).toBe(0);
   });
