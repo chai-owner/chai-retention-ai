@@ -14,7 +14,7 @@ const META_DESCRIPTION =
 const faqs = [
   {
     q: "Do I need to clean up my Xero data first?",
-    a: "No. Messy, incomplete, or inconsistent data is fine — ChAi is built to work with what you've already got.",
+    a: "No. Messy or inconsistent data is fine. Where there isn't enough to judge a customer yet, ChAi says so instead of guessing.",
   },
   {
     q: "Does this replace my Customer Success team?",
@@ -22,15 +22,15 @@ const faqs = [
   },
   {
     q: "Is my Xero data secure?",
-    a: "Yes — connected through Xero's official OAuth, encrypted with AES-256, and every sync runs server-side. Your Xero password never touches ChAi.",
+    a: "Yes — connected through Xero's official OAuth, connection keys encrypted with AES-256, and every sync runs server-side. Your Xero password never touches ChAi.",
   },
   {
     q: "What if I have multiple organizations in Xero?",
-    a: "No problem — you'll choose which organization ChAi connects to during setup.",
+    a: "No problem. ChAi syncs all your organisations by default, and you can pick just one afterwards.",
   },
   {
     q: "How long does setup take?",
-    a: "A few minutes to connect. ChAi starts learning your business immediately after.",
+    a: "A few minutes to connect. Your first sync starts straight away.",
   },
 ];
 
@@ -51,14 +51,14 @@ const steps = [
     n: "03",
     icon: Rocket,
     title: "Act before customers churn",
-    desc: "See who's slipping, why, and what's likely to help, ranked by revenue at risk.",
+    desc: "See who's slipping, why, and what's likely to help, riskiest first.",
   },
 ];
 
 const signals = [
   { icon: Clock, text: "Invoices slipping past their due date, and staying there" },
   { icon: TrendingDown, text: "Invoice or order values trending down" },
-  { icon: MessageSquareOff, text: "Long-standing customers going quiet on billing activity" },
+  { icon: MessageSquareOff, text: "Customers going quiet on billing activity" },
 ];
 
 const navItems = [
@@ -200,8 +200,9 @@ function XeroIntegrationPage() {
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-[#4A5A6B]">
             A customer can stay current on invoices right up until the month they leave. ChAi combines
-            what's happening in Xero with support tickets, usage, and CRM activity — so a change in
-            billing pattern gets read alongside everything else, not in isolation.
+            what's happening in Xero with support tickets, any usage data you upload, and won CRM
+            deals — so a change in billing pattern gets read alongside everything else, not in
+            isolation.
           </p>
         </Reveal>
       </section>
