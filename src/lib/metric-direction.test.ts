@@ -38,7 +38,7 @@ describe("shared direction for fewer-is-better measures", () => {
 
   it("the customer page is lower when the open-ticket count is higher", () => {
     const ds = buildRealDataset(data, { [tickets.name]: 3 }, makeProfile({ metrics: [tickets] }));
-    const sub = (id: string) => ds.customers.find((c) => c.id === id)!.subScores[tickets.name]!;
+    const sub = (id: string) => ds.customers.find((c) => c.id === id)!.subScores![tickets.name]!;
     expect(sub("A")).toBeGreaterThan(sub("E"));
   });
 
@@ -47,7 +47,7 @@ describe("shared direction for fewer-is-better measures", () => {
     const nightly = (id: string) =>
       (rows.find((r) => r.customer_id === id)!.score_breakdown as Array<{ metric?: string; normalised?: number }>).find((e) => e.metric === tickets.name)!.normalised!;
     const ds = buildRealDataset(data, { [tickets.name]: 3 }, makeProfile({ metrics: [tickets] }));
-    const page = (id: string) => ds.customers.find((c) => c.id === id)!.subScores[tickets.name]!;
+    const page = (id: string) => ds.customers.find((c) => c.id === id)!.subScores![tickets.name]!;
     for (const [x, y] of [["A", "B"], ["B", "D"], ["C", "E"]] as const) {
       expect(Math.sign(nightly(x) - nightly(y))).toBe(Math.sign(page(x) - page(y)));
     }
