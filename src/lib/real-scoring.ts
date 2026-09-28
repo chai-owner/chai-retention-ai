@@ -4,7 +4,7 @@
 // their weighted health score rather than being invented.
 import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
 import { withCountableTransactions, dealOnlyCustomers } from "@/lib/countable-transactions";
-import { hasEnoughPeers, hasEnoughRecords, isEvidenceExempt, peerNote } from "@/lib/metric-evidence";
+import { NOT_ENOUGH_DATA_LABEL, hasEnoughPeers, hasEnoughRecords, isEvidenceExempt, peerNote } from "@/lib/metric-evidence";
 import {
   type Customer,
   type ScoredDataset,
