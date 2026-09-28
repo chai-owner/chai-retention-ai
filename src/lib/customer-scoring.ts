@@ -137,12 +137,6 @@ function round(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function metricText(metric: PlannerMetric): string {
-  return [metric.name, metric.why, metric.churn, metric.reason, metric.category]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-}
 
 // Direction logic lives in metric-direction.ts, shared with the customer page.
 export { isElapsedMetric, metricDirection };
