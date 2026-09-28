@@ -292,7 +292,13 @@ export function buildRealDataset(
     if (!id) continue;
     const g = sup.get(id) ?? { count: 0, open: 0, sat: [], dated: [] };
     g.count++;
-    const td = parseDate(r.created_at) ?? parseDate(r.date) ?? parseDate(r.opened_at) ?? parseDate(r.occurred_at);
+    // Zendesk stores ticket dates as created_date — same fields the confidence check reads.
+    const td =
+      parseDate(r.created_at) ??
+      parseDate(r.created_date) ??
+      parseDate(r.date) ??
+      parseDate(r.opened_at) ??
+      parseDate(r.occurred_at);
     if (td != null) g.dated.push({ date: td, value: 1 });
     const st = (r.status || "").toLowerCase();
     if (st.includes("open") || st.includes("reopen")) g.open++;

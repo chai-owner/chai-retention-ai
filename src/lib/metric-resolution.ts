@@ -93,7 +93,7 @@ function timestamp(value?: string): number | null {
 }
 
 function dateFor(row: IngestRow): number | null {
-  for (const field of ["visit_date", "transaction_date", "survey_date", "date", "occurred_at", "submitted_at", "created_at", "signup_date", "check_in"]) {
+  for (const field of ["visit_date", "transaction_date", "survey_date", "date", "occurred_at", "submitted_at", "created_at", "created_date", "signup_date", "check_in"]) {
     const parsed = timestamp(row[field]);
     if (parsed != null) return parsed;
   }
