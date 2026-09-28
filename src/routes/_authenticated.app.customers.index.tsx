@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { NOT_ENOUGH_DATA_LABEL } from "@/lib/metric-evidence";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -57,6 +58,7 @@ interface RiskRow {
   risk: number;
   revenue: number;
   churnProbability: number;
+  notEnoughData?: boolean;
 }
 
 function fromCustomer(c: Customer): RiskRow {
@@ -68,6 +70,7 @@ function fromCustomer(c: Customer): RiskRow {
     risk: c.risk,
     revenue: c.revenue,
     churnProbability: c.churnProbability,
+    notEnoughData: c.notEnoughData,
   };
 }
 
@@ -119,7 +122,7 @@ function Customers() {
   const filtered = useMemo(() => {
     return dataset.filter((c) => {
       const cat = categoryFromHealth(c.health);
-      const matchesFilter = lifecycle !== "active" || filter === "all" || cat === filter;
+      const matchesFilter = lifecycle !== "active" || filter === "all" || (!c.notEnoughData && cat === filter);
       const matchesQuery = c.name.toLowerCase().includes(query.toLowerCase());
       return matchesFilter && matchesQuery;
     });
@@ -271,10 +274,18 @@ function Customers() {
                       </Link>
                     </td>
                     <td className="w-40 px-4 py-3">
-                      <ScoreBar value={c.health} />
+                      {c.notEnoughData ? (
+                        <span className="text-xs text-muted-foreground">{NOT_ENOUGH_DATA_LABEL}</span>
+                      ) : (
+                        <ScoreBar value={c.health} />
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={cn("font-semibold tabular-nums", riskMeta[cat].text)}>{c.risk}</span>
+                      {c.notEnoughData ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <span className={cn("font-semibold tabular-nums", riskMeta[cat].text)}>{c.risk}</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 tabular-nums">{formatCurrency(c.revenue)}</td>
                     <td className="hidden px-4 py-3 md:table-cell">
