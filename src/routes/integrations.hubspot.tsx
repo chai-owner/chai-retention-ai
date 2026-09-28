@@ -1,0 +1,342 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, Plug, Brain, Rocket, Clock, TrendingDown, MessageSquareOff } from "lucide-react";
+
+import { Reveal } from "@/components/landing/reveal";
+import { DemoGateDialog, useDemoGate } from "@/components/landing/demo-gate";
+import { HubSpotIcon, HubSpotColor } from "@/components/landing/brand-icons";
+import { canonicalHead } from "@/lib/site";
+
+const PATH = "/integrations/hubspot";
+const META_TITLE = "HubSpot Customer Health Scores | ChAi";
+const META_DESCRIPTION =
+  "Connect HubSpot and see which customers are at risk — and why. ChAi reads your won deals and flags warning signs in your CRM notes.";
+
+const faqs = [
+  {
+    q: "Do I need to clean up my HubSpot data first?",
+    a: "No. Messy or inconsistent data is fine. Where there isn't enough to judge a customer yet, ChAi says so instead of guessing.",
+  },
+  {
+    q: "How accurate are the warning signs?",
+    a: "They're an early feature and still being validated. They're shown as evidence you can check, can only nudge a score down a little, fade over time, and disappear when you click \"Not right\".",
+  },
+  {
+    q: "Does ChAi replace my customer success team?",
+    a: "No. It tells your team who needs attention and why. It never contacts customers for you.",
+  },
+  {
+    q: "Is my data secure?",
+    a: "Yes. You connect through HubSpot's official sign-in, syncs run on our servers, and your HubSpot password never touches ChAi. Connection keys are encrypted with AES-256.",
+  },
+  {
+    q: "Why does HubSpot show a warning when I connect?",
+    a: "ChAi's HubSpot app is waiting for HubSpot's approval. Until then, HubSpot shows a notice that the app isn't verified yet. You can continue safely — the connection uses HubSpot's official sign-in, it's read-only, and your password never reaches ChAi.",
+  },
+  {
+    q: "How long does setup take?",
+    a: "A few minutes to connect. Your first sync starts straight away.",
+  },
+];
+
+const steps = [
+  {
+    n: "01",
+    icon: Plug,
+    title: "Connect",
+    desc: "Sign in with HubSpot. It's read-only, with no CSV exports and no fields to map.",
+  },
+  {
+    n: "02",
+    icon: Brain,
+    title: "Learn",
+    desc: "Your won deals become one signal among several, weighted the way your business actually works.",
+  },
+  {
+    n: "03",
+    icon: Rocket,
+    title: "Act",
+    desc: "See your customers riskiest first, with the reasons and the next step for each.",
+  },
+];
+
+const signals = [
+  { icon: Clock, text: "Longer gaps than usual since the last won deal" },
+  { icon: TrendingDown, text: "Won deals getting smaller" },
+  {
+    icon: MessageSquareOff,
+    text: "Warning signs in notes, calls, meetings and emails, like a competitor mentioned or talk of cancelling. Each is shown with its quote, date and source, so you can check it and dismiss anything that's wrong.",
+  },
+];
+
+const navItems = [
+  { label: "Features", href: "/#features" },
+  { label: "Integrations", href: "/#integrations" },
+];
+
+const focusRing =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C3FFA5] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+
+export const Route = createFileRoute("/integrations/hubspot")({
+  head: () => ({
+    meta: [
+      { title: META_TITLE },
+      ...canonicalHead(PATH).meta,
+      { name: "description", content: META_DESCRIPTION },
+      { property: "og:title", content: META_TITLE },
+      { property: "og:description", content: META_DESCRIPTION },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: META_TITLE },
+      { name: "twitter:description", content: META_DESCRIPTION },
+    ],
+    links: canonicalHead(PATH).links,
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: faqs.map((f) => ({
+            "@type": "Question",
+            name: f.q,
+            acceptedAnswer: { "@type": "Answer", text: f.a },
+          })),
+        }),
+      },
+    ],
+  }),
+  component: HubSpotIntegrationPage,
+});
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-[8px] bg-[#A9E0F1]/50 px-3 py-1 text-xs font-semibold text-[#204654]">
+      {children}
+    </span>
+  );
+}
+
+function HubSpotIntegrationPage() {
+  const { open: demoOpen, openGate, closeGate } = useDemoGate();
+
+  return (
+    <div className="landing min-h-screen scroll-smooth font-sans antialiased">
+      {/* ── Header + hero ─────────────────────────────── */}
+      <section id="top" className="rounded-b-[36px] bg-[#152238] pb-20 lg:pb-28">
+        <nav className="mx-auto flex h-20 max-w-[1240px] items-center gap-6 px-6 lg:px-8">
+          <Link to="/" className={`flex items-center rounded-[10px] ${focusRing}`}>
+            <img src="/logo-light.png" alt="ChAi" className="h-12 w-auto" />
+          </Link>
+
+          <div className="ml-auto hidden items-center gap-1 md:flex">
+            {navItems.map((n) => (
+              <a
+                key={n.label}
+                href={n.href}
+                className={`rounded-[10px] px-3.5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white ${focusRing}`}
+              >
+                {n.label}
+              </a>
+            ))}
+            <button
+              onClick={openGate}
+              className={`rounded-[10px] border border-white/25 px-3.5 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white ${focusRing}`}
+            >
+              View Demo
+            </button>
+            <a
+              href="https://app.askchai.tech/auth"
+              className={`rounded-[10px] px-3.5 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white ${focusRing}`}
+            >
+              Log in
+            </a>
+          </div>
+
+          <a
+            href="https://app.askchai.tech/auth?mode=signup"
+            className={`group ml-auto inline-flex items-center gap-2 rounded-[10px] bg-[#C3FFA5] px-4 py-2.5 text-sm font-bold text-[#152238] transition-colors hover:bg-[#A8E080] md:ml-3 ${focusRing}`}
+          >
+            Get started
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </a>
+        </nav>
+
+        <div className="mx-auto mt-10 max-w-[900px] px-6 text-center lg:mt-16 lg:px-8">
+          <Reveal>
+            <span className="inline-flex items-center gap-2 rounded-[10px] bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white/85">
+              <span className="flex h-5 w-5 items-center justify-center rounded-[6px] bg-white" style={{ color: HubSpotColor }}>
+                <HubSpotIcon className="h-3.5 w-3.5" />
+              </span>
+              HubSpot integration
+            </span>
+            <h1 className="mt-6 text-[2.4rem] font-extrabold leading-[1.05] tracking-[-0.02em] text-white sm:text-5xl lg:text-[3.6rem]">
+              Spot at-risk customers in your HubSpot data
+            </h1>
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/65">
+              A longer gap since the last won deal, shrinking deal sizes, a note
+              that mentions a competitor. The signs are often already sitting in
+              HubSpot. Connect it and ChAi shows you who's slipping and why.
+            </p>
+            <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+              <a
+                href="https://app.askchai.tech/auth?mode=signup"
+                className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#C3FFA5] px-6 py-3.5 text-base font-bold text-[#152238] transition-colors hover:bg-[#A8E080] ${focusRing}`}
+              >
+                Try it for free <ArrowRight className="h-4 w-4" />
+              </a>
+              <button
+                onClick={openGate}
+                className={`inline-flex items-center justify-center gap-2 rounded-[10px] border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-white/10 ${focusRing}`}
+              >
+                View Demo
+              </button>
+            </div>
+            <p className="mt-5 text-sm text-white/45">
+              No credit card required · 14-day free trial · Cancel anytime
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── Why CRM activity alone isn't enough ──────────── */}
+      <section className="mx-auto max-w-[1240px] px-6 py-24 lg:px-8">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <Eyebrow>The whole picture</Eyebrow>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+            CRM data alone isn't enough
+          </h2>
+          <p className="mt-4 text-lg leading-relaxed text-[#4A5A6B]">
+            HubSpot tells you what's been sold, not how the customer feels about it. ChAi combines
+            what's happening in HubSpot with support tickets, billing activity, and any usage data
+            you upload, so you see the risk before the renewal conversation.
+          </p>
+        </Reveal>
+      </section>
+
+      {/* ── How it works ───────────────────────────────── */}
+      <section className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <Eyebrow>How it works</Eyebrow>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+            From connected to in control, in three steps
+          </h2>
+        </Reveal>
+
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
+          {steps.map((s, i) => (
+            <Reveal key={s.n} delay={i * 100}>
+              <div className="h-full rounded-[18px] bg-[#DFF0F7] p-8">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl font-extrabold tracking-[-0.02em] text-[#204654]">
+                    {s.n}
+                  </span>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#204654] text-white">
+                    <s.icon className="h-4.5 w-4.5" strokeWidth={1.75} />
+                  </span>
+                </div>
+                <h3 className="mt-5 text-xl font-extrabold tracking-[-0.02em]">{s.title}</h3>
+                <p className="mt-2 leading-relaxed text-[#4A5A6B]">{s.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Signals ────────────────────────────────────── */}
+      <section className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <Eyebrow>Signals</Eyebrow>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+            What ChAi looks for in your Zoho CRM data
+          </h2>
+        </Reveal>
+
+        <div className="mx-auto mt-12 max-w-2xl space-y-4">
+          {signals.map((s, i) => (
+            <Reveal key={s.text} delay={i * 80}>
+              <div className="flex items-center gap-4 rounded-[16px] bg-white p-5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#C3FFA5] text-[#152238]">
+                  <s.icon className="h-5 w-5" strokeWidth={2} />
+                </span>
+                <p className="text-lg font-semibold text-[#152238]">{s.text}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FAQ ────────────────────────────────────────── */}
+      <section className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <Eyebrow>FAQ</Eyebrow>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+            Questions Zoho CRM users ask us
+          </h2>
+        </Reveal>
+
+        <div className="mx-auto mt-12 max-w-3xl space-y-4">
+          {faqs.map((f, i) => (
+            <Reveal key={f.q} delay={i * 70}>
+              <div className="rounded-[18px] bg-white p-7">
+                <h3 className="text-lg font-extrabold tracking-[-0.02em]">{f.q}</h3>
+                <p className="mt-2 leading-relaxed text-[#4A5A6B]">{f.a}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Final CTA ──────────────────────────────────── */}
+      <section className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-8">
+        <Reveal>
+          <div className="rounded-[36px] bg-[#152238] px-8 py-20 text-center lg:px-16">
+            <h2 className="mx-auto max-w-2xl text-4xl font-extrabold tracking-[-0.02em] text-white sm:text-5xl">
+              Stop finding out about churn from a cancellation email.
+            </h2>
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <a
+                href="https://app.askchai.tech/auth?mode=signup"
+                className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#C3FFA5] px-6 py-3.5 text-base font-bold text-[#152238] transition-colors hover:bg-[#A8E080] ${focusRing}`}
+              >
+                Sign up free <ArrowRight className="h-4 w-4" />
+              </a>
+              <button
+                onClick={openGate}
+                className={`inline-flex items-center justify-center gap-2 rounded-[10px] border border-white/25 px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-white/10 ${focusRing}`}
+              >
+                View demo
+              </button>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ── Footer ─────────────────────────────────────── */}
+      <footer className="mx-auto max-w-[1240px] px-6 pb-12 lg:px-8">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-[#D8E7EF] pt-8 text-sm text-[#4A5A6B] sm:flex-row">
+          <img src="/logo-dark.png" alt="ChAi" className="h-12 w-auto" />
+          <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            <li>
+              <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/">Home</Link>
+            </li>
+            <li>
+              <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/pricing">Pricing</Link>
+            </li>
+            <li>
+              <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/help">Help</Link>
+            </li>
+            <li>
+              <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/terms">Terms</Link>
+            </li>
+            <li>
+              <Link className={`rounded-[8px] hover:text-[#204654] ${focusRing}`} to="/privacy">Privacy</Link>
+            </li>
+          </ul>
+          <p>© {new Date().getFullYear()} ChAi. All rights reserved.</p>
+        </div>
+      </footer>
+
+      <DemoGateDialog open={demoOpen} onClose={closeGate} />
+    </div>
+  );
+}
