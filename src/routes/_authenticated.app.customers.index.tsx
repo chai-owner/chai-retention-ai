@@ -289,11 +289,21 @@ function Customers() {
                     </td>
                     <td className="px-4 py-3 tabular-nums">{formatCurrency(c.revenue)}</td>
                     <td className="hidden px-4 py-3 md:table-cell">
-                      <span className="font-medium tabular-nums">{c.churnProbability}%</span>
-                      <span className="block text-xs text-muted-foreground">in the next 90 days</span>
+                      {c.notEnoughData ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <>
+                          <span className="font-medium tabular-nums">{c.churnProbability}%</span>
+                          <span className="block text-xs text-muted-foreground">in the next 90 days</span>
+                        </>
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      <HealthBadge category={cat} />
+                      {c.notEnoughData ? (
+                        <span className="text-xs text-muted-foreground">Not scored yet</span>
+                      ) : (
+                        <HealthBadge category={cat} />
+                      )}
                     </td>
                   </tr>
                 );

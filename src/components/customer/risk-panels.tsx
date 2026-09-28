@@ -1,4 +1,5 @@
 import { churnConfidenceText } from "@/lib/churn-probability";
+import { NOT_ENOUGH_DATA_LABEL } from "@/lib/metric-evidence";
 import { Sparkles } from "lucide-react";
 
 import { Card } from "@/components/ui/chai";
@@ -84,7 +85,9 @@ export function RiskFactorsCard({
         ))}
         {c.factors.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            {c.health < 40
+            {c.notEnoughData
+              ? `${NOT_ENOUGH_DATA_LABEL} of a kind. ChAi will score this customer once more data arrives.`
+              : c.health < 40
               ? "ChAi detected elevated risk for this customer. Check the metrics below and consider reaching out."
               : c.health < 70
                 ? "ChAi is still analysing the risk signals for this customer — check back after the next nightly scoring run."
