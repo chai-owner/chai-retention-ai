@@ -253,13 +253,17 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
     : selectField(metric, data);
   if (!selected) return { dataset: preferredDatasets(metric)[0] ?? null, field: null, rowCount: 0, latestDate: null, values: new Map(), series: new Map() };
 
-  const operation = usesDirectMetricDataset ? "latest" : operationFor(metric);
+  const countsTickets = selected.field === TICKET_FIELD;
+  const unresolvedOnly = countsTickets && /\b(unresolved|open|outstanding|pending)\b/i.test(metric.name);
+  const operation = usesDirectMetricDataset ? "latest" : countsTickets ? "sum" : operationFor(metric);
   const grouped = new Map<string, Array<{ value: string; date: number | null }>>();
   let latestDate: number | null = null;
   for (const raw of data[selected.dataset] ?? []) {
     const row = flattenRow(raw);
     const id = (row.customer_id ?? "").trim();
-    const value = row[selected.field];
+    const value = countsTickets
+      ? (unresolvedOnly && RESOLVED_STATUS.test((row.status ?? "").trim()) ? "0" : "1")
+      : row[selected.field];
     if (!id || value == null || value.trim() === "") continue;
     const date = dateFor(row);
     if (date != null && (latestDate == null || date > latestDate)) latestDate = date;
