@@ -186,6 +186,8 @@ function selectField(metric: PlannerMetric, data: IngestedData): FieldCandidate 
         // (e.g. "days since last purchase" → the transactions' date). Related
         // vocabulary alone never qualifies a column.
         if (direct === 0 && !(timeMetric && isDate && preferred.has(dataset))) continue;
+        // "Days since" / "months since" measures need a date column.
+        if (timeMetric && !isDate) continue;
         const expandedField = expand(fieldWords);
         let score = preferred.has(dataset) ? 3 : 0;
         for (const word of fieldWords) if (baseWords.has(word)) score += 8;
