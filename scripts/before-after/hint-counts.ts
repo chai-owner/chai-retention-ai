@@ -74,8 +74,6 @@ for (const p of profiles ?? []) {
   const ds = NewApp.buildRealDataset(data, w, profile);
   const ned = ds.customers.filter((c) => (c as { notEnoughData?: boolean }).notEnoughData).length;
   const account = `${p.company || "(no company)"} <${p.email || userId}>`;
-  console.log(
-    `${account}: total ${ds.executive.totalCustomers} · healthy ${ds.executive.healthy} · watch ${ds.executive.watch} · at-risk ${ds.executive.atRisk} · critical ${ds.executive.critical} · not enough data ${ned}`,
-  );
-  console.log(`  at-risk card: "${NewApp.executiveAtRiskHint ? "" : ""}"`);
+  const hint = atRiskHint(ds.executive.critical, ned);
+  console.log(`  at-risk card: "${hint}"`);
 }

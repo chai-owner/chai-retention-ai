@@ -53,6 +53,7 @@ import { DataCoverageBanner } from "@/components/data-coverage-banner";
 import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
 import { Button } from "@/components/ui/button";
 import { ingestedStore } from "@/lib/ingested-data-store";
+import { atRiskHint } from "@/lib/at-risk-hint";
 
 export const Route = createFileRoute("/_authenticated/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
