@@ -2,7 +2,7 @@
 // score (customer-scoring.ts), so thin data never turns into extreme scores.
 //
 // Rule 1 — per customer: a measure only scores a customer once they have at
-// least MIN_CUSTOMER_RECORDS dated records of that kind. Recency ("days since
+// least MIN_CUSTOMER_RECORDS records (dated, if the measure needs time) of that kind. Recency ("days since
 // last …", "months since …") and single-value fields ("latest") are exempt:
 // one record is real evidence for them.
 //
@@ -19,6 +19,17 @@ export const NOT_ENOUGH_DATA_LABEL = `Not enough data yet — scored after ${MIN
 /** Operations for which a single record is real evidence. */
 export function isEvidenceExempt(operation: string | undefined | null): boolean {
   return operation === "days_since_last" || operation === "months_since" || operation === "latest";
+}
+
+/**
+ * Rule 1 counts every record for count/level measures (dates not needed).
+ * Measures that need time — frequency per period, weekly totals — count
+ * only dated records. Recency is exempt, and trends/own-history comparisons
+ * separately require dated records (personal-baseline.ts).
+ */
+export function recordsNeedDates(operation: string | undefined | null, measureText = ""): boolean {
+  if (operation === "days_since_last" || operation === "months_since") return true;
+  return /frequency|per (day|week|month|year)|weekly|monthly|cadence|trend/i.test(measureText);
 }
 
 /** Rule 1: does this customer have enough records for a count/average/rate measure? */

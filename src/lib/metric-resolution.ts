@@ -1,7 +1,7 @@
 import type { IngestedData, IngestRow } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { customMetricKeys } from "@/lib/personalize-data";
-import { MIN_PEERS, applyEvidenceRules } from "@/lib/metric-evidence";
+import { MIN_PEERS, applyEvidenceRules, recordsNeedDates } from "@/lib/metric-evidence";
 
 /** Minimum customers with data before a measure compares them (shared rule). */
 export const MIN_TICKET_PEERS = MIN_PEERS;
@@ -346,8 +346,11 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
   // Shared evidence rules (metric-evidence.ts), used by both screens: a
   // customer needs 3+ dated records of this kind, and the measure needs 5+
   // such customers. Recency and single-value measures are exempt.
+  // Count measures accept undated records; measures that need time
+  // (frequency per period, weekly) only count dated ones.
+  const needsTime = recordsNeedDates(operation, metricText(metric));
   const datedCounts = new Map<string, number>();
-  for (const [id, entries] of grouped) datedCounts.set(id, entries.filter((e) => e.date != null).length);
+  for (const [id, entries] of grouped) datedCounts.set(id, needsTime ? entries.filter((e) => e.date != null).length : entries.length);
   const gated = opts.raw ? values : applyEvidenceRules(values, datedCounts, operation);
   if (gated.size === 0) {
     return { dataset: selected.dataset, field: selected.field, rowCount: 0, latestDate, values: new Map(), operation, series: new Map() };
