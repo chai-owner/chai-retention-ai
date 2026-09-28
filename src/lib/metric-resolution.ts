@@ -159,32 +159,47 @@ function isTicketCountMetric(metric: PlannerMetric): boolean {
 const TICKET_FIELD = "__ticket";
 const RESOLVED_STATUS = /^(solved|closed|resolved|done|complete|completed)$/i;
 
+/** Standard record-date columns: usable only as the date of a time measure. */
+const RECORD_DATE_FIELDS = new Set(["date", "occurred_at", "submitted_at", "created_at", "transaction_date", "survey_date", "created_date"]);
+/** Common abbreviations that name the same thing as a column word. */
+const ABBREVIATIONS: Record<string, string[]> = { csat: ["satisfaction"], nps: ["satisfaction", "recommend"] };
+
+function nameWords(metric: PlannerMetric): Set<string> {
+  const out = words(metric.name);
+  for (const w of [...out]) for (const alias of ABBREVIATIONS[w] ?? []) out.add(alias);
+  return out;
+}
+
 function selectField(metric: PlannerMetric, data: IngestedData): FieldCandidate | null {
   const operation = operationFor(metric);
   const baseWords = words(metricText(metric));
   const metricWords = expand(baseWords);
+  const named = nameWords(metric);
   const preferred = new Set(preferredDatasets(metric));
   const activityMetric = isActivityMetric(metric);
+  const timeMetric = operation === "days_since_last" || operation === "months_since";
   const candidates = new Map<string, FieldCandidate>();
 
   for (const dataset of DATASET_KEYS) {
     for (const raw of data[dataset] ?? []) {
       const row = flattenRow(raw);
       for (const field of Object.keys(row)) {
-        if (IDENTIFIERS.has(field)) continue;
+        const recordDate = RECORD_DATE_FIELDS.has(field);
+        // A record's own date may serve a time measure about that kind of
+        // data (e.g. "days since last purchase" → transaction dates).
+        if (IDENTIFIERS.has(field) && !(recordDate && timeMetric && preferred.has(dataset))) continue;
         // Only columns that actually hold a value in this record qualify.
         if ((row[field] ?? "").trim() === "") continue;
         // Activity data feeds activity measures only — never usage, support
         // or trend measures that merely share a related word.
         if (isActivityField(field) && !activityMetric) continue;
         const fieldWords = words(field);
-        const isDate = [...fieldWords].some((word) => DATE_WORDS.has(word));
-        const direct = [...fieldWords].filter((word) => baseWords.has(word) && !DATE_WORDS.has(word)).length;
-        const timeMetric = operation === "days_since_last" || operation === "months_since";
+        const isDate = recordDate || [...fieldWords].some((word) => DATE_WORDS.has(word));
         // A column must genuinely match the measure: share a real word with
-        // it, or be the date column of the kind of data the measure is about
-        // (e.g. "days since last purchase" → the transactions' date). Related
-        // vocabulary alone never qualifies a column.
+        // the measure's NAME, or be the date column of the kind of data the
+        // measure is about. Related vocabulary or description wording alone
+        // never qualifies a column.
+        const direct = [...fieldWords].filter((word) => named.has(word) && !DATE_WORDS.has(word)).length;
         if (direct === 0 && !(timeMetric && isDate && preferred.has(dataset))) continue;
         // "Days since" / "months since" measures need a date column.
         if (timeMetric && !isDate) continue;
