@@ -169,6 +169,7 @@ for (const p of profiles ?? []) {
   }
   const ned = [...aNew.values()].filter((c) => (c as { notEnoughData?: boolean }).notEnoughData).map((c) => c.name);
   if (process.env.DEBUG_ID) for (const [id, c] of aNew) if (c.name.includes(process.env.DEBUG_ID)) log(`DBG ${c.name} old=${JSON.stringify(aOld.get(id)?.subScores)} new=${JSON.stringify(c.subScores)} tx=${JSON.stringify((data.transactions??[]).filter((t)=>(t as any).customer_id===id).slice(0,4))}`);
+  { const all = [...aNew.values()].filter((c) => (c as any).notEnoughData); const wasEmpty = all.filter((c) => Object.keys(aOld.get(c.id)?.subScores ?? {}).length === 0); log(`NED already-unscored-before: ${wasEmpty.length}; newly unscored: ${all.filter((c)=>!wasEmpty.includes(c)).map((c)=>`${c.name} [${c.id}] old ${aOld.get(c.id)?.health} ${JSON.stringify(aOld.get(c.id)?.subScores)}`).join("; ")}`); }
   log(`not enough data yet (${ned.length}): ${ned.join(", ") || "none"}`);
   if (process.env.PROJECT_ACTIVITY && /securenest/i.test(String(p.company))) {
     const extra = [
