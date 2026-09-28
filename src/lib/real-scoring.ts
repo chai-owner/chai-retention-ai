@@ -411,13 +411,13 @@ export function buildRealDataset(
   // Deal sizes and invoice sizes are different kinds of number: deal-only
   // customers are compared only with each other, and only when there are
   // enough of them (MIN_DEAL_PEERS); otherwise they get no order-value score.
-  // Shared evidence rules (metric-evidence.ts): 3+ dated records per
-  // customer, and 5+ such customers per comparison group.
+  // Shared evidence rules (metric-evidence.ts): 3+ records per customer
+  // (dates not needed for these level measures; trends still need dates), and 5+ such customers per comparison group.
   const gate = (m: Map<string, number>) => (hasEnoughPeers(m.size) ? m : new Map<string, number>());
   const aovInvoices = new Map<string, number>();
   const aovDeals = new Map<string, number>();
   for (const [id, g] of tx) {
-    if (!hasEnoughRecords(g.dated.length)) continue;
+    if (!hasEnoughRecords(g.amounts.length)) continue;
     const a = avg(g.amounts);
     if (a != null) (dealOnly.has(id) ? aovDeals : aovInvoices).set(id, a);
   }
@@ -427,14 +427,14 @@ export function buildRealDataset(
   let loginAvgByCust = new Map<string, number>();
   let featAvgByCust = new Map<string, number>();
   for (const [id, g] of usg) {
-    const la = hasEnoughRecords(g.dated.length) ? avg(g.logins) : null;
+    const la = hasEnoughRecords(g.logins.length) ? avg(g.logins) : null;
     if (la != null) loginAvgByCust.set(id, la);
     const fa = hasEnoughRecords(g.features.length) ? avg(g.features) : null;
     if (fa != null) featAvgByCust.set(id, fa);
   }
   loginAvgByCust = gate(loginAvgByCust);
   featAvgByCust = gate(featAvgByCust);
-  const ticketCust = new Set([...sup].filter(([, g]) => hasEnoughRecords(g.dated.length)).map(([id]) => id));
+  const ticketCust = new Set([...sup].filter(([, g]) => hasEnoughRecords(g.count)).map(([id]) => id));
   if (!hasEnoughPeers(ticketCust.size)) ticketCust.clear();
   const maxLogin = Math.max(1, ...loginAvgByCust.values());
   const maxFeat = Math.max(1, ...featAvgByCust.values());

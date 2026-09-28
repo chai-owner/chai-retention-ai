@@ -90,3 +90,22 @@ describe("customers with no scorable measure", () => {
     expect(scoreCustomers([activity], data, { now: NOW })).toEqual([]);
   });
 });
+
+import { resolveMetric as __resolve } from "@/lib/metric-resolution";
+import { compareTrend as __trend } from "@/lib/personal-baseline";
+describe("undated records (rule 1 correction)", () => {
+  it("3 undated tickets qualify for a ticket-count measure", async () => {
+    const { applyEvidenceRules, recordsNeedDates } = await import("@/lib/metric-evidence");
+    expect(recordsNeedDates("sum", "Support ticket count")).toBe(false);
+    const values = new Map(["a", "b", "c", "d", "e"].map((id) => [id, 3]));
+    const counts = new Map(["a", "b", "c", "d", "e"].map((id) => [id, 3])); // all undated, counted
+    expect(applyEvidenceRules(values, counts, "sum").size).toBe(5);
+  });
+  it("3 undated records do NOT qualify for a trend or frequency measure", async () => {
+    const { recordsNeedDates } = await import("@/lib/metric-evidence");
+    expect(recordsNeedDates("sum", "Activity frequency")).toBe(true);
+    expect(recordsNeedDates("days_since_last", "Days since last login")).toBe(true);
+    expect(__trend([], "sum", "lower", Date.now())).toBeNull();
+  });
+});
+void __resolve;
