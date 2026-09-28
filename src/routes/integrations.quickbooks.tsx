@@ -15,10 +15,16 @@ const faqs = [
   {
     q: "Do I need to clean up my QuickBooks data first?",
     a: "No. Messy or inconsistent data is fine. Where there isn't enough to judge a customer yet, ChAi says so instead of guessing.",
-...
+  },
+  {
+    q: "Does this replace my Customer Success team?",
+    a: "No — and that's on purpose. ChAi's scoring and analysis are built around how your business actually thinks about customers. No auto-replies, no scripted outreach. Just a clearer picture, handed to a human.",
+  },
+  {
     q: "Is my QuickBooks data secure?",
     a: "Yes — connected through Intuit's official OAuth, connection keys encrypted with AES-256, and every sync runs server-side. Your QuickBooks password never touches ChAi.",
-...
+  },
+  {
     q: "How long does setup take?",
     a: "A few minutes to connect. Your first sync starts straight away.",
   },
