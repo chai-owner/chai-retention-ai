@@ -117,7 +117,7 @@ const integrations = [
   { name: "Zendesk", Icon: ZendeskIcon, color: ZendeskColor, category: "Support" },
   { name: "Intercom", Icon: IntercomIcon, color: IntercomColor, category: "Support" },
   { name: "Freshdesk", Icon: FreshdeskIcon, color: FreshdeskColor, category: "Support" },
-  { name: "HubSpot", Icon: HubSpotIcon, color: HubSpotColor, category: "CRM" },
+  { name: "HubSpot", Icon: HubSpotIcon, color: HubSpotColor, category: "CRM", href: "/integrations/hubspot" },
   { name: "Salesforce", Icon: SalesforceIcon, color: SalesforceColor, category: "CRM", soon: true },
   { name: "Zoho CRM", Icon: ZohoIcon, color: ZohoColor, category: "CRM", href: "/integrations/zoho-crm" },
   { name: "QuickBooks Online", Icon: QuickBooksIcon, color: QuickBooksColor, category: "Billing", href: "/integrations/quickbooks" },
