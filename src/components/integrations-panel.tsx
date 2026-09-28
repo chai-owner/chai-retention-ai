@@ -586,6 +586,11 @@ function HubspotCard({ name, category, desc }: { name: string; category: string;
           {connecting ? "Connecting…" : "Connect with OAuth"}
         </button>
       )}
+      {!connected && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          HubSpot approval pending — you'll see an 'unverified app' notice. It's safe to continue.
+        </p>
+      )}
 
       <CrmSyncWizard
         provider="hubspot"

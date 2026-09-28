@@ -247,7 +247,7 @@ function HubSpotIntegrationPage() {
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>Signals</Eyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-            What ChAi looks for in your Zoho CRM data
+            What ChAi looks for in your HubSpot data
           </h2>
         </Reveal>
 
@@ -270,7 +270,7 @@ function HubSpotIntegrationPage() {
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>FAQ</Eyebrow>
           <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-            Questions Zoho CRM users ask us
+            Questions HubSpot users ask us
           </h2>
         </Reveal>
 
