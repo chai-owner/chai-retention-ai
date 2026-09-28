@@ -80,6 +80,7 @@ const PERIOD_FACTORS: Record<Period, number> = {
 function Dashboard() {
   const { executive: baseExecutive, healthDistribution, segmentRevenue, sortedByRisk } = useScoredData();
   const topRisk = sortedByRisk.filter((c) => !c.notEnoughData).slice(0, 5);
+  const notEnoughDataCount = sortedByRisk.filter((c) => c.notEnoughData).length;
   const uploads = useUploads();
   const [period, setPeriod] = useState<Period>("30d");
 
