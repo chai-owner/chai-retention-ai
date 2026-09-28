@@ -255,7 +255,7 @@ function Dashboard() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total customers" value={executive.totalCustomers} icon={Users} />
         <StatCard label="Healthy customers" value={executive.healthy} icon={HeartPulse} tone="success" hint="Engaged & low risk" />
-        <StatCard label="At-risk customers" value={executive.atRisk + executive.critical} icon={AlertTriangle} tone="caution" hint={`${executive.critical} critical`} />
+        <StatCard label="At-risk customers" value={executive.atRisk + executive.critical} icon={AlertTriangle} tone="caution" hint={atRiskHint(executive.critical, notEnoughDataCount)} />
         <StatCard label="Predicted monthly churn" value={`${executive.predictedMonthlyChurn} customers`} icon={TrendingDown} tone="danger" />
       </div>
 
