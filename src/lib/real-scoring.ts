@@ -538,6 +538,9 @@ export function buildRealDataset(
     }
     // No behavioural signal for this account → neutral "watch" rather than a
     // fabricated score.
+    // No scorable measure (too few records everywhere) → flagged as "not
+    // enough data yet" and kept out of every risk count (see below).
+    const notEnoughData = den === 0;
     const health = den > 0 ? Math.round(numr / den) : 60;
 
     const cat = categoryFromHealth(health);
@@ -616,6 +619,7 @@ export function buildRealDataset(
       risk,
       churnProbability,
       churnConfidence,
+      ...(notEnoughData ? { notEnoughData: true } : {}),
       dataCategories: assessed.dataCategories,
       confidenceReason: assessed.reason,
       revenue,
@@ -630,8 +634,11 @@ export function buildRealDataset(
   });
 
   // ---- aggregate / executive metrics (same shape as the mock dataset) ----
-  const sorted = [...customers].sort((a, b) => b.risk - a.risk);
-  const counts = customers.reduce(
+  // Customers without enough data sit at the end of the list and count as
+  // neither healthy nor at risk.
+  const sorted = [...customers].sort((a, b) => Number(!!a.notEnoughData) - Number(!!b.notEnoughData) || b.risk - a.risk);
+  const scored = customers.filter((c) => !c.notEnoughData);
+  const counts = scored.reduce(
     (acc, c) => {
       acc[categoryFromHealth(c.health)] += 1;
       return acc;
@@ -639,7 +646,7 @@ export function buildRealDataset(
     { healthy: 0, watch: 0, "at-risk": 0, critical: 0 } as Record<RiskCategory, number>,
   );
   const totalRevenue = customers.reduce((s, c) => s + c.revenue, 0);
-  const atRiskCustomers = customers.filter((c) => c.health < 55);
+  const atRiskCustomers = scored.filter((c) => c.health < 55);
   const revenueAtRisk = atRiskCustomers.reduce(
     (s, c) => s + Math.round(c.revenue * (c.churnProbability / 100)),
     0,
@@ -679,7 +686,7 @@ export function buildRealDataset(
       segment: seg,
       revenue: customers.filter((c) => c.segment === seg).reduce((s, c) => s + c.revenue, 0),
       atRisk: customers
-        .filter((c) => c.segment === seg && c.health < 55)
+        .filter((c) => c.segment === seg && !c.notEnoughData && c.health < 55)
         .reduce((s, c) => s + Math.round(c.revenue * (c.churnProbability / 100)), 0),
     })),
   };
