@@ -152,7 +152,8 @@ function Customers() {
         health: r.health,
         risk: Math.max(0, 100 - r.health),
         revenue: r.revenue,
-        churnProbability: churnProbabilityFromHealth(r.health),
+        churnProbability: r.notEnoughData ? 0 : churnProbabilityFromHealth(r.health),
+        notEnoughData: r.notEnoughData,
       }));
     }
     return pageSlice(filtered.map(fromCustomer), page, CUSTOMER_PAGE_SIZE);

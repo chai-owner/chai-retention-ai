@@ -83,6 +83,12 @@ describe("customers with no scorable measure", () => {
     const e = ds.executive;
     expect(e.healthy + e.watch + e.atRisk + e.critical).toBe(0);
     expect(ds.revenueAtRisk).toBe(0);
+    // No churn %, no risk explanation, no urgent action.
+    for (const c of ds.customers) {
+      expect(c.churnProbability).toBe(0);
+      expect(c.factors).toEqual([]);
+      expect(c.recommendations).toEqual([]);
+    }
   });
 
   it("get no nightly score at all", () => {

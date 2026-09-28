@@ -28,6 +28,26 @@ export function breakdownEntries(breakdown: unknown): ScoreBreakdownEntry[] {
   ) as ScoreBreakdownEntry[];
 }
 
+/**
+ * A saved score only counts when at least one real measure sits behind it.
+ * Saved rows with nothing but the churn summary (e.g. an old run that scored
+ * customers with no data) are ignored everywhere, and the live calculation —
+ * which may say "Not enough data yet" — is used instead.
+ */
+export function snapshotHasEvidence(breakdown: unknown): boolean {
+  return breakdownEntries(breakdown).some((e) => Number.isFinite(e.normalised));
+}
+
+/** Splits saved rows into those with evidence behind them and those without. */
+export function splitSnapshotRows<T extends { score_breakdown?: unknown }>(
+  rows: T[],
+): { scored: T[]; unscored: T[] } {
+  const scored: T[] = [];
+  const unscored: T[] = [];
+  for (const r of rows) (snapshotHasEvidence(r.score_breakdown) ? scored : unscored).push(r);
+  return { scored, unscored };
+}
+
 /** Distinct "Competitor mentioned · HubSpot" style labels for AI-detected signals. */
 export function contentSignalLabels(breakdown: unknown): Array<{ label: string; source: string }> {
   const entry = contentEntryOf(breakdown);
@@ -137,6 +157,8 @@ export function recommendationsFromBreakdown(
     breakdownEntries(breakdown).map((e) => [e.metric, e.baseline ?? null]),
   );
   const factors = factorsFromBreakdown(breakdown, opts.metrics, opts.healthScore);
+  // No measures behind the score → no evidence → never an urgent action.
+  if (!snapshotHasEvidence(breakdown)) return [];
   if (factors.length === 0 && opts.healthScore != null && opts.healthScore < 40) {
     // Critical account with no identifiable factors still needs an action.
     return [

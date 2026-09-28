@@ -8,6 +8,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { INGEST_COLUMNS, normalizeIngestRow } from "@/lib/ingest-row-normalize";
 import { rangeFor } from "@/lib/pagination";
 import type { ChurnMetaEntry, ScoreBreakdownEntry } from "@/lib/customer-scoring";
+import { snapshotHasEvidence, splitSnapshotRows } from "@/lib/customer-score-snapshot";
 
 export const CUSTOMER_PAGE_SIZE = 50;
 export const TRANSACTION_PAGE_SIZE = 100;
@@ -30,6 +31,8 @@ export interface CustomerRiskRow {
   health: number;
   riskLevel: string;
   revenue: number;
+  /** Saved score had no measures behind it — shown as "Not enough data yet". */
+  notEnoughData?: boolean;
 }
 
 export interface CustomerRiskPage {
@@ -61,30 +64,28 @@ export const listCustomerRiskPage = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const [from, to] = rangeFor(data.page, data.pageSize);
 
-    let query = supabase
+    const { data: all, error } = await supabase
       .from("customer_scores")
-      .select("customer_id, score, risk_level", { count: "exact" })
+      .select("customer_id, score, risk_level, score_breakdown")
       .eq("user_id", userId)
-      .eq("is_latest", true);
-    if (data.risk && data.risk !== "all") query = query.eq("risk_level", data.risk);
-
-    // Lowest health score first == highest risk first, matching the live view.
-    const { data: scores, count, error } = await query
-      .order("score", { ascending: true })
-      .order("customer_id", { ascending: true })
-      .range(from, to);
+      .eq("is_latest", true)
+      .limit(5000);
     if (error) throw new Error(error.message);
+    const latest = all ?? [];
+    if (latest.length === 0) return { rows: [], total: 0, hasSnapshot: false };
 
-    const rows = scores ?? [];
-    if (rows.length === 0) {
-      // Distinguish "no snapshot at all" from "this page is past the end".
-      const { count: anySnapshot } = await supabase
-        .from("customer_scores")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .eq("is_latest", true);
-      return { rows: [], total: count ?? 0, hasSnapshot: (anySnapshot ?? 0) > 0 };
-    }
+    // Saved scores with no measures behind them are ignored: those customers
+    // are listed last as "Not enough data yet" (only in the unfiltered view).
+    const split = splitSnapshotRows(latest);
+    if (split.scored.length === 0) return { rows: [], total: 0, hasSnapshot: false };
+    const ordered = [
+      ...split.scored
+        .filter((r) => !data.risk || data.risk === "all" || r.risk_level === data.risk)
+        .sort((a, b) => Number(a.score) - Number(b.score) || a.customer_id.localeCompare(b.customer_id)),
+      ...(!data.risk || data.risk === "all" ? split.unscored : []),
+    ];
+    const rows = ordered.slice(from, to + 1);
+    if (rows.length === 0) return { rows: [], total: ordered.length, hasSnapshot: true };
 
     const ids = rows.map((r) => r.customer_id);
     const { data: customers } = await supabase
@@ -101,6 +102,7 @@ export const listCustomerRiskPage = createServerFn({ method: "POST" })
         normalizeIngestRow(c as Record<string, unknown>, INGEST_COLUMNS.customers!),
       );
     }
+    const unscored = new Set(split.unscored.map((r) => r.customer_id));
 
     return {
       rows: rows.map((r) => {
@@ -112,9 +114,10 @@ export const listCustomerRiskPage = createServerFn({ method: "POST" })
           health: Math.round(Number(r.score) || 0),
           riskLevel: r.risk_level,
           revenue: toNumber(pick(d, ["revenue", "mrr", "arr", "contract_value", "amount"])),
+          ...(unscored.has(r.customer_id) ? { notEnoughData: true } : {}),
         };
       }),
-      total: count ?? rows.length,
+      total: ordered.length,
       hasSnapshot: true,
     };
   });
@@ -236,6 +239,9 @@ export const getCustomerScore = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) return null;
+    // A saved score with no measures behind it is ignored; the page falls
+    // back to the live calculation (which may say "Not enough data yet").
+    if (!snapshotHasEvidence(row.score_breakdown)) return null;
     return {
       customerId: row.customer_id,
       score: Math.round(Number(row.score) || 0),

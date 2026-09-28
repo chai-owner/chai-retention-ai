@@ -4,7 +4,7 @@
 // their weighted health score rather than being invented.
 import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
 import { withCountableTransactions, dealOnlyCustomers } from "@/lib/countable-transactions";
-import { hasEnoughPeers, hasEnoughRecords, isEvidenceExempt, peerNote } from "@/lib/metric-evidence";
+import { NOT_ENOUGH_DATA_LABEL, hasEnoughPeers, hasEnoughRecords, isEvidenceExempt, peerNote } from "@/lib/metric-evidence";
 import {
   type Customer,
   type ScoredDataset,
@@ -545,7 +545,8 @@ export function buildRealDataset(
 
     const cat = categoryFromHealth(health);
     const risk = Math.round(clamp(100 - health));
-    const churnProbability = churnProbabilityFromHealth(health);
+    // No evidence → no churn figure (shown as "—") and no revenue at risk.
+    const churnProbability = notEnoughData ? 0 : churnProbabilityFromHealth(health);
     // Confidence reflects data completeness: how many distinct data categories
     // this customer actually has signals in.
     // Counts distinct data SOURCES, not metric labels: ticket volume and
@@ -569,7 +570,8 @@ export function buildRealDataset(
     const lastTs = txg?.lastDate ?? parseDate(r.signup_date);
     const lastActivity = lastTs ? `${Math.max(0, Math.round((now - lastTs) / DAY))} days ago` : "—";
 
-    const factors = buildFactors(subScores, { days, supg, customMetrics, notes: personalNotes });
+    // "Not enough data yet" → no risk explanation and no actions at all.
+    const factors = notEnoughData ? [] : buildFactors(subScores, { days, supg, customMetrics, notes: personalNotes });
     const recommendations = factors
       .map((f) => {
         // Known churn drivers have hand-written playbooks; anything else
@@ -605,8 +607,8 @@ export function buildRealDataset(
     timeline.push({
       date: new Date(now).toISOString().slice(0, 10),
       type: "score",
-      title: health >= 55 ? "Account reviewed" : "Risk flagged",
-      detail: `Health score ${health}, churn probability ${churnProbability}%.`,
+      title: notEnoughData ? "Not scored yet" : health >= 55 ? "Account reviewed" : "Risk flagged",
+      detail: notEnoughData ? NOT_ENOUGH_DATA_LABEL : `Health score ${health}, churn probability ${churnProbability}%.`,
     });
     timeline.sort((a, b) => a.date.localeCompare(b.date));
 
