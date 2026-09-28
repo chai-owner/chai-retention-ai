@@ -37,6 +37,10 @@ interface EditableDataset {
   label: string;
   schema: DatasetSchema;
   rows: string[][];
+  /** Synced columns outside the review schema (e.g. deal_stage, deal_status).
+   *  Not editable, but saved with each row so nothing the sync read is lost. */
+  extraHeaders: string[];
+  extras: string[][];
   confidence: number;
 }
 
@@ -61,7 +65,12 @@ function buildEditable(
         return i >= 0 ? (r[i] ?? "") : "";
       }),
     );
-    out.push({ key: d.key, label: d.label, schema, rows, confidence: d.confidence });
+    const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const known = new Set(headers.map(norm));
+    const extraIdx = d.headers.map((h, i) => (known.has(norm(h)) ? -1 : i)).filter((i) => i >= 0);
+    const extraHeaders = extraIdx.map((i) => d.headers[i]!);
+    const extras = d.rows.map((r) => extraIdx.map((i) => r[i] ?? ""));
+    out.push({ key: d.key, label: d.label, schema, rows, extraHeaders, extras, confidence: d.confidence });
   }
   return out;
 }
@@ -145,7 +154,13 @@ export function CrmSyncWizard({
   function removeRow(dsIdx: number, rowIdx: number) {
     setDatasets((prev) =>
       prev.map((d, di) =>
-        di === dsIdx ? { ...d, rows: d.rows.filter((_, ri) => ri !== rowIdx) } : d,
+        di === dsIdx
+          ? {
+              ...d,
+              rows: d.rows.filter((_, ri) => ri !== rowIdx),
+              extras: d.extras.filter((_, ri) => ri !== rowIdx),
+            }
+          : d,
       ),
     );
   }
@@ -193,7 +208,13 @@ export function CrmSyncWizard({
         fieldChecks,
       };
       uploadsStore.add(record);
-      const rowObjects = tagSource(rowsToObjects(d.schema.fields.map((f) => f.name), d.rows), provider);
+      const rowObjects = tagSource(
+        rowsToObjects(
+          [...d.schema.fields.map((f) => f.name), ...d.extraHeaders],
+          d.rows.map((r, i) => [...r, ...(d.extras[i] ?? [])]),
+        ),
+        provider,
+      );
       ingestedStore.addRows(d.key, rowObjects);
       void persistBatch({
         localUploadId: record.id,
