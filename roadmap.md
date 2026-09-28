@@ -30,3 +30,5 @@
 - [x] Evidence rules: 3+ dated records per customer per measure (recency/single-value exempt), 5+ qualifying customers per comparison — shared by customer page and nightly score; "Not enough data yet" display; peer reason text
 - [ ] Review gate: user reviews evidence-rules before/after — not published
 - [ ] Later: softened spread (rule 3), with its own before-and-after
+- [ ] On hold (user): realistic homepage demo data plan — not building
+- [ ] Read-only accuracy check of /integrations/zoho-crm page claims
