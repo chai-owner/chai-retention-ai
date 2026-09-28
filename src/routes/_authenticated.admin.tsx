@@ -40,6 +40,7 @@ import { impersonationStore } from "@/lib/impersonation";
 import { getRealDataReadiness } from "@/lib/content-signals/readiness.functions";
 import type { ReadinessSummary } from "@/lib/content-signals/readiness";
 import { AdminBilling } from "@/components/admin-billing";
+import { NightlyRunsCard } from "@/components/admin/nightly-runs-card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -539,6 +540,8 @@ function AdminPage() {
               value={String(customers.filter((c) => c.onboarded).length)}
             />
           </div>
+
+          <NightlyRunsCard />
 
           {readiness && (
             <Card className="mb-6">

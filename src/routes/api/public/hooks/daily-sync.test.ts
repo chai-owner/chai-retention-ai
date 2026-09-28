@@ -117,7 +117,8 @@ describe("daily sync run", () => {
     const body = await (await call("test-cron-secret")).json();
     const crm = body.results.find((r: { source: string }) => r.source === "crm");
     expect(crm.ok).toBe(false);
-    expect(crm.error).toBe("token expired");
+    expect(crm.error_type).toBe("auth");
+    expect(JSON.stringify(body)).not.toContain("token expired");
     // The support sync still ran despite the CRM failure.
     expect(runSupportSync).toHaveBeenCalled();
   });

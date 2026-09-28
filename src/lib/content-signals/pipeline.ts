@@ -81,6 +81,17 @@ export interface RunOptions {
   now?: Date;
 }
 
+/** Per-source counts for the nightly run log — numbers only, never text. */
+export interface SourceStats {
+  fetched: number;
+  stored: number;
+  extracted: number;
+  skipped: number;
+  signals: number;
+  errors: number;
+  fetchMs: number;
+}
+
 export interface RunResult {
   sources: string[];
   fetched: number;
@@ -91,6 +102,11 @@ export interface RunResult {
   ungroundedDropped: number;
   pausedForBudget: boolean;
   errors: Array<{ source: string; message: string }>;
+  bySource: Record<string, SourceStats>;
+}
+
+function emptyStats(): SourceStats {
+  return { fetched: 0, stored: 0, extracted: 0, skipped: 0, signals: 0, errors: 0, fetchMs: 0 };
 }
 
 /**
@@ -119,21 +135,34 @@ export async function runContentPipeline(opts: RunOptions): Promise<RunResult> {
     ungroundedDropped: 0,
     pausedForBudget: false,
     errors: [],
+    bySource: {},
   };
+  const statsFor = (source: string): SourceStats =>
+    (result.bySource[source] ??= emptyStats());
 
   // 1. Fetch — one connected source at a time. A failing source never stops
   //    the others, and never stops extraction of what's already stored.
   for (const adapter of adapters) {
+    const t0 = Date.now();
     try {
       if (!(await adapter.isConnected(userId))) continue;
       result.sources.push(adapter.id);
+      const stats = statsFor(adapter.id);
       const since = (await store.lastFetchedAt(userId, adapter.id)) ?? backfillSince(now);
       const batch = await adapter.fetchConversations({ userId, since, limit: fetchLimit });
       const usable = (batch ?? []).filter(isUsableConversation);
       result.fetched += usable.length;
-      if (usable.length) result.stored += await store.saveConversations(userId, usable);
+      stats.fetched += usable.length;
+      if (usable.length) {
+        const saved = await store.saveConversations(userId, usable);
+        result.stored += saved;
+        stats.stored += saved;
+      }
     } catch (e) {
       result.errors.push({ source: adapter.id, message: (e as Error).message });
+      statsFor(adapter.id).errors += 1;
+    } finally {
+      if (result.bySource[adapter.id]) result.bySource[adapter.id].fetchMs += Date.now() - t0;
     }
   }
 
@@ -150,10 +179,12 @@ export async function runContentPipeline(opts: RunOptions): Promise<RunResult> {
   let spent = usage.estimatedCostUsd;
 
   for (const conversation of pending) {
+    const stats = statsFor(conversation.source);
     const skip = prefilterSkipReason(conversation.body);
     if (skip) {
       await store.markSkipped(userId, conversation.id, skip);
       result.skipped += 1;
+      stats.skipped += 1;
       continue;
     }
 
@@ -168,6 +199,7 @@ export async function runContentPipeline(opts: RunOptions): Promise<RunResult> {
       outcome = await extractor.run(conversation.body);
     } catch (e) {
       result.errors.push({ source: conversation.source, message: (e as Error).message });
+      stats.errors += 1;
       continue;
     }
 
@@ -176,10 +208,13 @@ export async function runContentPipeline(opts: RunOptions): Promise<RunResult> {
     result.ungroundedDropped += outcome.signals.length - grounded.length;
 
     if (grounded.length) {
-      result.signals += await store.saveSignals(userId, conversation, grounded);
+      const saved = await store.saveSignals(userId, conversation, grounded);
+      result.signals += saved;
+      stats.signals += saved;
     }
     await store.markExtracted(userId, conversation.id, extractor.model);
     result.extracted += 1;
+    stats.extracted += 1;
 
     const cost = estimateCostUsd(outcome.inputTokens, outcome.outputTokens);
     spent += cost;

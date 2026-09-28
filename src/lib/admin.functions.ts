@@ -339,6 +339,9 @@ const USER_DATA_TABLES = [
   "zendesk_oauth_states",
   "zoho_crm_connections",
   "zoho_crm_oauth_states",
+  // Account-level only (no end-customer data), but it names the account, so
+  // it goes when the account is reset or deleted.
+  "nightly_run_log",
 ] as const;
 
 export const resetAccount = createServerFn({ method: "POST" })
@@ -697,4 +700,61 @@ export const adminChangePlan = createServerFn({ method: "POST" })
         .eq("id", member.org_id);
     }
     return { kind, effectiveAt: sub.current_period_end ?? undefined };
+  });
+
+// ---------- Nightly run log ----------
+export interface NightlyRunEntry {
+  runId: string;
+  userId: string | null;
+  accountLabel: string | null;
+  source: string;
+  provider: string;
+  step: string;
+  ok: boolean;
+  rowsRead: number | null;
+  rowsSaved: number | null;
+  signals: number | null;
+  durationMs: number | null;
+  errorType: string | null;
+  startedAt: string;
+}
+
+export const listNightlyRuns = createServerFn({ method: "GET" })
+  .middleware([requireConnectedAuth])
+  .handler(async ({ context }): Promise<NightlyRunEntry[]> => {
+    await assertAdmin(context);
+    // RLS lets admins read the log directly as themselves.
+    const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+    const { data, error } = await context.supabase
+      .from("nightly_run_log")
+      .select("run_id, user_id, source, provider, step, ok, rows_read, rows_saved, signals, duration_ms, error_type, started_at")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as any[];
+    const ids = [...new Set(rows.map((r) => r.user_id).filter(Boolean))] as string[];
+    const labels = new Map<string, string>();
+    if (ids.length) {
+      const { data: profs } = await context.supabase
+        .from("profiles")
+        .select("id, company, email")
+        .in("id", ids);
+      for (const p of (profs ?? []) as any[]) labels.set(p.id, p.company || p.email || p.id);
+    }
+    return rows.map((r) => ({
+      runId: r.run_id,
+      userId: r.user_id,
+      accountLabel: r.user_id ? labels.get(r.user_id) ?? null : null,
+      source: r.source,
+      provider: r.provider,
+      step: r.step,
+      ok: r.ok,
+      rowsRead: r.rows_read,
+      rowsSaved: r.rows_saved,
+      signals: r.signals,
+      durationMs: r.duration_ms,
+      errorType: r.error_type,
+      startedAt: r.started_at,
+    }));
   });

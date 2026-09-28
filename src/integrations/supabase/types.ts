@@ -959,6 +959,63 @@ export type Database = {
         }
         Relationships: []
       }
+      nightly_run_log: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_type: string | null
+          finished_at: string | null
+          id: string
+          job: string
+          ok: boolean
+          provider: string
+          rows_read: number | null
+          rows_saved: number | null
+          run_id: string
+          signals: number | null
+          source: string
+          started_at: string
+          step: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_type?: string | null
+          finished_at?: string | null
+          id?: string
+          job: string
+          ok: boolean
+          provider: string
+          rows_read?: number | null
+          rows_saved?: number | null
+          run_id: string
+          signals?: number | null
+          source: string
+          started_at?: string
+          step: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_type?: string | null
+          finished_at?: string | null
+          id?: string
+          job?: string
+          ok?: boolean
+          provider?: string
+          rows_read?: number | null
+          rows_saved?: number | null
+          run_id?: string
+          signals?: number | null
+          source?: string
+          started_at?: string
+          step?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       organisation_invites: {
         Row: {
           accepted_at: string | null
