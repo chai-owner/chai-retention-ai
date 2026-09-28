@@ -577,19 +577,19 @@ function HubspotCard({ name, category, desc }: { name: string; category: string;
           )}
         </>
       ) : (
-        <button
-          onClick={handleConnect}
-          disabled={connecting}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
-        >
-          {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
-          {connecting ? "Connecting…" : "Connect with OAuth"}
-        </button>
-      )}
-      {!connected && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          HubSpot approval pending — you'll see an 'unverified app' notice. It's safe to continue.
-        </p>
+        <>
+          <button
+            onClick={handleConnect}
+            disabled={connecting}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
+          >
+            {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+            {connecting ? "Connecting…" : "Connect with OAuth"}
+          </button>
+          <p className="mt-2 text-xs text-muted-foreground">
+            HubSpot approval pending — you'll see an 'unverified app' notice. It's safe to continue.
+          </p>
+        </>
       )}
 
       <CrmSyncWizard
