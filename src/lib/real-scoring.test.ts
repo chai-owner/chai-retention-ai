@@ -112,18 +112,20 @@ describe("buildRealDataset — health scoring", () => {
   it("scores fitness fields used by gym uploads", () => {
     const ds = buildRealDataset(
       {
+        // Five members with three records each, so the evidence rules pass.
         customers: [
           { customer_id: "A", monthly_fee: "50" },
           { customer_id: "B", monthly_fee: "75" },
+          { customer_id: "C", monthly_fee: "60" },
+          { customer_id: "D", monthly_fee: "60" },
+          { customer_id: "E", monthly_fee: "60" },
         ],
-        usage: [
-          { customer_id: "A", check_in_count: "8", date: daysAgo(1) },
-          { customer_id: "B", check_in_count: "1", date: daysAgo(1) },
-        ],
-        surveys: [
-          { customer_id: "A", satisfaction_score: "9", survey_date: daysAgo(2) },
-          { customer_id: "B", satisfaction_score: "3", survey_date: daysAgo(2) },
-        ],
+        usage: (["A", "B", "C", "D", "E"] as const).flatMap((id) =>
+          [1, 2, 3].map((d) => ({ customer_id: id, check_in_count: id === "A" ? "8" : id === "B" ? "1" : "4", date: daysAgo(d) })),
+        ),
+        surveys: (["A", "B", "C", "D", "E"] as const).flatMap((id) =>
+          [2, 3, 4].map((d) => ({ customer_id: id, satisfaction_score: id === "A" ? "9" : id === "B" ? "3" : "6", survey_date: daysAgo(d) })),
+        ),
       },
       W,
       profile,
@@ -140,8 +142,8 @@ describe("buildRealDataset — metric weights", () => {
 
   it("a weight of 0 removes the metric from the blend", () => {
     const data = makeIngested();
-    const withLogins = buildRealDataset(data, { ...W, "Login frequency": 5 }, profile);
-    const withoutLogins = buildRealDataset(data, { ...W, "Login frequency": 0 }, profile);
+    const withLogins = buildRealDataset(data, { ...W, "Days since last purchase": 5 }, profile);
+    const withoutLogins = buildRealDataset(data, { ...W, "Days since last purchase": 0 }, profile);
     const worstWith = withLogins.customers.find((c) => c.id === "CUS-3")!.health;
     const worstWithout = withoutLogins.customers.find((c) => c.id === "CUS-3")!.health;
     expect(worstWith).not.toBe(worstWithout);
@@ -217,6 +219,7 @@ describe("buildRealDataset — AI-generated custom metrics", () => {
   });
 
   it("resolves generated metrics from fields in standard source datasets", () => {
+    const GYMS = ["GYM1", "GYM2", "GYM3", "GYM4", "GYM5"];
     const metrics = [
       { ...customMetric, name: "Average Workout Duration", why: "Time spent working out per visit." },
       { ...customMetric, name: "Weekly Check-in Frequency", why: "Badge check-ins each week." },
@@ -230,22 +233,24 @@ describe("buildRealDataset — AI-generated custom metrics", () => {
     const profile = makeProfile({ metrics });
     const ds = buildRealDataset(
       {
-        customers: [{ customer_id: "GYM1", signup_date: daysAgo(365) }],
-        usage: [
-          { customer_id: "GYM1", visit_date: daysAgo(3), workout_duration_minutes: "20", check_in_count: "1", peak_hour: "true", off_peak: "false" },
-          { customer_id: "GYM1", visit_date: daysAgo(1), workout_duration_minutes: "40", check_in_count: "1", peak_hour: "false", off_peak: "true" },
-        ],
-        transactions: [
-          { customer_id: "GYM1", transaction_date: daysAgo(5), payment_status: "overdue", transaction_type: "Membership Dues", upsell: "false" },
-          { customer_id: "GYM1", transaction_date: daysAgo(2), payment_status: "paid", transaction_type: "Personal Training", upsell: "true" },
-        ],
+        // Five identical members, each with two copies of the same records,
+        // so the evidence rules (3+ records, 5+ customers) pass.
+        customers: GYMS.map((id) => ({ customer_id: id, signup_date: daysAgo(365) })),
+        usage: GYMS.flatMap((id) => [0, 1].flatMap(() => [
+          { customer_id: id, visit_date: daysAgo(3), workout_duration_minutes: "20", check_in_count: "1", peak_hour: "true", off_peak: "false" },
+          { customer_id: id, visit_date: daysAgo(1), workout_duration_minutes: "40", check_in_count: "1", peak_hour: "false", off_peak: "true" },
+        ])),
+        transactions: GYMS.flatMap((id) => [0, 1].flatMap(() => [
+          { customer_id: id, transaction_date: daysAgo(5), payment_status: "overdue", transaction_type: "Membership Dues", upsell: "false" },
+          { customer_id: id, transaction_date: daysAgo(2), payment_status: "paid", transaction_type: "Personal Training", upsell: "true" },
+        ])),
       },
       Object.fromEntries(metrics.map((metric) => [metric.name, 3])),
       profile,
     );
     const values = ds.customers[0].metricValues ?? {};
     expect(values["Average Workout Duration"]).toBe(30);
-    expect(values["Weekly Check-in Frequency"]).toBe(2);
+    expect(values["Weekly Check-in Frequency"]).toBe(4);
     expect(values["Days Since Last Visit"]).toBeGreaterThanOrEqual(1);
     expect(values["Days Since Last Visit"]).toBeLessThanOrEqual(2);
     expect(values["Membership Dues Delinquency"]).toBe(50);
