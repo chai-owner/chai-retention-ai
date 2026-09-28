@@ -25,7 +25,7 @@ export function isElapsedMetric(metric: PlannerMetric): boolean {
  * retention language means higher is better.
  */
 export function metricDirection(metric: PlannerMetric): "higher" | "lower" {
-  if (metric.valueAt0 != null && metric.valueAt100 != null && metric.valueAt0 !== metric.valueAt100) {
+  if (metric.valueAt0 != null && metric.valueAt100 != null) {
     return metric.valueAt0 > metric.valueAt100 ? "lower" : "higher";
   }
   const text = metricText(metric);
