@@ -15,7 +15,7 @@ import {
 } from "@/lib/personal-baseline";
 import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
 import { withCountableTransactions, dealOnlyCustomers } from "@/lib/countable-transactions";
-import { hasEnoughPeers, peerNote } from "@/lib/metric-evidence";
+import { hasEnoughPeers, isEvidenceExempt, peerNote } from "@/lib/metric-evidence";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { resolveMetric } from "@/lib/metric-resolution";
@@ -330,7 +330,7 @@ export function scoreCustomers(
       normalised = blended.score;
       if (blended.basis === "fallback") {
         basis = fallbackBasis;
-        if (fallbackBasis === "cohort") comparison = peerNote(isDealOnly ? entry.dealPeers : entry.invoicePeers);
+        if (fallbackBasis === "cohort" && !isEvidenceExempt(entry.operation)) comparison = peerNote(isDealOnly ? entry.dealPeers : entry.invoicePeers);
       } else {
         basis = blended.basis;
         baseline = personal ? personal.normal : null;
