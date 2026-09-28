@@ -14,7 +14,7 @@ const META_DESCRIPTION =
 const faqs = [
   {
     q: "Do I need to clean up my Zoho data first?",
-    a: "No. Messy, incomplete, or inconsistent data is fine — ChAi is built to work with what you've already got.",
+    a: "No. Messy or inconsistent data is fine. Where there isn't enough to judge a customer yet, ChAi says so instead of guessing.",
   },
   {
     q: "Does this replace my Customer Success team?",
@@ -41,20 +41,20 @@ const steps = [
     n: "02",
     icon: Brain,
     title: "ChAi learns your business",
-    desc: "CRM activity becomes one signal among several, weighted the way your business actually works.",
+    desc: "Your won deals become one signal among several, weighted the way your business actually works.",
   },
   {
     n: "03",
     icon: Rocket,
     title: "Act before customers churn",
-    desc: "See who's slipping, why, and what's likely to help, ranked by revenue at risk.",
+    desc: "See who's slipping, why, and what's likely to help, riskiest first.",
   },
 ];
 
 const signals = [
-  { icon: Clock, text: "Longer gaps than usual since the last deal" },
-  { icon: TrendingDown, text: "Deal sizes getting smaller" },
-  { icon: MessageSquareOff, text: "Long-standing accounts that have gone quiet" },
+  { icon: Clock, text: "Longer gaps than usual since the last won deal" },
+  { icon: TrendingDown, text: "Won deals getting smaller" },
+  { icon: MessageSquareOff, text: "Accounts that have gone quiet" },
 ];
 
 const navItems = [
@@ -162,10 +162,10 @@ function ZohoCrmIntegrationPage() {
               Your Zoho CRM already shows who's going quiet. ChAi makes it obvious.
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/65">
-              A longer gap since the last deal, a shrinking deal size, an account
-              that's gone quiet — the signs are already sitting in Zoho. ChAi
-              connects in minutes and turns them into a clear picture of who's at
-              risk, why, and what to do next.
+              A longer gap since the last won deal, shrinking deal sizes, an
+              account that's gone quiet — the signs are already sitting in
+              Zoho. ChAi connects in minutes and turns them into a clear picture
+              of who's at risk, why, and what to do next.
             </p>
             <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <a
@@ -197,8 +197,8 @@ function ZohoCrmIntegrationPage() {
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-[#4A5A6B]">
             A deal can look fine on paper right up until the customer's gone. ChAi combines what's
-            happening in Zoho with support tickets, billing activity, and usage data — so a change in
-            engagement gets read alongside everything else, not in isolation.
+            happening in Zoho with support tickets, billing activity, and any usage data you upload
+            — so a change in engagement gets read alongside everything else, not in isolation.
           </p>
         </Reveal>
       </section>
