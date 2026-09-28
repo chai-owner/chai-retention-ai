@@ -53,6 +53,7 @@ import { DataCoverageBanner } from "@/components/data-coverage-banner";
 import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
 import { Button } from "@/components/ui/button";
 import { ingestedStore } from "@/lib/ingested-data-store";
+import { atRiskHint } from "@/lib/at-risk-hint";
 
 export const Route = createFileRoute("/_authenticated/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
@@ -79,6 +80,7 @@ const PERIOD_FACTORS: Record<Period, number> = {
 function Dashboard() {
   const { executive: baseExecutive, healthDistribution, segmentRevenue, sortedByRisk } = useScoredData();
   const topRisk = sortedByRisk.filter((c) => !c.notEnoughData).slice(0, 5);
+  const notEnoughDataCount = sortedByRisk.filter((c) => c.notEnoughData).length;
   const uploads = useUploads();
   const [period, setPeriod] = useState<Period>("30d");
 
@@ -255,7 +257,7 @@ function Dashboard() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total customers" value={executive.totalCustomers} icon={Users} />
         <StatCard label="Healthy customers" value={executive.healthy} icon={HeartPulse} tone="success" hint="Engaged & low risk" />
-        <StatCard label="At-risk customers" value={executive.atRisk + executive.critical} icon={AlertTriangle} tone="caution" hint={`${executive.critical} critical`} />
+        <StatCard label="At-risk customers" value={executive.atRisk + executive.critical} icon={AlertTriangle} tone="caution" hint={atRiskHint(executive.critical, notEnoughDataCount)} />
         <StatCard label="Predicted monthly churn" value={`${executive.predictedMonthlyChurn} customers`} icon={TrendingDown} tone="danger" />
       </div>
 
