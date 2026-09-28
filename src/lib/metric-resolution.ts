@@ -136,26 +136,87 @@ interface FieldCandidate {
   score: number;
 }
 
+/**
+ * CRM activity columns (calls, notes, meetings, tasks, emails — e.g. Zoho's
+ * activity_count / activity_date / activity_type). These describe account
+ * activity, not product usage or support, so they may only feed measures that
+ * are explicitly about activity.
+ */
+export function isActivityField(field: string): boolean {
+  return /^activity(_|$)/i.test(field);
+}
+
+/** A measure explicitly about account activity, judged by its name. */
+export function isActivityMetric(metric: PlannerMetric): boolean {
+  return /\bactivit(y|ies)\b/i.test(metric.name);
+}
+
+/** A measure that counts support tickets, judged by its name. */
+function isTicketCountMetric(metric: PlannerMetric): boolean {
+  return /\btickets?\b/i.test(metric.name);
+}
+
+const TICKET_FIELD = "__ticket";
+const RESOLVED_STATUS = /^(solved|closed|resolved|done|complete|completed)$/i;
+
+/** Standard record-date columns: usable only as the date of a time measure. */
+const RECORD_DATE_FIELDS = new Set(["date", "occurred_at", "submitted_at", "created_at", "transaction_date", "survey_date", "created_date"]);
+/**
+ * Narrow, same-meaning names for a column word (abbreviations and the payment
+ * status behind delinquency). Deliberately NOT the broad related-word groups.
+ */
+const ABBREVIATIONS: Record<string, string[]> = {
+  csat: ["satisfaction"],
+  nps: ["satisfaction", "recommend"],
+  delinquency: ["overdue", "unpaid", "payment"],
+  delinquent: ["overdue", "unpaid", "payment"],
+};
+
+function nameWords(metric: PlannerMetric): Set<string> {
+  const out = words(metric.name);
+  for (const w of [...out]) for (const alias of ABBREVIATIONS[w] ?? []) out.add(alias);
+  return out;
+}
+
 function selectField(metric: PlannerMetric, data: IngestedData): FieldCandidate | null {
   const operation = operationFor(metric);
   const baseWords = words(metricText(metric));
   const metricWords = expand(baseWords);
+  const named = nameWords(metric);
   const preferred = new Set(preferredDatasets(metric));
+  const activityMetric = isActivityMetric(metric);
+  const timeMetric = operation === "days_since_last" || operation === "months_since";
   const candidates = new Map<string, FieldCandidate>();
 
   for (const dataset of DATASET_KEYS) {
     for (const raw of data[dataset] ?? []) {
       const row = flattenRow(raw);
       for (const field of Object.keys(row)) {
-        if (IDENTIFIERS.has(field)) continue;
+        const recordDate = RECORD_DATE_FIELDS.has(field);
+        // A record's own date may serve a time measure about that kind of
+        // data (e.g. "days since last purchase" → transaction dates).
+        if (IDENTIFIERS.has(field) && !(recordDate && timeMetric && preferred.has(dataset))) continue;
+        // Only columns that actually hold a value in this record qualify.
+        if ((row[field] ?? "").trim() === "") continue;
+        // Activity data feeds activity measures only — never usage, support
+        // or trend measures that merely share a related word.
+        if (isActivityField(field) && !activityMetric) continue;
         const fieldWords = words(field);
+        const isDate = recordDate || [...fieldWords].some((word) => DATE_WORDS.has(word));
+        // A column must genuinely match the measure: share a real word with
+        // the measure's NAME, or be the date column of the kind of data the
+        // measure is about. Related vocabulary or description wording alone
+        // never qualifies a column.
+        const direct = [...fieldWords].filter((word) => named.has(word) && !DATE_WORDS.has(word)).length;
+        if (direct === 0 && !(timeMetric && isDate && preferred.has(dataset))) continue;
+        // "Days since" / "months since" measures need a date column.
+        if (timeMetric && !isDate) continue;
         const expandedField = expand(fieldWords);
         let score = preferred.has(dataset) ? 3 : 0;
         for (const word of fieldWords) if (baseWords.has(word)) score += 8;
         for (const word of expandedField) if (metricWords.has(word)) score += 2;
-        const isDate = [...fieldWords].some((word) => DATE_WORDS.has(word));
-        if ((operation === "days_since_last" || operation === "months_since") && isDate) score += 7;
-        if (operation !== "days_since_last" && operation !== "months_since" && isDate) score -= 4;
+        if (timeMetric && isDate) score += 7;
+        if (!timeMetric && isDate) score -= 4;
         if (operation === "ratio" && /^(is_|has_)?(upsell|upgraded|converted|delinquent|overdue|peak_hour|off_peak|recommended)/.test(field)) {
           score += 8;
         }
@@ -166,6 +227,12 @@ function selectField(metric: PlannerMetric, data: IngestedData): FieldCandidate 
     }
   }
   const ranked = [...candidates.values()].sort((a, b) => b.score - a.score);
+  // A tickets measure counts the support tickets themselves — genuinely the
+  // same kind of data — unless an uploaded column is itself a ticket figure.
+  if (isTicketCountMetric(metric) && (data.support ?? []).length > 0) {
+    const ticketColumn = ranked.find((c) => c.score >= 7 && words(c.field).has("ticket"));
+    return ticketColumn ?? { dataset: "support", field: TICKET_FIELD, score: 7 };
+  }
   return ranked.length > 0 && ranked[0].score >= 7 ? ranked[0] : null;
 }
 
@@ -211,13 +278,17 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
     : selectField(metric, data);
   if (!selected) return { dataset: preferredDatasets(metric)[0] ?? null, field: null, rowCount: 0, latestDate: null, values: new Map(), series: new Map() };
 
-  const operation = usesDirectMetricDataset ? "latest" : operationFor(metric);
+  const countsTickets = selected.field === TICKET_FIELD;
+  const unresolvedOnly = countsTickets && /\b(unresolved|open|outstanding|pending)\b/i.test(metric.name);
+  const operation = usesDirectMetricDataset ? "latest" : countsTickets ? "sum" : operationFor(metric);
   const grouped = new Map<string, Array<{ value: string; date: number | null }>>();
   let latestDate: number | null = null;
   for (const raw of data[selected.dataset] ?? []) {
     const row = flattenRow(raw);
     const id = (row.customer_id ?? "").trim();
-    const value = row[selected.field];
+    const value = countsTickets
+      ? (unresolvedOnly && RESOLVED_STATUS.test((row.status ?? "").trim()) ? "0" : "1")
+      : row[selected.field];
     if (!id || value == null || value.trim() === "") continue;
     const date = dateFor(row);
     if (date != null && (latestDate == null || date > latestDate)) latestDate = date;
