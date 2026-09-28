@@ -339,6 +339,9 @@ const USER_DATA_TABLES = [
   "zendesk_oauth_states",
   "zoho_crm_connections",
   "zoho_crm_oauth_states",
+  // Account-level only (no end-customer data), but it names the account, so
+  // it goes when the account is reset or deleted.
+  "nightly_run_log",
 ] as const;
 
 export const resetAccount = createServerFn({ method: "POST" })
