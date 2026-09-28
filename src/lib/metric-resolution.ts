@@ -1,6 +1,10 @@
 import type { IngestedData, IngestRow } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { customMetricKeys } from "@/lib/personalize-data";
+import { MIN_DEAL_PEERS } from "@/lib/countable-transactions";
+
+/** Minimum customers with data before a ticket measure compares them (same as deals). */
+export const MIN_TICKET_PEERS = MIN_DEAL_PEERS;
 
 const DAY = 86400000;
 const IDENTIFIERS = new Set([
@@ -334,6 +338,12 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
       }
     }
     if (value != null && Number.isFinite(value)) values.set(id, value);
+  }
+  // Ticket measures follow the same minimum-group rule as deals: with fewer
+  // than MIN_TICKET_PEERS customers holding data, there's no fair comparison,
+  // so the measure is left out on both screens until enough exist.
+  if (isTicketCountMetric(metric) && values.size < MIN_TICKET_PEERS) {
+    return { dataset: selected.dataset, field: selected.field, rowCount: 0, latestDate, values: new Map(), operation, series: new Map() };
   }
   const series = new Map<string, Array<{ date: number; value: number }>>();
   const trendable = operation === "average" || operation === "sum" || operation === "ratio" || operation === "days_since_last";

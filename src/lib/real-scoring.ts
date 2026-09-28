@@ -20,6 +20,7 @@ import type { OnboardingProfile, ProfileSegment } from "@/lib/profile-store";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import { customMetricKeys, type CustomMetricKey } from "@/lib/personalize-data";
 import { resolveMetric } from "@/lib/metric-resolution";
+import { lowerIsBetter } from "@/lib/metric-direction";
 import { playbookFor } from "@/lib/metric-playbooks";
 import {
   blendScore,
@@ -376,10 +377,7 @@ export function buildRealDataset(
       // (75th percentile, or 25th when lower is better) so recommendations can
       // name a concrete goal instead of "improve this".
       const sorted = [...vals].sort((a, b) => a - b);
-      const lowerBetter =
-        cm.metric.valueAt0 != null &&
-        cm.metric.valueAt100 != null &&
-        cm.metric.valueAt0 > cm.metric.valueAt100;
+      const lowerBetter = lowerIsBetter(cm.metric);
       const idx = Math.floor((sorted.length - 1) * (lowerBetter ? 0.25 : 0.75));
       peerTarget.set(cm.metric.name, sorted[idx]);
     }
@@ -400,7 +398,9 @@ export function buildRealDataset(
     const mx = dealRange?.max ?? customMax.get(cm.metric.name) ?? 1;
     const mn = dealRange?.min ?? customMin.get(cm.metric.name) ?? 0;
     if (mx === mn) return 60;
-    return clamp(((v - mn) / (mx - mn)) * 100);
+    const pct = ((v - mn) / (mx - mn)) * 100;
+    // Same direction rule as the nightly score (metric-direction.ts).
+    return clamp(lowerIsBetter(cm.metric) ? 100 - pct : pct);
   };
 
   // ---- reference maxima for relative scoring ----
@@ -488,8 +488,7 @@ export function buildRealDataset(
         metricValues[cm.metric.name] = v;
         const res = customResolved.get(cm.metric.name);
         const pts = res?.series?.get(cid);
-        const lowerBetter =
-          cm.metric.valueAt0 != null && cm.metric.valueAt100 != null && cm.metric.valueAt0 > cm.metric.valueAt100;
+        const lowerBetter = lowerIsBetter(cm.metric);
         const op = res?.operation;
         const personal =
           op === "days_since_last"
@@ -567,10 +566,7 @@ export function buildRealDataset(
             value: metricValues[f.label] ?? null,
             target: peerTarget.get(f.label) ?? null,
             unit: cm?.metric.unit,
-            lowerIsBetter:
-              cm?.metric.valueAt0 != null &&
-              cm?.metric.valueAt100 != null &&
-              cm.metric.valueAt0 > cm.metric.valueAt100,
+            lowerIsBetter: cm ? lowerIsBetter(cm.metric) : false,
           });
         return { ...base, revenueSaved: Math.round((revenue * churnProbability) / 100 * 0.5) };
       })
