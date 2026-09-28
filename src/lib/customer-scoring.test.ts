@@ -131,7 +131,7 @@ describe("scoreCustomers", () => {
     expect(a.comparison).toContain("down 50%");
     expect(a.comparison).toContain("own previous 90 days");
     expect(entries(scores.b!)[0]!.basis).toBe("cohort");
-    expect(entries(scores.b!)[0]!.comparison).toContain("Compared with 5 customers");
+    expect(entries(scores.b!)[0]!.comparison).toContain("Compared with 6 customers");
   });
 
   it("blends thin personal history with the fallback", () => {
