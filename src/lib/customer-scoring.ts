@@ -14,7 +14,8 @@ import {
   describeComparison,
 } from "@/lib/personal-baseline";
 import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
-import { withCountableTransactions, dealOnlyCustomers, MIN_DEAL_PEERS } from "@/lib/countable-transactions";
+import { withCountableTransactions, dealOnlyCustomers } from "@/lib/countable-transactions";
+import { hasEnoughPeers, peerNote } from "@/lib/metric-evidence";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { resolveMetric } from "@/lib/metric-resolution";
@@ -259,6 +260,8 @@ export function scoreCustomers(
       max: invoiceRange.max,
       splitDeals,
       dealRange,
+      dealPeers: splitDeals ? entries.filter(([id]) => dealOnly.has(id)).length : 0,
+      invoicePeers: splitDeals ? entries.filter(([id]) => !dealOnly.has(id)).length : entries.length,
       direction: metricDirection(metric),
       elapsed: isElapsedMetric(metric),
       operation: result.operation,
@@ -289,7 +292,7 @@ export function scoreCustomers(
       const value = entry.values.get(customerId);
       if (value == null || !Number.isFinite(value)) continue;
       const isDealOnly = entry.splitDeals && dealOnly.has(customerId);
-      if (isDealOnly && dealOnly.size < MIN_DEAL_PEERS) continue;
+      if (isDealOnly && !hasEnoughPeers(entry.dealPeers)) continue;
       const peers = isDealOnly ? entry.dealRange : { min: entry.min, max: entry.max };
       const weight = Number(entry.metric.weight ?? 1) || 1;
 
@@ -327,6 +330,7 @@ export function scoreCustomers(
       normalised = blended.score;
       if (blended.basis === "fallback") {
         basis = fallbackBasis;
+        if (fallbackBasis === "cohort") comparison = peerNote(isDealOnly ? entry.dealPeers : entry.invoicePeers);
       } else {
         basis = blended.basis;
         baseline = personal ? personal.normal : null;
