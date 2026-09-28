@@ -161,8 +161,16 @@ const RESOLVED_STATUS = /^(solved|closed|resolved|done|complete|completed)$/i;
 
 /** Standard record-date columns: usable only as the date of a time measure. */
 const RECORD_DATE_FIELDS = new Set(["date", "occurred_at", "submitted_at", "created_at", "transaction_date", "survey_date", "created_date"]);
-/** Common abbreviations that name the same thing as a column word. */
-const ABBREVIATIONS: Record<string, string[]> = { csat: ["satisfaction"], nps: ["satisfaction", "recommend"] };
+/**
+ * Narrow, same-meaning names for a column word (abbreviations and the payment
+ * status behind delinquency). Deliberately NOT the broad related-word groups.
+ */
+const ABBREVIATIONS: Record<string, string[]> = {
+  csat: ["satisfaction"],
+  nps: ["satisfaction", "recommend"],
+  delinquency: ["overdue", "unpaid", "payment"],
+  delinquent: ["overdue", "unpaid", "payment"],
+};
 
 function nameWords(metric: PlannerMetric): Set<string> {
   const out = words(metric.name);
