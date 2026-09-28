@@ -202,13 +202,13 @@ function selectField(metric: PlannerMetric, data: IngestedData): FieldCandidate 
     }
   }
   const ranked = [...candidates.values()].sort((a, b) => b.score - a.score);
-  if (ranked.length > 0 && ranked[0].score >= 7) return ranked[0];
-  // A tickets measure with no matching column counts the support tickets
-  // themselves — genuinely the same kind of data.
+  // A tickets measure counts the support tickets themselves — genuinely the
+  // same kind of data — unless an uploaded column is itself a ticket figure.
   if (isTicketCountMetric(metric) && (data.support ?? []).length > 0) {
-    return { dataset: "support", field: TICKET_FIELD, score: 7 };
+    const ticketColumn = ranked.find((c) => c.score >= 7 && words(c.field).has("ticket"));
+    return ticketColumn ?? { dataset: "support", field: TICKET_FIELD, score: 7 };
   }
-  return null;
+  return ranked.length > 0 && ranked[0].score >= 7 ? ranked[0] : null;
 }
 
 function conditionValue(value: string, metric: PlannerMetric): number | null {
