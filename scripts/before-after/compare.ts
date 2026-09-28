@@ -168,6 +168,7 @@ for (const p of profiles ?? []) {
     csv.push([account, a1.name, id, a0?.health ?? "", a1.health, n0 ? Math.round(Number(n0.score)) : "", n1 ? Math.round(Number(n1.score)) : "", c0, c1, reason, why.join(" | ")].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
   }
   const ned = [...aNew.values()].filter((c) => (c as { notEnoughData?: boolean }).notEnoughData).map((c) => c.name);
+  if (process.env.DEBUG_ID) for (const [id, c] of aNew) if (c.name.includes(process.env.DEBUG_ID)) log(`DBG ${c.name} old=${JSON.stringify(aOld.get(id)?.subScores)} new=${JSON.stringify(c.subScores)} tx=${JSON.stringify((data.transactions??[]).filter((t)=>(t as any).customer_id===id).slice(0,4))}`);
   log(`not enough data yet (${ned.length}): ${ned.join(", ") || "none"}`);
   if (process.env.PROJECT_ACTIVITY && /securenest/i.test(String(p.company))) {
     const extra = [
