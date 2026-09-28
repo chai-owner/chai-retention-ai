@@ -59,7 +59,7 @@ describe("customer score snapshot", () => {
     expect(factorsFromBreakdown(mild, null, 55)).toEqual([]);
   });
 
-  it("adds a generic urgent recommendation for critical customers without factors", () => {
+  it("never adds an urgent action when no measures sit behind a critical score", () => {
     const healthyBreakdown: unknown[] = [];
     const recs = recommendationsFromBreakdown(healthyBreakdown, {
       customerName: "Acme",
@@ -67,10 +67,7 @@ describe("customer score snapshot", () => {
       churnProbability: 80,
       healthScore: 20,
     });
-    expect(recs).toHaveLength(1);
-    expect(recs[0]!.title).toBe("Contact this customer urgently");
-    expect(recs[0]!.priority).toBe("High");
-    expect(recs[0]!.reasoning).toContain("high risk of churning");
+    expect(recs).toEqual([]);
     // Non-critical customers keep the empty list.
     expect(
       recommendationsFromBreakdown(healthyBreakdown, {
