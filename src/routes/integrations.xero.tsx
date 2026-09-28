@@ -14,7 +14,7 @@ const META_DESCRIPTION =
 const faqs = [
   {
     q: "Do I need to clean up my Xero data first?",
-    a: "No. Messy, incomplete, or inconsistent data is fine — ChAi is built to work with what you've already got.",
+    a: "No. Messy or inconsistent data is fine. Where there isn't enough to judge a customer yet, ChAi says so instead of guessing.",
   },
   {
     q: "Does this replace my Customer Success team?",
@@ -22,15 +22,15 @@ const faqs = [
   },
   {
     q: "Is my Xero data secure?",
-    a: "Yes — connected through Xero's official OAuth, encrypted with AES-256, and every sync runs server-side. Your Xero password never touches ChAi.",
+    a: "Yes — connected through Xero's official OAuth, connection keys encrypted with AES-256, and every sync runs server-side. Your Xero password never touches ChAi.",
   },
   {
     q: "What if I have multiple organizations in Xero?",
-    a: "No problem — you'll choose which organization ChAi connects to during setup.",
+    a: "No problem. ChAi syncs all your organisations by default, and you can pick just one afterwards.",
   },
   {
     q: "How long does setup take?",
-    a: "A few minutes to connect. ChAi starts learning your business immediately after.",
+    a: "A few minutes to connect. Your first sync starts straight away.",
   },
 ];
 
