@@ -24,6 +24,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as HelpIndexRouteImport } from './routes/help.index'
+import { Route as IntegrationsHubspotRouteImport } from './routes/integrations.hubspot'
 import { Route as IntegrationsQuickbooksRouteImport } from './routes/integrations.quickbooks'
 import { Route as IntegrationsXeroRouteImport } from './routes/integrations.xero'
 import { Route as IntegrationsZohoCrmRouteImport } from './routes/integrations.zoho-crm'
@@ -139,6 +140,11 @@ const HelpIndexRoute = HelpIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => HelpRoute,
+} as any)
+const IntegrationsHubspotRoute = IntegrationsHubspotRouteImport.update({
+  id: '/integrations/hubspot',
+  path: '/integrations/hubspot',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const IntegrationsQuickbooksRoute = IntegrationsQuickbooksRouteImport.update({
   id: '/integrations/quickbooks',
@@ -380,6 +386,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/integrations/hubspot': typeof IntegrationsHubspotRoute
   '/integrations/quickbooks': typeof IntegrationsQuickbooksRoute
   '/integrations/xero': typeof IntegrationsXeroRoute
   '/integrations/zoho-crm': typeof IntegrationsZohoCrmRoute
@@ -435,6 +442,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/integrations/hubspot': typeof IntegrationsHubspotRoute
   '/integrations/quickbooks': typeof IntegrationsQuickbooksRoute
   '/integrations/xero': typeof IntegrationsXeroRoute
   '/integrations/zoho-crm': typeof IntegrationsZohoCrmRoute
@@ -493,6 +501,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/integrations/hubspot': typeof IntegrationsHubspotRoute
   '/integrations/quickbooks': typeof IntegrationsQuickbooksRoute
   '/integrations/xero': typeof IntegrationsXeroRoute
   '/integrations/zoho-crm': typeof IntegrationsZohoCrmRoute
@@ -552,6 +561,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/onboarding'
+    | '/integrations/hubspot'
     | '/integrations/quickbooks'
     | '/integrations/xero'
     | '/integrations/zoho-crm'
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/onboarding'
+    | '/integrations/hubspot'
     | '/integrations/quickbooks'
     | '/integrations/xero'
     | '/integrations/zoho-crm'
@@ -664,6 +675,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/app'
     | '/_authenticated/onboarding'
+    | '/integrations/hubspot'
     | '/integrations/quickbooks'
     | '/integrations/xero'
     | '/integrations/zoho-crm'
@@ -720,6 +732,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  IntegrationsHubspotRoute: typeof IntegrationsHubspotRoute
   IntegrationsQuickbooksRoute: typeof IntegrationsQuickbooksRoute
   IntegrationsXeroRoute: typeof IntegrationsXeroRoute
   IntegrationsZohoCrmRoute: typeof IntegrationsZohoCrmRoute
@@ -849,6 +862,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/help/'
       preLoaderRoute: typeof HelpIndexRouteImport
       parentRoute: typeof HelpRoute
+    }
+    '/integrations/hubspot': {
+      id: '/integrations/hubspot'
+      path: '/integrations/hubspot'
+      fullPath: '/integrations/hubspot'
+      preLoaderRoute: typeof IntegrationsHubspotRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/integrations/quickbooks': {
       id: '/integrations/quickbooks'
@@ -1248,6 +1268,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  IntegrationsHubspotRoute: IntegrationsHubspotRoute,
   IntegrationsQuickbooksRoute: IntegrationsQuickbooksRoute,
   IntegrationsXeroRoute: IntegrationsXeroRoute,
   IntegrationsZohoCrmRoute: IntegrationsZohoCrmRoute,
