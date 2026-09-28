@@ -272,7 +272,11 @@ export interface ResolvedMetric {
   series?: Map<string, Array<{ date: number; value: number }>>;
 }
 
-export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = Date.now()): ResolvedMetric {
+/**
+ * `raw: true` skips the evidence rules — for data-coverage reporting, which
+ * counts rows present rather than scoring customers.
+ */
+export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = Date.now(), opts: { raw?: boolean } = {}): ResolvedMetric {
   const custom = customMetricKeys([metric])[0];
   const customRows = custom ? data[custom.key] ?? [] : [];
   const directRows = custom ? customRows.filter((row) => numeric(flattenRow(row)[custom.column]) != null) : [];
@@ -344,7 +348,7 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
   // such customers. Recency and single-value measures are exempt.
   const datedCounts = new Map<string, number>();
   for (const [id, entries] of grouped) datedCounts.set(id, entries.filter((e) => e.date != null).length);
-  const gated = applyEvidenceRules(values, datedCounts, operation);
+  const gated = opts.raw ? values : applyEvidenceRules(values, datedCounts, operation);
   if (gated.size === 0) {
     return { dataset: selected.dataset, field: selected.field, rowCount: 0, latestDate, values: new Map(), operation, series: new Map() };
   }
@@ -375,6 +379,6 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
 }
 
 export function metricDatasetDependencies(metric: PlannerMetric, data: IngestedData): string[] {
-  const resolved = resolveMetric(metric, data);
+  const resolved = resolveMetric(metric, data, Date.now(), { raw: true });
   return resolved.dataset ? [resolved.dataset] : preferredDatasets(metric);
 }
