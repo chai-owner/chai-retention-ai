@@ -68,13 +68,12 @@ describe("genuine columns still match", () => {
     expect(r.values.get("A")).toBe(12);
   });
 
-  it("Zendesk and Intercom tickets feed a tickets measure", () => {
+  it("Zendesk and Intercom tickets feed a tickets measure once 5 customers have tickets", () => {
+    const t = (id: string, cust: string, status: string, src: string) => ({ __source: src, ticket_id: id, customer_id: cust, status, created_date: "2026-09-01" });
     const data = {
       support: [
-        { __source: "zendesk", ticket_id: "1", customer_id: "A", status: "open", created_date: "2026-09-01" },
-        { __source: "zendesk", ticket_id: "2", customer_id: "A", status: "solved", created_date: "2026-09-02" },
-        { __source: "intercom", ticket_id: "3", customer_id: "A", status: "open", created_date: "2026-09-03" },
-        { __source: "intercom", ticket_id: "4", customer_id: "B", status: "closed", created_date: "2026-09-03" },
+        t("1", "A", "open", "zendesk"), t("2", "A", "solved", "zendesk"), t("3", "A", "open", "intercom"),
+        t("4", "B", "closed", "intercom"), t("5", "C", "open", "zendesk"), t("6", "D", "open", "intercom"), t("7", "E", "solved", "zendesk"),
       ],
       usage: [zohoActivity("A", "2026-09-10")],
     } as unknown as IngestedData;
@@ -82,9 +81,17 @@ describe("genuine columns still match", () => {
     expect(all.dataset).toBe("support");
     expect(all.values.get("A")).toBe(3);
     const open = resolveMetric(m("Unresolved Vulnerability Support Tickets", "Open tickets", "Support"), data);
-    expect(open.dataset).toBe("support");
     expect(open.values.get("A")).toBe(2);
     expect(open.values.get("B")).toBe(0);
+    expect(open.values.size).toBe(5);
+  });
+
+  it("a ticket measure with only 3 customers is left out", () => {
+    const data = {
+      support: ["A", "B", "C"].map((c, i) => ({ ticket_id: String(i), customer_id: c, status: "open", created_date: "2026-09-01" })),
+    } as unknown as IngestedData;
+    const r = resolveMetric(m("Unresolved Vulnerability Support Tickets", "Open tickets", "Support"), data);
+    expect(r.values.size).toBe(0);
   });
 
   it("description wording alone does not qualify a column", () => {
