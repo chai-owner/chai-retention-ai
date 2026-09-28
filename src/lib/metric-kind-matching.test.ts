@@ -87,6 +87,23 @@ describe("genuine columns still match", () => {
     expect(open.values.get("B")).toBe(0);
   });
 
+  it("description wording alone does not qualify a column", () => {
+    const data = { transactions: [{ customer_id: "A", transaction_id: "1", date: "2026-09-10", product: "Plan" }] } as unknown as IngestedData;
+    const r = resolveMetric(m("Endpoint Protection Coverage Trend", "Coverage of the product across endpoints"), data);
+    expect(r.values.size).toBe(0);
+  });
+
+  it("days since last purchase uses the transactions' own dates", () => {
+    const now = Date.parse("2026-09-20T00:00:00Z");
+    const data = {
+      customers: [{ customer_id: "A", signup_date: "2025-01-01" }],
+      transactions: [{ customer_id: "A", transaction_id: "1", transaction_date: "2026-09-10", amount: "10" }],
+    } as unknown as IngestedData;
+    const r = resolveMetric(m("Days since last purchase", "Days since the last purchase", "Transactions"), data, now);
+    expect(r.dataset).toBe("transactions");
+    expect(r.values.get("A")).toBe(10);
+  });
+
   it("related words alone no longer qualify a column", () => {
     const data = { usage: [{ customer_id: "A", date: "2026-09-10", sessions: "9" }] } as unknown as IngestedData;
     // "downloads" is not "sessions", even though both read as usage counts.
