@@ -49,7 +49,7 @@ describe("CRM activity data never feeds non-activity measures", () => {
     const recency = resolveMetric(m("Days since last activity", "Days since the last logged activity"), zoho, now);
     expect(recency.field).toBe("activity_date");
     expect(recency.values.get("A")).toBe(8);
-    const freq = resolveMetric(m("Activity frequency", "Activities per account over the last 90 days"), zoho, now);
+    const freq = resolveMetric(m("Activity frequency", "Activities per account over the last 90 days"), zoho, now, { raw: true });
     expect(freq.field).toBe("activity_count");
     expect(freq.values.get("A")).toBe(2);
   });
@@ -63,12 +63,12 @@ describe("genuine columns still match", () => {
         { __source: "csv", customer_id: "B", date: "2026-09-10", logins: "3", activity_count: "1" },
       ],
     } as unknown as IngestedData;
-    const r = resolveMetric(m("Admin Portal Login Cadence", "How often admins log in"), data);
+    const r = resolveMetric(m("Admin Portal Login Cadence", "How often admins log in"), data, Date.now(), { raw: true });
     expect(r.field).toBe("logins");
     expect(r.values.get("A")).toBe(12);
   });
 
-  it("Zendesk and Intercom tickets feed a tickets measure once 5 customers have tickets", () => {
+  it("Zendesk and Intercom tickets feed a tickets measure (column choice, before evidence rules)", () => {
     const t = (id: string, cust: string, status: string, src: string) => ({ __source: src, ticket_id: id, customer_id: cust, status, created_date: "2026-09-01" });
     const data = {
       support: [
@@ -77,10 +77,10 @@ describe("genuine columns still match", () => {
       ],
       usage: [zohoActivity("A", "2026-09-10")],
     } as unknown as IngestedData;
-    const all = resolveMetric(m("Support tickets raised", "Number of support tickets", "Support"), data);
+    const all = resolveMetric(m("Support tickets raised", "Number of support tickets", "Support"), data, Date.now(), { raw: true });
     expect(all.dataset).toBe("support");
     expect(all.values.get("A")).toBe(3);
-    const open = resolveMetric(m("Unresolved Vulnerability Support Tickets", "Open tickets", "Support"), data);
+    const open = resolveMetric(m("Unresolved Vulnerability Support Tickets", "Open tickets", "Support"), data, Date.now(), { raw: true });
     expect(open.values.get("A")).toBe(2);
     expect(open.values.get("B")).toBe(0);
     expect(open.values.size).toBe(5);
