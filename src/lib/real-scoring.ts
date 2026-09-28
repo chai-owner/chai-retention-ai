@@ -3,7 +3,8 @@
 // if a signal is absent for a customer, that metric is simply excluded from
 // their weighted health score rather than being invented.
 import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
-import { withCountableTransactions, dealOnlyCustomers, MIN_DEAL_PEERS } from "@/lib/countable-transactions";
+import { withCountableTransactions, dealOnlyCustomers } from "@/lib/countable-transactions";
+import { hasEnoughPeers, hasEnoughRecords, isEvidenceExempt, peerNote } from "@/lib/metric-evidence";
 import {
   type Customer,
   type ScoredDataset,
@@ -265,7 +266,6 @@ export function buildRealDataset(
   const data = withCountableTransactions(rawData);
   // Customers whose only sales data is CRM deals (see countable-transactions).
   const dealOnly = dealOnlyCustomers(data);
-  const dealPeersOk = dealOnly.size >= MIN_DEAL_PEERS;
   const evidence = datedRecordCounts(data as unknown as Record<string, unknown>);
   const customerRows = data.customers ?? [];
   const now = Date.now();
@@ -352,6 +352,8 @@ export function buildRealDataset(
   // own range (and none at all below MIN_DEAL_PEERS).
   const customSplit = new Set<string>();
   const customDealRange = new Map<string, { min: number; max: number }>();
+  const customDealPeers = new Map<string, number>();
+  const customPeers = new Map<string, number>();
   const peerTarget = new Map<string, number>();
   for (const cm of customMetrics) {
     const resolved = resolveMetric(cm.metric, data, now);
@@ -369,7 +371,9 @@ export function buildRealDataset(
         customSplit.add(cm.metric.name);
         const dv = entries.filter(([id]) => dealOnly.has(id)).map(([, v]) => v);
         if (dv.length) customDealRange.set(cm.metric.name, { min: Math.min(...dv), max: Math.max(...dv) });
+        customDealPeers.set(cm.metric.name, dv.length);
       }
+      if (!isEvidenceExempt(op)) customPeers.set(cm.metric.name, vals.length);
       if (!vals.length) vals.push(...entries.map(([, v]) => v));
       customMax.set(cm.metric.name, Math.max(...vals));
       customMin.set(cm.metric.name, Math.min(...vals));
@@ -407,30 +411,39 @@ export function buildRealDataset(
   // Deal sizes and invoice sizes are different kinds of number: deal-only
   // customers are compared only with each other, and only when there are
   // enough of them (MIN_DEAL_PEERS); otherwise they get no order-value score.
-  const aovByCust = new Map<string, number>();
+  // Shared evidence rules (metric-evidence.ts): 3+ dated records per
+  // customer, and 5+ such customers per comparison group.
+  const gate = (m: Map<string, number>) => (hasEnoughPeers(m.size) ? m : new Map<string, number>());
+  const aovInvoices = new Map<string, number>();
+  const aovDeals = new Map<string, number>();
   for (const [id, g] of tx) {
-    if (dealOnly.has(id) && !dealPeersOk) continue;
+    if (!hasEnoughRecords(g.dated.length)) continue;
     const a = avg(g.amounts);
-    if (a != null) aovByCust.set(id, a);
+    if (a != null) (dealOnly.has(id) ? aovDeals : aovInvoices).set(id, a);
   }
+  const aovByCust = new Map<string, number>([...gate(aovInvoices), ...gate(aovDeals)]);
   const maxAovDeals = Math.max(1, ...[...aovByCust].filter(([id]) => dealOnly.has(id)).map(([, v]) => v));
   const maxAovInvoices = Math.max(1, ...[...aovByCust].filter(([id]) => !dealOnly.has(id)).map(([, v]) => v));
-  const loginAvgByCust = new Map<string, number>();
-  const featAvgByCust = new Map<string, number>();
+  let loginAvgByCust = new Map<string, number>();
+  let featAvgByCust = new Map<string, number>();
   for (const [id, g] of usg) {
-    const la = avg(g.logins);
+    const la = hasEnoughRecords(g.dated.length) ? avg(g.logins) : null;
     if (la != null) loginAvgByCust.set(id, la);
-    const fa = avg(g.features);
+    const fa = hasEnoughRecords(g.features.length) ? avg(g.features) : null;
     if (fa != null) featAvgByCust.set(id, fa);
   }
+  loginAvgByCust = gate(loginAvgByCust);
+  featAvgByCust = gate(featAvgByCust);
+  const ticketCust = new Set([...sup].filter(([, g]) => hasEnoughRecords(g.dated.length)).map(([id]) => id));
+  if (!hasEnoughPeers(ticketCust.size)) ticketCust.clear();
   const maxLogin = Math.max(1, ...loginAvgByCust.values());
   const maxFeat = Math.max(1, ...featAvgByCust.values());
-  const maxTickets = Math.max(1, ...[...sup.values()].map((g) => g.count));
+  const maxTickets = Math.max(1, ...[...ticketCust].map((id) => sup.get(id)!.count));
 
 
   const csatScore = (id: string): number | null => {
     const scores = [...(srv.get(id) ?? []), ...((sup.get(id)?.sat) ?? [])];
-    if (!scores.length) return null;
+    if (!hasEnoughRecords(scores.length)) return null;
     const a = avg(scores)!;
     const mx = Math.max(...scores);
     if (mx <= 5) return clamp((a / 5) * 100);
@@ -461,19 +474,22 @@ export function buildRealDataset(
       subScores[label] = b.score;
       const note = describeComparison(personal, b.basis, what);
       if (note) personalNotes[label] = note;
+      else if (peers != null) personalNotes[label] = peerNote(peers);
     };
+    let peers: number | null = null;
+    const withPeers = (n: number | null, fn: () => void) => { peers = n; fn(); peers = null; };
     const usgg = usg.get(cid);
     if (loginAvgByCust.has(cid))
-      personalise("Login frequency", clamp((loginAvgByCust.get(cid)! / maxLogin) * 100), compareTrend(usgg?.dated, "average", "higher", now), "activity per record");
+      withPeers(loginAvgByCust.size, () => personalise("Login frequency", clamp((loginAvgByCust.get(cid)! / maxLogin) * 100), compareTrend(usgg?.dated, "average", "higher", now), "activity per record"));
     if (featAvgByCust.has(cid)) subScores["Feature adoption"] = clamp((featAvgByCust.get(cid)! / maxFeat) * 100);
     const days = txg?.lastDate ? (now - txg.lastDate) / DAY : null;
     if (days != null)
       personalise("Days since last purchase", clamp(100 - (days / 180) * 100), compareRhythm(txg?.dates, now), "purchase");
     if (aovByCust.has(cid))
-      personalise("Average order value", clamp((aovByCust.get(cid)! / (dealOnly.has(cid) ? maxAovDeals : maxAovInvoices)) * 100), compareTrend(txg?.dated, "average", "higher", now), "average order value");
+      withPeers(dealOnly.has(cid) ? aovDeals.size : aovInvoices.size, () => personalise("Average order value", clamp((aovByCust.get(cid)! / (dealOnly.has(cid) ? maxAovDeals : maxAovInvoices)) * 100), compareTrend(txg?.dated, "average", "higher", now), "average order value"));
     const supg = sup.get(cid);
-    if (supg) {
-      personalise("Support ticket volume", clamp(100 - (supg.count / maxTickets) * 100), compareTrend(supg.dated, "sum", "lower", now), "support tickets");
+    if (supg && ticketCust.has(cid)) {
+      withPeers(ticketCust.size, () => personalise("Support ticket volume", clamp(100 - (supg.count / maxTickets) * 100), compareTrend(supg.dated, "sum", "lower", now), "support tickets"));
       subScores["Resolution time"] = clamp(100 - (supg.count ? (supg.open / supg.count) * 100 : 0));
     }
     const cs = csatScore(cid);
@@ -483,7 +499,7 @@ export function buildRealDataset(
     // has an uploaded value for.
     for (const cm of customMetrics) {
       const v = customLatest.get(cm.metric.name)?.get(cid);
-      const dealSkip = customSplit.has(cm.metric.name) && dealOnly.has(cid) && !dealPeersOk;
+      const dealSkip = customSplit.has(cm.metric.name) && dealOnly.has(cid) && !hasEnoughPeers(customDealPeers.get(cm.metric.name) ?? 0);
       if (v != null && !dealSkip) {
         metricValues[cm.metric.name] = v;
         const res = customResolved.get(cm.metric.name);
@@ -500,7 +516,9 @@ export function buildRealDataset(
           op === "days_since_last"
             ? (cm.metric.name.match(/since\s+(?:the\s+)?(?:last|most recent)\s+(.+)$/i)?.[1] ?? "recorded activity").toLowerCase()
             : cm.metric.name.toLowerCase();
-        personalise(cm.metric.name, customSubScore(cm, v, cid), personal, what);
+        const anchored = cm.metric.valueAt0 != null && cm.metric.valueAt100 != null;
+        const groupSize = customSplit.has(cm.metric.name) && dealOnly.has(cid) ? customDealPeers.get(cm.metric.name) : customPeers.get(cm.metric.name);
+        withPeers(anchored ? null : groupSize ?? null, () => personalise(cm.metric.name, customSubScore(cm, v, cid), personal, what));
       }
     }
 
