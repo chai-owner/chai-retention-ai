@@ -10,6 +10,7 @@ import { mergeRoster } from "@/lib/customer-merge";
 import { DEFAULT_METRIC_WEIGHTS, type MetricWeights, type PlannerMetric } from "@/lib/mock-data";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import * as NewApp from "@/lib/real-scoring";
+import { atRiskHint } from "@/lib/at-risk-hint";
 
 const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false },
@@ -74,6 +75,9 @@ for (const p of profiles ?? []) {
   const ds = NewApp.buildRealDataset(data, w, profile);
   const ned = ds.customers.filter((c) => (c as { notEnoughData?: boolean }).notEnoughData).length;
   const account = `${p.company || "(no company)"} <${p.email || userId}>`;
+  console.log(
+    `${account}: total ${ds.executive.totalCustomers} · healthy ${ds.executive.healthy} · watch ${ds.executive.watch} · at-risk ${ds.executive.atRisk} · critical ${ds.executive.critical} · not enough data ${ned}`,
+  );
   const hint = atRiskHint(ds.executive.critical, ned);
   console.log(`  at-risk card: "${hint}"`);
 }
