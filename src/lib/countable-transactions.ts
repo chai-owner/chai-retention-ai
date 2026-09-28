@@ -21,7 +21,7 @@ export function isDealRow(row: Record<string, unknown>): boolean {
  * customers. Below this, deal-only customers get no score from spend /
  * order-size measures rather than a comparison against a handful of peers.
  */
-export const MIN_DEAL_PEERS = 5;
+export const MIN_DEAL_PEERS = MIN_PEERS;
 
 /**
  * Returns `data` with transactions reduced to the rows scoring should use:

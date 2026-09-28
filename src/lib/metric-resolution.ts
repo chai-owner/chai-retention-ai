@@ -1,10 +1,9 @@
 import type { IngestedData, IngestRow } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { customMetricKeys } from "@/lib/personalize-data";
-import { MIN_DEAL_PEERS } from "@/lib/countable-transactions";
-
-/** Minimum customers with data before a ticket measure compares them (same as deals). */
-export const MIN_TICKET_PEERS = MIN_DEAL_PEERS;
+import { MIN_PEERS, applyEvidenceRules } from "@/lib/metric-evidence";
+...
+export const MIN_TICKET_PEERS = MIN_PEERS;
 
 const DAY = 86400000;
 const IDENTIFIERS = new Set([
@@ -339,11 +338,19 @@ export function resolveMetric(metric: PlannerMetric, data: IngestedData, now = D
     }
     if (value != null && Number.isFinite(value)) values.set(id, value);
   }
-  // Ticket measures follow the same minimum-group rule as deals: with fewer
-  // than MIN_TICKET_PEERS customers holding data, there's no fair comparison,
-  // so the measure is left out on both screens until enough exist.
-  if (isTicketCountMetric(metric) && values.size < MIN_TICKET_PEERS) {
+  // Shared evidence rules (metric-evidence.ts), used by both screens: a
+  // customer needs 3+ dated records of this kind, and the measure needs 5+
+  // such customers. Recency and single-value measures are exempt.
+  const datedCounts = new Map<string, number>();
+  for (const [id, entries] of grouped) datedCounts.set(id, entries.filter((e) => e.date != null).length);
+  const gated = applyEvidenceRules(values, datedCounts, operation);
+  if (gated.size === 0) {
     return { dataset: selected.dataset, field: selected.field, rowCount: 0, latestDate, values: new Map(), operation, series: new Map() };
+  }
+  if (gated !== values) {
+    values.clear();
+    for (const [id, v] of gated) values.set(id, v);
+    for (const id of [...grouped.keys()]) if (!values.has(id)) grouped.delete(id);
   }
   const series = new Map<string, Array<{ date: number; value: number }>>();
   const trendable = operation === "average" || operation === "sum" || operation === "ratio" || operation === "days_since_last";
