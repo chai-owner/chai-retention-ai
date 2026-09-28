@@ -38,6 +38,16 @@ export function snapshotHasEvidence(breakdown: unknown): boolean {
   return breakdownEntries(breakdown).some((e) => Number.isFinite(e.normalised));
 }
 
+/** Splits saved rows into those with evidence behind them and those without. */
+export function splitSnapshotRows<T extends { score_breakdown?: unknown }>(
+  rows: T[],
+): { scored: T[]; unscored: T[] } {
+  const scored: T[] = [];
+  const unscored: T[] = [];
+  for (const r of rows) (snapshotHasEvidence(r.score_breakdown) ? scored : unscored).push(r);
+  return { scored, unscored };
+}
+
 /** Distinct "Competitor mentioned · HubSpot" style labels for AI-detected signals. */
 export function contentSignalLabels(breakdown: unknown): Array<{ label: string; source: string }> {
   const entry = contentEntryOf(breakdown);

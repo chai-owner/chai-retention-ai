@@ -159,17 +159,9 @@ function CustomerDetail() {
   const status = (override?.status ?? c.status ?? "active") as CustomerStatus;
   const suggestChurn = status === "active" && looksChurned(c);
 
-  // Industry-neutral: name the signals actually driving this customer's score —
-  // the risk factors when we have them, otherwise the active metric set.
-  const signals = (
-    c.factors.length > 0 ? c.factors.map((f) => f.label) : metrics.map((m) => m.name)
-  )
-    .filter(Boolean)
-    .slice(0, 4);
-  const analyzedCopy =
-    signals.length > 0
-      ? `ChAi analyzed ${signals.slice(0, -1).join(", ")}${signals.length > 1 ? " and " : ""}${signals[signals.length - 1]}. Here's what's driving the risk.`
-      : "ChAi analyzed the data you've connected. Here's what's driving the risk.";
+  // Name only the measures this customer actually has data for (their risk
+  // factors) — never the account's measure list.
+  const analyzedCopy = c.notEnoughData ? NO_RISK_EXPLANATION : analyzedCopyFor(c.factors.map((f) => f.label));
 
   return (
     <div>

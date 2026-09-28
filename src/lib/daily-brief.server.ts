@@ -6,6 +6,7 @@ import {
   type DailyBrief,
   type SnapshotRow,
 } from "@/lib/daily-brief";
+import { splitSnapshotRows } from "@/lib/customer-score-snapshot";
 
 // Structurally typed so either a user-scoped or an admin Supabase client fits.
 type AnyClient = {
@@ -40,7 +41,9 @@ export async function loadSnapshots(
     .limit(5000);
   if (error) throw new Error(error.message);
 
-  const latest = ((latestRows ?? []) as SnapshotRow[]).map((r) => ({
+  // Saved scores with no measures behind them are not evidence: they never
+  // count as at risk, critical or healthy in the brief or weekly digest.
+  const latest = splitSnapshotRows((latestRows ?? []) as SnapshotRow[]).scored.map((r) => ({
     ...r,
     score: Number(r.score),
   }));
@@ -61,7 +64,7 @@ export async function loadSnapshots(
       .lt("scored_at", scoredAt)
       .order("scored_at", { ascending: false })
       .limit(5000);
-    const rows = ((priorRows ?? []) as SnapshotRow[]).map((r) => ({
+    const rows = splitSnapshotRows((priorRows ?? []) as SnapshotRow[]).scored.map((r) => ({
       ...r,
       score: Number(r.score),
     }));

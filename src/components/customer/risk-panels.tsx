@@ -12,11 +12,16 @@ export const priorityChip: Record<string, string> = {
   Low: "bg-secondary text-secondary-foreground border-border",
 };
 
-/** Copy naming the signals ChAi analysed for this customer. */
+export const NO_RISK_EXPLANATION = "No risk explanation yet — this customer doesn't have enough data to be scored.";
+
+/**
+ * Copy naming the signals ChAi analysed for this customer. Pass only measures
+ * the customer has data for (their risk factors); with none, no names appear.
+ */
 export function analyzedCopyFor(signalLabels: string[]): string {
   const signals = signalLabels.filter(Boolean).slice(0, 4);
   if (signals.length === 0) {
-    return "ChAi analyzed the data you've connected. Here's what's driving the risk.";
+    return "No measure with enough data is pulling this customer's score down.";
   }
   return `ChAi analyzed ${signals.slice(0, -1).join(", ")}${signals.length > 1 ? " and " : ""}${signals[signals.length - 1]}. Here's what's driving the risk.`;
 }
