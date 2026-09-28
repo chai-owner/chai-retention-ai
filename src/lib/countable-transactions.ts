@@ -5,6 +5,7 @@
 // lost deal never happened. Rows without a `deal_status` — invoices, payments,
 // uploaded transactions — are real sales and always count.
 import type { IngestedData } from "@/lib/ingested-data-store";
+import { MIN_PEERS } from "@/lib/metric-evidence";
 
 export function isCountableTransaction(row: Record<string, unknown>): boolean {
   const status = String(row["deal_status"] ?? "").trim().toLowerCase();

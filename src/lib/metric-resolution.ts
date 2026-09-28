@@ -2,7 +2,8 @@ import type { IngestedData, IngestRow } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { customMetricKeys } from "@/lib/personalize-data";
 import { MIN_PEERS, applyEvidenceRules } from "@/lib/metric-evidence";
-...
+
+/** Minimum customers with data before a measure compares them (shared rule). */
 export const MIN_TICKET_PEERS = MIN_PEERS;
 
 const DAY = 86400000;
