@@ -92,6 +92,8 @@ export interface Customer {
   dataCategories?: number;
   /** Why confidence is limited by thin evidence, e.g. "based on a single sale". */
   confidenceReason?: string | null;
+  /** No measure has enough records yet — show "Not enough data yet", not a score. */
+  notEnoughData?: boolean;
   revenue: number;
   sentiment: number;
   lastActivity: string;

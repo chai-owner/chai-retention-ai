@@ -84,7 +84,7 @@ export function assessCoverage(
     baseSignals.push({ key: "support", label: "Support tickets" });
   }
   const metricSignals = activeMetrics.map((metric) => {
-    const resolved = resolveMetric(metric, data, now);
+    const resolved = resolveMetric(metric, data, now, { raw: true });
     return {
       key: `metric:${metric.name}`,
       label: metric.name,

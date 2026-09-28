@@ -25,14 +25,22 @@ const metric: PlannerMetric = {
   weight: 2,
 };
 
+// Five customers with three dated records each, so the shared evidence rules
+// (3+ records per customer, 5+ customers per comparison) pass.
+const MINUTES: Record<string, string> = { a: "10", b: "50", c: "90", d: "50", e: "50" };
 const data: IngestedData = {
-  customers: [{ customer_id: "a" }, { customer_id: "b" }, { customer_id: "c" }],
-  usage: [
-    { customer_id: "a", workout_duration_minutes: "10", occurred_at: "2026-01-01" },
-    { customer_id: "b", workout_duration_minutes: "50", occurred_at: "2026-01-01" },
-    { customer_id: "c", workout_duration_minutes: "90", occurred_at: "2026-01-01" },
-  ],
+  customers: Object.keys(MINUTES).map((customer_id) => ({ customer_id })),
+  usage: Object.entries(MINUTES).flatMap(([customer_id, m]) =>
+    ["2026-01-01", "2026-01-02", "2026-01-03"].map((occurred_at) => ({ customer_id, workout_duration_minutes: m, occurred_at })),
+  ),
 };
+
+/** Four steady customers (3 recent records each) to make a comparison group. */
+const peers = (d: (n: number) => string) =>
+  ["p1", "p2", "p3", "p4"].flatMap((customer_id) =>
+    [5, 6, 7].map((n) => ({ customer_id, workout_duration_minutes: "60", occurred_at: d(n) })),
+  );
+const peerCustomers = ["p1", "p2", "p3", "p4"].map((customer_id) => ({ customer_id }));
 
 const byId = (scores: ReturnType<typeof scoreCustomers>) =>
   Object.fromEntries(scores.map((s) => [s.customer_id, s]));
@@ -105,13 +113,14 @@ describe("scoreCustomers", () => {
   it("compares recent 30 days to the customer's own prior 90 days", () => {
     const d = (n: number) => new Date(NOW - n * DAY).toISOString().slice(0, 10);
     const trendData: IngestedData = {
-      customers: [{ customer_id: "a" }, { customer_id: "b" }],
+      customers: [{ customer_id: "a" }, { customer_id: "b" }, ...peerCustomers],
       usage: [
+        ...peers(d),
         // a: 60-minute sessions for months, now 30 → halved.
         ...[40, 60, 80, 100, 110, 115].map((n) => ({ customer_id: "a", workout_duration_minutes: "60", occurred_at: d(n) })),
         { customer_id: "a", workout_duration_minutes: "30", occurred_at: d(5) },
-        // b: short history (one record) → no personal baseline.
-        { customer_id: "b", workout_duration_minutes: "20", occurred_at: d(5) },
+        // b: three recent records, no older history → no personal baseline.
+        ...[3, 4, 5].map((n) => ({ customer_id: "b", workout_duration_minutes: "20", occurred_at: d(n) })),
       ],
     };
     const scores = byId(scoreCustomers([metric], trendData, { now: NOW }));
@@ -122,17 +131,17 @@ describe("scoreCustomers", () => {
     expect(a.comparison).toContain("down 50%");
     expect(a.comparison).toContain("own previous 90 days");
     expect(entries(scores.b!)[0]!.basis).toBe("cohort");
-    expect(entries(scores.b!)[0]!.comparison).toBeUndefined();
+    expect(entries(scores.b!)[0]!.comparison).toContain("Compared with 6 customers");
   });
 
   it("blends thin personal history with the fallback", () => {
     const d = (n: number) => new Date(NOW - n * DAY).toISOString().slice(0, 10);
     const thin: IngestedData = {
-      customers: [{ customer_id: "a" }, { customer_id: "b" }],
+      customers: [{ customer_id: "a" }, ...peerCustomers],
       usage: [
+        ...peers(d),
         ...[40, 60, 80].map((n) => ({ customer_id: "a", workout_duration_minutes: "60", occurred_at: d(n) })),
         { customer_id: "a", workout_duration_minutes: "60", occurred_at: d(5) },
-        { customer_id: "b", workout_duration_minutes: "90", occurred_at: d(5) },
       ],
     };
     const a = entries(byId(scoreCustomers([metric], thin, { now: NOW })).a!)[0]!;
@@ -200,8 +209,8 @@ describe("churn probability meta", () => {
     expect(meta.churn_probability).toBe(scores.a!.churn_probability);
     // Score 0 → deep in the critical band.
     expect(scores.a!.churn_probability).toBe(85);
-    // One kind of data, but too few dated records to count toward confidence.
-    expect(meta.data_categories).toBe(0);
+    // One kind of data with three dated records → counts, but one kind is Low.
+    expect(meta.data_categories).toBe(1);
     expect(scores.a!.churn_confidence).toBe("low");
     expect(scores.c!.churn_probability).toBe(2);
   });

@@ -5,6 +5,7 @@
 // lost deal never happened. Rows without a `deal_status` — invoices, payments,
 // uploaded transactions — are real sales and always count.
 import type { IngestedData } from "@/lib/ingested-data-store";
+import { MIN_PEERS } from "@/lib/metric-evidence";
 
 export function isCountableTransaction(row: Record<string, unknown>): boolean {
   const status = String(row["deal_status"] ?? "").trim().toLowerCase();
@@ -21,7 +22,7 @@ export function isDealRow(row: Record<string, unknown>): boolean {
  * customers. Below this, deal-only customers get no score from spend /
  * order-size measures rather than a comparison against a handful of peers.
  */
-export const MIN_DEAL_PEERS = 5;
+export const MIN_DEAL_PEERS = MIN_PEERS;
 
 /**
  * Returns `data` with transactions reduced to the rows scoring should use:

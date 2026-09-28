@@ -18,7 +18,7 @@ describe("resolveMetric", () => {
         { customer_id: "A", date: "2026-08-11", data: '{"workout":{"workout_duration_minutes":40}}' },
       ],
     } as IngestedData;
-    const resolved = resolveMetric(metric("Average Workout Duration", "Average workout duration in minutes"), data);
+    const resolved = resolveMetric(metric("Average Workout Duration", "Average workout duration in minutes"), data, Date.now(), { raw: true });
     expect(resolved.dataset).toBe("usage");
     expect(resolved.field).toContain("workout_duration_minutes");
     expect(resolved.values.get("A")).toBe(30);

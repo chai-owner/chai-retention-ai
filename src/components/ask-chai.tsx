@@ -39,7 +39,7 @@ export function AskChAi() {
 
   function buildContext() {
     const e = executive;
-    const top = sortedByRisk.slice(0, 5);
+    const top = sortedByRisk.filter((c) => !c.notEnoughData).slice(0, 5);
     const topLines = top
       .map(
         (c) =>

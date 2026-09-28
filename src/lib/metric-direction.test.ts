@@ -19,7 +19,7 @@ const openCounts: Record<string, number> = { A: 0, B: 1, C: 2, D: 3, E: 4 };
 const data = {
   customers: customers.map((c) => ({ customer_id: c, name: c })),
   support: customers.flatMap((c) => [
-    { ticket_id: `${c}-r`, customer_id: c, status: "solved", created_date: "2026-09-01" },
+    ...[1, 2, 3].map((n) => ({ ticket_id: `${c}-r${n}`, customer_id: c, status: "solved", created_date: `2026-09-0${n}` })),
     ...Array.from({ length: openCounts[c]! }, (_, i) => ({ ticket_id: `${c}-${i}`, customer_id: c, status: "open", created_date: "2026-09-01" })),
   ]),
 } as unknown as IngestedData;

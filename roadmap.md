@@ -27,3 +27,6 @@
 - [x] Before/after comparison on real account data (read-only)
 - [ ] Review gate: user reviews before/after results — nothing publishes until approved
 - [ ] Decide: HubSpot deals have the same open/lost issue (31 deals) — not changed
+- [x] Evidence rules: 3+ dated records per customer per measure (recency/single-value exempt), 5+ qualifying customers per comparison — shared by customer page and nightly score; "Not enough data yet" display; peer reason text
+- [ ] Review gate: user reviews evidence-rules before/after — not published
+- [ ] Later: softened spread (rule 3), with its own before-and-after

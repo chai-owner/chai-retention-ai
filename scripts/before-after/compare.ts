@@ -167,6 +167,29 @@ for (const p of profiles ?? []) {
     for (const d of personalDetails) log(`    » reason shown: ${d}`);
     csv.push([account, a1.name, id, a0?.health ?? "", a1.health, n0 ? Math.round(Number(n0.score)) : "", n1 ? Math.round(Number(n1.score)) : "", c0, c1, reason, why.join(" | ")].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
   }
+  const ned = [...aNew.values()].filter((c) => (c as { notEnoughData?: boolean }).notEnoughData).map((c) => c.name);
+  if (process.env.DEBUG_ID) for (const [id, c] of aNew) if (c.name.includes(process.env.DEBUG_ID)) log(`DBG ${c.name} old=${JSON.stringify(aOld.get(id)?.subScores)} new=${JSON.stringify(c.subScores)} tx=${JSON.stringify((data.transactions??[]).filter((t)=>(t as any).customer_id===id).slice(0,4))}`);
+  { const all = [...aNew.values()].filter((c) => (c as any).notEnoughData); const wasEmpty = all.filter((c) => Object.keys(aOld.get(c.id)?.subScores ?? {}).length === 0); log(`NED already-unscored-before: ${wasEmpty.length}; newly unscored: ${all.filter((c)=>!wasEmpty.includes(c)).map((c)=>`${c.name} [${c.id}] old ${aOld.get(c.id)?.health} ${JSON.stringify(aOld.get(c.id)?.subScores)}`).join("; ")}`); }
+  log(`not enough data yet (${ned.length}): ${ned.join(", ") || "none"}`);
+  if (process.env.PROJECT_ACTIVITY && /securenest/i.test(String(p.company))) {
+    const extra = [
+      { name: "Days since last activity", why: "Days since the last logged activity", churn: "", category: "Engagement", weight: 3 },
+      { name: "Activity frequency", why: "Activities per account over the last 90 days", churn: "", category: "Engagement", weight: 3 },
+    ] as PlannerMetric[];
+    const m2 = [...metrics, ...extra];
+    const pOld = new Map(OldNightly.scoreCustomers(m2, data, opts).map((s) => [s.customer_id, s]));
+    const pNew = new Map(NewNightly.scoreCustomers(m2, data, opts).map((s) => [s.customer_id, s]));
+    const w2 = weightsFor(p.metric_weights as Record<string, number> | null, m2);
+    const qOld = new Map(OldApp.buildRealDataset(data, w2, { segments: p.segments ?? [], metrics: m2 } as never).customers.map((c) => [c.id, c]));
+    const qNew = new Map(NewApp.buildRealDataset(data, w2, { segments: p.segments ?? [], metrics: m2 } as never).customers.map((c) => [c.id, c]));
+    log("### projection with the two activity measures added");
+    for (const [id, c] of qNew) {
+      const o = qOld.get(id);
+      const hasAct = (data.usage ?? []).some((u) => (u as Record<string, string>).customer_id === id && (u as Record<string, string>).activity_type);
+      if (!hasAct) continue;
+      log(`- ${c.name}: page old-rules ${o?.health}→new-rules ${c.health}; nightly old-rules ${pOld.get(id) ? Math.round(Number(pOld.get(id)!.score)) : "—"}→new-rules ${pNew.get(id) ? Math.round(Number(pNew.get(id)!.score)) : "—"}; confidence ${c.churnConfidence}${c.confidenceReason ? ` (${c.confidenceReason})` : ""}`);
+    }
+  }
   log(`listed: ${moved} of ${aNew.size} (score or confidence changed, or a thin-evidence reason now shows); confidence label changed: ${confMovedCount}; nightly comparison used: ${JSON.stringify(basisCount)}`);
   log();
 }

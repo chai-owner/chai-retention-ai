@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { NOT_ENOUGH_DATA_LABEL } from "@/lib/metric-evidence";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -284,7 +285,11 @@ function CustomerDetail() {
       })()}
 
       <PageHeader title={c.name} description={`${c.segment} · ${c.contact} · last active ${c.lastActivity}`}>
-        <HealthBadge category={cat} />
+        {c.notEnoughData ? (
+          <span className="text-xs text-muted-foreground">Not scored yet</span>
+        ) : (
+          <HealthBadge category={cat} />
+        )}
       </PageHeader>
 
       {snapshot ? (
@@ -299,10 +304,10 @@ function CustomerDetail() {
 
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Health score" value={c.health} icon={HeartPulse} tone={cat === "healthy" ? "success" : cat === "watch" ? "warning" : cat === "at-risk" ? "caution" : "danger"} />
+        <StatCard label="Health score" value={c.notEnoughData ? NOT_ENOUGH_DATA_LABEL : c.health} icon={HeartPulse} tone={cat === "healthy" ? "success" : cat === "watch" ? "warning" : cat === "at-risk" ? "caution" : "danger"} />
         <StatCard
           label="Churn probability"
-          value={`${c.churnProbability}%`}
+          value={c.notEnoughData ? "—" : `${c.churnProbability}%`}
           icon={AlertTriangle}
           tone="danger"
           hint={`${churnProbabilityPhrase(c.churnProbability)} · ${c.confidenceReason ? churnConfidenceText(c.churnConfidence ?? churnConfidenceFor(c.dataCategories ?? 0), c.confidenceReason) : churnConfidenceLabel(c.churnConfidence ?? churnConfidenceFor(c.dataCategories ?? 0))}`}

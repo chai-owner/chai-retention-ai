@@ -4,12 +4,21 @@
 // app already computes in the browser.
 //
 // Scoring is baseline-relative: each customer is compared against their own
-// recent history (from previous `customer_scores` rows) rather than against
-// whoever happens to be best or worst in the cohort today. Cohort min-max is
-// kept as the no-history fallback.
+// history, worked out from their dated records (see personal-baseline.ts —
+// the same logic the in-app score uses). Customers with too little history
+// fall back to a cadence horizon or today's cohort, blended in while thin.
+import {
+  blendScore,
+  compareRhythm,
+  compareTrend,
+  describeComparison,
+} from "@/lib/personal-baseline";
+import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
+import { withCountableTransactions, dealOnlyCustomers, MIN_DEAL_PEERS } from "@/lib/countable-transactions";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 import { resolveMetric } from "./metric-resolution";
+import { isElapsedMetric, metricDirection } from "@/lib/metric-direction";
 import {
   CHURN_HORIZON_DAYS,
   churnConfidenceFor,
@@ -27,6 +36,11 @@ import {
 export type RiskLevel = "healthy" | "at-risk" | "critical";
 
 export type ScoreBasis =
+  /** Judged against this customer's own history (enough of it to trust). */
+  | "personal"
+  /** Thin personal history, mixed with the horizon/cohort fallback. */
+  | "blended"
+  /** Legacy stored rows only — no longer produced. */
   | "baseline-30d"
   | "baseline-90d"
   | "horizon"
@@ -41,7 +55,10 @@ export interface ScoreBreakdownEntry {
   normalised: number;
   weight: number;
   basis: ScoreBasis;
+  /** Personal comparisons: the customer's own normal (value or usual gap). */
   baseline: number | null;
+  /** Plain-language reason naming the comparison used, when personal. */
+  comparison?: string;
 }
 
 /**
@@ -57,6 +74,8 @@ export interface ChurnMetaEntry {
   churn_horizon_days: number;
   confidence: ChurnConfidence;
   data_categories: number;
+  /** Plain reason when a kind of data was held back for thin evidence. */
+  confidence_reason?: string | null;
 }
 
 export function isChurnMeta(entry: unknown): entry is ChurnMetaEntry {
@@ -92,6 +111,7 @@ export interface HistoryPoint {
 }
 
 export interface ScoringOptions {
+  /** @deprecated Ignored — personal baselines now come from dated records. */
   history?: HistoryPoint[];
   /** profiles.cadence — free text describing how often customers buy/engage. */
   cadence?: string;
@@ -117,47 +137,9 @@ function round(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function metricText(metric: PlannerMetric): string {
-  return [metric.name, metric.why, metric.churn, metric.reason, metric.category]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-}
 
-/** True when the metric measures elapsed time since an event ("days since last…"). */
-export function isElapsedMetric(metric: PlannerMetric): boolean {
-  return /(days?|weeks?|months?)\s+since|time since|last (purchase|payment|order|visit|login|contact|session|interaction)|inactiv|dormant|ghost|lapse/.test(
-    metricText(metric),
-  );
-}
-
-/**
- * Direction of "good" for a metric. Explicit display anchors win; otherwise it
- * is inferred from the category and wording — elapsed-time, cost, complaint and
- * transaction-recency language means lower is better, while engagement and
- * retention language means higher is better.
- */
-export function metricDirection(metric: PlannerMetric): "higher" | "lower" {
-  if (metric.valueAt0 != null && metric.valueAt100 != null) {
-    return metric.valueAt0 > metric.valueAt100 ? "lower" : "higher";
-  }
-  const text = metricText(metric);
-  const category = (metric.category ?? "").toLowerCase();
-  if (isElapsedMetric(metric)) return "lower";
-  if (/overdue|late|delay|complaint|escalation|churn|cancel|refund|failure|backlog|wait|ticket volume|downtime|defect/.test(text)) {
-    return "lower";
-  }
-  if (category === "engagement" || category === "retention" || category === "satisfaction") return "higher";
-  if (category === "support") return "lower";
-  // Transactions is recency/obligation heavy in practice; only treat it as
-  // lower-is-better when there is no clear "more is better" value language.
-  if (category === "transactions") {
-    return /revenue|value|spend|amount|frequency|depth|penetration|volume of purchases|renewal/.test(text)
-      ? "higher"
-      : "lower";
-  }
-  return "higher";
-}
+// Direction logic lives in metric-direction.ts, shared with the customer page.
+export { isElapsedMetric, metricDirection };
 
 const CADENCE_UNITS: Array<[RegExp, number]> = [
   [/\bday(s)?\b/, 1],
@@ -209,47 +191,36 @@ export function horizonDays(cadence?: string, lifespan?: string): number {
   return DEFAULT_HORIZON_DAYS;
 }
 
-/** Average of a customer's observations for a metric inside a day window. */
-function baselineFor(
-  points: HistoryPoint[] | undefined,
-  now: number,
-  windowDays: number,
-): number | null {
-  if (!points || points.length === 0) return null;
-  const cutoff = now - windowDays * DAY;
-  const inWindow = points.filter((p) => p.scored_at >= cutoff && Number.isFinite(p.value));
-  if (inWindow.length === 0) return null;
-  return inWindow.reduce((sum, p) => sum + p.value, 0) / inWindow.length;
-}
-
-/** Score a value against the customer's own baseline; baseline itself sits at 50. */
-function scoreAgainstBaseline(value: number, baseline: number, direction: "higher" | "lower"): number {
-  if (direction === "lower") {
-    if (value <= 0) return 100;
-    if (baseline <= 0) return value <= 0 ? 100 : 0;
-    return clamp(50 * (baseline / value));
+/** Noun used in reason text: "days since last deal" → "deal". */
+function subjectFor(name: string, kind: "trend" | "rhythm" | undefined): string {
+  const n = name.trim();
+  if (kind === "rhythm") {
+    const m = n.match(/since\s+(?:the\s+)?(?:last|most recent)\s+(.+)$/i);
+    return (m?.[1] ?? "recorded activity").toLowerCase();
   }
-  if (baseline <= 0) return value > 0 ? 100 : 50;
-  return clamp(50 * (value / baseline));
+  return n.toLowerCase();
 }
 
 /**
  * Scores every customer in `data.customers` against `metrics`.
  *
  * Per metric, per customer, in order of preference:
- *  1. the customer's own 30-day average from `customer_scores`
- *  2. their 90-day average when 30 days of history is not there yet
+ *  1. their own history from dated records: last 30 days vs the prior 90
+ *     (values, counts, rates) or their usual gap ("days since last …")
+ *  2. blended with 3/4 while that history is thin
  *  3. a cadence-derived horizon for elapsed-time metrics ("days since last…")
- *  4. cohort min-max across today's customer base (the original behaviour)
+ *  4. cohort min-max across today's customer base
  *
  * Each normalised value is weighted by the metric's `weight` (default 1) and
  * averaged into a 0–100 health score.
  */
 export function scoreCustomers(
   metrics: PlannerMetric[],
-  data: IngestedData,
+  rawData: IngestedData,
   options: ScoringOptions = {},
 ): CustomerScore[] {
+  // Open and lost CRM deals are not sales.
+  const data = withCountableTransactions(rawData);
   const now = options.now ?? Date.now();
   const horizon = horizonDays(options.cadence, options.lifespan);
 
@@ -262,29 +233,40 @@ export function scoreCustomers(
   ];
   if (customerIds.length === 0 || metrics.length === 0) return [];
 
-  // history indexed by "customerId\u0000metricName"
-  const history = new Map<string, HistoryPoint[]>();
-  for (const point of options.history ?? []) {
-    const key = `${point.customer_id}\u0000${point.metric}`;
-    const bucket = history.get(key);
-    if (bucket) bucket.push(point);
-    else history.set(key, [point]);
-  }
+  // Deal sizes and invoice sizes are different kinds of number. For spend /
+  // order-size measures on sales data, deal-only customers are compared only
+  // with each other — and only when there are at least MIN_DEAL_PEERS of them.
+  const dealOnly = dealOnlyCustomers(data);
+  const evidence = datedRecordCounts(data as unknown as Record<string, unknown>);
+  const range = (vals: number[]) => ({
+    min: vals.length ? Math.min(...vals) : 0,
+    max: vals.length ? Math.max(...vals) : 0,
+  });
 
   const resolved = metrics.map((metric) => {
     const result = resolveMetric(metric, data, now);
-    const values = [...result.values.values()];
+    const category = dataSourceFor(result.dataset);
+    const elapsedOp = result.operation === "days_since_last" || result.operation === "months_since";
+    const splitDeals = category === "transactions" && !elapsedOp && !isElapsedMetric(metric) && dealOnly.size > 0;
+    const entries = [...result.values.entries()];
+    const all = range(entries.map(([, v]) => v));
+    const invoiceRange = splitDeals ? range(entries.filter(([id]) => !dealOnly.has(id)).map(([, v]) => v)) : all;
+    const dealRange = splitDeals ? range(entries.filter(([id]) => dealOnly.has(id)).map(([, v]) => v)) : all;
     return {
       metric,
       values: result.values,
-      min: values.length ? Math.min(...values) : 0,
-      max: values.length ? Math.max(...values) : 0,
+      min: invoiceRange.min,
+      max: invoiceRange.max,
+      splitDeals,
+      dealRange,
       direction: metricDirection(metric),
       elapsed: isElapsedMetric(metric),
+      operation: result.operation,
+      series: result.series,
       // Which data SOURCE this metric draws on (transactions, support, usage,
       // surveys…) — the confidence indicator counts distinct sources, so two
       // metrics from the same source never inflate it.
-      category: dataSourceFor(result.dataset),
+      category,
     };
   });
 
@@ -306,29 +288,49 @@ export function scoreCustomers(
 
       const value = entry.values.get(customerId);
       if (value == null || !Number.isFinite(value)) continue;
+      const isDealOnly = entry.splitDeals && dealOnly.has(customerId);
+      if (isDealOnly && dealOnly.size < MIN_DEAL_PEERS) continue;
+      const peers = isDealOnly ? entry.dealRange : { min: entry.min, max: entry.max };
       const weight = Number(entry.metric.weight ?? 1) || 1;
-      const points = history.get(`${customerId}\u0000${entry.metric.name}`);
 
       let normalised: number;
       let basis: ScoreBasis;
-      let baseline: number | null = baselineFor(points, now, 30);
+      let baseline: number | null = null;
+      let comparison: string | null = null;
 
-      if (baseline != null) {
-        basis = "baseline-30d";
-        normalised = scoreAgainstBaseline(value, baseline, entry.direction);
-      } else if ((baseline = baselineFor(points, now, 90)) != null) {
-        basis = "baseline-90d";
-        normalised = scoreAgainstBaseline(value, baseline, entry.direction);
-      } else if (entry.elapsed) {
-        basis = "horizon";
-        normalised = clamp(100 - (value / horizon) * 100);
+      // Fallback first: what today's scoring would say without the
+      // customer's own history.
+      let fallback: number;
+      let fallbackBasis: ScoreBasis;
+      if (entry.elapsed) {
+        fallbackBasis = "horizon";
+        fallback = clamp(100 - (value / horizon) * 100);
       } else {
-        basis = "cohort";
-        const spread = entry.max - entry.min;
+        fallbackBasis = "cohort";
+        const spread = peers.max - peers.min;
         // A flat distribution carries no signal — treat everyone as mid-range.
-        normalised = spread === 0 ? 50 : ((value - entry.min) / spread) * 100;
-        if (entry.direction === "lower") normalised = 100 - normalised;
-        normalised = clamp(normalised);
+        let n = spread === 0 ? 50 : ((value - peers.min) / spread) * 100;
+        if (entry.direction === "lower") n = 100 - n;
+        fallback = clamp(n);
+      }
+
+      // Then this customer's own history: recent-vs-normal trend, or their
+      // usual rhythm for "days since last …" metrics.
+      const points = entry.series?.get(customerId);
+      const personal =
+        entry.operation === "days_since_last"
+          ? compareRhythm(points?.map((p) => p.date), now)
+          : entry.operation === "average" || entry.operation === "sum" || entry.operation === "ratio"
+            ? compareTrend(points, entry.operation, entry.direction, now)
+            : null;
+      const blended = blendScore(personal, fallback);
+      normalised = blended.score;
+      if (blended.basis === "fallback") {
+        basis = fallbackBasis;
+      } else {
+        basis = blended.basis;
+        baseline = personal ? personal.normal : null;
+        comparison = describeComparison(personal, blended.basis, subjectFor(entry.metric.name, personal?.kind));
       }
 
       normalised = clamp(round(normalised));
@@ -339,6 +341,7 @@ export function scoreCustomers(
         weight,
         basis,
         baseline: baseline == null ? null : round(baseline),
+        ...(comparison ? { comparison } : {}),
       });
       if (entry.category) categories.add(entry.category);
       weighted += normalised * weight;
@@ -368,13 +371,16 @@ export function scoreCustomers(
 
     const score = round(weighted / totalWeight);
     const churnProbability = churnProbabilityFromHealth(score);
-    const confidence = churnConfidenceFor(categories.size);
+    // Evidence weighting: a kind only counts with ≥3 dated records.
+    const assessed = assessConfidence(categories, (src) => evidence.get(src)?.get(customerId) ?? 0);
+    const confidence = assessed.confidence;
     breakdown.push({
       metric: CHURN_META_METRIC,
       churn_probability: churnProbability,
       churn_horizon_days: CHURN_HORIZON_DAYS,
       confidence,
-      data_categories: categories.size,
+      data_categories: assessed.dataCategories,
+      ...(assessed.reason ? { confidence_reason: assessed.reason } : {}),
     });
     scores.push({
       customer_id: customerId,

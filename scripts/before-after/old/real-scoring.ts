@@ -2,6 +2,8 @@
 // uploaded or synced (see ingested-data-store.ts). No demo data is involved:
 // if a signal is absent for a customer, that metric is simply excluded from
 // their weighted health score rather than being invented.
+import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
+import { withCountableTransactions, dealOnlyCustomers, MIN_DEAL_PEERS } from "@/lib/countable-transactions";
 import {
   type Customer,
   type ScoredDataset,
@@ -18,7 +20,16 @@ import type { OnboardingProfile, ProfileSegment } from "@/lib/profile-store";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import { customMetricKeys, type CustomMetricKey } from "@/lib/personalize-data";
 import { resolveMetric } from "./metric-resolution";
+import { lowerIsBetter } from "@/lib/metric-direction";
 import { playbookFor } from "@/lib/metric-playbooks";
+import {
+  blendScore,
+  compareRhythm,
+  compareTrend,
+  describeComparison,
+  type PersonalComparison,
+  type SeriesPoint,
+} from "@/lib/personal-baseline";
 import {
   churnConfidenceFor,
   churnProbabilityFromHealth,
@@ -181,11 +192,26 @@ const REC_FOR: Record<string, Omit<Recommendation, "revenueSaved">> = {
 
 function buildFactors(
   sub: Record<string, number>,
-  ctx: { days: number | null; supg?: { count: number; open: number }; customMetrics?: CustomMetricKey[] },
+  ctx: {
+    days: number | null;
+    supg?: { count: number; open: number };
+    customMetrics?: CustomMetricKey[];
+    /** Personal-comparison reason per sub-score label; replaces the generic detail. */
+    notes?: Record<string, string>;
+  },
 ): Factor[] {
   const out: Factor[] = [];
+  const subKey: Record<string, string> = {
+    "No recent purchases": "Days since last purchase",
+    "Unresolved support tickets": "Resolution time",
+    "High support volume": "Support ticket volume",
+    "Declining satisfaction": "CSAT / NPS",
+    "Usage declining": "Login frequency",
+    "Low feature adoption": "Feature adoption",
+    "Low spend": "Average order value",
+  };
   const push = (label: string, score: number, detail: string) =>
-    out.push({ label, weight: Math.round(clamp(100 - score)), detail });
+    out.push({ label, weight: Math.round(clamp(100 - score)), detail: ctx.notes?.[subKey[label] ?? label] ?? detail });
 
   if (sub["Days since last purchase"] != null && sub["Days since last purchase"] < 50 && ctx.days != null)
     push("No recent purchases", sub["Days since last purchase"], `Last purchase was ${Math.round(ctx.days)} days ago.`);
@@ -231,47 +257,69 @@ function segmentFor(monthly: number | null, segs: ProfileSegment[]): string {
 }
 
 export function buildRealDataset(
-  data: IngestedData,
+  rawData: IngestedData,
   weights: MetricWeights,
   profile: OnboardingProfile | null,
 ): ScoredDataset {
+  // Open and lost CRM deals are not sales.
+  const data = withCountableTransactions(rawData);
+  // Customers whose only sales data is CRM deals (see countable-transactions).
+  const dealOnly = dealOnlyCustomers(data);
+  const dealPeersOk = dealOnly.size >= MIN_DEAL_PEERS;
+  const evidence = datedRecordCounts(data as unknown as Record<string, unknown>);
   const customerRows = data.customers ?? [];
   const now = Date.now();
   const segs = profile?.segments ?? [];
 
   // ---- aggregate signals per customer ----
-  const tx = new Map<string, { amounts: number[]; lastDate: number | null }>();
+  const tx = new Map<string, { amounts: number[]; lastDate: number | null; dates: number[]; dated: SeriesPoint[] }>();
   for (const r of data.transactions ?? []) {
     const id = r.customer_id;
     if (!id) continue;
-    const g = tx.get(id) ?? { amounts: [], lastDate: null };
+    const g = tx.get(id) ?? { amounts: [], lastDate: null, dates: [], dated: [] };
     const a = num(r.amount);
     if (a != null) g.amounts.push(a);
     const d = parseDate(r.transaction_date);
-    if (d != null) g.lastDate = Math.max(g.lastDate ?? 0, d);
+    if (d != null) {
+      g.lastDate = Math.max(g.lastDate ?? 0, d);
+      g.dates.push(d);
+      if (a != null) g.dated.push({ date: d, value: a });
+    }
     tx.set(id, g);
   }
-  const sup = new Map<string, { count: number; open: number; sat: number[] }>();
+  const sup = new Map<string, { count: number; open: number; sat: number[]; dated: SeriesPoint[] }>();
   for (const r of data.support ?? []) {
     const id = r.customer_id;
     if (!id) continue;
-    const g = sup.get(id) ?? { count: 0, open: 0, sat: [] };
+    const g = sup.get(id) ?? { count: 0, open: 0, sat: [], dated: [] };
     g.count++;
+    // Zendesk stores ticket dates as created_date — same fields the confidence check reads.
+    const td =
+      parseDate(r.created_at) ??
+      parseDate(r.created_date) ??
+      parseDate(r.date) ??
+      parseDate(r.opened_at) ??
+      parseDate(r.occurred_at);
+    if (td != null) g.dated.push({ date: td, value: 1 });
     const st = (r.status || "").toLowerCase();
     if (st.includes("open") || st.includes("reopen")) g.open++;
     const s = num(r.satisfaction_score);
     if (s != null) g.sat.push(s);
     sup.set(id, g);
   }
-  const usg = new Map<string, { logins: number[]; features: number[] }>();
+  const usg = new Map<string, { logins: number[]; features: number[]; dated: SeriesPoint[] }>();
   for (const r of data.usage ?? []) {
     const id = r.customer_id;
     if (!id) continue;
-    const g = usg.get(id) ?? { logins: [], features: [] };
+    const g = usg.get(id) ?? { logins: [], features: [], dated: [] };
     // Industry uploads commonly call a usage event a visit/check-in rather
     // than a login. Both are engagement-frequency signals.
     const l = num(r.logins) ?? num(r.check_in_count) ?? num(r.visit_count);
-    if (l != null) g.logins.push(l);
+    if (l != null) {
+      g.logins.push(l);
+      const ud = parseDate(r.date) ?? parseDate(r.activity_date) ?? parseDate(r.visit_date) ?? parseDate(r.occurred_at);
+      if (ud != null) g.dated.push({ date: ud, value: l });
+    }
     const f = num(r.features_used);
     if (f != null) g.features.push(f);
     usg.set(id, g);
@@ -299,23 +347,37 @@ export function buildRealDataset(
   const customDataset = new Map<string, string | null>();
   const customMax = new Map<string, number>();
   const customMin = new Map<string, number>();
+  const customResolved = new Map<string, ReturnType<typeof resolveMetric>>();
+  // Spend / order-size measures on sales data: deal-only customers get their
+  // own range (and none at all below MIN_DEAL_PEERS).
+  const customSplit = new Set<string>();
+  const customDealRange = new Map<string, { min: number; max: number }>();
   const peerTarget = new Map<string, number>();
   for (const cm of customMetrics) {
     const resolved = resolveMetric(cm.metric, data, now);
     if (resolved.values.size > 0) {
       customLatest.set(cm.metric.name, resolved.values);
       customDataset.set(cm.metric.name, resolved.dataset ?? null);
-      const vals = [...resolved.values.values()];
+      customResolved.set(cm.metric.name, resolved);
+      const op = resolved.operation;
+      const split =
+        dataSourceFor(resolved.dataset) === "transactions" &&
+        op !== "days_since_last" && op !== "months_since" && dealOnly.size > 0;
+      const entries = [...resolved.values.entries()];
+      const vals = (split ? entries.filter(([id]) => !dealOnly.has(id)) : entries).map(([, v]) => v);
+      if (split) {
+        customSplit.add(cm.metric.name);
+        const dv = entries.filter(([id]) => dealOnly.has(id)).map(([, v]) => v);
+        if (dv.length) customDealRange.set(cm.metric.name, { min: Math.min(...dv), max: Math.max(...dv) });
+      }
+      if (!vals.length) vals.push(...entries.map(([, v]) => v));
       customMax.set(cm.metric.name, Math.max(...vals));
       customMin.set(cm.metric.name, Math.min(...vals));
       // Peer target = what a healthy customer looks like on this metric
       // (75th percentile, or 25th when lower is better) so recommendations can
       // name a concrete goal instead of "improve this".
       const sorted = [...vals].sort((a, b) => a - b);
-      const lowerBetter =
-        cm.metric.valueAt0 != null &&
-        cm.metric.valueAt100 != null &&
-        cm.metric.valueAt0 > cm.metric.valueAt100;
+      const lowerBetter = lowerIsBetter(cm.metric);
       const idx = Math.floor((sorted.length - 1) * (lowerBetter ? 0.25 : 0.75));
       peerTarget.set(cm.metric.name, sorted[idx]);
     }
@@ -325,25 +387,34 @@ export function buildRealDataset(
   // valueAt100 anchors (invert automatically when "lower is better"). Falls
   // back to relative scoring against the customer-base max when anchors are
   // missing.
-  const customSubScore = (cm: CustomMetricKey, v: number): number => {
+  const customSubScore = (cm: CustomMetricKey, v: number, cid: string): number => {
     const a0 = cm.metric.valueAt0;
     const a100 = cm.metric.valueAt100;
     if (a0 != null && a100 != null && a0 !== a100) {
       const pct = ((v - a0) / (a100 - a0)) * 100;
       return clamp(pct);
     }
-    const mx = customMax.get(cm.metric.name) ?? 1;
-    const mn = customMin.get(cm.metric.name) ?? 0;
+    const dealRange = customSplit.has(cm.metric.name) && dealOnly.has(cid) ? customDealRange.get(cm.metric.name) : null;
+    const mx = dealRange?.max ?? customMax.get(cm.metric.name) ?? 1;
+    const mn = dealRange?.min ?? customMin.get(cm.metric.name) ?? 0;
     if (mx === mn) return 60;
-    return clamp(((v - mn) / (mx - mn)) * 100);
+    const pct = ((v - mn) / (mx - mn)) * 100;
+    // Same direction rule as the nightly score (metric-direction.ts).
+    return clamp(lowerIsBetter(cm.metric) ? 100 - pct : pct);
   };
 
   // ---- reference maxima for relative scoring ----
+  // Deal sizes and invoice sizes are different kinds of number: deal-only
+  // customers are compared only with each other, and only when there are
+  // enough of them (MIN_DEAL_PEERS); otherwise they get no order-value score.
   const aovByCust = new Map<string, number>();
   for (const [id, g] of tx) {
+    if (dealOnly.has(id) && !dealPeersOk) continue;
     const a = avg(g.amounts);
     if (a != null) aovByCust.set(id, a);
   }
+  const maxAovDeals = Math.max(1, ...[...aovByCust].filter(([id]) => dealOnly.has(id)).map(([, v]) => v));
+  const maxAovInvoices = Math.max(1, ...[...aovByCust].filter(([id]) => !dealOnly.has(id)).map(([, v]) => v));
   const loginAvgByCust = new Map<string, number>();
   const featAvgByCust = new Map<string, number>();
   for (const [id, g] of usg) {
@@ -352,7 +423,6 @@ export function buildRealDataset(
     const fa = avg(g.features);
     if (fa != null) featAvgByCust.set(id, fa);
   }
-  const maxAov = Math.max(1, ...aovByCust.values());
   const maxLogin = Math.max(1, ...loginAvgByCust.values());
   const maxFeat = Math.max(1, ...featAvgByCust.values());
   const maxTickets = Math.max(1, ...[...sup.values()].map((g) => g.count));
@@ -382,14 +452,28 @@ export function buildRealDataset(
 
     const subScores: Record<string, number> = {};
     const metricValues: Record<string, number> = {};
-    if (loginAvgByCust.has(cid)) subScores["Login frequency"] = clamp((loginAvgByCust.get(cid)! / maxLogin) * 100);
+    // Reason text for signals judged against this customer's own history.
+    const personalNotes: Record<string, string> = {};
+    // Compare to the customer's own history where there is enough of it;
+    // otherwise keep the cross-customer / fixed-window score (blended while thin).
+    const personalise = (label: string, fallback: number, personal: PersonalComparison | null, what: string) => {
+      const b = blendScore(personal, fallback);
+      subScores[label] = b.score;
+      const note = describeComparison(personal, b.basis, what);
+      if (note) personalNotes[label] = note;
+    };
+    const usgg = usg.get(cid);
+    if (loginAvgByCust.has(cid))
+      personalise("Login frequency", clamp((loginAvgByCust.get(cid)! / maxLogin) * 100), compareTrend(usgg?.dated, "average", "higher", now), "activity per record");
     if (featAvgByCust.has(cid)) subScores["Feature adoption"] = clamp((featAvgByCust.get(cid)! / maxFeat) * 100);
     const days = txg?.lastDate ? (now - txg.lastDate) / DAY : null;
-    if (days != null) subScores["Days since last purchase"] = clamp(100 - (days / 180) * 100);
-    if (aovByCust.has(cid)) subScores["Average order value"] = clamp((aovByCust.get(cid)! / maxAov) * 100);
+    if (days != null)
+      personalise("Days since last purchase", clamp(100 - (days / 180) * 100), compareRhythm(txg?.dates, now), "purchase");
+    if (aovByCust.has(cid))
+      personalise("Average order value", clamp((aovByCust.get(cid)! / (dealOnly.has(cid) ? maxAovDeals : maxAovInvoices)) * 100), compareTrend(txg?.dated, "average", "higher", now), "average order value");
     const supg = sup.get(cid);
     if (supg) {
-      subScores["Support ticket volume"] = clamp(100 - (supg.count / maxTickets) * 100);
+      personalise("Support ticket volume", clamp(100 - (supg.count / maxTickets) * 100), compareTrend(supg.dated, "sum", "lower", now), "support tickets");
       subScores["Resolution time"] = clamp(100 - (supg.count ? (supg.open / supg.count) * 100 : 0));
     }
     const cs = csatScore(cid);
@@ -399,9 +483,24 @@ export function buildRealDataset(
     // has an uploaded value for.
     for (const cm of customMetrics) {
       const v = customLatest.get(cm.metric.name)?.get(cid);
-      if (v != null) {
+      const dealSkip = customSplit.has(cm.metric.name) && dealOnly.has(cid) && !dealPeersOk;
+      if (v != null && !dealSkip) {
         metricValues[cm.metric.name] = v;
-        subScores[cm.metric.name] = customSubScore(cm, v);
+        const res = customResolved.get(cm.metric.name);
+        const pts = res?.series?.get(cid);
+        const lowerBetter = lowerIsBetter(cm.metric);
+        const op = res?.operation;
+        const personal =
+          op === "days_since_last"
+            ? compareRhythm(pts?.map((p) => p.date), now)
+            : op === "average" || op === "sum" || op === "ratio"
+              ? compareTrend(pts, op, lowerBetter ? "lower" : "higher", now)
+              : null;
+        const what =
+          op === "days_since_last"
+            ? (cm.metric.name.match(/since\s+(?:the\s+)?(?:last|most recent)\s+(.+)$/i)?.[1] ?? "recorded activity").toLowerCase()
+            : cm.metric.name.toLowerCase();
+        personalise(cm.metric.name, customSubScore(cm, v, cid), personal, what);
       }
     }
 
@@ -442,12 +541,14 @@ export function buildRealDataset(
         if (src) dataCategories.add(src);
       }
     }
-    const churnConfidence: ChurnConfidence = churnConfidenceFor(dataCategories.size);
+    // Evidence weighting: a kind only counts with ≥3 dated records.
+    const assessed = assessConfidence(dataCategories, (src) => evidence.get(src)?.get(cid) ?? 0);
+    const churnConfidence: ChurnConfidence = assessed.confidence;
     const sentiment = cs != null ? Math.round(cs) : Math.round(clamp(40 + health * 0.5));
     const lastTs = txg?.lastDate ?? parseDate(r.signup_date);
     const lastActivity = lastTs ? `${Math.max(0, Math.round((now - lastTs) / DAY))} days ago` : "—";
 
-    const factors = buildFactors(subScores, { days, supg, customMetrics });
+    const factors = buildFactors(subScores, { days, supg, customMetrics, notes: personalNotes });
     const recommendations = factors
       .map((f) => {
         // Known churn drivers have hand-written playbooks; anything else
@@ -465,10 +566,7 @@ export function buildRealDataset(
             value: metricValues[f.label] ?? null,
             target: peerTarget.get(f.label) ?? null,
             unit: cm?.metric.unit,
-            lowerIsBetter:
-              cm?.metric.valueAt0 != null &&
-              cm?.metric.valueAt100 != null &&
-              cm.metric.valueAt0 > cm.metric.valueAt100,
+            lowerIsBetter: cm ? lowerIsBetter(cm.metric) : false,
           });
         return { ...base, revenueSaved: Math.round((revenue * churnProbability) / 100 * 0.5) };
       })
@@ -500,7 +598,8 @@ export function buildRealDataset(
       risk,
       churnProbability,
       churnConfidence,
-      dataCategories: dataCategories.size,
+      dataCategories: assessed.dataCategories,
+      confidenceReason: assessed.reason,
       revenue,
       sentiment,
       lastActivity,
