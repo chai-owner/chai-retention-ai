@@ -36,22 +36,26 @@ export function AskChAi() {
   const coverage = useDataCoverage();
   const profile = useProfile();
   const ask = useServerFn(askChai);
+  const linkCustomers = sortedByRisk.map((c) => ({ id: c.id, name: c.name }));
 
   function buildContext() {
     const e = executive;
     const top = sortedByRisk.filter((c) => !c.notEnoughData).slice(0, 5);
+    const thin = sortedByRisk.filter((c) => c.notEnoughData).length;
     const topLines = top
-      .map(
-        (c) =>
-          `${c.name}: ${c.churnProbability}% churn risk, ${formatCurrency(c.revenue)} revenue, health ${c.health}/100`,
-      )
+      .map((c) => {
+        // Only pass revenue when there is real sales data behind it.
+        const rev = c.revenue > 0 ? `${formatCurrency(c.revenue)} revenue` : "revenue unknown (no sales data)";
+        return `${c.name}: health ${c.health}/100, ${c.churnProbability}% churn risk, ${rev}`;
+      })
       .join("; ");
     return [
       `Total customers: ${e.totalCustomers ?? "n/a"}`,
       `At-risk accounts: ${e.atRisk}, critical: ${e.critical}`,
+      `Customers with not enough data to judge yet: ${thin}`,
       `Predicted monthly churn: ${e.predictedMonthlyChurn}`,
       `Revenue at risk: ${formatCurrency(e.revenueAtRisk)}`,
-      `Top at-risk accounts: ${topLines || "none"}`,
+      `Highest-risk scoreable accounts (riskiest first): ${topLines || "none"}`,
     ].join("\n");
   }
 
@@ -150,13 +154,13 @@ export function AskChAi() {
               <div
                 key={i}
                 className={cn(
-                  "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm",
+                  "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
                   m.role === "user"
-                    ? "ml-auto bg-primary text-primary-foreground"
+                    ? "ml-auto whitespace-pre-wrap bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground",
                 )}
               >
-                {m.text}
+                {m.role === "assistant" ? <ChatMarkdown source={m.text} customers={linkCustomers} /> : m.text}
               </div>
             ))}
             {loading && (
