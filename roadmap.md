@@ -32,3 +32,5 @@
 - [ ] Later: softened spread (rule 3), with its own before-and-after
 - [ ] On hold (user): realistic homepage demo data plan — not building
 - [ ] Read-only accuracy check of /integrations/zoho-crm page claims
+- [ ] Combine Identity Resolution saved matches into per-customer cards, preserving orphaned and ignored rules; test without publishing
+- [ ] Apply the approved Identity Resolution help-article wording only when publishing is approved
