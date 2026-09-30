@@ -13,6 +13,7 @@ import {
   resolveIdentities,
   identifierLabel,
   countAliasUsage,
+  groupCustomerMatches,
   aliasKey,
   autoLinkable,
   sourceLabel,
@@ -97,26 +98,14 @@ export function IdentityResolution() {
     [isReal, ingested, liveAliases],
   );
 
-  const customerName = (id: string | null) =>
-    customers.find((c) => c.customer_id === id)?.name ?? null;
-
-  // Customers that have more than one platform identity rolling up to them.
-  const identityGroups = useMemo(() => {
-    const map = new Map<string, CustomerAlias[]>();
-    for (const a of aliases) {
-      if (a.status !== "linked" || !a.customer_id) continue;
-      const list = map.get(a.customer_id) ?? [];
-      list.push(a);
-      map.set(a.customer_id, list);
-    }
-    return [...map.entries()]
-      .map(([customer_id, list]) => ({ customer_id, list }))
-      .sort((a, b) => b.list.length - a.list.length);
-  }, [aliases]);
+  const groupedMatches = useMemo(
+    () => groupCustomerMatches(aliases, customers),
+    [aliases, customers],
+  );
 
   async function handleUnlink(a: CustomerAlias) {
     if (!isReal) {
-      toast.info("Demo mode", { description: "Saved customer matches can be managed once you're signed in." });
+      toast.info("Demo mode", { description: "Customer matches can be managed once you're signed in." });
       return;
     }
     try {
@@ -245,15 +234,16 @@ export function IdentityResolution() {
       {/* Possible duplicate customers */}
       <DuplicateCustomersCard isReal={isReal} />
 
-      {/* Saved links */}
+      {/* Customer matches */}
       <Card className="mt-6">
         <div className="flex items-start gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
-            <Link2 className="h-4 w-4" />
+            <Users className="h-4 w-4" />
           </span>
           <div>
             <h3 className="font-semibold">
-              Saved Customer Matches{aliases.length > 0 ? ` (${aliases.length})` : ""}
+              Matched customers from different sources
+              {groupedMatches.customers.length > 0 ? ` (${groupedMatches.customers.length})` : ""}
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               Records from other platforms that ChAi always links to the same customer, on every
@@ -262,124 +252,65 @@ export function IdentityResolution() {
           </div>
         </div>
 
-        {aliases.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            No saved links yet. Matches you confirm are remembered and applied automatically to
-            future uploads and syncs.
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-2">
-            {aliases.map((a) => {
-              const counts = aliasUsage[aliasKey(a.source, a.source_id)] ?? {};
-              const rows = Object.values(counts).reduce((s, n) => s + n, 0);
-              const name = customerName(a.customer_id);
-              return (
-                <li
-                  key={aliasKey(a.source, a.source_id)}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm"
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-medium">
-                        {a.source_id || "(blank)"}
-                      </span>
-                      <span className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        {sourceLabel(a.source)}
-                      </span>
-                      <span className="text-muted-foreground">→</span>
-                      {a.status === "ignored" ? (
-                        <span className="rounded-md border border-border bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
-                          Ignored — not a customer
-                        </span>
-                      ) : name ? (
-                        <span className="text-xs font-medium">{name}</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          <span className="font-mono">{a.customer_id}</span> · customer not found
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {rows > 0
-                        ? `Currently resolving ${describeCounts(counts)}`
-                        : "No rows in your current data use this reference"}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      onClick={() => handleChange(a)}
-                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-secondary"
-                    >
-                      Change
-                    </button>
-                    <button
-                      onClick={() => void handleUnlink(a)}
-                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary"
-                    >
-                      Unlink
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Card>
-
-      {/* Customer identities */}
-      <Card className="mt-6">
-        <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
-            <Users className="h-4 w-4" />
-          </span>
-          <div>
-            <h3 className="font-semibold">
-              Matched customers from different sources{identityGroups.length > 0 ? ` (${identityGroups.length})` : ""}
-            </h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Every customer that has more than one platform ID rolling up to a single profile.
-            </p>
-          </div>
-        </div>
-
-        {identityGroups.length === 0 ? (
+        {groupedMatches.customers.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
             No matched customers yet.
           </p>
         ) : (
           <ul className="mt-4 space-y-2">
-            {identityGroups.map((g) => (
+            {groupedMatches.customers.map((group) => (
               <li
-                key={g.customer_id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm"
+                key={group.customer.customer_id}
+                className="rounded-lg border border-border/60 px-3 py-3 text-sm"
               >
-                <div className="min-w-0">
-                  <p className="font-medium">
-                    {customerName(g.customer_id) ?? g.customer_id}
-                  </p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    {g.list.map((a) => (
-                      <span
-                        key={aliasKey(a.source, a.source_id)}
-                        className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-                      >
-                        {sourceLabel(a.source)} · {a.source_id || "(blank)"}
-                      </span>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-medium">{group.customer.name}</p>
+                  {isReal && (
+                    <Link
+                      to="/app/customers/$id"
+                      params={{ id: group.customer.customer_id }}
+                      className="shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-secondary"
+                    >
+                      View profile
+                    </Link>
+                  )}
                 </div>
-                {isReal && (
-                  <Link
-                    to="/app/customers/$id"
-                    params={{ id: g.customer_id }}
-                    className="shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-secondary"
-                  >
-                    View profile
-                  </Link>
-                )}
+                <ul className="mt-2 divide-y divide-border/60">
+                  {group.matches.map((match) => (
+                    <MatchRow
+                      key={aliasKey(match.source, match.source_id)}
+                      match={match}
+                      counts={aliasUsage[aliasKey(match.source, match.source_id)] ?? {}}
+                      onChange={handleChange}
+                      onUnlink={handleUnlink}
+                    />
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>
+        )}
+
+        {groupedMatches.orphaned.length > 0 && (
+          <MatchList
+            title="Matches not linked to any current customer"
+            matches={groupedMatches.orphaned}
+            aliasUsage={aliasUsage}
+            onChange={handleChange}
+            onUnlink={handleUnlink}
+            orphaned
+          />
+        )}
+
+        {groupedMatches.ignored.length > 0 && (
+          <MatchList
+            title="Ignored records"
+            matches={groupedMatches.ignored}
+            aliasUsage={aliasUsage}
+            onChange={handleChange}
+            onUnlink={handleUnlink}
+            ignored
+          />
         )}
       </Card>
 
@@ -393,6 +324,102 @@ export function IdentityResolution() {
         customers={customers}
         readOnly={!isReal}
       />
+    </div>
+  );
+}
+
+function MatchRow({
+  match,
+  counts,
+  onChange,
+  onUnlink,
+  orphaned = false,
+  ignored = false,
+}: {
+  match: CustomerAlias;
+  counts: Record<string, number>;
+  onChange: (match: CustomerAlias) => void;
+  onUnlink: (match: CustomerAlias) => Promise<void>;
+  orphaned?: boolean;
+  ignored?: boolean;
+}) {
+  const rows = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {sourceLabel(match.source)}
+          </span>
+          <span className="font-mono text-xs font-medium">{match.source_id || "(blank)"}</span>
+          {orphaned && (
+            <span className="text-xs text-muted-foreground">
+              <span className="font-mono">{match.customer_id}</span> · customer not found
+            </span>
+          )}
+          {ignored && (
+            <span className="rounded-md border border-border bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+              Ignored — not a customer
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {rows > 0
+            ? `Currently resolving ${describeCounts(counts)}`
+            : "No rows in your current data use this reference"}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <button
+          onClick={() => onChange(match)}
+          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-secondary"
+        >
+          Change
+        </button>
+        <button
+          onClick={() => void onUnlink(match)}
+          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary"
+        >
+          Unlink
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function MatchList({
+  title,
+  matches,
+  aliasUsage,
+  onChange,
+  onUnlink,
+  orphaned = false,
+  ignored = false,
+}: {
+  title: string;
+  matches: CustomerAlias[];
+  aliasUsage: Record<string, Record<string, number>>;
+  onChange: (match: CustomerAlias) => void;
+  onUnlink: (match: CustomerAlias) => Promise<void>;
+  orphaned?: boolean;
+  ignored?: boolean;
+}) {
+  return (
+    <div className="mt-5 border-t border-border pt-4">
+      <h4 className="text-sm font-semibold">{title}</h4>
+      <ul className="mt-2 divide-y divide-border/60 rounded-lg border border-border/60 px-3 py-2">
+        {matches.map((match) => (
+          <MatchRow
+            key={aliasKey(match.source, match.source_id)}
+            match={match}
+            counts={aliasUsage[aliasKey(match.source, match.source_id)] ?? {}}
+            onChange={onChange}
+            onUnlink={onUnlink}
+            orphaned={orphaned}
+            ignored={ignored}
+          />
+        ))}
+      </ul>
     </div>
   );
 }

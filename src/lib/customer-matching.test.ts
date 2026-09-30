@@ -12,6 +12,7 @@ import {
   resolveIdentities,
   identifierLabel,
   identityCardTitle,
+  groupCustomerMatches,
   sourceLabel,
   type CustomerAlias,
 } from "@/lib/customer-matching";
@@ -153,6 +154,40 @@ describe("saved links reporting", () => {
     expect(describeCounts({ transactions: 3, support: 1 })).toBe(
       "3 transactions · 1 support tickets",
     );
+  });
+});
+
+describe("groupCustomerMatches", () => {
+  const customers = [
+    { customer_id: "CUS-1", name: "Northwind Labs" },
+    { customer_id: "CUS-2", name: "Globex Co" },
+  ];
+  const aliases: CustomerAlias[] = [
+    { source: "zendesk", source_id: "northwind", customer_id: "CUS-1", status: "linked" },
+    { source: "xero", source_id: "NW-01", customer_id: "CUS-1", status: "linked" },
+    { source: "zoho", source_id: "SN-0030", customer_id: "MISSING", status: "linked" },
+    { source: "hubspot", source_id: "INTERNAL", customer_id: null, status: "ignored" },
+  ];
+
+  it("puts current matches under one card per customer", () => {
+    const grouped = groupCustomerMatches(aliases, customers);
+    expect(grouped.customers).toHaveLength(1);
+    expect(grouped.customers[0]?.customer.name).toBe("Northwind Labs");
+    expect(grouped.customers[0]?.matches.map((match) => match.source_id)).toEqual([
+      "northwind",
+      "NW-01",
+    ]);
+  });
+
+  it("keeps orphaned and ignored rules visible and accounts for every saved rule", () => {
+    const grouped = groupCustomerMatches(aliases, customers);
+    expect(grouped.orphaned.map((match) => match.source_id)).toEqual(["SN-0030"]);
+    expect(grouped.ignored.map((match) => match.source_id)).toEqual(["INTERNAL"]);
+    const groupedCount =
+      grouped.customers.reduce((sum, group) => sum + group.matches.length, 0) +
+      grouped.orphaned.length +
+      grouped.ignored.length;
+    expect(groupedCount).toBe(aliases.length);
   });
 });
 

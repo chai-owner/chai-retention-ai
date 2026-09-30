@@ -200,8 +200,7 @@ function DataQualityPage() {
             <div>
               <h3 className="font-semibold">Identity Resolution</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                Unmatched records, saved customer matches, duplicate customers and matched customers all
-                live in one hub.
+                Unmatched records, duplicate customers and matched customers all live in one hub.
               </p>
             </div>
           </div>
