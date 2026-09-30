@@ -24,6 +24,14 @@ import {
 } from "@/lib/customer-matching";
 import { CustomerLinkWizard } from "@/components/customer-link-wizard";
 import { DuplicateCustomersCard } from "@/components/duplicate-customers-card";
+import { matchesSearch } from "@/lib/section-search";
+import { useSectionSearch, SectionSearch, SectionPager, NoResults } from "@/components/section-controls";
+
+const unmatchedFilter = (g: UnmatchedGroup, q: string) =>
+  matchesSearch(q, [g.sourceId, identifierLabel(g.sourceId), ...g.suggestions.map((s) => s.name)]);
+const customerGroupFilter = (g: { customer: CustomerOption }, q: string) =>
+  matchesSearch(q, [g.customer.name]);
+const aliasFilter = (a: CustomerAlias, q: string) => matchesSearch(q, [a.source_id]);
 
 // Illustrative data for the public demo (no DB writes there).
 const demoCustomers: CustomerOption[] = [
@@ -102,6 +110,25 @@ export function IdentityResolution() {
     () => groupCustomerMatches(aliases, customers),
     [aliases, customers],
   );
+
+  const unmatchedSearch = useSectionSearch(unmatched, unmatchedFilter);
+  const unmatchedCandidates = useMemo(
+    () => unmatched.flatMap((g) => [...g.suggestions.map((s) => s.name), identifierLabel(g.sourceId)]),
+    [unmatched],
+  );
+  const matchSearch = useSectionSearch(groupedMatches.customers, customerGroupFilter);
+  const orphanedShown = groupedMatches.orphaned.filter((a) => aliasFilter(a, matchSearch.query));
+  const ignoredShown = groupedMatches.ignored.filter((a) => aliasFilter(a, matchSearch.query));
+  const matchCandidates = useMemo(
+    () => [
+      ...groupedMatches.customers.map((g) => g.customer.name),
+      ...groupedMatches.orphaned.map((a) => a.source_id),
+      ...groupedMatches.ignored.map((a) => a.source_id),
+    ],
+    [groupedMatches],
+  );
+  const anyMatches =
+    groupedMatches.customers.length + groupedMatches.orphaned.length + groupedMatches.ignored.length > 0;
 
   async function handleUnlink(a: CustomerAlias) {
     if (!isReal) {
@@ -200,8 +227,15 @@ export function IdentityResolution() {
             </p>
           ) : (
             <>
+              <SectionSearch
+                value={unmatchedSearch.query}
+                onChange={unmatchedSearch.setQuery}
+                candidates={unmatchedCandidates}
+                placeholder="Search by customer name or reference ID"
+              />
+              {unmatchedSearch.filtered.length === 0 && <NoResults query={unmatchedSearch.query} />}
               <ul className="mt-4 space-y-2">
-                {unmatched.slice(0, 5).map((g) => (
+                {unmatchedSearch.paged.items.map((g) => (
                   <li
                     key={aliasKey(g.source, g.sourceId)}
                     className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm"
@@ -223,9 +257,9 @@ export function IdentityResolution() {
               </ul>
               <p className="mt-3 text-xs text-muted-foreground">
                 {unmatchedRows.toLocaleString()} row{unmatchedRows === 1 ? "" : "s"} currently
-                excluded from scoring
-                {unmatched.length > 5 ? ` · showing 5 of ${unmatched.length} references` : ""}.
+                excluded from scoring.
               </p>
+              <SectionPager {...unmatchedSearch.paged} onPage={unmatchedSearch.setPage} />
             </>
           )}
         </Card>
@@ -252,13 +286,19 @@ export function IdentityResolution() {
           </div>
         </div>
 
-        {groupedMatches.customers.length === 0 ? (
+        {anyMatches && (
+          <SectionSearch value={matchSearch.query} onChange={matchSearch.setQuery} candidates={matchCandidates} />
+        )}
+        {matchSearch.query && matchSearch.filtered.length + orphanedShown.length + ignoredShown.length === 0 ? (
+          <NoResults query={matchSearch.query} />
+        ) : groupedMatches.customers.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
             No matched customers yet.
           </p>
-        ) : (
+        ) : matchSearch.filtered.length === 0 ? null : (
+          <>
           <ul className="mt-4 space-y-2">
-            {groupedMatches.customers.map((group) => (
+            {matchSearch.paged.items.map((group) => (
               <li
                 key={group.customer.customer_id}
                 className="rounded-lg border border-border/60 px-3 py-3 text-sm"
@@ -289,12 +329,14 @@ export function IdentityResolution() {
               </li>
             ))}
           </ul>
+          <SectionPager {...matchSearch.paged} onPage={matchSearch.setPage} />
+          </>
         )}
 
-        {groupedMatches.orphaned.length > 0 && (
+        {orphanedShown.length > 0 && (
           <MatchList
             title="Matches not linked to any current customer"
-            matches={groupedMatches.orphaned}
+            matches={orphanedShown}
             aliasUsage={aliasUsage}
             onChange={handleChange}
             onUnlink={handleUnlink}
@@ -302,10 +344,10 @@ export function IdentityResolution() {
           />
         )}
 
-        {groupedMatches.ignored.length > 0 && (
+        {ignoredShown.length > 0 && (
           <MatchList
             title="Ignored records"
-            matches={groupedMatches.ignored}
+            matches={ignoredShown}
             aliasUsage={aliasUsage}
             onChange={handleChange}
             onUnlink={handleUnlink}
