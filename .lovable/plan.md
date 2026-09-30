@@ -1,39 +1,61 @@
-# Plan: realistic homepage demo data (plan only, nothing built yet)
+# Combine customer matches into one section
 
-## Where things stand
-- The 8 sample customers are made by one seed script. Each has 4–6 invoices a month apart, 0–4 tickets, and no activities.
-- Only Meadowbank has 3+ tickets, so ticket measures need 5 qualifying customers and are switched off for everyone. Ticket dates are also missing from the seed.
-- The homepage panel is a saved snapshot (Meadowbank 37, "High support volume" from 4 tickets). The page copy doesn't change.
+## How it will look
 
-## a) Data to add (all dated, over the last 12 months, with realistic gaps)
-Every customer gets 10–12 monthly invoices (small ups and downs, a few paid late) and 4–14 dated tickets, so all 8 pass the 3-record and 5-customer minimums. No activities: the homepage engine uses invoices and tickets only, and activities score only under custom CRM measures, which the demo doesn't have. Adding them would just be noise.
+Keep **Unmatched records** and **Possible duplicate customers** unchanged. Replace the two overlapping sections with one:
 
-| Customer | Invoices (12 mo) | Tickets | Pattern |
-|---|---|---|---|
-| Meadowbank Logistics | 10, falling 2,100 → 900, last one about 110 days ago | 12–14, 4 in the last 30 days, 3–4 open/reopened, low CSAT | at risk |
-| Tidewater Legal | 11, steady, last about 45 days ago, 2 late | 7, rising lately, 1 open | watch |
-| Copperfield Veterinary | 11, slight dip | 6, mixed CSAT | watch |
-| Harbour & Finch, Ridgeway, Oakline, Brightside, Northgate | 11–12, steady, last within 30 days | 4–6, closed, good CSAT | healthy |
+```text
+Matched customers from different sources (2)
+Records from other platforms that ChAi always links to the same customer,
+on every sync and upload.
 
-A second at-risk customer (Tidewater or Copperfield) comes only if their real data supports it. I won't force it.
+Acme Corporation                              View profile
+  Xero       ACME-CORP-01
+  Currently resolving 34 transactions · 9 usage rows   Change  Unlink
 
-## b) Expected results (estimates; the real engine decides)
-- Meadowbank: about 25–40, "At risk". Likely reasons: High support volume (for example "13 tickets, 4 in the last 30 days"), Unresolved support tickets ("4 of 13 open or reopened"), No recent purchases ("last purchase about 110 days ago") or falling order value. Confidence moves from "moderate" to "high", because it now rests on 10 invoices and 13 dated tickets. Actions stay the same kind: Resolve open support issues, Clear the ticket backlog, Re-engagement campaign, each showing revenue saved.
-- Tidewater and Copperfield: about 55–70, watch.
-- The other 5: about 80–95, healthy.
-- I'll show the real before → after table for all 8 before anything reaches the homepage. If Meadowbank doesn't come out as the clearest at-risk customer, I'll report that and won't adjust scores by hand.
+Northwind Labs                               View profile
+  Zendesk    northwind labs
+  Currently resolving 11 support tickets                Change  Unlink
 
-## c) Share image
-Yes, re-export social-share-hero.png if it shows the panel's numbers (score, reasons) and they change. I'll check what it shows first. If it only shows copy or branding, it stays as is.
+Matches not linked to any current customer
+  Zoho CRM   SN-0030 · customer not found
+  No rows in your current data use this reference       Change  Unlink
 
-## d) Risks and effort
-- The spread may not come out as planned, because the evidence rules are strict. The fix is to adjust the sample data, never the rules.
-- The panel's saved snapshot and the live demo page must match. Both will come from the same seed.
-- "Sample data" labels stay exactly where they are. No page copy changes.
-- Demo-only change: no real accounts or saved scores are touched.
-- Effort: small. It's one seed script, a regenerated snapshot, a few tests (all 8 pass the minimums, Meadowbank's reasons match), and possibly one image. Nothing is published until you approve.
+Ignored records
+  HubSpot    INTERNAL-TEST · Ignored — not a customer
+  Currently resolving 3 transactions                    Change  Unlink
+```
 
-## Technical details
-- Edit scripts/hero-snapshot/generate.ts: add ticket dates, longer invoice histories and some late payments. Re-run it to rewrite src/lib/hero-snapshot.json with the real engine and the default weights.
-- If demo-tables.ts feeds the live demo, update it from the same seed.
-- Tests: snapshot values match the engine, and no customer comes out as notEnoughData.
+Each current customer gets one card. Every saved platform record becomes a row inside that card, retaining its source, reference, current-row status, **Change**, and **Unlink** controls. **View profile** remains at customer level.
+
+The number in the section title will count current customer cards, not individual rules. The empty message remains **“No matched customers yet.”** when there are no current-customer cards.
+
+## Orphaned and ignored matches
+
+- Saved matches whose customer has disappeared go in **Matches not linked to any current customer** at the bottom of the same section. They remain visible and keep **Change** and **Unlink**, so they can be repaired or removed.
+- Saved “Ignored — not a customer” rules go in a separate **Ignored records** group immediately below. This preserves information currently shown in Saved Customer Matches without presenting ignored records as customers.
+- Either group is hidden when empty.
+
+## Wording updates
+
+Update references that currently describe two separate sections:
+
+- **Identity Resolution page description:** remove “saved customer matches” so it lists unmatched references, duplicates, and matched customers.
+- **Data Quality page:** change “Unmatched records, saved customer matches, duplicate customers and matched customers…” to “Unmatched records, duplicate customers and matched customers…”.
+- **Help article:** replace “use Saved Customer Matches or Matched customers from different sources” with “use Matched customers from different sources”.
+- **Demo notice:** replace “Saved customer matches can be managed…” with “Customer matches can be managed…”.
+
+No navigation links point directly to either old section; links go to the Identity Resolution page itself. Customer-page wording, erasure-report wording, and internal comments remain unchanged.
+
+## Behaviour and checks
+
+- Reuse the existing saved matches, row counts, matching wizard, unlink action, and profile links; no matching or scoring rules change.
+- Partition saved rules into current-customer, missing-customer, and ignored groups without dropping any entry.
+- Add focused tests covering grouping, orphan visibility, ignored-rule visibility, row counts, and unchanged Change/Unlink inputs.
+- Check the combined section at desktop and mobile sizes, then confirm the project is clean. Do not publish.
+
+## Risks and effort
+
+- **Main risk:** accidentally hiding missing-customer or ignored rules while regrouping. Explicit groups and tests prevent this.
+- **Small display risk:** customers with many platform records create taller cards; rows will wrap on narrow screens without changing controls.
+- **Effort:** small, about half a day including tests and visual checks. No data migration or backend work is needed.
