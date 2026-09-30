@@ -9,6 +9,11 @@ import { useIngested } from "@/lib/ingested-data-store";
 import { useCustomerAliases, linkCustomer } from "@/lib/customer-aliases";
 import { sourceLabel, aliasKey } from "@/lib/customer-matching";
 import { findDuplicateCustomers, type DuplicateGroup } from "@/lib/customer-merge";
+import { matchesSearch } from "@/lib/section-search";
+import { useSectionSearch, SectionSearch, SectionPager, NoResults } from "@/components/section-controls";
+
+const dupFilter = (g: DuplicateGroup, q: string) =>
+  matchesSearch(q, [g.master.name, ...g.members.map((m) => m.name)]);
 
 const demoGroups: DuplicateGroup[] = [
   {
@@ -54,7 +59,15 @@ export function DuplicateCustomersCard({ isReal }: { isReal: boolean }) {
     () => (isReal ? findDuplicateCustomers(ingested, aliases) : demoGroups),
     [isReal, ingested, aliases],
   );
-  const visible = groups.filter((g) => !dismissed.has(aliasKey(g.master.source, g.master.customer_id)));
+  const visible = useMemo(
+    () => groups.filter((g) => !dismissed.has(aliasKey(g.master.source, g.master.customer_id))),
+    [groups, dismissed],
+  );
+  const search = useSectionSearch(visible, dupFilter);
+  const candidates = useMemo(
+    () => visible.flatMap((g) => [g.master.name, ...g.members.map((m) => m.name)]),
+    [visible],
+  );
 
   async function merge(g: DuplicateGroup) {
     const key = aliasKey(g.master.source, g.master.customer_id);
@@ -103,8 +116,11 @@ export function DuplicateCustomersCard({ isReal }: { isReal: boolean }) {
           <CheckCircle2 className="h-4 w-4 text-success" /> No duplicate customers detected.
         </p>
       ) : (
+        <>
+        <SectionSearch value={search.query} onChange={search.setQuery} candidates={candidates} />
+        {search.filtered.length === 0 && <NoResults query={search.query} />}
         <ul className="mt-4 space-y-3">
-          {visible.slice(0, 6).map((g) => {
+          {search.paged.items.map((g) => {
             const key = aliasKey(g.master.source, g.master.customer_id);
             return (
               <li key={key} className="rounded-lg border border-border/60 p-3">
@@ -156,6 +172,8 @@ export function DuplicateCustomersCard({ isReal }: { isReal: boolean }) {
             );
           })}
         </ul>
+        <SectionPager {...search.paged} onPage={search.setPage} />
+        </>
       )}
     </Card>
   );
