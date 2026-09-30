@@ -330,17 +330,18 @@ class LovableAiProvider implements AiProvider {
 
       return { text: result.text, usage: result.usage, ok: true };
     } catch (error) {
+      const usedModel = credentials.vendor === "anthropic" ? ANTHROPIC_FALLBACK_MODEL : model;
       const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
       const status = (error as { statusCode?: number; status?: number } | null)?.statusCode ??
         (error as { status?: number } | null)?.status;
       console.error(
-        `[ai] ${req.operation} failed (model ${model}, user ${caller?.userId ?? "anonymous"}, status ${status ?? "n/a"}): ${detail}`,
+        `[ai] ${req.operation} failed (provider ${credentials.vendor}, model ${usedModel}, user ${caller?.userId ?? "anonymous"}, status ${status ?? "n/a"}): ${detail}`,
         error instanceof Error ? error.stack : undefined,
       );
       await logAiCall({
         operation: req.operation,
-        model,
-        provider: this.name,
+        model: usedModel,
+        provider: credentials.vendor,
         success: false,
         errorMessage: error instanceof Error ? error.message.slice(0, 500) : "unknown_error",
         caller,
