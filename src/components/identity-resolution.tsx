@@ -116,7 +116,7 @@ export function IdentityResolution() {
 
   async function handleUnlink(a: CustomerAlias) {
     if (!isReal) {
-      toast.info("Demo mode", { description: "Saved links can be managed once you're signed in." });
+      toast.info("Demo mode", { description: "Saved customer matches can be managed once you're signed in." });
       return;
     }
     try {
@@ -344,7 +344,7 @@ export function IdentityResolution() {
 
         {identityGroups.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            No customers with multiple platform identities yet.
+            No matched customers yet.
           </p>
         ) : (
           <ul className="mt-4 space-y-2">
