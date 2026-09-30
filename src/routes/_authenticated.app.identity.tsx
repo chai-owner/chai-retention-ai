@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated/app/identity")({
       {
         name: "description",
         content:
-          "Manage how customer records from every platform match up: unmatched references, saved links, duplicates and connected identities.",
+          "Manage how customer records from every platform match up: unmatched references, saved customer matches, duplicates and matched customers.",
       },
     ],
   }),
