@@ -8,6 +8,7 @@ import { useScoredData, useDataCoverage } from "@/lib/use-scored-data";
 import { coverageBasis } from "@/lib/data-coverage";
 import { useProfile } from "@/lib/profile-store";
 import { formatCurrency } from "@/lib/mock-data";
+import { ChatMarkdown } from "@/components/chat-markdown";
 
 
 interface Msg {

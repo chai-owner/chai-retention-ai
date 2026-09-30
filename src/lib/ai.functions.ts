@@ -142,11 +142,10 @@ export const askChai = createServerFn({ method: "POST" })
           .join("\n")
       : "(no coverage assessment provided)";
 
-    const system = `You are ChAi, an AI customer-retention analyst inside a churn-intelligence app.
-Answer in plain, friendly language for a non-technical business owner. Be concise (2-4 sentences).
-Focus on customer health, churn risk, what data to track, and concrete next steps.
-When relevant, point users to the Risk Center, Insights, or Data Quality pages.
-Use the workspace context below if helpful; never invent specific numbers that aren't given.
+    const system = `${ASK_CHAI_STYLE_RULES}`;
+    void system;
+    const fullSystem = `You are ChAi, an AI customer-retention analyst inside a churn-intelligence app.
+${ASK_CHAI_STYLE_RULES}
 
 TAILOR EVERY ANSWER TO THIS BUSINESS. Use the industry's own vocabulary (a dental practice hears about recall appointments and missed visits; a B2B SaaS company hears about seats, adoption and renewals; a gym hears about weekly check-ins). Never give generic "increase engagement" advice when the business profile below tells you what they actually sell and how often customers buy.
 
