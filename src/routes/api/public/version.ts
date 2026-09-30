@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
  * Build stamp so we can tell exactly which code the live worker is serving.
  * Bump BUILD_STAMP whenever a deployment needs to be verifiably fresh.
  */
-const BUILD_STAMP = "identity-combined-1";
+const BUILD_STAMP = "anthropic-fallback-1";
 
 export const Route = createFileRoute("/api/public/version")({
   server: {
