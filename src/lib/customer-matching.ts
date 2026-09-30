@@ -37,6 +37,17 @@ export interface CustomerOption {
   email?: string;
 }
 
+export interface CustomerMatchGroup {
+  customer: CustomerOption;
+  matches: CustomerAlias[];
+}
+
+export interface GroupedCustomerMatches {
+  customers: CustomerMatchGroup[];
+  orphaned: CustomerAlias[];
+  ignored: CustomerAlias[];
+}
+
 export interface Suggestion {
   customer_id: string;
   name: string;
@@ -147,6 +158,42 @@ export function customerOptions(data: IngestedData): CustomerOption[] {
       email: (r.email || r.contact_email || "").trim() || undefined,
     }))
     .filter((c) => c.customer_id.length > 0);
+}
+
+/**
+ * Arrange every saved rule for the Identity Resolution page without dropping
+ * rules whose target customer has since disappeared or rules marked ignored.
+ */
+export function groupCustomerMatches(
+  aliases: CustomerAlias[],
+  customers: CustomerOption[],
+): GroupedCustomerMatches {
+  const customerById = new Map(customers.map((customer) => [customer.customer_id, customer]));
+  const matchesByCustomer = new Map<string, CustomerAlias[]>();
+  const orphaned: CustomerAlias[] = [];
+  const ignored: CustomerAlias[] = [];
+
+  for (const alias of aliases) {
+    if (alias.status === "ignored") {
+      ignored.push(alias);
+      continue;
+    }
+    const customer = alias.customer_id ? customerById.get(alias.customer_id) : undefined;
+    if (!customer) {
+      orphaned.push(alias);
+      continue;
+    }
+    const matches = matchesByCustomer.get(customer.customer_id) ?? [];
+    matches.push(alias);
+    matchesByCustomer.set(customer.customer_id, matches);
+  }
+
+  const groupedCustomers = [...matchesByCustomer.entries()]
+    .map(([customerId, matches]) => ({ customer: customerById.get(customerId), matches }))
+    .filter((group): group is CustomerMatchGroup => group.customer !== undefined)
+    .sort((a, b) => b.matches.length - a.matches.length || a.customer.name.localeCompare(b.customer.name));
+
+  return { customers: groupedCustomers, orphaned, ignored };
 }
 
 // Cheap token/substring similarity good enough for "did you mean" suggestions.
