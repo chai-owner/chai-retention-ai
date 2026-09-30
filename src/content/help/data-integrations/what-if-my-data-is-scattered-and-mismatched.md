@@ -26,7 +26,7 @@ When you connect multiple integrations or upload files, ChAi runs an identity re
 
 If a customer has no overlapping identifiers across your sources — different email addresses, very different name spellings, no shared IDs — ChAi won't automatically link them.
 
-In that case, open Identity Resolution and use **Saved Customer Matches** or **Matched customers from different sources**. From there you can manually link a platform's ID to the correct customer record, and ChAi will merge all their data going forward.
+In that case, open Identity Resolution and use **Matched customers from different sources**. From there you can manually link a platform's ID to the correct customer record, and ChAi will merge all their data going forward.
 
 ## Why this matters for your health scores
 
