@@ -253,11 +253,11 @@ export function IdentityResolution() {
           </span>
           <div>
             <h3 className="font-semibold">
-              Saved links{aliases.length > 0 ? ` (${aliases.length})` : ""}
+              Saved Customer Matches{aliases.length > 0 ? ` (${aliases.length})` : ""}
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Links you confirm are remembered permanently and applied automatically to every
-              future upload and integration refresh — you'll never match the same ID twice.
+              Records from other platforms that ChAi always links to the same customer, on every
+              sync and upload.
             </p>
           </div>
         </div>
@@ -334,7 +334,7 @@ export function IdentityResolution() {
           </span>
           <div>
             <h3 className="font-semibold">
-              Customer identities{identityGroups.length > 0 ? ` (${identityGroups.length})` : ""}
+              Matched customers from different sources{identityGroups.length > 0 ? ` (${identityGroups.length})` : ""}
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               Every customer that has more than one platform ID rolling up to a single profile.
