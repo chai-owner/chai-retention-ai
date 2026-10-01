@@ -916,6 +916,7 @@ export async function fetchAndNormalize(
       const home = String(pJson?.Preferences?.CurrencyPrefs?.HomeCurrency?.value ?? "").trim().toUpperCase();
       if (home) orgCurrencies[String(conn.realm_id ?? "quickbooks")] = { name: conn.company_name ?? "QuickBooks", currency: home };
     } catch (err) {
+      if (err instanceof AccountingReauthRequired) throw err;
       // Base currency is a nice-to-have; never fail the sync over it.
       logAccounting(provider, "sync", { userId, step: "base_currency_failed", error: String(err).slice(0, 200) });
     }
@@ -992,6 +993,7 @@ export async function fetchAndNormalize(
         const baseCurrency = String(oJson?.Organisations?.[0]?.BaseCurrency ?? "").trim().toUpperCase();
         if (baseCurrency) orgCurrencies[tenant.tenantId] = { name: tenant.tenantName, currency: baseCurrency };
       } catch (err) {
+        if (err instanceof AccountingReauthRequired) throw err;
         logAccounting(provider, "sync", { userId, step: "base_currency_failed", error: String(err).slice(0, 200) });
       }
       if (since) xauth["If-Modified-Since"] = new Date(since).toUTCString();
