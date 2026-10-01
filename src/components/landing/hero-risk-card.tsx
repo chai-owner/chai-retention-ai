@@ -32,7 +32,7 @@ function HeroRiskCard({ customer }: { customer: Customer }) {
               {customer.name}
             </h3>
             <p className="mt-0.5 text-sm text-[#4A5A6B]">
-              {formatCurrency(customer.revenue)} ARR
+              {formatCurrency(customer.revenue, "USD")} ARR
             </p>
           </div>
           <div className="text-right">
@@ -55,7 +55,7 @@ function HeroRiskCard({ customer }: { customer: Customer }) {
         <div className="mt-4 flex items-center justify-between gap-4 rounded-[12px] border border-[#D8E7EF] p-4">
           <p className="text-sm font-semibold text-[#152238]">{topRec.title}</p>
           <span className="shrink-0 text-sm font-extrabold text-[#204654]">
-            +{formatCurrency(topRec.revenueSaved)}
+            +{formatCurrency(topRec.revenueSaved, "USD")}
           </span>
         </div>
       </div>
