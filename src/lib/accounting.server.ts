@@ -1,3 +1,4 @@
+import { syncedCurrency } from "./currency-rules";
 // Server-only helpers for real accounting OAuth integrations
 // (QuickBooks Online, Xero, FreshBooks).
 //
@@ -839,10 +840,12 @@ const TRANSACTION_HEADERS = [
   "currency_verified",
 ];
 
-/** A provider currency code and whether it was really read. */
-function providerCurrency(code: unknown): [string, string] {
-  const c = String(code ?? "").trim().toUpperCase();
-  return c ? [c, "1"] : ["", ""];
+/**
+ * A provider currency code and whether it was really read. Falls back to the
+ * organisation's base currency when the row has none (currency-rules.ts).
+ */
+function providerCurrency(code: unknown, base?: unknown): [string, string] {
+  return syncedCurrency(code, base);
 }
 
 function isoDate(v: any): string {
@@ -911,9 +914,11 @@ export async function fetchAndNormalize(
 
   if (provider === "quickbooks") {
     const base = `${qboApiBase()}/v3/company/${conn.realm_id}`;
+    let qboHome = "";
     try {
       const pJson = await api.fetchJson(`${base}/preferences?minorversion=65`, "QuickBooks preferences");
       const home = String(pJson?.Preferences?.CurrencyPrefs?.HomeCurrency?.value ?? "").trim().toUpperCase();
+      qboHome = home;
       if (home) orgCurrencies[String(conn.realm_id ?? "quickbooks")] = { name: conn.company_name ?? "QuickBooks", currency: home };
     } catch (err) {
       if (err instanceof AccountingReauthRequired) throw err;
@@ -949,14 +954,14 @@ export async function fetchAndNormalize(
         isoDate(inv.TxnDate),
         inv.Line?.find((l: any) => l.SalesItemLineDetail)?.Description ?? "Invoice",
         // Never assume USD: no currency on the invoice means "unknown".
-        providerCurrency(inv.CurrencyRef?.value)[0],
+        providerCurrency(inv.CurrencyRef?.value, qboHome)[0],
         isoDate(inv.DueDate),
         numStr(inv.Balance),
         // QuickBooks only exposes settlement dates through the Payments API,
         // which this sync does not call yet.
         "",
         String(daysOverdue(inv.DueDate, inv.Balance)),
-        providerCurrency(inv.CurrencyRef?.value)[1],
+        providerCurrency(inv.CurrencyRef?.value, qboHome)[1],
       ]);
     }
   } else if (provider === "xero") {
@@ -981,6 +986,7 @@ export async function fetchAndNormalize(
 
     const PAGE_SIZE = 100; // Xero's fixed page size for Contacts/Invoices.
     for (const tenant of activeTenants) {
+      let xeroBase = "";
       const xauth: Record<string, string> = {
         "Xero-tenant-id": tenant.tenantId,
       };
@@ -991,6 +997,7 @@ export async function fetchAndNormalize(
           { "Xero-tenant-id": tenant.tenantId },
         );
         const baseCurrency = String(oJson?.Organisations?.[0]?.BaseCurrency ?? "").trim().toUpperCase();
+        xeroBase = baseCurrency;
         if (baseCurrency) orgCurrencies[tenant.tenantId] = { name: tenant.tenantName, currency: baseCurrency };
       } catch (err) {
         if (err instanceof AccountingReauthRequired) throw err;
@@ -1033,12 +1040,12 @@ export async function fetchAndNormalize(
             String(inv.Total ?? ""),
             isoDate(inv.DateString || inv.Date),
             inv.LineItems?.[0]?.Description ?? "Invoice",
-            providerCurrency(inv.CurrencyCode)[0],
+            providerCurrency(inv.CurrencyCode, xeroBase)[0],
             isoDate(inv.DueDateString || inv.DueDate),
             numStr(inv.AmountDue),
             isoDate(inv.FullyPaidOnDate),
             String(daysOverdue(inv.DueDateString || inv.DueDate, inv.AmountDue)),
-            providerCurrency(inv.CurrencyCode)[1],
+            providerCurrency(inv.CurrencyCode, xeroBase)[1],
           ]);
         }
         if (invoices.length < PAGE_SIZE) break;
@@ -1066,6 +1073,9 @@ export async function fetchAndNormalize(
       return isNaN(t) ? null : t;
     };
 
+    // FreshBooks has no reliable account-wide base currency endpoint, so the
+    // client's billing currency is the fallback for an invoice with none.
+    const fbClientCurrency = new Map<string, string>();
     let stop = false;
     for (let page = 1; page <= MAX_PAGES && !stop; page++) {
       const cJson = await api.fetchJson(
@@ -1080,6 +1090,8 @@ export async function fetchAndNormalize(
           stop = true;
           break;
         }
+        const clientCur = String(c.currency_code ?? "").trim().toUpperCase();
+        if (clientCur) fbClientCurrency.set(String(c.id ?? ""), clientCur);
         const name = c.organization || `${c.fname ?? ""} ${c.lname ?? ""}`.trim() || c.email || "";
         customerRows.push([
           String(c.id ?? ""),
@@ -1114,12 +1126,12 @@ export async function fetchAndNormalize(
           String(inv.amount?.amount ?? ""),
           isoDate(inv.create_date),
           inv.lines?.[0]?.name ?? "Invoice",
-          providerCurrency(inv.amount?.code ?? inv.currency_code)[0],
+          providerCurrency(inv.amount?.code ?? inv.currency_code, fbClientCurrency.get(String(inv.customerid ?? "")))[0],
           isoDate(inv.due_date),
           numStr(inv.outstanding?.amount),
           "",
           String(daysOverdue(inv.due_date, inv.outstanding?.amount)),
-          providerCurrency(inv.amount?.code ?? inv.currency_code)[1],
+          providerCurrency(inv.amount?.code ?? inv.currency_code, fbClientCurrency.get(String(inv.customerid ?? "")))[1],
         ]);
       }
       if (invoices.length < PER_PAGE || page >= (result.pages ?? page)) break;
