@@ -835,7 +835,15 @@ const TRANSACTION_HEADERS = [
   "amount_due",
   "paid_date",
   "days_overdue",
+  // "1" when the currency came from the provider itself (currency-rules.ts).
+  "currency_verified",
 ];
+
+/** A provider currency code and whether it was really read. */
+function providerCurrency(code: unknown): [string, string] {
+  const c = String(code ?? "").trim().toUpperCase();
+  return c ? [c, "1"] : ["", ""];
+}
 
 function isoDate(v: any): string {
   if (!v) return "";
@@ -928,13 +936,15 @@ export async function fetchAndNormalize(
         String(inv.TotalAmt ?? ""),
         isoDate(inv.TxnDate),
         inv.Line?.find((l: any) => l.SalesItemLineDetail)?.Description ?? "Invoice",
-        inv.CurrencyRef?.value ?? "USD",
+        // Never assume USD: no currency on the invoice means "unknown".
+        providerCurrency(inv.CurrencyRef?.value)[0],
         isoDate(inv.DueDate),
         numStr(inv.Balance),
         // QuickBooks only exposes settlement dates through the Payments API,
         // which this sync does not call yet.
         "",
         String(daysOverdue(inv.DueDate, inv.Balance)),
+        providerCurrency(inv.CurrencyRef?.value)[1],
       ]);
     }
   } else if (provider === "xero") {
@@ -999,11 +1009,12 @@ export async function fetchAndNormalize(
             String(inv.Total ?? ""),
             isoDate(inv.DateString || inv.Date),
             inv.LineItems?.[0]?.Description ?? "Invoice",
-            inv.CurrencyCode ?? "",
+            providerCurrency(inv.CurrencyCode)[0],
             isoDate(inv.DueDateString || inv.DueDate),
             numStr(inv.AmountDue),
             isoDate(inv.FullyPaidOnDate),
             String(daysOverdue(inv.DueDateString || inv.DueDate, inv.AmountDue)),
+            providerCurrency(inv.CurrencyCode)[1],
           ]);
         }
         if (invoices.length < PAGE_SIZE) break;
@@ -1079,11 +1090,12 @@ export async function fetchAndNormalize(
           String(inv.amount?.amount ?? ""),
           isoDate(inv.create_date),
           inv.lines?.[0]?.name ?? "Invoice",
-          inv.amount?.code ?? inv.currency_code ?? "",
+          providerCurrency(inv.amount?.code ?? inv.currency_code)[0],
           isoDate(inv.due_date),
           numStr(inv.outstanding?.amount),
           "",
           String(daysOverdue(inv.due_date, inv.outstanding?.amount)),
+          providerCurrency(inv.amount?.code ?? inv.currency_code)[1],
         ]);
       }
       if (invoices.length < PER_PAGE || page >= (result.pages ?? page)) break;

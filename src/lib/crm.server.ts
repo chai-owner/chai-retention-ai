@@ -63,7 +63,8 @@ const TRANSACTION_HEADERS = [
   "currency",
 ];
 
-const DEAL_TRANSACTION_HEADERS = [...TRANSACTION_HEADERS, "deal_stage", "deal_status"];
+// currency_verified is "1" when the currency came from the CRM itself.
+const DEAL_TRANSACTION_HEADERS = [...TRANSACTION_HEADERS, "deal_stage", "deal_status", "currency_verified"];
 
 /**
  * Classifies a HubSpot deal as won / lost / open. Only won deals count as
@@ -189,7 +190,8 @@ async function syncSalesforce(
     num(r.Amount),
     dateOnly(r.CloseDate),
     toStr(r.Name),
-    "USD",
+    // Never assume USD: Salesforce currency isn't read, so it is "unknown".
+    "",
   ]);
   return buildDatasets(customers, transactions);
 }
@@ -253,7 +255,7 @@ async function syncHubspot(
   const headers = gatewayHeaders(connectionKey, lovableKey);
   const base = `${GATEWAY_BASE}/hubspot`;
   const companyProps = ["name", "domain", "createdate", "annualrevenue", "industry", "country", "hs_lastmodifieddate"];
-  const dealProps = ["dealname", "amount", "closedate", "pipeline", "dealstage", "hs_is_closed_won", "hs_is_closed", "hs_lastmodifieddate"];
+  const dealProps = ["dealname", "amount", "closedate", "pipeline", "dealstage", "hs_is_closed_won", "hs_is_closed", "hs_lastmodifieddate", "deal_currency_code"];
   void limit; // HubSpot now pages the whole portal; `limit` only capped Salesforce/Zoho-style pulls.
 
   // Per-user tokens can't use HubSpot's search endpoint, so "changed since"
@@ -312,9 +314,11 @@ async function syncHubspot(
       num(p.amount),
       dateOnly(p.closedate),
       toStr(p.dealname),
-      "USD",
+      // HubSpot's own deal currency; blank (unknown) when the portal has none.
+      toStr(p.deal_currency_code).toUpperCase(),
       toStr(p.dealstage),
       hubspotDealStatus(p),
+      toStr(p.deal_currency_code) ? "1" : "",
     ];
   });
   return buildDatasets(customers, transactions, DEAL_TRANSACTION_HEADERS);
