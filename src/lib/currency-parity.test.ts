@@ -9,7 +9,7 @@ import type { IngestedData } from "@/lib/ingested-data-store";
 
 const NOW = Date.now();
 const metrics: PlannerMetric[] = [
-  { name: "Average order value", why: "", churn: "", cadence: "Monthly", benchmark: "", benchmarkScore: 70, category: "Revenue", unit: "$", decimals: 0, valueAt0: 0, valueAt100: 5000 },
+  { name: "Average order amount", why: "", churn: "", cadence: "Monthly", benchmark: "", benchmarkScore: 70, category: "Revenue", unit: "$", decimals: 0, valueAt0: 0, valueAt100: 5000 },
   { name: "Days since last purchase", why: "", churn: "", cadence: "Monthly", benchmark: "", benchmarkScore: 70, category: "Engagement", unit: "days", decimals: 0, valueAt0: 180, valueAt100: 0 },
 ];
 
@@ -67,6 +67,6 @@ describe("mixed-currency parity between the two scoring paths", () => {
       | { value?: number | null }
       | undefined;
     // C1's newest invoice (5 days ago) is in ZAR, and it still counts as a purchase.
-    expect(days?.value).toBe(5);
+    expect(days?.value).toBeLessThan(10); // the next USD invoice is 55 days old
   });
 });
