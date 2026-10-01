@@ -65,6 +65,8 @@ export function useProfileSync() {
           channels: remote.channels,
           metricWeights: remote.metricWeights,
           churnDefinition: remote.churnDefinition,
+          dataCurrency: remote.dataCurrency,
+          dataCurrencySuggestionDismissed: remote.dataCurrencySuggestionDismissed,
           // Keep the locally cached metric set if the account predates metric
           // persistence, so upload templates never fall back to the generic set.
           metrics:

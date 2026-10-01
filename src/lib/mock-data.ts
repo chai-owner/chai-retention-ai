@@ -1,3 +1,5 @@
+import { formatMoney, type DataCurrency } from "@/lib/money";
+import { accountCurrency } from "@/lib/account-currency";
 // Central mock data + helpers powering the ChAi demo experience.
 // All numbers are illustrative sample data for a fictional company.
 import {
@@ -712,11 +714,11 @@ export const fieldMappings = [
   { source: "plan_state", target: "Status", confidence: 72 },
 ];
 
-export function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-    notation: n >= 1_000_000 ? "compact" : "standard",
-  }).format(n);
+/**
+ * Customer-data money in the signed-in account's data currency (USD for the
+ * public demo and signed-out visitors). Labels only — never converted.
+ * Pass `currency` explicitly where the account currency must not apply.
+ */
+export function formatCurrency(n: number, currency?: DataCurrency) {
+  return formatMoney(n, currency ?? accountCurrency());
 }
