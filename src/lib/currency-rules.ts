@@ -277,3 +277,27 @@ export function captureRowCurrency(
   else if (seen.size > 1) out["currency"] = "MIXED";
   return out;
 }
+
+/**
+ * Currency for a synced row: the provider's own code for the row, else the
+ * connection/organisation base currency, else "" (genuinely unknown). Returns
+ * [code, verified] where verified is "1" whenever the code came from the
+ * provider (row or org), so it is never mistaken for an old default stamp.
+ */
+export function syncedCurrency(rowCode: unknown, baseCode?: unknown): [string, string] {
+  const norm = (v: unknown) => {
+    const c = String(v ?? "").trim().toUpperCase();
+    return CODE_RE.test(c) ? c : "";
+  };
+  const c = norm(rowCode) || norm(baseCode);
+  return c ? [c, "1"] : ["", ""];
+}
+
+/** ISO code from a Zoho org record (`iso_code`, or "US Dollar - USD"). */
+export function zohoOrgCurrency(org: Record<string, unknown> | null | undefined): string {
+  if (!org) return "";
+  const iso = String(org["iso_code"] ?? "").trim().toUpperCase();
+  if (CODE_RE.test(iso)) return iso;
+  const m = String(org["currency"] ?? "").toUpperCase().match(/\b([A-Z]{3})\s*$/);
+  return m ? m[1]! : "";
+}
