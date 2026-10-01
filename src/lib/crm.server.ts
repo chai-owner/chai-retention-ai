@@ -6,6 +6,7 @@ import { laggedSinceMs } from "./sync-cursor";
 // Callable from both authenticated server functions (manual "Sync now") and
 // the daily cron runner. Never import this file from client code.
 import type { ExtractedDataset } from "./ingest.functions";
+import { syncedCurrency } from "./currency-rules";
 import { domainEmailHint } from "./crm-identity";
 
 const GATEWAY_BASE = "https://connector-gateway.lovable.dev";
@@ -64,6 +65,8 @@ const TRANSACTION_HEADERS = [
 ];
 
 // currency_verified is "1" when the currency came from the CRM itself.
+// CRM customers carry the currency of their revenue figure when it is known.
+const CRM_CUSTOMER_HEADERS = [...CUSTOMER_HEADERS, "currency", "currency_verified"];
 const DEAL_TRANSACTION_HEADERS = [...TRANSACTION_HEADERS, "deal_stage", "deal_status", "currency_verified"];
 
 /**
@@ -90,13 +93,14 @@ function buildDatasets(
   customers: string[][],
   transactions: string[][],
   transactionHeaders: string[] = TRANSACTION_HEADERS,
+  customerHeaders: string[] = CUSTOMER_HEADERS,
 ): ExtractedDataset[] {
   const out: ExtractedDataset[] = [];
   if (customers.length) {
     out.push({
       key: "customers",
       label: "Customers",
-      headers: CUSTOMER_HEADERS,
+      headers: customerHeaders,
       rows: customers,
       confidence: 95,
       note: "Imported from CRM accounts / contacts.",
@@ -238,6 +242,43 @@ export async function pageHubspotList(
   return out;
 }
 
+/** HubSpot company → customer row; revenue tagged with the portal currency. */
+export function mapHubspotCompany(r: Record<string, unknown>, home: string): string[] {
+  const p = (r.properties ?? {}) as Record<string, unknown>;
+  const revenue = num((p.annualrevenue as string) ? Number(p.annualrevenue) / 12 : "");
+  const [cur, verified] = revenue ? syncedCurrency("", home) : ["", ""];
+  return [
+    toStr(r.id),
+    toStr(p.name),
+    domainEmailHint(toStr(p.domain)),
+    dateOnly(p.createdate),
+    revenue,
+    toStr(p.industry),
+    toStr(p.country),
+    cur,
+    verified,
+  ];
+}
+
+/** HubSpot deal → transaction row; deal currency, else the portal default. */
+export function mapHubspotDeal(r: Record<string, unknown>, home: string): string[] {
+  const p = (r.properties ?? {}) as Record<string, unknown>;
+  const assoc = r.associations as { companies?: { results?: { id: string }[] } } | undefined;
+  const companyId = assoc?.companies?.results?.[0]?.id ?? "";
+  const [cur, verified] = syncedCurrency(p.deal_currency_code, home);
+  return [
+    toStr(companyId),
+    toStr(r.id),
+    num(p.amount),
+    dateOnly(p.closedate),
+    toStr(p.dealname),
+    cur,
+    toStr(p.dealstage),
+    hubspotDealStatus(p),
+    verified,
+  ];
+}
+
 async function syncHubspot(
   userId: string,
   limit: number,
@@ -288,40 +329,18 @@ async function syncHubspot(
   }
   const deals = { results: fullDeals ? dealsList : dealsList.filter(changed) };
 
-  const customers: string[][] = (
-    (companies as { results?: Record<string, unknown>[] } | null)?.results ?? []
-  ).map((r) => {
-    const p = (r.properties ?? {}) as Record<string, unknown>;
-    return [
-      toStr(r.id),
-      toStr(p.name),
-      domainEmailHint(toStr(p.domain)),
-      dateOnly(p.createdate),
-      num((p.annualrevenue as string) ? Number(p.annualrevenue) / 12 : ""),
-      toStr(p.industry),
-      toStr(p.country),
-    ];
-  });
-  const transactions: string[][] = (
-    (deals as { results?: Record<string, unknown>[] } | null)?.results ?? []
-  ).map((r) => {
-    const p = (r.properties ?? {}) as Record<string, unknown>;
-    const assoc = r.associations as { companies?: { results?: { id: string }[] } } | undefined;
-    const companyId = assoc?.companies?.results?.[0]?.id ?? "";
-    return [
-      toStr(companyId),
-      toStr(r.id),
-      num(p.amount),
-      dateOnly(p.closedate),
-      toStr(p.dealname),
-      // HubSpot's own deal currency; blank (unknown) when the portal has none.
-      toStr(p.deal_currency_code).toUpperCase(),
-      toStr(p.dealstage),
-      hubspotDealStatus(p),
-      toStr(p.deal_currency_code) ? "1" : "",
-    ];
-  });
-  return buildDatasets(customers, transactions, DEAL_TRANSACTION_HEADERS);
+  // Portal default currency: fallback for deals with no currency of their own
+  // and the currency of company annual revenue. Best-effort only.
+  let home = "";
+  try {
+    const info = (await gwGet(`${base}/account-info/v3/details`, headers)) as { companyCurrency?: string } | null;
+    home = toStr(info?.companyCurrency);
+  } catch {
+    home = "";
+  }
+  const customers = (companies.results ?? []).map((r) => mapHubspotCompany(r, home));
+  const transactions = (deals.results ?? []).map((r) => mapHubspotDeal(r, home));
+  return buildDatasets(customers, transactions, DEAL_TRANSACTION_HEADERS, CRM_CUSTOMER_HEADERS);
 }
 
 // ---------------- Zoho CRM (per-user OAuth) ----------------

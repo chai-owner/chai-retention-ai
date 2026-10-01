@@ -1,6 +1,7 @@
 // Server-only helpers for Zoho CRM per-user OAuth. Each user connects their
 // own Zoho account; we store their refresh token and refresh access tokens
 // as needed. Never import from client code.
+import { syncedCurrency, zohoOrgCurrency } from "./currency-rules";
 import type { ExtractedDataset } from "./ingest.functions";
 import {
   encryptSecret,
@@ -356,6 +357,8 @@ const CUSTOMER_HEADERS = [
   "monthly_revenue",
   "plan",
   "region",
+  "currency",
+  "currency_verified",
 ];
 const TRANSACTION_HEADERS = [
   "customer_id",
@@ -366,6 +369,7 @@ const TRANSACTION_HEADERS = [
   "currency",
   "deal_stage",
   "deal_status",
+  "currency_verified",
 ];
 
 /**
@@ -505,6 +509,8 @@ export interface ZohoRawData {
   deals: ZohoRecord[];
   contacts: ZohoRecord[];
   activities: Array<{ type: string; module: ActivityModule; records: ZohoRecord[] }>;
+  /** The Zoho org's home currency, when known. */
+  homeCurrency?: string;
 }
 
 /** Pure mapping step — kept separate from fetching so it can be tested directly. */
@@ -528,28 +534,38 @@ export function buildZohoDatasets(raw: ZohoRawData): ExtractedDataset[] {
     if (dealId && accId) accountByDeal.set(dealId, accId);
   }
 
-  const customers: string[][] = raw.accounts.map((r) => [
+  const home = raw.homeCurrency ?? "";
+  const customers: string[][] = raw.accounts.map((r) => {
+    const revenue = num((r.Annual_Revenue as number) ? Number(r.Annual_Revenue) / 12 : "");
+    const [cur, verified] = revenue ? syncedCurrency(r.Currency, home) : ["", ""];
+    return [
     toStr(r.id),
     toStr(r.Account_Name),
     emailByAccount.get(toStr(r.id)) ?? domainEmailHint(toStr(r.Website)),
     dateOnly(r.Created_Time),
-    num((r.Annual_Revenue as number) ? Number(r.Annual_Revenue) / 12 : ""),
+    revenue,
     toStr(r.Industry),
     toStr(r.Billing_Country),
-  ]);
+    cur,
+    verified,
+  ];
+  });
 
-  const transactions: string[][] = raw.deals.map((r) => [
-    lookupId(r.Account_Name),
-    toStr(r.id),
-    num(r.Amount),
-    dateOnly(r.Closing_Date),
-    toStr(r.Deal_Name),
-    // Never assume USD. Zoho's Currency field only exists on multi-currency
-    // orgs (requesting it elsewhere fails), so the currency is "unknown".
-    "",
-    toStr(r.Stage),
-    zohoDealStatus(r.Stage, r.Probability),
-  ]);
+  const transactions: string[][] = raw.deals.map((r) => {
+    // Deal's own Currency (multi-currency orgs), else the org home currency.
+    const [cur, verified] = syncedCurrency(r.Currency, home);
+    return [
+      lookupId(r.Account_Name),
+      toStr(r.id),
+      num(r.Amount),
+      dateOnly(r.Closing_Date),
+      toStr(r.Deal_Name),
+      cur,
+      toStr(r.Stage),
+      zohoDealStatus(r.Stage, r.Probability),
+      verified,
+    ];
+  });
 
   // An activity can hang off an account, a deal or a contact. Resolve all three
   // down to the owning account so engagement is measured per customer.
@@ -650,6 +666,26 @@ export async function syncZohoForUser(
   ];
   const dealFields = ["Deal_Name", "Account_Name", "Amount", "Closing_Date", "Stage", "Probability"];
 
+  // Org home currency, and whether multi-currency is on. The record-level
+  // Currency field only exists on multi-currency orgs (requesting it elsewhere
+  // fails), so it is asked for only then. Best-effort: never fails the sync.
+  let homeCurrency = "";
+  try {
+    const res = await fetch(`${conn.api_domain}/crm/v6/org`, {
+      headers: { Authorization: `Zoho-oauthtoken ${conn.access_token}` },
+    });
+    if (res.ok) {
+      const org = ((await res.json()) as { org?: Record<string, unknown>[] })?.org?.[0];
+      homeCurrency = zohoOrgCurrency(org);
+      if (org?.mc_status === true) {
+        dealFields.push("Currency");
+        accFields.push("Currency");
+      }
+    }
+  } catch {
+    homeCurrency = "";
+  }
+
   // Deals stored before stage tracking have no status. An incremental sync
   // would never revisit unchanged deals, so re-read every deal once until all
   // stored Zoho deals carry a status.
@@ -705,7 +741,7 @@ export async function syncZohoForUser(
     })),
   );
 
-  return buildZohoDatasets({ accounts, deals, contacts, activities: activityGroups });
+  return buildZohoDatasets({ accounts, deals, contacts, activities: activityGroups, homeCurrency });
 }
 
 export async function getZohoStatusRow(userId: string) {
