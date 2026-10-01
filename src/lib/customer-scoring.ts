@@ -14,7 +14,7 @@ import {
   describeComparison,
 } from "@/lib/personal-baseline";
 import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
-import { withCountableTransactions, dealOnlyCustomers } from "@/lib/countable-transactions";
+import { prepareScoringData, dealOnlyCustomers } from "@/lib/countable-transactions";
 import { hasEnoughPeers, isEvidenceExempt, peerNote } from "@/lib/metric-evidence";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
@@ -119,6 +119,8 @@ export interface ScoringOptions {
   /** profiles.lifespan — free text describing expected customer lifetime. */
   lifespan?: string;
   now?: number;
+  /** profiles.data_currency — foreign-currency amounts are left out (currency-rules.ts). */
+  currency?: string;
 }
 
 const DAY = 86_400_000;
@@ -220,8 +222,8 @@ export function scoreCustomers(
   rawData: IngestedData,
   options: ScoringOptions = {},
 ): CustomerScore[] {
-  // Open and lost CRM deals are not sales.
-  const data = withCountableTransactions(rawData);
+  // Foreign-currency amounts left out; open and lost CRM deals are not sales.
+  const data = prepareScoringData(rawData, options.currency);
   const now = options.now ?? Date.now();
   const horizon = horizonDays(options.cadence, options.lifespan);
 

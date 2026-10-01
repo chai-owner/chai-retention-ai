@@ -3,7 +3,7 @@
 // if a signal is absent for a customer, that metric is simply excluded from
 // their weighted health score rather than being invented.
 import { assessConfidence, datedRecordCounts } from "@/lib/confidence-evidence";
-import { withCountableTransactions, dealOnlyCustomers } from "@/lib/countable-transactions";
+import { prepareScoringData, dealOnlyCustomers } from "@/lib/countable-transactions";
 import { NOT_ENOUGH_DATA_LABEL, hasEnoughPeers, hasEnoughRecords, isEvidenceExempt, peerNote } from "@/lib/metric-evidence";
 import {
   type Customer,
@@ -262,8 +262,8 @@ export function buildRealDataset(
   weights: MetricWeights,
   profile: OnboardingProfile | null,
 ): ScoredDataset {
-  // Open and lost CRM deals are not sales.
-  const data = withCountableTransactions(rawData);
+  // Foreign-currency amounts left out; open and lost CRM deals are not sales.
+  const data = prepareScoringData(rawData, profile?.dataCurrency);
   // Customers whose only sales data is CRM deals (see countable-transactions).
   const dealOnly = dealOnlyCustomers(data);
   const evidence = datedRecordCounts(data as unknown as Record<string, unknown>);

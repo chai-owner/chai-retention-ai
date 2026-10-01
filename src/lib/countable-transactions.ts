@@ -6,6 +6,7 @@
 // uploaded transactions — are real sales and always count.
 import type { IngestedData } from "@/lib/ingested-data-store";
 import { MIN_PEERS } from "@/lib/metric-evidence";
+import { applyAccountCurrency } from "@/lib/currency-rules";
 
 export function isCountableTransaction(row: Record<string, unknown>): boolean {
   const status = String(row["deal_status"] ?? "").trim().toLowerCase();
@@ -58,4 +59,13 @@ export function dealOnlyCustomers(data: IngestedData): Set<string> {
   }
   for (const id of other) deal.delete(id);
   return deal;
+}
+
+/**
+ * The one entry point both scoring paths use before scoring: foreign-currency
+ * amounts are left out first (currency-rules.ts), then open/lost deals are
+ * dropped. Keeps the customer page and the nightly score identical.
+ */
+export function prepareScoringData<T extends IngestedData>(data: T, accountCurrency: unknown): T {
+  return withCountableTransactions(applyAccountCurrency(data, accountCurrency).data);
 }
