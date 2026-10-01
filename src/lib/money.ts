@@ -54,7 +54,7 @@ export function formatMoney(n: number, currency: DataCurrency, opts: MoneyOption
   // Same digits and sign handling as USD, with the rand symbol and a space.
   const digits = new Intl.NumberFormat("en-US", {
     ...(decimals == null
-      ? { maximumFractionDigits: 0 }
+      ? { maximumFractionDigits: notation === "compact" ? 1 : 0 }
       : { minimumFractionDigits: decimals, maximumFractionDigits: decimals }),
     notation,
   }).format(n);
