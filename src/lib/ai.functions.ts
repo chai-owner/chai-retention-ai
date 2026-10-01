@@ -1,3 +1,4 @@
+import { currencySymbol, formatMoney, normalizeDataCurrency } from "@/lib/money";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getAiProvider, DEFAULT_AI_MODEL, resolveAiCredentials } from "./ai-provider.server";
@@ -117,9 +118,18 @@ const ChatMessage = z.object({
   text: z.string(),
 });
 
+/** Currency instruction shared by every prompt that sees money. */
+export function currencyRule(currency: unknown): string {
+  const c = normalizeDataCurrency(currency);
+  const sym = currencySymbol(c);
+  return `CURRENCY: all amounts are in ${c}. Write money with "${sym}" exactly as given (e.g. ${formatMoney(12500, c)}); never use another currency symbol or code, never convert, and never add amounts in different currencies together.`;
+}
+
 const AskChAiInput = z.object({
   messages: z.array(ChatMessage).min(1),
   context: z.string().optional(),
+  /** The account's data currency; labels only, never converted. */
+  currency: z.enum(["USD", "ZAR"]).optional(),
   coverage: z
     .object({
       confidence: z.enum(["low", "partial", "good"]),
@@ -169,6 +179,8 @@ export const askChai = createServerFn({ method: "POST" })
     const system = `You are ChAi, an AI customer-retention analyst inside a churn-intelligence app.
 ${ASK_CHAI_STYLE_RULES}
 
+${currencyRule(data.currency)}
+
 TAILOR EVERY ANSWER TO THIS BUSINESS. Use the industry's own vocabulary (a dental practice hears about recall appointments and missed visits; a B2B SaaS company hears about seats, adoption and renewals; a gym hears about weekly check-ins). Never give generic "increase engagement" advice when the business profile below tells you what they actually sell and how often customers buy.
 
 DATA SUFFICIENCY: if data confidence is "low" or "partial", add one short bullet saying your answer may be limited by data gaps, naming the specific gaps listed below (e.g. which dataset is missing or how many days old it is), and pointing to Data Quality. If confidence is "good", add no data caveat.
@@ -215,6 +227,7 @@ const RiskSummaryInput = z.object({
     )
     .min(1)
     .max(8),
+  currency: z.enum(["USD", "ZAR"]).optional(),
 });
 
 export type RiskSummaryInput = z.infer<typeof RiskSummaryInput>;
@@ -226,13 +239,17 @@ export const summarizeRiskReasons = createServerFn({ method: "POST" })
     const lines = data.customers
       .map(
         (c) =>
-          `- id ${c.id}: ${c.name}, ${c.churnProbability}% churn risk, health ${c.health}/100, $${c.revenue} revenue. Factors: ${
+          `- id ${c.id}: ${c.name}, ${c.churnProbability}% churn risk, health ${c.health}/100, ${
+            c.revenue > 0 ? `${formatMoney(c.revenue, normalizeDataCurrency(data.currency))} revenue` : "revenue unknown"
+          }. Factors: ${
             c.factors.length ? c.factors.join("; ") : "none recorded"
           }`,
       )
       .join("\n");
 
     const prompt = `You are a B2B SaaS retention analyst. For each account below, write ONE short plain-language sentence (max ~14 words) explaining why it needs attention and the single best next step.
+
+${currencyRule(data.currency)}
 
 Accounts:
 ${lines}
@@ -271,6 +288,8 @@ export const generateCollectiveInsights = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => CollectiveInsightsInput.parse(input))
   .handler(async ({ data }): Promise<{ insights: string[] }> => {
     const prompt = `You are ChAi, a customer-retention analyst. Based on the workspace analysis below, write the TOP 5 most interesting, high-level collective insights a business owner would most want to know about their customer base and retention. Each insight is ONE punchy plain-language sentence (max ~18 words), specific and useful. Do not invent precise numbers that aren't given.
+
+Use only the currency symbol that appears in the analysis; never convert or mix currencies.
 
 Workspace analysis:
 ${data.summary}
