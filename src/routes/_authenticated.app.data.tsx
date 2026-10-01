@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/chai";
 import { listPausedCustomers } from "@/lib/data-tables.functions";
 import { SmartIngestCard, UploadDatasetsCard } from "@/components/data-uploads-panel";
 import { IntegrationsPanel } from "@/components/integrations-panel";
+import { CurrencySuggestionBanner } from "@/components/data-currency-card";
 
 export const Route = createFileRoute("/_authenticated/app/data")({
   head: () => ({ meta: [{ title: "Data Uploads & Integrations — ChAi" }] }),
@@ -19,6 +20,7 @@ function DataPage() {
         title="Data Uploads & Integrations"
         description="Bring your customer, transaction and support data into ChAi. We'll check how ready it is and map it for you."
       />
+      <CurrencySuggestionBanner className="mb-4" />
       <IntegrationsPanel />
 
       {/* Clear divider — the standard, do-it-yourself uploads & integrations are
