@@ -366,7 +366,7 @@ export function UploadWizard({
       }
       // Keep the currency per row instead of stripping it (currency-rules.ts).
       return dataset.fields.some((f) => f.name === "currency")
-        ? captureRowCurrency(obj, dataset.fields.filter((f) => f.type === "number" && isAmountKey(f.name)).map((f) => f.name))
+        ? captureRowCurrency(obj, dataset.fields.filter((f) => inferType(f) === "number" && isAmountKey(f.name)).map((f) => f.name))
         : obj;
     });
     const taggedRows = tagSource(rowObjects, "csv");
