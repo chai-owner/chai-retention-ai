@@ -65,7 +65,7 @@ describe("Salesforce sync", () => {
     const transactions = datasets.find((d) => d.key === "transactions")!;
     // Annual revenue is converted to a monthly figure.
     expect(customers.rows[0]).toEqual(["001A", "Acme Corp", "", "2025-11-01", "10000", "Customer", "US"]);
-    expect(transactions.rows[0]).toEqual(["001A", "006A", "5000", "2026-03-15", "Renewal FY26", "USD"]);
+    expect(transactions.rows[0]).toEqual(["001A", "006A", "5000", "2026-03-15", "Renewal FY26", ""]);
   });
 
   it("adds a SystemModstamp filter for incremental pulls", async () => {
@@ -136,7 +136,7 @@ describe("HubSpot sync", () => {
       "701", "Globex", "", "2025-09-10", "20000", "Manufacturing", "CA",
     ]);
     expect(datasets.find((d) => d.key === "transactions")!.rows[0]).toEqual([
-      "701", "D1", "7500", "2026-02-01", "Expansion", "USD", "", "open",
+      "701", "D1", "7500", "2026-02-01", "Expansion", "", "", "open", "",
     ]);
   });
 
