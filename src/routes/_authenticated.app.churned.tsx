@@ -1,9 +1,9 @@
+import { MoneyIcon } from "@/components/money-icon";
 import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   UserMinus,
   RotateCcw,
-  DollarSign,
   Clock,
   TrendingDown,
   Sparkles,
@@ -168,7 +168,7 @@ function Churned() {
         {!hasData ? (
           <>
             <StatCard label="Churn rate" value="No data yet" icon={TrendingDown} hint="Add customer data to see your churn rate" />
-            <StatCard label="Revenue lost" value="No data yet" icon={DollarSign} hint="Add customer data to track lost revenue" />
+            <StatCard label="Revenue lost" value="No data yet" icon={MoneyIcon} hint="Add customer data to track lost revenue" />
             <StatCard label="Win-back opportunity" value="No data yet" icon={RotateCcw} hint="Add customer data to size win-back value" />
             <StatCard label="Avg. tenure before churn" value="No data yet" icon={Clock} hint="Add customer data to measure tenure" />
           </>
@@ -182,7 +182,7 @@ function Churned() {
                   {formatCurrency(stats.revenueLost)} <span className="text-sm font-normal italic text-muted-foreground">/ yr</span>
                 </span>
               }
-              icon={DollarSign}
+              icon={MoneyIcon}
               tone="danger"
             />
             <StatCard

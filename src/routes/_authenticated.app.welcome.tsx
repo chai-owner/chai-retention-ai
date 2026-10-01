@@ -1,3 +1,4 @@
+import { MoneyIcon } from "@/components/money-icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,7 +8,6 @@ import {
   CalendarCheck,
   TrendingUp,
   Users,
-  DollarSign,
   AlertTriangle,
   Database,
 } from "lucide-react";
@@ -151,7 +151,7 @@ function WelcomePage() {
               value={String(dataset.executive.totalCustomers)}
             />
             <Stat
-              icon={DollarSign}
+              icon={MoneyIcon}
               label="Revenue reviewed"
               value={formatCurrency(dataset.totalRevenue)}
             />

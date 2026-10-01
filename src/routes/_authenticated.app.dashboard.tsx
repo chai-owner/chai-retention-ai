@@ -1,3 +1,4 @@
+import { MoneyIcon } from "@/components/money-icon";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAccountCurrency } from "@/lib/account-currency";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,7 +9,6 @@ import {
   HeartPulse,
   AlertTriangle,
   TrendingDown,
-  DollarSign,
   Target,
   ArrowRight,
   Database,
@@ -274,7 +274,7 @@ function Dashboard() {
               <span className="text-sm font-normal italic text-muted-foreground">per year</span>
             </>
           }
-          icon={DollarSign}
+          icon={MoneyIcon}
           tone="danger"
           hint="Across at-risk & critical accounts"
         />
