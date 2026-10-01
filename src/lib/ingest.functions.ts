@@ -255,6 +255,7 @@ Rules:
 - Use the EXACT column header text from the header row for "column", and the EXACT ChAi field name for "field".
 - If a value is the same for every row and is stated in the file (e.g. a report date) but has no column, you may set "constant" instead of "column".
 - Skip a dataset entirely if the file has nothing for it.
+- If the file has a currency column (e.g. "Currency", "Curr", "CCY"), map it to the dataset's "currency" field. Map amount columns as they are; ChAi reads currency symbols or codes inside amount cells itself. Never sum amounts in different currencies.
 - confidence is your 0-100 certainty in the mapping for that dataset.
 
 CALCULATED FIELDS
