@@ -3,7 +3,7 @@
 // no side effects — safe to run during render and on the server.
 import { customerIdentifierFields, IDENTIFIER_HINT, type DatasetSchema, type SchemaField } from "@/lib/data-schemas";
 import type { OnboardingProfile } from "@/lib/profile-store";
-import type { PlannerMetric } from "@/lib/mock-data";
+import { displayPrefix, type PlannerMetric } from "@/lib/mock-data";
 
 export interface PersonalizedField extends SchemaField {
   promoted?: boolean; // became required because of the profile

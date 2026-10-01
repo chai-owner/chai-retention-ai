@@ -169,7 +169,7 @@ function buildTimeline(
   const contract = 12000 + Math.round(rand() * 60) * 1000;
   const events: TimelineEvent[] = [
     { date: daysAgoISO(332), type: "signup", title: "Became a customer", detail: `${name} signed up for the Growth plan.` },
-    { date: daysAgoISO(318), type: "purchase", title: "First purchase", detail: `Initial annual contract — $${contract.toLocaleString()}.` },
+    { date: daysAgoISO(318), type: "purchase", title: "First purchase", detail: `Initial annual contract — ${formatMoney(contract, "USD")}.` },
     { date: daysAgoISO(248), type: "usage", title: "Strong early adoption", detail: "Activated 4 of 5 core features. Health score peaked at 88." },
     { date: daysAgoISO(150), type: "survey", title: "Survey response", detail: "NPS of 9 — promoter. 'Great product, easy to use.'" },
   ];
