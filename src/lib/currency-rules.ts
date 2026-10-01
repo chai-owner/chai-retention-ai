@@ -207,3 +207,57 @@ export const MEASURE_GROUPS = {
     "Payment health (days overdue)",
   ],
 } as const;
+
+// ---- Uploads: currency written inside amount cells -------------------------
+
+const CELL_CODE_RE = /\b(USD|ZAR|EUR|GBP|AUD|CAD|NZD|INR|JPY|CHF|NGN|KES|BWP|NAD)\b/i;
+
+/**
+ * Reads a currency written inside an amount cell ("R 1,200", "ZAR 1200",
+ * "US$1,200", "$1,200", "€50") and returns the bare number plus the code.
+ * A bare "$" is read as USD. Returns code "" when the cell names none.
+ */
+export function splitMoneyCell(raw: string): { value: string; code: string } {
+  const v = String(raw ?? "").trim();
+  if (!v) return { value: "", code: "" };
+  let code = "";
+  const named = CELL_CODE_RE.exec(v);
+  if (named) code = named[1]!.toUpperCase();
+  else if (/US\$/i.test(v)) code = "USD";
+  else if (/^\(?-?\s*R\s?\d/i.test(v) || /^-?R\s/i.test(v)) code = "ZAR";
+  else if (v.includes("€")) code = "EUR";
+  else if (v.includes("£")) code = "GBP";
+  else if (v.includes("$")) code = "USD";
+  const cleaned = v.replace(CELL_CODE_RE, "").replace(/US\$/gi, "").replace(/[R€£$\s]/gi, "");
+  const neg = /^\(.*\)$/.test(cleaned);
+  const body = cleaned.replace(/[()]/g, "").replace(/,/g, "");
+  if (!/^-?\d*\.?\d+$/.test(body)) return { value: v, code: "" };
+  return { value: neg ? `-${body}` : body, code };
+}
+
+/**
+ * For one uploaded row (field → raw cell): when the row has no currency of its
+ * own, take it from the first amount cell that names one. Amount cells are
+ * returned as bare numbers. Rows that name two different currencies get
+ * "MIXED", which never matches an account currency, so their amounts are left
+ * out rather than added up.
+ */
+export function captureRowCurrency(
+  row: Record<string, string>,
+  amountFields: string[],
+): Record<string, string> {
+  const out = { ...row };
+  const seen = new Set<string>();
+  for (const f of amountFields) {
+    const cell = out[f];
+    if (!cell) continue;
+    const { value, code } = splitMoneyCell(cell);
+    out[f] = value;
+    if (code) seen.add(code);
+  }
+  const own = rowCurrencyCode(out);
+  if (own) out["currency"] = own;
+  else if (seen.size === 1) out["currency"] = [...seen][0]!;
+  else if (seen.size > 1) out["currency"] = "MIXED";
+  return out;
+}
