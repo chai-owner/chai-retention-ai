@@ -1,3 +1,4 @@
+import { accountCurrency } from "@/lib/account-currency";
 import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ClipboardList } from "lucide-react";
@@ -22,7 +23,7 @@ function unitLabel(m: { name: string; unit?: string; prefix?: string }): string 
     if (u.startsWith("/")) return u;
     return u;
   }
-  if (m.prefix === "$") return "dollars";
+  if (m.prefix === "$") return accountCurrency() === "ZAR" ? "rand" : "dollars";
   const n = m.name.toLowerCase();
   if (/(minute|duration)/.test(n)) return "minutes";
   if (/hour/.test(n)) return "hours";
