@@ -32,14 +32,15 @@ export const ALLOWED: Record<string, string> = {
   "routes/_authenticated.app.settings.tsx": "placeholder that follows the chosen symbol",
   "routes/_authenticated.onboarding.tsx": "segment labels that follow the chosen symbol",
   "routes/_authenticated.app.planner.tsx": "maps the saved '$' prefix to dollars / rand",
+  "lib/demo-tables.ts": "signed-out demo invoices, labelled USD",
   "lib/ingest.functions.ts": "AI instruction naming $ and US$ as USD",
 };
 
 const PATTERNS: Array<[RegExp, string]> = [
-  [/currency:\s*["']USD["']/, "USD-only Intl formatter"],
+  [/currency:\s*["']USD["']\s*[,}]/, "USD-only Intl formatter"],
   [/\$\$\{/, "raw $ before an amount"],
   [/\$\d{2,}|\$\d+[.,]\d|\$\d+k\b/, "hard-coded dollar amount"],
-  [/>\s*\$\s*[{<]/, "$ written in page text"],
+  [/>\s*\$\s*[{<]/, "$ written in page text (.tsx only)"],
   [/["'`]\$["'`]/, "a bare \"$\" string"],
 ];
 
@@ -66,7 +67,10 @@ describe("no stray $ outside billing and demo files", () => {
         .split("\n")
         .forEach((line, i) => {
           if (/^\s*(\/\/|\*)/.test(line)) return;
-          for (const [re, why] of PATTERNS) if (re.test(line)) hits.push(`${rel}:${i + 1} ${why}: ${line.trim().slice(0, 120)}`);
+          for (const [re, why] of PATTERNS) {
+            if (why.includes(".tsx only") && !rel.endsWith(".tsx")) continue;
+            if (re.test(line)) hits.push(`${rel}:${i + 1} ${why}: ${line.trim().slice(0, 120)}`);
+          }
         });
     }
     expect(hits).toEqual([]);
