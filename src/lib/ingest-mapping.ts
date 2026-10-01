@@ -1,3 +1,4 @@
+import { captureRowCurrency, isAmountKey } from "./currency-rules";
 // Deterministic column mapping for already-structured uploads (CSV / Excel).
 //
 // The AI only decides WHICH spreadsheet column feeds which dataset field; ChAi
@@ -320,6 +321,21 @@ export function describeDerive(spec: DeriveSpec, field: string): string {
  * calculated (per row, or rolled up per customer when `groupBy` is set).
  * Rows where nothing resolves to a value are dropped.
  */
+/** Keeps the currency per row (currency-rules.ts) instead of stripping it. */
+function withRowCurrency(
+  plan: { name: string; type: MappedSchemaField["type"] }[],
+  values: string[],
+): string[] {
+  const amountFields = plan.filter((p) => p.type === "number" && isAmountKey(p.name)).map((p) => p.name);
+  if (!plan.some((p) => p.name === "currency")) {
+    return values.map((v, i) => (amountFields.includes(plan[i]!.name) ? normalizeNumber(v) : v));
+  }
+  const obj: Record<string, string> = {};
+  plan.forEach((p, i) => (obj[p.name] = values[i] ?? ""));
+  const out = captureRowCurrency(obj, amountFields);
+  return plan.map((p) => (amountFields.includes(p.name) ? normalizeNumber(out[p.name] ?? "") : out[p.name] ?? ""));
+}
+
 export function applyMapping(
   headers: string[],
   rows: string[][],
@@ -385,9 +401,9 @@ export function applyMapping(
               if (ds.length > 0) raw = new Date(Math.max(...ds)).toISOString().slice(0, 10);
             }
           } else raw = p.constant;
-          return normalizeCell(p.type, raw);
+          return p.type === "number" && isAmountKey(p.name) ? raw : normalizeCell(p.type, raw);
         });
-        if (values.some((v) => v !== "")) built.push(values);
+        if (values.some((v) => v !== "")) built.push(withRowCurrency(plan, values));
       }
     } else {
       for (const row of rows) {
@@ -397,9 +413,9 @@ export function applyMapping(
             : p.idx >= 0
               ? (row[p.idx] ?? "")
               : p.constant;
-          return normalizeCell(p.type, raw);
+          return p.type === "number" && isAmountKey(p.name) ? raw : normalizeCell(p.type, raw);
         });
-        if (values.some((v) => v !== "")) built.push(values);
+        if (values.some((v) => v !== "")) built.push(withRowCurrency(plan, values));
       }
     }
     if (built.length === 0) continue;

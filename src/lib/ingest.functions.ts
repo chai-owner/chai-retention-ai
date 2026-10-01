@@ -114,7 +114,8 @@ Rules:
 - You may derive a metric value from the document when the derivation is unambiguous (count occurrences, sum amounts, compute days between two dates, convert a percentage). Do not guess otherwise.
 - Every row must carry at least one customer identifier (customer_id, email or customer_name) — pick whichever the document provides; fill the others with "".
 - If a custom metric appears only as a per-customer total with no explicit measurement date, use the document's date (invoice/report/statement date) for the date field.
-- Format dates as YYYY-MM-DD. Strip currency symbols and thousands separators from numeric fields.
+- Format dates as YYYY-MM-DD. Remove thousands separators from numeric fields.
+- Currency: never drop it. When a dataset has a "currency" field, fill it per row with the 3-letter ISO code the document shows for that amount (R or ZAR → "ZAR", $ or US$ → "USD", € → "EUR", £ → "GBP"), and write the amount as a bare number. If the document shows no currency for a row, leave "currency" as "". Never convert amounts and never add amounts in different currencies together.
 - For each dataset you populate, return its exact field names as headers and one array of string values per row, in the same order as headers.
 - Return EVERY row the document contains — one output row per source record. Never summarise, never stop after the first customer, never write "..." or a note saying rows were omitted. If the document lists 120 customers, return 120 rows.
 - If a value is unknown for a row, use an empty string "".
