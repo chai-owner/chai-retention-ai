@@ -905,9 +905,20 @@ export async function fetchAndNormalize(
 
   const customerRows: string[][] = [];
   const txnRows: string[][] = [];
+  // Organisation base currency per org (Xero can sync several), used only to
+  // SUGGEST the account's data currency — never to switch it.
+  const orgCurrencies: Record<string, { name: string; currency: string }> = {};
 
   if (provider === "quickbooks") {
     const base = `${qboApiBase()}/v3/company/${conn.realm_id}`;
+    try {
+      const pJson = await api.fetchJson(`${base}/preferences?minorversion=65`, "QuickBooks preferences");
+      const home = String(pJson?.Preferences?.CurrencyPrefs?.HomeCurrency?.value ?? "").trim().toUpperCase();
+      if (home) orgCurrencies[String(conn.realm_id ?? "quickbooks")] = { name: conn.company_name ?? "QuickBooks", currency: home };
+    } catch (err) {
+      // Base currency is a nice-to-have; never fail the sync over it.
+      logAccounting(provider, "sync", { userId, step: "base_currency_failed", error: String(err).slice(0, 200) });
+    }
     const customerWhere = since ? ` where Metadata.LastUpdatedTime > '${since}'` : "";
     const invoiceWhere = since ? ` where Metadata.LastUpdatedTime > '${since}'` : "";
     const cJson = await api.fetchJson(
@@ -972,6 +983,17 @@ export async function fetchAndNormalize(
       const xauth: Record<string, string> = {
         "Xero-tenant-id": tenant.tenantId,
       };
+      try {
+        const oJson = await api.fetchJson(
+          "https://api.xero.com/api.xro/2.0/Organisation",
+          `Xero organisation (${tenant.tenantName})`,
+          { "Xero-tenant-id": tenant.tenantId },
+        );
+        const baseCurrency = String(oJson?.Organisations?.[0]?.BaseCurrency ?? "").trim().toUpperCase();
+        if (baseCurrency) orgCurrencies[tenant.tenantId] = { name: tenant.tenantName, currency: baseCurrency };
+      } catch (err) {
+        logAccounting(provider, "sync", { userId, step: "base_currency_failed", error: String(err).slice(0, 200) });
+      }
       if (since) xauth["If-Modified-Since"] = new Date(since).toUTCString();
 
       for (let page = 1; page <= 50; page++) {
@@ -1104,9 +1126,14 @@ export async function fetchAndNormalize(
 
   // Record this successful pull so the next sync only fetches deltas.
   const db = await admin();
+  const currencies = Object.values(orgCurrencies).map((o) => o.currency);
+  const agreed = currencies.length > 0 && currencies.every((c) => c === currencies[0]) ? currencies[0]! : null;
   await db
     .from("accounting_connections")
-    .update({ last_synced_at: startedAt })
+    .update({
+      last_synced_at: startedAt,
+      ...(currencies.length > 0 ? { base_currency: agreed, tenant_currencies: orgCurrencies } : {}),
+    })
     .eq("user_id", userId)
     .eq("provider", provider);
 
