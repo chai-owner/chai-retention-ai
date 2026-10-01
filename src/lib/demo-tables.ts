@@ -54,6 +54,9 @@ export function demoTransactions(): TransactionRow[] {
         amountDue: unpaid ? amount : 0,
         paidDate: unpaid ? null : occurred,
         daysOverdue: overdue,
+        currency: "USD",
+        source: "demo",
+        currencyVerified: "1",
       });
     }
   });
