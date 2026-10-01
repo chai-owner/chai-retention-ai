@@ -136,6 +136,8 @@ export interface CurrencyExclusion {
   unconfirmedRows: number;
   /** Rows with no currency, counted as the account's currency. */
   assumedRows: number;
+  /** Excluded rows per source ("xero", "quickbooks", "csv"…). */
+  bySource: Record<string, number>;
 }
 
 type Rows = Record<string, Array<Record<string, string>>>;
@@ -150,7 +152,7 @@ export function applyAccountCurrency<T extends Rows>(
   accountCurrency: unknown,
 ): { data: T; exclusion: CurrencyExclusion } {
   const account = normalizeDataCurrency(accountCurrency);
-  const exclusion: CurrencyExclusion = { excludedRows: 0, byCode: {}, unconfirmedRows: 0, assumedRows: 0 };
+  const exclusion: CurrencyExclusion = { excludedRows: 0, byCode: {}, unconfirmedRows: 0, assumedRows: 0, bySource: {} };
   let next: T | null = null;
   for (const key of MONEY_DATASETS) {
     const rows = data[key];
@@ -167,6 +169,8 @@ export function applyAccountCurrency<T extends Rows>(
       if (status === "unconfirmed") exclusion.unconfirmedRows++;
       const label = status === "unconfirmed" ? `${code} (unconfirmed)` : code;
       exclusion.byCode[label] = (exclusion.byCode[label] ?? 0) + 1;
+      const src = sourceOf(row) || "unknown";
+      exclusion.bySource[src] = (exclusion.bySource[src] ?? 0) + 1;
       changed ??= rows.slice();
       changed[i] = stripAmounts(row, code);
     });
@@ -185,8 +189,20 @@ export function describeCurrencyExclusion(e: CurrencyExclusion, account: DataCur
     .sort((a, b) => b[1] - a[1])
     .map(([code, n]) => `${n} in ${code}`)
     .join(", ");
+  const sources = Object.entries(e.bySource)
+    .sort((a, b) => b[1] - a[1])
+    .map(([src, n]) => `${n} from ${sourceLabel(src)}`)
+    .join(", ");
   const noun = e.excludedRows === 1 ? "record is" : "records are";
-  return `${e.excludedRows} ${noun} not in your account's ${account} (${parts}) — left out of revenue totals and amount-based measures. Their dates still count.`;
+  return `${e.excludedRows} ${noun} not in your account's ${account} (${parts}; ${sources}) — left out of revenue totals and amount-based measures. Their dates still count.`;
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  xero: "Xero", quickbooks: "QuickBooks", freshbooks: "FreshBooks", hubspot: "HubSpot",
+  zoho: "Zoho CRM", zoho_crm: "Zoho CRM", salesforce: "Salesforce", csv: "uploads", unknown: "unknown source",
+};
+function sourceLabel(src: string): string {
+  return SOURCE_LABELS[src] ?? src;
 }
 
 /** Which kinds of measure still use foreign-currency rows. */

@@ -36,4 +36,4 @@
 - [ ] Apply the approved Identity Resolution help-article wording only when publishing is approved
 - [ ] Data currency (USD/ZAR): setting, shared formatter, shared foreign-currency rule in both scoring paths (amount measures only), QuickBooks fallback fix, stored "$" text audit, uploads capture currency, Xero multi-org base currency, switch confirmation (owner/admin, audit), onboarding choice, formatting details, Ask ChAi rule, help/copy audit
 - [ ] Data currency verification: USD regression before/after on all accounts, SecureNest ZAR simulation, tests incl. no-stray-$ guard, self-review search — DO NOT publish
-- [ ] Data currency — remaining before publish approval: Data Quality exclusion line, chart ticks via formatMoneyTick, "no stray $" guard test, all-account USD regression, SecureNest ZAR simulation, help/copy audit, final $/USD self-review, scoring-path parity test.
+- [x] Data currency — build, checks and verification done; awaiting publish approval.

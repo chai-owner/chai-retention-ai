@@ -76,7 +76,7 @@ export const datasetSchemas: DatasetSchema[] = [
       { name: "name", mandatory: false, identifier: true, description: `Customer or company name. ${IDENTIFIER_HINT}`, example: "Brightwell Software" },
       { name: "email", mandatory: false, identifier: true, description: `Primary contact email. ${IDENTIFIER_HINT}`, example: "ops@brightwell.com" },
       { name: "signup_date", mandatory: true, description: "When they became a customer (YYYY-MM-DD)", example: "2026-02-14" },
-      { name: "monthly_revenue", mandatory: false, description: "Average revenue per month ($)", example: "1200" },
+      { name: "monthly_revenue", mandatory: false, description: "Average revenue per month, in your account currency", example: "1200" },
       { name: "plan", mandatory: false, description: "Plan or tier name", example: "Growth" },
       { name: "region", mandatory: false, description: "Country or region", example: "US" },
     ],
@@ -92,10 +92,10 @@ export const datasetSchemas: DatasetSchema[] = [
     fields: [
       ...customerIdentifierFields(),
       { name: "transaction_id", mandatory: true, description: "Unique transaction ID", example: "TXN-90021" },
-      { name: "amount", mandatory: true, description: "Transaction amount ($)", example: "1200" },
+      { name: "amount", mandatory: true, description: "Transaction amount, in your account currency unless the currency column says otherwise", example: "1200" },
       { name: "transaction_date", mandatory: true, description: "Date of transaction (YYYY-MM-DD)", example: "2026-08-03" },
       { name: "product", mandatory: false, description: "Product or SKU purchased", example: "Annual plan" },
-      { name: "currency", mandatory: false, description: "Currency code", example: "USD" },
+      { name: "currency", mandatory: false, description: "Currency code, e.g. USD or ZAR (blank = your account currency)", example: "USD" },
     ],
     sampleRows: [
       ["CUS-1001", "ops@brightwell.com", "Brightwell Software", "TXN-90021", "1200", "2026-08-03", "Annual plan", "USD"],

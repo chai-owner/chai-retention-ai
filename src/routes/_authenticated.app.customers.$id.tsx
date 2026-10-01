@@ -1,3 +1,4 @@
+import { MoneyIcon } from "@/components/money-icon";
 import { useState } from "react";
 import { NOT_ENOUGH_DATA_LABEL } from "@/lib/metric-evidence";
 import { useQuery } from "@tanstack/react-query";
@@ -24,7 +25,6 @@ import {
   ArrowLeft,
   HeartPulse,
   AlertTriangle,
-  DollarSign,
   Smile,
   ShoppingCart,
   Activity,
@@ -306,7 +306,7 @@ function CustomerDetail() {
           tone="danger"
           hint={`${churnProbabilityPhrase(c.churnProbability)} · ${c.confidenceReason ? churnConfidenceText(c.churnConfidence ?? churnConfidenceFor(c.dataCategories ?? 0), c.confidenceReason) : churnConfidenceLabel(c.churnConfidence ?? churnConfidenceFor(c.dataCategories ?? 0))}`}
         />
-        <StatCard label="Revenue value" value={formatCurrency(c.revenue)} icon={DollarSign} />
+        <StatCard label="Revenue value" value={formatCurrency(c.revenue)} icon={MoneyIcon} />
         <StatCard label="Sentiment" value={sentimentLabel} icon={Smile} tone={c.sentiment >= 60 ? "success" : c.sentiment >= 40 ? "warning" : "danger"} hint={`Score ${c.sentiment}/100`} />
       </div>
 

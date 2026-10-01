@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useIngested } from "@/lib/ingested-data-store";
+import { useAccountCurrency } from "@/lib/account-currency";
+import { applyAccountCurrency, describeCurrencyExclusion } from "@/lib/currency-rules";
 import { toast } from "sonner";
 import { FileSpreadsheet, Trash2, UserX, ScrollText, Link2 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui/chai";
@@ -70,6 +73,14 @@ function DataQualityPage() {
   const uploads = useUploads();
   const signedIn = useSignedIn();
   const isReal = signedIn === true;
+  const ingestedRaw = useIngested();
+  const dataCurrency = useAccountCurrency();
+  const currencyExclusion = useMemo(
+    () => applyAccountCurrency(ingestedRaw, dataCurrency).exclusion,
+    [ingestedRaw, dataCurrency],
+  );
+  const currencyNote = isReal ? describeCurrencyExclusion(currencyExclusion, dataCurrency) : null;
+  const currencyUnconfirmed = currencyExclusion.unconfirmedRows;
   const [forgetId, setForgetId] = useState("");
   const [forgetting, setForgetting] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -187,6 +198,18 @@ function DataQualityPage() {
               </div>
             ))}
           </div>
+        </Card>
+      )}
+
+      {currencyNote && (
+        <Card className="mt-6">
+          <h3 className="font-semibold">Records in another currency</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{currencyNote}</p>
+          {currencyUnconfirmed > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {currencyUnconfirmed} of these were synced before ChAi read their real currency. Re-sync that connection to confirm them.
+            </p>
+          )}
         </Card>
       )}
 
