@@ -4,7 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PageHeader } from "@/components/ui/chai";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { formatCurrency } from "@/lib/mock-data";
+import { formatRowAmount } from "@/lib/account-currency";
+
+const rowCurrencyFields = (r: { currency: string; source: string; currencyVerified: string }) => ({
+  currency: r.currency,
+  __source: r.source,
+  currency_verified: r.currencyVerified,
+});
 import { listTransactionsPage, TRANSACTION_PAGE_SIZE } from "@/lib/data-tables.functions";
 import { useEffectiveSignedIn } from "@/lib/use-auth-state";
 import { useDemoMode } from "@/lib/use-demo-mode";
@@ -89,7 +95,7 @@ function TransactionsPage() {
                   <td className="px-4 py-3 font-medium">{r.transactionId}</td>
                   <td className="px-4 py-3 text-muted-foreground">{r.customerId || "—"}</td>
                   <td className="px-4 py-3 tabular-nums">
-                    {r.amount == null ? "—" : formatCurrency(r.amount)}
+                    {r.amount == null ? "—" : formatRowAmount(r.amount, rowCurrencyFields(r))}
                   </td>
                   <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
                     {fmtDate(r.occurredAt)}
@@ -98,7 +104,7 @@ function TransactionsPage() {
                     {fmtDate(r.dueDate)}
                   </td>
                   <td className="hidden px-4 py-3 tabular-nums lg:table-cell">
-                    {r.amountDue == null ? "—" : formatCurrency(r.amountDue)}
+                    {r.amountDue == null ? "—" : formatRowAmount(r.amountDue, rowCurrencyFields(r))}
                   </td>
                   <td className="px-4 py-3 tabular-nums">
                     {r.daysOverdue && r.daysOverdue > 0 ? (

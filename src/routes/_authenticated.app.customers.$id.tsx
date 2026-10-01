@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NOT_ENOUGH_DATA_LABEL } from "@/lib/metric-evidence";
 import { useQuery } from "@tanstack/react-query";
+import { formatRowAmount } from "@/lib/account-currency";
 import { useServerFn } from "@tanstack/react-start";
 import {
   churnConfidenceFor,
@@ -254,10 +255,11 @@ function CustomerDetail() {
       ) : null}
 
       {(() => {
-        const overdue = worstOverdueInvoice(
-          ingested.transactions as Array<Record<string, unknown>> | undefined,
-          c.id,
-        );
+        const overdueRows = ingested.transactions as Array<Record<string, unknown>> | undefined;
+        const overdue = worstOverdueInvoice(overdueRows, c.id);
+        const overdueRow = overdue
+          ? overdueRows?.find((r) => String(r["transaction_id"] ?? "") === overdue.transactionId) ?? { currency: overdue.currency }
+          : null;
         if (!overdue) return null;
         return (
           <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-4">
@@ -265,7 +267,7 @@ function CustomerDetail() {
             <div>
               <p className="text-sm font-semibold text-foreground">
                 ⚠️ Invoice {overdue.daysOverdue} {overdue.daysOverdue === 1 ? "day" : "days"} overdue —{" "}
-                {formatCurrency(overdue.amountDue)} outstanding
+                {formatRowAmount(overdue.amountDue, overdueRow ?? {})} outstanding
               </p>
               <p className="text-xs text-muted-foreground">
                 {overdue.transactionId ? `Invoice ${overdue.transactionId}` : "Open invoice"}
