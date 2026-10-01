@@ -74,7 +74,7 @@ describe("3. customer monthly revenue currency", () => {
     expect(c.rows[0]![c.headers.indexOf("currency")]).toBe("ZAR");
   });
   it("foreign-currency customer revenue is left out; untagged uploads follow the account", () => {
-    const data = {
+    const data: { customers: Array<Record<string, string>> } = {
       customers: [
         { customer_id: "synced", monthly_revenue: "1000", currency: "ZAR", currency_verified: "1", __source: "hubspot" },
         { customer_id: "upload", monthly_revenue: "500" },
