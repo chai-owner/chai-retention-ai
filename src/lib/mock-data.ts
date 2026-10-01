@@ -1,4 +1,4 @@
-import { formatMoney, type DataCurrency } from "@/lib/money";
+import { formatMoney, currencySymbol, type DataCurrency } from "@/lib/money";
 import { accountCurrency } from "@/lib/account-currency";
 // Central mock data + helpers powering the ChAi demo experience.
 // All numbers are illustrative sample data for a fictional company.
@@ -666,7 +666,14 @@ export function metricActualValue(
   const a100 = metric.valueAt100 ?? 100;
   const raw = a0 + (a100 - a0) * (score / 100);
   const num = raw.toFixed(metric.decimals ?? 0);
-  return `${metric.prefix ?? ""}${num}${metric.unit ?? ""}`;
+  return `${displayPrefix(metric.prefix)}${num}${metric.unit ?? ""}`;
+}
+
+/** A saved "$" measure prefix means "money": show the account's symbol. */
+export function displayPrefix(prefix: string | undefined, currency?: DataCurrency): string {
+  if (prefix !== "$") return prefix ?? "";
+  const c = currency ?? accountCurrency();
+  return c === "USD" ? "$" : `${currencySymbol(c)} `;
 }
 
 
