@@ -35,6 +35,8 @@ const profileInput = z.object({
   // The AI-nominated metric definitions; stored as-is so upload templates and
   // scoring stay aligned with what ChAi picked during onboarding.
   metrics: z.array(z.any()).optional(),
+  // Only honoured while onboarding; afterwards it changes via setDataCurrency.
+  dataCurrency: z.enum(["USD", "ZAR"]).optional(),
 });
 
 export const getProfile = createServerFn({ method: "GET" })
@@ -44,7 +46,7 @@ export const getProfile = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "full_name, email, company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, must_track, segments, success_actions, disengagement, churn_definition, tracked, channels, metric_weights, metrics, onboarded, unlocked, booked_at",
+        "full_name, email, company, industry, model, size, customers, avg_value, what_buy, cadence, lifespan, concerns, must_track, segments, success_actions, disengagement, churn_definition, tracked, channels, metric_weights, metrics, onboarded, unlocked, booked_at, data_currency, data_currency_suggestion_dismissed",
       )
       .eq("id", userId)
       .maybeSingle();
@@ -75,6 +77,8 @@ export const getProfile = createServerFn({ method: "GET" })
       onboarded: data.onboarded,
       unlocked: data.unlocked ?? false,
       bookedAt: data.booked_at ?? null,
+      dataCurrency: (data.data_currency === "ZAR" ? "ZAR" : "USD") as "USD" | "ZAR",
+      dataCurrencySuggestionDismissed: data.data_currency_suggestion_dismissed ?? null,
     };
   });
 
@@ -83,8 +87,18 @@ export const saveProfile = createServerFn({ method: "POST" })
   .inputValidator((input) => profileInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    // The currency choice is part of onboarding; once onboarded it can only
+    // change through setDataCurrency (owner/admin, recorded).
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("onboarded")
+      .eq("id", userId)
+      .maybeSingle();
+    const onboardingCurrency =
+      data.dataCurrency && existing?.onboarded !== true ? { data_currency: data.dataCurrency } : {};
     const { error } = await supabase.from("profiles").upsert({
       id: userId,
+      ...onboardingCurrency,
       company: data.company,
       industry: data.industry,
       model: data.model,
