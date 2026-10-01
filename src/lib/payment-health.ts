@@ -37,7 +37,9 @@ function dayStart(ms: number): number {
  * never overdue, whatever its due date says.
  */
 export function rowDaysOverdue(row: Record<string, unknown>, now: number = Date.now()): number {
-  const outstanding = num(row["amount_due"]);
+  // Foreign-currency rows have their amount blanked but keep an open-balance
+  // flag, so overdue days (a date measure) still count (currency-rules.ts).
+  const outstanding = String(row["__outstanding"] ?? "") === "1" ? 1 : num(row["amount_due"]);
   if (!Number.isFinite(outstanding) || outstanding <= 0) return 0;
   const due = String(row["due_date"] ?? "").trim();
   const dueMs = due ? Date.parse(`${due.slice(0, 10)}T00:00:00Z`) : NaN;

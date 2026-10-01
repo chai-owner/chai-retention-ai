@@ -3,6 +3,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Plus, Trash2, AlertCircle, Check, Loader2, Save } from "lucide-react";
 import { Card } from "@/components/ui/chai";
+import { DataCurrencyCard } from "@/components/data-currency-card";
+import { useAccountCurrency } from "@/lib/account-currency";
+import { currencySymbol } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { profileStore, useProfile, type ProfileSegment } from "@/lib/profile-store";
 import { saveProfile } from "@/lib/profile.functions";
@@ -20,6 +23,7 @@ const MAX_SEGMENTS = 4;
 
 function Settings() {
   const profile = useProfile();
+  const sym = currencySymbol(useAccountCurrency());
   const activeMetrics = useActiveMetrics();
   // Only admins (including an admin impersonating this user) may drop metrics.
   const isAdmin = useIsAdmin();
@@ -233,11 +237,13 @@ function Settings() {
             <input className={inputCls} value={customers} onChange={(e) => setCustomers(e.target.value)} placeholder="e.g. 400" />
           </Field>
           <Field label="Average customer value">
-            <input className={inputCls} value={avgValue} onChange={(e) => setAvgValue(e.target.value)} placeholder="e.g. $12,000 / year" />
+            <input className={inputCls} value={avgValue} onChange={(e) => setAvgValue(e.target.value)} placeholder={sym === "$" ? "e.g. $12,000 / year" : `e.g. ${sym} 12,000 / year`} />
           </Field>
         </div>
       </Card>
 
+
+      <DataCurrencyCard />
 
       {/* Segments */}
       <Card title="Customer segments" subtitle={`Group by average monthly revenue. Up to ${MAX_SEGMENTS} non-overlapping ranges.`} className="space-y-4 sm:p-6">
@@ -257,10 +263,10 @@ function Settings() {
                   <input className={inputCls} value={seg.name} onChange={(e) => updateSegment(i, "name", e.target.value)} placeholder="e.g. Premium" />
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Min / month ($)">
+                  <Field label={`Min / month (${sym})`}>
                     <input type="number" min="0" inputMode="numeric" className={inputCls} value={seg.min} onChange={(e) => updateSegment(i, "min", e.target.value)} placeholder="0" />
                   </Field>
-                  <Field label="Max / month ($)">
+                  <Field label={`Max / month (${sym})`}>
                     <input type="number" min="0" inputMode="numeric" className={inputCls} value={seg.max} onChange={(e) => updateSegment(i, "max", e.target.value)} placeholder="500" />
                   </Field>
                 </div>

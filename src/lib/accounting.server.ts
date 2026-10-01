@@ -835,7 +835,15 @@ const TRANSACTION_HEADERS = [
   "amount_due",
   "paid_date",
   "days_overdue",
+  // "1" when the currency came from the provider itself (currency-rules.ts).
+  "currency_verified",
 ];
+
+/** A provider currency code and whether it was really read. */
+function providerCurrency(code: unknown): [string, string] {
+  const c = String(code ?? "").trim().toUpperCase();
+  return c ? [c, "1"] : ["", ""];
+}
 
 function isoDate(v: any): string {
   if (!v) return "";
@@ -897,9 +905,21 @@ export async function fetchAndNormalize(
 
   const customerRows: string[][] = [];
   const txnRows: string[][] = [];
+  // Organisation base currency per org (Xero can sync several), used only to
+  // SUGGEST the account's data currency — never to switch it.
+  const orgCurrencies: Record<string, { name: string; currency: string }> = {};
 
   if (provider === "quickbooks") {
     const base = `${qboApiBase()}/v3/company/${conn.realm_id}`;
+    try {
+      const pJson = await api.fetchJson(`${base}/preferences?minorversion=65`, "QuickBooks preferences");
+      const home = String(pJson?.Preferences?.CurrencyPrefs?.HomeCurrency?.value ?? "").trim().toUpperCase();
+      if (home) orgCurrencies[String(conn.realm_id ?? "quickbooks")] = { name: conn.company_name ?? "QuickBooks", currency: home };
+    } catch (err) {
+      if (err instanceof AccountingReauthRequired) throw err;
+      // Base currency is a nice-to-have; never fail the sync over it.
+      logAccounting(provider, "sync", { userId, step: "base_currency_failed", error: String(err).slice(0, 200) });
+    }
     const customerWhere = since ? ` where Metadata.LastUpdatedTime > '${since}'` : "";
     const invoiceWhere = since ? ` where Metadata.LastUpdatedTime > '${since}'` : "";
     const cJson = await api.fetchJson(
@@ -928,13 +948,15 @@ export async function fetchAndNormalize(
         String(inv.TotalAmt ?? ""),
         isoDate(inv.TxnDate),
         inv.Line?.find((l: any) => l.SalesItemLineDetail)?.Description ?? "Invoice",
-        inv.CurrencyRef?.value ?? "USD",
+        // Never assume USD: no currency on the invoice means "unknown".
+        providerCurrency(inv.CurrencyRef?.value)[0],
         isoDate(inv.DueDate),
         numStr(inv.Balance),
         // QuickBooks only exposes settlement dates through the Payments API,
         // which this sync does not call yet.
         "",
         String(daysOverdue(inv.DueDate, inv.Balance)),
+        providerCurrency(inv.CurrencyRef?.value)[1],
       ]);
     }
   } else if (provider === "xero") {
@@ -962,6 +984,18 @@ export async function fetchAndNormalize(
       const xauth: Record<string, string> = {
         "Xero-tenant-id": tenant.tenantId,
       };
+      try {
+        const oJson = await api.fetchJson(
+          "https://api.xero.com/api.xro/2.0/Organisation",
+          `Xero organisation (${tenant.tenantName})`,
+          { "Xero-tenant-id": tenant.tenantId },
+        );
+        const baseCurrency = String(oJson?.Organisations?.[0]?.BaseCurrency ?? "").trim().toUpperCase();
+        if (baseCurrency) orgCurrencies[tenant.tenantId] = { name: tenant.tenantName, currency: baseCurrency };
+      } catch (err) {
+        if (err instanceof AccountingReauthRequired) throw err;
+        logAccounting(provider, "sync", { userId, step: "base_currency_failed", error: String(err).slice(0, 200) });
+      }
       if (since) xauth["If-Modified-Since"] = new Date(since).toUTCString();
 
       for (let page = 1; page <= 50; page++) {
@@ -999,11 +1033,12 @@ export async function fetchAndNormalize(
             String(inv.Total ?? ""),
             isoDate(inv.DateString || inv.Date),
             inv.LineItems?.[0]?.Description ?? "Invoice",
-            inv.CurrencyCode ?? "",
+            providerCurrency(inv.CurrencyCode)[0],
             isoDate(inv.DueDateString || inv.DueDate),
             numStr(inv.AmountDue),
             isoDate(inv.FullyPaidOnDate),
             String(daysOverdue(inv.DueDateString || inv.DueDate, inv.AmountDue)),
+            providerCurrency(inv.CurrencyCode)[1],
           ]);
         }
         if (invoices.length < PAGE_SIZE) break;
@@ -1079,11 +1114,12 @@ export async function fetchAndNormalize(
           String(inv.amount?.amount ?? ""),
           isoDate(inv.create_date),
           inv.lines?.[0]?.name ?? "Invoice",
-          inv.amount?.code ?? inv.currency_code ?? "",
+          providerCurrency(inv.amount?.code ?? inv.currency_code)[0],
           isoDate(inv.due_date),
           numStr(inv.outstanding?.amount),
           "",
           String(daysOverdue(inv.due_date, inv.outstanding?.amount)),
+          providerCurrency(inv.amount?.code ?? inv.currency_code)[1],
         ]);
       }
       if (invoices.length < PER_PAGE || page >= (result.pages ?? page)) break;
@@ -1092,9 +1128,14 @@ export async function fetchAndNormalize(
 
   // Record this successful pull so the next sync only fetches deltas.
   const db = await admin();
+  const currencies = Object.values(orgCurrencies).map((o) => o.currency);
+  const agreed = currencies.length > 0 && currencies.every((c) => c === currencies[0]) ? currencies[0]! : null;
   await db
     .from("accounting_connections")
-    .update({ last_synced_at: startedAt })
+    .update({
+      last_synced_at: startedAt,
+      ...(currencies.length > 0 ? { base_currency: agreed, tenant_currencies: orgCurrencies } : {}),
+    })
     .eq("user_id", userId)
     .eq("provider", provider);
 

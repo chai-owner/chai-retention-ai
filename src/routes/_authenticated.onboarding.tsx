@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DATA_CURRENCIES, DATA_CURRENCY_LABELS } from "@/lib/money";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
@@ -60,6 +61,8 @@ function Onboarding() {
     size: "1–10",
     customers: "",
     avgValue: "",
+    // Chosen explicitly — never silently defaulted for new sign-ups.
+    dataCurrency: "" as "" | "USD" | "ZAR",
     model: "Subscription business",
     whatBuy: "",
     cadence: "",
@@ -263,7 +266,8 @@ function Onboarding() {
           form.company.trim() !== "" &&
           form.industry.trim() !== "" &&
           form.customers.trim() !== "" &&
-          form.avgValue.trim() !== ""
+          form.avgValue.trim() !== "" &&
+          form.dataCurrency !== ""
         );
       case 1:
         return segmentsValid;
@@ -363,6 +367,7 @@ function Onboarding() {
       channels,
       metricWeights: effectiveWeights,
       metrics: savedMetrics,
+      dataCurrency: form.dataCurrency === "ZAR" ? ("ZAR" as const) : ("USD" as const),
     };
     profileStore.save(payload);
     // Persist to the user's account so it follows them across devices.
@@ -460,7 +465,22 @@ function Onboarding() {
                       <input className={inputCls} value={form.customers} onChange={(e) => update("customers", e.target.value)} placeholder="e.g. 400" />
                     </Field>
                     <Field label="Average customer value">
-                      <input className={inputCls} value={form.avgValue} onChange={(e) => update("avgValue", e.target.value)} placeholder="e.g. $12,000 / year" />
+                      <input className={inputCls} value={form.avgValue} onChange={(e) => update("avgValue", e.target.value)} placeholder={form.dataCurrency === "ZAR" ? "e.g. R 12,000 / year" : "e.g. $12,000 / year"} />
+                    </Field>
+                    <Field label="What currency is your customer data in?">
+                      <select
+                        className={inputCls}
+                        value={form.dataCurrency}
+                        onChange={(e) => update("dataCurrency", e.target.value as "USD" | "ZAR")}
+                      >
+                        <option value="" disabled>
+                          Select a currency
+                        </option>
+                        {DATA_CURRENCIES.map((c) => (
+                          <option key={c} value={c}>{DATA_CURRENCY_LABELS[c]}</option>
+                        ))}
+                      </select>
+                      <span className="mt-1 block text-xs text-muted-foreground">Amounts are shown in this currency. Nothing is converted.</span>
                     </Field>
                   </div>
                 </div>
@@ -500,7 +520,7 @@ function Onboarding() {
                             />
                           </Field>
                           <div className="grid grid-cols-2 gap-3">
-                            <Field label="Min / month ($)">
+                            <Field label={`Min / month (${form.dataCurrency === "ZAR" ? "R" : "$"})`}>
                               <input
                                 type="number"
                                 min="0"
@@ -511,7 +531,7 @@ function Onboarding() {
                                 placeholder="0"
                               />
                             </Field>
-                            <Field label="Max / month ($)">
+                            <Field label={`Max / month (${form.dataCurrency === "ZAR" ? "R" : "$"})`}>
                               <input
                                 type="number"
                                 min="0"

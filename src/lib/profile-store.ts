@@ -41,6 +41,10 @@ export interface OnboardingProfile {
   metricWeights?: Record<string, number>;
   // The AI-generated metric set (definitions) tailored to this business.
   metrics?: PlannerMetric[];
+  // What currency the account's data is in (labels only — never converted).
+  dataCurrency?: "USD" | "ZAR";
+  // Currency whose "switch?" suggestion the user dismissed.
+  dataCurrencySuggestionDismissed?: string | null;
 }
 
 const STORAGE_KEY = "chai.onboarding.profile";

@@ -3,6 +3,7 @@
 // inferred (and adjust it) -> fix any validation problems -> confirm & save.
 // Validation runs entirely client-side so nothing is persisted until the data
 // is clean and the user explicitly confirms.
+import { captureRowCurrency, isAmountKey, splitMoneyCell } from "@/lib/currency-rules";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -104,7 +105,8 @@ function validateValue(type: FieldType, raw: string): string | null {
   if (v === "") return null; // emptiness handled separately for mandatory fields
   switch (type) {
     case "number":
-      return /^-?\d+(\.\d+)?$/.test(v.replace(/[$,]/g, ""))
+      // Currency written in the cell ("R 1,200", "ZAR 1200") is kept per row.
+      return /^-?\d+(\.\d+)?$/.test(splitMoneyCell(v).value)
         ? null
         : `expected a number, got "${v}"`;
     case "date": {
@@ -362,7 +364,10 @@ export function UploadWizard({
         const idx = col ? headers.indexOf(col) : -1;
         obj[f.name] = idx >= 0 ? (r[idx] ?? "").trim() : "";
       }
-      return obj;
+      // Keep the currency per row instead of stripping it (currency-rules.ts).
+      return dataset.fields.some((f) => f.name === "currency")
+        ? captureRowCurrency(obj, dataset.fields.filter((f) => inferType(f) === "number" && isAmountKey(f.name)).map((f) => f.name))
+        : obj;
     });
     const taggedRows = tagSource(rowObjects, "csv");
     ingestedStore.addRows(dataset.key, taggedRows);

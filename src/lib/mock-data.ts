@@ -1,3 +1,5 @@
+import { formatMoney, currencySymbol, type DataCurrency } from "@/lib/money";
+import { accountCurrency } from "@/lib/account-currency";
 // Central mock data + helpers powering the ChAi demo experience.
 // All numbers are illustrative sample data for a fictional company.
 import {
@@ -167,7 +169,7 @@ function buildTimeline(
   const contract = 12000 + Math.round(rand() * 60) * 1000;
   const events: TimelineEvent[] = [
     { date: daysAgoISO(332), type: "signup", title: "Became a customer", detail: `${name} signed up for the Growth plan.` },
-    { date: daysAgoISO(318), type: "purchase", title: "First purchase", detail: `Initial annual contract — $${contract.toLocaleString()}.` },
+    { date: daysAgoISO(318), type: "purchase", title: "First purchase", detail: `Initial annual contract — ${formatMoney(contract, "USD")}.` },
     { date: daysAgoISO(248), type: "usage", title: "Strong early adoption", detail: "Activated 4 of 5 core features. Health score peaked at 88." },
     { date: daysAgoISO(150), type: "survey", title: "Survey response", detail: "NPS of 9 — promoter. 'Great product, easy to use.'" },
   ];
@@ -664,7 +666,14 @@ export function metricActualValue(
   const a100 = metric.valueAt100 ?? 100;
   const raw = a0 + (a100 - a0) * (score / 100);
   const num = raw.toFixed(metric.decimals ?? 0);
-  return `${metric.prefix ?? ""}${num}${metric.unit ?? ""}`;
+  return `${displayPrefix(metric.prefix)}${num}${metric.unit ?? ""}`;
+}
+
+/** A saved "$" measure prefix means "money": show the account's symbol. */
+export function displayPrefix(prefix: string | undefined, currency?: DataCurrency): string {
+  if (prefix !== "$") return prefix ?? "";
+  const c = currency ?? accountCurrency();
+  return c === "USD" ? "$" : `${currencySymbol(c)} `;
 }
 
 
@@ -712,11 +721,11 @@ export const fieldMappings = [
   { source: "plan_state", target: "Status", confidence: 72 },
 ];
 
-export function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-    notation: n >= 1_000_000 ? "compact" : "standard",
-  }).format(n);
+/**
+ * Customer-data money in the signed-in account's data currency (USD for the
+ * public demo and signed-out visitors). Labels only — never converted.
+ * Pass `currency` explicitly where the account currency must not apply.
+ */
+export function formatCurrency(n: number, currency?: DataCurrency) {
+  return formatMoney(n, currency ?? accountCurrency());
 }

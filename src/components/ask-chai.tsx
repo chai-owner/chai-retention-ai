@@ -8,6 +8,8 @@ import { useScoredData, useDataCoverage } from "@/lib/use-scored-data";
 import { coverageBasis } from "@/lib/data-coverage";
 import { useProfile } from "@/lib/profile-store";
 import { formatCurrency } from "@/lib/mock-data";
+import { useAccountCurrency } from "@/lib/account-currency";
+import { currencySymbol } from "@/lib/money";
 import { ChatMarkdown } from "@/components/chat-markdown";
 
 
@@ -39,6 +41,8 @@ export function AskChAi() {
   const ask = useServerFn(askChai);
   const linkCustomers = sortedByRisk.map((c) => ({ id: c.id, name: c.name }));
 
+  const currency = useAccountCurrency();
+
   function buildContext() {
     const e = executive;
     const top = sortedByRisk.filter((c) => !c.notEnoughData).slice(0, 5);
@@ -51,6 +55,7 @@ export function AskChAi() {
       })
       .join("; ");
     return [
+      `Data currency: ${currency} (symbol "${currencySymbol(currency)}"); every amount below is already formatted in it`,
       `Total customers: ${e.totalCustomers ?? "n/a"}`,
       `At-risk accounts: ${e.atRisk}, critical: ${e.critical}`,
       `Customers with not enough data to judge yet: ${thin}`,
@@ -79,6 +84,7 @@ export function AskChAi() {
         data: {
           messages: history.filter((m) => m.text !== GREETING).map((m) => ({ role: m.role, text: m.text })),
           context: buildContext(),
+          currency,
           coverage: {
             confidence: coverage.confidence,
             headline: coverage.headline,

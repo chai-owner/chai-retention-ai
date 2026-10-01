@@ -1,3 +1,4 @@
+import { batchSource } from "@/lib/ingest-row-normalize";
 // Server-side paginated reads for the app's data tables.
 //
 // These deliberately use Supabase `.range(from, to)` with an exact count so a
@@ -124,6 +125,13 @@ export const listCustomerRiskPage = createServerFn({ method: "POST" })
 
 // ---- Transactions table ---------------------------------------------------
 
+function rowSource(r: Record<string, unknown>): string {
+  const own = String(r["source"] ?? "").trim();
+  if (own) return own;
+  const b = r["batch"] as { source_kind?: string; source_provider?: string } | null;
+  return b ? batchSource(b.source_kind ?? "", b.source_provider ?? "") : "";
+}
+
 export interface TransactionRow {
   id: string;
   transactionId: string;
@@ -134,6 +142,10 @@ export interface TransactionRow {
   amountDue: number | null;
   paidDate: string | null;
   daysOverdue: number | null;
+  /** The row's own currency code and origin, for honest labelling. */
+  currency: string;
+  source: string;
+  currencyVerified: string;
 }
 
 export const listTransactionsPage = createServerFn({ method: "POST" })
@@ -145,7 +157,7 @@ export const listTransactionsPage = createServerFn({ method: "POST" })
     const { data: rows, count, error } = await supabase
       .from("ingested_transactions")
       .select(
-        "id, transaction_id, customer_id, amount, occurred_at, due_date, amount_due, paid_date, days_overdue",
+        "id, transaction_id, customer_id, amount, occurred_at, due_date, amount_due, paid_date, days_overdue, currency:data->>currency, source:data->>__source, currency_verified:data->>currency_verified, batch:ingest_batches(source_kind, source_provider)",
         { count: "exact" },
       )
       .eq("user_id", userId)
@@ -164,6 +176,9 @@ export const listTransactionsPage = createServerFn({ method: "POST" })
         amountDue: r.amount_due,
         paidDate: r.paid_date,
         daysOverdue: r.days_overdue,
+        currency: String((r as Record<string, unknown>).currency ?? ""),
+        source: rowSource(r as Record<string, unknown>),
+        currencyVerified: String((r as Record<string, unknown>).currency_verified ?? ""),
       })),
       total: count ?? 0,
     };

@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           access_token: string
           account_id: string | null
+          base_currency: string | null
           company_name: string | null
           connected_at: string
           expires_at: string | null
@@ -31,6 +32,7 @@ export type Database = {
           refresh_token: string | null
           refresh_token_expires_at: string | null
           status: string
+          tenant_currencies: Json
           tenant_id: string | null
           tenants: Json
           updated_at: string
@@ -39,6 +41,7 @@ export type Database = {
         Insert: {
           access_token: string
           account_id?: string | null
+          base_currency?: string | null
           company_name?: string | null
           connected_at?: string
           expires_at?: string | null
@@ -52,6 +55,7 @@ export type Database = {
           refresh_token?: string | null
           refresh_token_expires_at?: string | null
           status?: string
+          tenant_currencies?: Json
           tenant_id?: string | null
           tenants?: Json
           updated_at?: string
@@ -60,6 +64,7 @@ export type Database = {
         Update: {
           access_token?: string
           account_id?: string | null
+          base_currency?: string | null
           company_name?: string | null
           connected_at?: string
           expires_at?: string | null
@@ -73,6 +78,7 @@ export type Database = {
           refresh_token?: string | null
           refresh_token_expires_at?: string | null
           status?: string
+          tenant_currencies?: Json
           tenant_id?: string | null
           tenants?: Json
           updated_at?: string
@@ -426,6 +432,39 @@ export type Database = {
           score?: number
           score_breakdown?: Json
           scored_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      data_currency_changes: {
+        Row: {
+          changed_by: string
+          created_at: string
+          excluded_rows: number
+          from_currency: string
+          id: string
+          org_id: string | null
+          to_currency: string
+          user_id: string
+        }
+        Insert: {
+          changed_by: string
+          created_at?: string
+          excluded_rows?: number
+          from_currency: string
+          id?: string
+          org_id?: string | null
+          to_currency: string
+          user_id: string
+        }
+        Update: {
+          changed_by?: string
+          created_at?: string
+          excluded_rows?: number
+          from_currency?: string
+          id?: string
+          org_id?: string | null
+          to_currency?: string
           user_id?: string
         }
         Relationships: []
@@ -1163,6 +1202,8 @@ export type Database = {
           concerns: string
           created_at: string
           customers: string
+          data_currency: string
+          data_currency_suggestion_dismissed: string | null
           disengagement: string
           email: string
           full_name: string
@@ -1194,6 +1235,8 @@ export type Database = {
           concerns?: string
           created_at?: string
           customers?: string
+          data_currency?: string
+          data_currency_suggestion_dismissed?: string | null
           disengagement?: string
           email?: string
           full_name?: string
@@ -1225,6 +1268,8 @@ export type Database = {
           concerns?: string
           created_at?: string
           customers?: string
+          data_currency?: string
+          data_currency_suggestion_dismissed?: string | null
           disengagement?: string
           email?: string
           full_name?: string

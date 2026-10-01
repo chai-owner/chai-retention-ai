@@ -544,7 +544,9 @@ export function buildZohoDatasets(raw: ZohoRawData): ExtractedDataset[] {
     num(r.Amount),
     dateOnly(r.Closing_Date),
     toStr(r.Deal_Name),
-    "USD",
+    // Never assume USD. Zoho's Currency field only exists on multi-currency
+    // orgs (requesting it elsewhere fails), so the currency is "unknown".
+    "",
     toStr(r.Stage),
     zohoDealStatus(r.Stage, r.Probability),
   ]);

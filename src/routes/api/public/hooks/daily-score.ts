@@ -79,7 +79,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
 
         const { data: profiles, error: profileError } = await supabaseAdmin
           .from("profiles")
-          .select("id, metrics, cadence, lifespan");
+          .select("id, metrics, cadence, lifespan, data_currency");
         if (profileError) {
           return new Response(JSON.stringify({ error: profileError.message }), {
             status: 500,
@@ -167,6 +167,7 @@ export const Route = createFileRoute("/api/public/hooks/daily-score")({
             let scores = scoreCustomers(metrics, data, {
               cadence: (profile.cadence as string | null) ?? undefined,
               lifespan: (profile.lifespan as string | null) ?? undefined,
+              currency: (profile.data_currency as string | null) ?? undefined,
             });
 
             // Phase 3: active (not dismissed) conversation signals nudge the

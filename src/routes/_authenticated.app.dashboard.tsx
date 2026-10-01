@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAccountCurrency } from "@/lib/account-currency";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { summarizeRiskReasons } from "@/lib/ai.functions";
@@ -86,6 +87,7 @@ function Dashboard() {
 
   // AI-generated one-line explanations for each at-risk account.
   const summarize = useServerFn(summarizeRiskReasons);
+  const dataCurrency = useAccountCurrency();
   const [riskSummaries, setRiskSummaries] = useState<Record<string, string>>({});
   const [aiRefreshing, setAiRefreshing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -97,7 +99,8 @@ function Dashboard() {
   // signature" so summaries never leak between accounts and regenerate whenever
   // new data is uploaded. Otherwise they're capped at one AI call per 24h.
   const uploadsSignature = `${uploads.length}:${uploads[0]?.id ?? "none"}:${uploads[0]?.uploadedAt ?? ""}`;
-  const summaryKey = `${userId ?? "anon"}|${topRisk.map((c) => c.id).join(",")}|${uploadsSignature}`;
+  // Currency is part of the key so cached AI text never keeps the old symbol.
+  const summaryKey = `${userId ?? "anon"}|${topRisk.map((c) => c.id).join(",")}|${uploadsSignature}|${dataCurrency}`;
 
   useEffect(() => {
     if (topRisk.length === 0) return;
@@ -126,6 +129,7 @@ function Dashboard() {
           health: c.health,
           factors: c.factors.map((f) => f.label),
         })),
+        currency: dataCurrency,
       },
     })
       .then((res) => {

@@ -3,7 +3,7 @@
 // no side effects — safe to run during render and on the server.
 import { customerIdentifierFields, IDENTIFIER_HINT, type DatasetSchema, type SchemaField } from "@/lib/data-schemas";
 import type { OnboardingProfile } from "@/lib/profile-store";
-import type { PlannerMetric } from "@/lib/mock-data";
+import { displayPrefix, type PlannerMetric } from "@/lib/mock-data";
 
 export interface PersonalizedField extends SchemaField {
   promoted?: boolean; // became required because of the profile
@@ -79,7 +79,7 @@ export function buildCustomMetricDatasets(
     const a0 = m.valueAt0 ?? 0;
     const a100 = m.valueAt100 ?? 100;
     const mid = a0 + (a100 - a0) * 0.6;
-    const sample = `${m.prefix ?? ""}${mid.toFixed(m.decimals ?? 0)}`;
+    const sample = `${displayPrefix(m.prefix)}${mid.toFixed(m.decimals ?? 0)}`;
     const unitSuffix = m.unit ? ` (${m.unit.trim()})` : "";
 
     out.push({
