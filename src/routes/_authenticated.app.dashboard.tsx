@@ -364,9 +364,9 @@ function Dashboard() {
               <BarChart data={segmentRevenue} margin={{ left: 4, right: 8, top: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="segment" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={70} />
+                <YAxis tickFormatter={(v) => formatCurrency(v, dataCurrency)} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={70} />
                 <Tooltip
-                  formatter={(v: number) => formatCurrency(v)}
+                  formatter={(v: number) => formatCurrency(v, dataCurrency)}
                   contentStyle={{ borderRadius: 10, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }}
                 />
                 <Bar dataKey="revenue" fill="var(--chart-1)" radius={[6, 6, 0, 0]} name="Revenue" />
