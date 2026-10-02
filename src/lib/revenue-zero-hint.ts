@@ -3,7 +3,7 @@ import type { Customer } from "@/lib/mock-data";
 /** An estimate of zero is inconclusive if any customer is unscoreable or revenue is absent. */
 export function revenueZeroHint(
   amount: number,
-  customers: Customer[],
+  customers: Pick<Customer, "revenue" | "hasUsableRevenue">[],
   notEnoughDataCount: number,
   normalHint: string,
 ): string {

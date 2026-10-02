@@ -10,8 +10,8 @@ const opportunityHint = "Recoverable with action";
 describe("dashboard revenue zero hints", () => {
   it("marks zero estimates inconclusive when any customer is not scoreable", () => {
     const customers = [{ revenue: 1200, hasUsableRevenue: true }, { revenue: 0, notEnoughData: true }];
-    expect(revenueZeroHint(0, customers as never, 1, riskHint)).toBe("Not enough data yet to estimate");
-    expect(revenueZeroHint(0, customers as never, 1, opportunityHint)).toBe("Not enough data yet to estimate");
+    expect(revenueZeroHint(0, customers, 1, riskHint)).toBe("Not enough data yet to estimate");
+    expect(revenueZeroHint(0, customers, 1, opportunityHint)).toBe("Not enough data yet to estimate");
   });
 
   it("marks zero estimates inconclusive if foreign currency leaves no usable revenue", () => {
@@ -31,8 +31,8 @@ describe("dashboard revenue zero hints", () => {
 
   it("keeps the original captions for a trustworthy zero", () => {
     const customers = [{ revenue: 1200, hasUsableRevenue: true }];
-    expect(revenueZeroHint(0, customers as never, 0, riskHint)).toBe(riskHint);
-    expect(revenueZeroHint(0, customers as never, 0, opportunityHint)).toBe(opportunityHint);
+    expect(revenueZeroHint(0, customers, 0, riskHint)).toBe(riskHint);
+    expect(revenueZeroHint(0, customers, 0, opportunityHint)).toBe(opportunityHint);
   });
 
   it("keeps the original captions for positive amounts even with incomplete data", () => {
