@@ -1,5 +1,5 @@
 import { formatMoney, normalizeDataCurrency } from "@/lib/money";
-import { AI_FACT_RULES, AI_FEATURE_RULES, currencyRule, sanitizeAiTip } from "@/lib/ai-rules";
+import { AI_FACT_RULES, AI_FEATURE_RULES, buildRiskTipPrompt, currencyRule, sanitizeAiTip } from "@/lib/ai-rules";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getAiProvider, DEFAULT_AI_MODEL, resolveAiCredentials } from "./ai-provider.server";
@@ -222,25 +222,7 @@ export const summarizeRiskReasons = createServerFn({ method: "POST" })
   .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => RiskSummaryInput.parse(input))
   .handler(async ({ data }): Promise<Record<string, string>> => {
-    const lines = data.customers
-      .map(
-        (c) =>
-          `- id ${c.id}: ${c.name}, ${c.churnProbability}% churn risk, health ${c.health}/100, ${
-            c.revenue > 0 ? `${formatMoney(c.revenue, normalizeDataCurrency(data.currency))} revenue` : "revenue unknown"
-          }. Factors: ${
-            c.factors.length ? c.factors.join("; ") : "none recorded"
-          }`,
-      )
-      .join("\n");
-
-    const prompt = `You are a B2B SaaS retention analyst. For each account below, write ONE short plain-language sentence (max ~14 words) explaining why it needs attention and the single best next step.
-
-${currencyRule(data.currency)}
-
-Accounts:
-${lines}
-
-Return ONLY a JSON object (no markdown, no code fences) mapping each account id to its one-sentence summary string.`;
+    const prompt = buildRiskTipPrompt(data.customers, data.currency);
 
     const result = await getAiProvider().generateSummary({
       operation: "summarizeRiskReasons",
@@ -252,7 +234,13 @@ Return ONLY a JSON object (no markdown, no code fences) mapping each account id 
 
     const jsonText = result.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
     try {
-      return z.record(z.string(), z.string()).parse(JSON.parse(jsonText));
+      const raw = z.record(z.string(), z.string()).parse(JSON.parse(jsonText));
+      const out: Record<string, string> = {};
+      for (const [id, tip] of Object.entries(raw)) {
+        const clean = sanitizeAiTip(tip, data.currency);
+        if (clean) out[id] = clean;
+      }
+      return out;
     } catch {
       return {};
     }
@@ -273,7 +261,11 @@ export const generateCollectiveInsights = createServerFn({ method: "POST" })
   .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => CollectiveInsightsInput.parse(input))
   .handler(async ({ data }): Promise<{ insights: string[] }> => {
-    const prompt = `You are ChAi, a customer-retention analyst. Based on the workspace analysis below, write the TOP 5 most interesting, high-level collective insights a business owner would most want to know about their customer base and retention. Each insight is ONE punchy plain-language sentence (max ~18 words), specific and useful. Do not invent precise numbers that aren't given.
+    const prompt = `You are ChAi, a customer-retention analyst. Based on the workspace analysis below, write the TOP 5 most interesting, high-level collective insights a business owner would most want to know about their customer base and retention. Each insight is ONE punchy plain-language sentence (max ~18 words), specific and useful.
+
+${AI_FACT_RULES}
+
+${AI_FEATURE_RULES}
 
 Use only the currency symbol that appears in the analysis; never convert or mix currencies.
 
