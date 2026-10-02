@@ -16,7 +16,7 @@ const { DEFAULT_METRIC_WEIGHTS } = await L("mock-data.ts");
 const Nightly = await L("customer-scoring.ts");
 const App = await L("real-scoring.ts");
 const Snap = await L("customer-score-snapshot.ts");
-const { formatCurrency } = await L("format.ts").catch(() => ({ formatCurrency: null }));
+const { formatCurrency } = await L("mock-data.ts").catch(() => ({ formatCurrency: null }));
 
 const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
 async function readAll(table: string, select: string, userId: string, activeOnly = false) {
