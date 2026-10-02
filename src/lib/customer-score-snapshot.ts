@@ -7,6 +7,7 @@
 // been scored yet.
 import type { Factor, Recommendation, PlannerMetric } from "@/lib/mock-data";
 import { playbookFor, inferUnit } from "@/lib/metric-playbooks";
+import { lowerIsBetter as metricLowerIsBetter } from "@/lib/metric-direction";
 import type { ScoreBreakdownEntry } from "@/lib/customer-scoring";
 import { isChurnMeta } from "@/lib/customer-scoring";
 import { contentEntryOf, isContentEntry } from "@/lib/content-signals/scoring";
@@ -180,10 +181,8 @@ export function recommendationsFromBreakdown(
   }
   return factors.map((f) => {
     const m = byName.get(f.label);
-    const lowerIsBetter =
-      m?.valueAt0 != null && m?.valueAt100 != null
-        ? m.valueAt0 > m.valueAt100
-        : m?.direction === "lower";
+    // One shared direction rule (reference values → explicit → wording).
+    const lowerIsBetter = m ? metricLowerIsBetter(m) : false;
     const base = playbookFor({
       metric: f.label,
       detail: f.detail,
