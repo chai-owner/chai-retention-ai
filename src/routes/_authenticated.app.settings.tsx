@@ -12,6 +12,11 @@ import { saveProfile } from "@/lib/profile.functions";
 import { IMPORTANCE_LABELS } from "@/lib/mock-data";
 import { useActiveMetrics } from "@/lib/use-scored-data";
 import { useIsAdmin } from "@/lib/use-is-admin";
+import { useOrgRole } from "@/lib/use-team";
+import { canManageMembers } from "@/lib/organisations";
+import { metricDirection } from "@/lib/metric-direction";
+import { DIRECTION_LABELS } from "@/lib/user-metric";
+import type { MetricDirection } from "@/lib/mock-data";
 import { businessModels, companySizes, interactionChannels, getQuestions, getChurnDefinition } from "@/lib/onboarding-options";
 
 export const Route = createFileRoute("/_authenticated/app/settings")({
@@ -343,6 +348,27 @@ function Settings() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium">{m.name}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{m.why}</p>
+                    {canEditDirection && !(m.valueAt0 != null && m.valueAt100 != null) && (
+                      <select
+                        aria-label={`Direction for ${m.name}`}
+                        value={m.direction ?? ""}
+                        onChange={(e) => {
+                          const d = (e.target.value || null) as MetricDirection | null;
+                          setMetrics((ms) =>
+                            ms.map((x) => {
+                              if (x.name !== m.name) return x;
+                              const { direction: _old, ...rest } = x;
+                              return d ? { ...rest, direction: d } : rest;
+                            }),
+                          );
+                        }}
+                        className="mt-1.5 rounded-md border border-border bg-background px-1.5 py-0.5 text-[11px]"
+                      >
+                        <option value="">{DIRECTION_LABELS[metricDirection({ ...m, direction: undefined })]} (ChAi's guess)</option>
+                        <option value="higher">{DIRECTION_LABELS.higher}</option>
+                        <option value="lower">{DIRECTION_LABELS.lower}</option>
+                      </select>
+                    )}
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <div className="flex items-center gap-2">
