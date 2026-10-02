@@ -13,6 +13,7 @@ import { IMPORTANCE_LABELS } from "@/lib/mock-data";
 import { useActiveMetrics } from "@/lib/use-scored-data";
 import { useIsAdmin } from "@/lib/use-is-admin";
 import { useOrgRole } from "@/lib/use-team";
+import { useSetMetricDirection } from "@/lib/use-set-metric-direction";
 import { canManageMembers } from "@/lib/organisations";
 import { metricDirection } from "@/lib/metric-direction";
 import { DIRECTION_LABELS } from "@/lib/user-metric";
@@ -32,6 +33,10 @@ function Settings() {
   const activeMetrics = useActiveMetrics();
   // Only admins (including an admin impersonating this user) may drop metrics.
   const isAdmin = useIsAdmin();
+  // Owners/admins of the organisation may set each metric's direction.
+  const orgRole = useOrgRole();
+  const canEditDirection = canManageMembers(orgRole);
+  const setDirection = useSetMetricDirection();
   const [removedMetrics, setRemovedMetrics] = useState<string[]>([]);
   const metrics = useMemo(
     () => activeMetrics.filter((m) => !removedMetrics.includes(m.name)),
@@ -352,16 +357,7 @@ function Settings() {
                       <select
                         aria-label={`Direction for ${m.name}`}
                         value={m.direction ?? ""}
-                        onChange={(e) => {
-                          const d = (e.target.value || null) as MetricDirection | null;
-                          setMetrics((ms) =>
-                            ms.map((x) => {
-                              if (x.name !== m.name) return x;
-                              const { direction: _old, ...rest } = x;
-                              return d ? { ...rest, direction: d } : rest;
-                            }),
-                          );
-                        }}
+                        onChange={(e) => setDirection(m.name, (e.target.value || null) as MetricDirection | null)}
                         className="mt-1.5 rounded-md border border-border bg-background px-1.5 py-0.5 text-[11px]"
                       >
                         <option value="">{DIRECTION_LABELS[metricDirection({ ...m, direction: undefined })]} (ChAi's guess)</option>
