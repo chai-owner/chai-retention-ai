@@ -55,6 +55,7 @@ import { hydrateIngestFromServer } from "@/lib/ingest-persistence";
 import { Button } from "@/components/ui/button";
 import { ingestedStore } from "@/lib/ingested-data-store";
 import { atRiskHint } from "@/lib/at-risk-hint";
+import { revenueZeroHint } from "@/lib/revenue-zero-hint";
 
 export const Route = createFileRoute("/_authenticated/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
@@ -79,7 +80,7 @@ const PERIOD_FACTORS: Record<Period, number> = {
 };
 
 function Dashboard() {
-  const { executive: baseExecutive, healthDistribution, segmentRevenue, sortedByRisk } = useScoredData();
+  const { customers, executive: baseExecutive, healthDistribution, segmentRevenue, sortedByRisk } = useScoredData();
   const topRisk = sortedByRisk.filter((c) => !c.notEnoughData).slice(0, 5);
   const notEnoughDataCount = sortedByRisk.filter((c) => c.notEnoughData).length;
   const uploads = useUploads();
@@ -276,7 +277,7 @@ function Dashboard() {
           }
           icon={MoneyIcon}
           tone="danger"
-          hint="Across at-risk & critical accounts"
+          hint={revenueZeroHint(executive.revenueAtRisk, customers, notEnoughDataCount, "Across at-risk & critical accounts")}
         />
         <StatCard
           label="Retention opportunity"
@@ -288,7 +289,7 @@ function Dashboard() {
           }
           icon={Target}
           tone="success"
-          hint="Recoverable with action"
+          hint={revenueZeroHint(executive.retentionOpportunity, customers, notEnoughDataCount, "Recoverable with action")}
         />
       </div>
 
