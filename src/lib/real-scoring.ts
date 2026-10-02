@@ -625,6 +625,7 @@ export function buildRealDataset(
       dataCategories: assessed.dataCategories,
       confidenceReason: assessed.reason,
       revenue,
+      hasUsableRevenue: monthly != null || (txg?.amounts.length ?? 0) > 0,
       sentiment,
       lastActivity,
       subScores,

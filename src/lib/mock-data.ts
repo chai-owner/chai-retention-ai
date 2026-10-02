@@ -97,6 +97,8 @@ export interface Customer {
   /** No measure has enough records yet — show "Not enough data yet", not a score. */
   notEnoughData?: boolean;
   revenue: number;
+  /** Whether a usable revenue figure exists after currency exclusions. */
+  hasUsableRevenue?: boolean;
   sentiment: number;
   lastActivity: string;
   subScores?: Record<string, number>;
