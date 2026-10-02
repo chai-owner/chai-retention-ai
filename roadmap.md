@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Dashboard revenue zero captions: distinguish incomplete data from a true zero; test and verify SecureNest/Chai; do not publish.
+
 - [x] Add server-enforced impersonation expiry and audit reasons
 - [x] Make impersonation state memory-only and restore admin automatically
 - [x] Keep the end control globally visible
