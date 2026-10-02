@@ -61,7 +61,7 @@ for (const p of profiles ?? []) {
   const nightly = Nightly.scoreCustomers(metrics, data, { cadence: p.cadence ?? undefined, lifespan: p.lifespan ?? undefined, currency });
   const fmt = (n: number) => (formatCurrency ? formatCurrency(n, currency) : String(n));
   // Advice on the latest stored nightly score per customer.
-  const { data: stored } = await db.from("customer_scores").select("customer_id, scored_at, score, churn_probability, score_breakdown").eq("user_id", userId).order("scored_at", { ascending: false });
+  const { data: stored } = await db.from("customer_scores").select("customer_id, scored_at, score, score_breakdown").eq("user_id", userId).order("scored_at", { ascending: false });
   const latest = new Map<string, Record<string, unknown>>();
   for (const r of stored ?? []) if (!latest.has(r.customer_id)) latest.set(r.customer_id, r);
   const byId = new Map(ds.customers.map((c: { id: string }) => [c.id, c]));
@@ -70,7 +70,7 @@ for (const p of profiles ?? []) {
     const c = byId.get(id) as { name?: string; revenue?: number } | undefined;
     advice[`${c?.name ?? id} [${id}]`] = Snap.recommendationsFromBreakdown(r.score_breakdown, {
       customerName: c?.name ?? "this customer", revenue: c?.revenue ?? 0,
-      churnProbability: Number(r.churn_probability ?? 0), metrics, healthScore: Number(r.score),
+      churnProbability: Number((r.score_breakdown as Array<Record<string, unknown>> | null)?.find?.((e) => e && "churnProbability" in e)?.churnProbability ?? (byId.get(id) as { churnProbability?: number } | undefined)?.churnProbability ?? 0), metrics, healthScore: Number(r.score),
     }).map((x: { title: string; reasoning: string; steps?: string[] }) => [x.title, x.reasoning, ...(x.steps ?? [])].join(" | "));
   }
   result[`${p.company || "(no company)"} <${p.email || userId}>`] = {
