@@ -10,7 +10,9 @@ import {
   getOnboardingProgress,
   saveOnboardingProgress,
 } from "@/lib/profile.functions";
-import { recommendMetrics } from "@/lib/ai.functions";
+import { enrichMetric, recommendMetrics } from "@/lib/ai.functions";
+import { buildUserMetric, DIRECTION_LABELS, type MetricEnrichment } from "@/lib/user-metric";
+import type { MetricDirection } from "@/lib/mock-data";
 import { plannerMetrics, IMPORTANCE_LABELS, type PlannerMetric } from "@/lib/mock-data";
 import { SmartIngestCard, UploadDatasetsCard } from "@/components/data-uploads-panel";
 import { IntegrationsPanel } from "@/components/integrations-panel";
@@ -294,7 +296,17 @@ function Onboarding() {
   const MAX_METRICS = 12;
   const [newMetric, setNewMetric] = useState("");
 
-  function addMetric() {
+  // Adding a metric is two steps: ChAi describes it (and suggests a
+  // direction), then the owner confirms "more or fewer is better" — required.
+  const enrichMetricFn = useServerFn(enrichMetric);
+  const [pendingMetric, setPendingMetric] = useState<{
+    name: string;
+    loading: boolean;
+    enrichment: MetricEnrichment | null;
+    direction: MetricDirection | null;
+  } | null>(null);
+
+  async function addMetric() {
     const name = newMetric.trim();
     if (!name) return;
     if (metrics.length >= MAX_METRICS) return;
@@ -302,18 +314,41 @@ function Onboarding() {
       setNewMetric("");
       return;
     }
-    setMetrics((ms) => [
-      ...ms,
-      {
-        name,
-        category: "Engagement",
-        why: "",
-        churn: "",
-        weight: 3,
-        reason: "You asked ChAi to track this metric.",
-      } as PlannerMetric,
-    ]);
-    setMetricWeights((w) => ({ ...w, [name]: 3 }));
+    setPendingMetric({ name, loading: true, enrichment: null, direction: null });
+    let enrichment: MetricEnrichment | null = null;
+    try {
+      const res = await enrichMetricFn({
+        data: {
+          name,
+          profile: {
+            company: form.company,
+            industry: form.industry,
+            model: form.model,
+            whatBuy: form.whatBuy,
+            cadence: form.cadence,
+            successActions: form.successActions,
+            disengagement: form.disengagement,
+          },
+        },
+      });
+      enrichment = res.enrichment;
+    } catch (err) {
+      console.error("[onboarding] metric enrichment failed:", err);
+    }
+    setPendingMetric((p) =>
+      p && p.name === name
+        ? { ...p, loading: false, enrichment, direction: enrichment?.direction ?? null }
+        : p,
+    );
+  }
+
+  function confirmPendingMetric() {
+    if (!pendingMetric) return;
+    const metric = buildUserMetric(pendingMetric.name, pendingMetric.direction, pendingMetric.enrichment);
+    if (!metric) return;
+    setMetrics((ms) => [...ms, metric]);
+    setMetricWeights((w) => ({ ...w, [metric.name]: 3 }));
+    setPendingMetric(null);
     setNewMetric("");
   }
 
@@ -817,12 +852,64 @@ function Onboarding() {
                             <button
                               type="button"
                               onClick={addMetric}
-                              disabled={!newMetric.trim() || metrics.length >= MAX_METRICS}
+                              disabled={!newMetric.trim() || metrics.length >= MAX_METRICS || pendingMetric !== null}
                               className="shrink-0 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               Add
                             </button>
                           </div>
+                          {pendingMetric && (
+                            <div className="mt-3 rounded-lg bg-secondary/50 p-3">
+                              <p className="text-sm font-medium">
+                                Is more of this good or bad for you?
+                              </p>
+                              <p className="mt-0.5 text-xs text-muted-foreground">
+                                {pendingMetric.loading
+                                  ? `ChAi is describing "${pendingMetric.name}"…`
+                                  : pendingMetric.enrichment
+                                    ? pendingMetric.enrichment.why
+                                    : `"${pendingMetric.name}" — choose one to add it.`}
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Is more of this good or bad for you?">
+                                {(["higher", "lower"] as const).map((d) => (
+                                  <button
+                                    key={d}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={pendingMetric.direction === d}
+                                    disabled={pendingMetric.loading}
+                                    onClick={() => setPendingMetric((p) => (p ? { ...p, direction: d } : p))}
+                                    className={cn(
+                                      "rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-40",
+                                      pendingMetric.direction === d
+                                        ? "border-primary bg-primary/10 text-primary"
+                                        : "border-border text-foreground",
+                                    )}
+                                  >
+                                    {DIRECTION_LABELS[d]}
+                                    {pendingMetric.enrichment?.direction === d && " (ChAi's suggestion)"}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="mt-2 flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={confirmPendingMetric}
+                                  disabled={pendingMetric.loading || !pendingMetric.direction}
+                                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  Add metric
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPendingMetric(null)}
+                                  className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
                           {metrics.length >= MAX_METRICS && (
                             <p className="mt-2 text-xs text-muted-foreground">
                               You've reached the maximum of {MAX_METRICS} metrics.
