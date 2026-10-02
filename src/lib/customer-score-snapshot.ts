@@ -181,7 +181,9 @@ export function recommendationsFromBreakdown(
   return factors.map((f) => {
     const m = byName.get(f.label);
     const lowerIsBetter =
-      m?.valueAt0 != null && m?.valueAt100 != null && m.valueAt0 > m.valueAt100;
+      m?.valueAt0 != null && m?.valueAt100 != null
+        ? m.valueAt0 > m.valueAt100
+        : m?.direction === "lower";
     const base = playbookFor({
       metric: f.label,
       detail: f.detail,
