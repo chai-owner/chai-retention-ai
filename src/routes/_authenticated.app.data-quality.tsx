@@ -41,6 +41,9 @@ import {
 } from "@/lib/customer-erasure";
 import { Search } from "lucide-react";
 import { useSignedIn } from "@/lib/use-auth-state";
+import { useDataCoverage } from "@/lib/use-scored-data";
+import { useProfile } from "@/lib/profile-store";
+import { metricsWithoutData } from "@/lib/data-coverage";
 
 
 export const Route = createFileRoute("/_authenticated/app/data-quality")({
@@ -81,6 +84,9 @@ function DataQualityPage() {
   );
   const currencyNote = isReal ? describeCurrencyExclusion(currencyExclusion, dataCurrency) : null;
   const currencyUnconfirmed = currencyExclusion.unconfirmedRows;
+  const coverage = useDataCoverage();
+  const profile = useProfile();
+  const noDataMetrics = isReal ? metricsWithoutData(coverage, profile?.metrics) : [];
   const [forgetId, setForgetId] = useState("");
   const [forgetting, setForgetting] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -210,6 +216,24 @@ function DataQualityPage() {
               {currencyUnconfirmed} of these were synced before ChAi read their real currency. Re-sync that connection to confirm them.
             </p>
           )}
+        </Card>
+      )}
+
+      {noDataMetrics.length > 0 && (
+        <Card className="mt-6">
+          <h3 className="font-semibold">
+            No data yet for: {noDataMetrics.map((m) => m.name).join(", ")}
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            These metrics don't count towards health scores until matching data is added.
+          </p>
+          <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+            {noDataMetrics.map((m) => (
+              <li key={m.name}>
+                <span className="font-medium text-foreground">{m.name}:</span> {m.hint}
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 

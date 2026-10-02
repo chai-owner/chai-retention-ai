@@ -148,3 +148,31 @@ export function coverageBasis(c: DataCoverage): string {
   if (list.length) parts.push(list.join(", "));
   return `Based on the data available today: ${parts.join(" and ")}.`;
 }
+
+export interface MetricWithoutData {
+  name: string;
+  /** What data would feed it, taken from the metric's own description. */
+  hint: string;
+}
+
+/**
+ * Metrics with no matching data at all (status "missing" in the per-metric
+ * coverage), in the order the metrics are listed.
+ */
+export function metricsWithoutData(
+  coverage: DataCoverage,
+  metrics: PlannerMetric[] | null | undefined,
+): MetricWithoutData[] {
+  const missing = new Set(
+    coverage.datasets.filter((d) => d.key.startsWith("metric:") && d.status === "missing").map((d) => d.key.slice(7)),
+  );
+  return (metrics ?? [])
+    .filter((m) => missing.has(m.name))
+    .map((m) => {
+      const why = (m.why ?? "").trim();
+      return {
+        name: m.name,
+        hint: why ? why : `Add data that records ${m.name.toLowerCase()}.`,
+      };
+    });
+}

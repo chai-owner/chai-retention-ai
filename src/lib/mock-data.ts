@@ -641,7 +641,13 @@ export interface PlannerMetric {
   valueAt100?: number;
   reason?: string;
   weight?: number;
+  /** Explicit "good" direction set by ChAi or the owner; reference values still win. */
+  direction?: MetricDirection;
+  /** True when the owner added this metric themselves. */
+  userAdded?: boolean;
 }
+
+export type MetricDirection = "higher" | "lower";
 
 export const plannerMetrics: PlannerMetric[] = [
   { name: "Login frequency", why: "Tells you whether customers are getting into the product at all.", churn: "Customers who stop logging in churn far more often than active ones.", cadence: "Daily", benchmark: "3–5 logins / week", benchmarkScore: 70, category: "Engagement", unit: " / wk", decimals: 1, valueAt0: 0, valueAt100: 7 },

@@ -1,6 +1,7 @@
 import { formatMoney, normalizeDataCurrency } from "@/lib/money";
 import { AI_FACT_RULES, AI_FEATURE_RULES, buildRiskTipPrompt, currencyRule, sanitizeAiTip } from "@/lib/ai-rules";
 import { createServerFn } from "@tanstack/react-start";
+import { METRIC_CATEGORIES, normalizeDirection, parseMetricEnrichment, type MetricEnrichment } from "@/lib/user-metric";
 import { z } from "zod";
 import { getAiProvider, DEFAULT_AI_MODEL, resolveAiCredentials } from "./ai-provider.server";
 import { requireConnectedAuth } from "@/lib/connected-auth-middleware";
@@ -426,6 +427,7 @@ export type GeneratedMetric = {
   category: string;
   weight: number;
   reason: string;
+  direction?: "higher" | "lower";
 };
 
 export const recommendMetrics = createServerFn({ method: "POST" })
@@ -470,8 +472,9 @@ For each metric provide:
 - churn: one sentence on how it signals churn (max ~16 words)
 - weight: WHOLE NUMBER from 1 to 5 — importance for THIS business (1=Unimportant, 5=Critical). Never a decimal or a percentage.
 - reason: short reason for the weight, grounded in their business (max ~14 words)
+- direction: "higher" if more of this is good for the business, "lower" if fewer/less is good (e.g. days since last visit, missed appointments, overdue invoices → "lower")
 
-Return ONLY a JSON array (no prose, no markdown, no code fences) of 6-8 objects with keys: name, category, why, churn, weight, reason.`;
+Return ONLY a JSON array (no prose, no markdown, no code fences) of 6-8 objects with keys: name, category, why, churn, weight, reason, direction.`;
 
     const metricRow = z.object({
       name: z.string(),
@@ -480,6 +483,7 @@ Return ONLY a JSON array (no prose, no markdown, no code fences) of 6-8 objects 
       churn: z.string().optional(),
       weight: z.union([z.number(), z.string()]).optional(),
       reason: z.string().optional(),
+      direction: z.string().optional(),
     });
 
     // Models sometimes wrap the array in prose, fences or an object — pull the
@@ -532,6 +536,7 @@ Return ONLY a JSON array (no prose, no markdown, no code fences) of 6-8 objects 
               churn: (m.churn ?? "").trim(),
               weight: Math.max(1, Math.min(5, Math.round(w) || 3)),
               reason: (m.reason ?? "").trim(),
+              ...(normalizeDirection(m.direction) ? { direction: normalizeDirection(m.direction)! } : {}),
             };
           });
         if (out.length >= 4) return out;
@@ -595,3 +600,71 @@ Your previous answer could not be parsed. Reply with the raw JSON array only —
     return { metrics };
   });
 
+
+// ---------------------------------------------------------------------------
+// Enrich a metric the owner added themselves: one AI call fills in category,
+// why, churn and reason, and suggests a direction. The user's name is never
+// changed and their own direction choice always wins (applied in the browser).
+// ---------------------------------------------------------------------------
+
+const EnrichMetricInput = z.object({
+  name: z.string().trim().min(1).max(120),
+  profile: RecommendMetricsInput.shape.profile,
+});
+
+export const enrichMetric = createServerFn({ method: "POST" })
+  .middleware([requireConnectedAuth])
+  .inputValidator((input: unknown) => EnrichMetricInput.parse(input))
+  .handler(async ({ data }): Promise<{ enrichment: MetricEnrichment | null; error?: string }> => {
+    const p = data.profile;
+    const profileLines = [
+      p.company && `Company: ${p.company}`,
+      p.industry && `Industry: ${p.industry}`,
+      p.model && `Business model: ${p.model}`,
+      p.whatBuy && `What customers buy: ${p.whatBuy}`,
+      p.cadence && `Purchase/usage cadence: ${p.cadence}`,
+      p.successActions && `What a successful/engaged customer does: ${p.successActions}`,
+      p.disengagement && `Signs of disengagement: ${p.disengagement}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const prompt = `You are ChAi, a customer-retention analyst. A business owner added their own retention metric called "${data.name}". Describe it for THIS business. Do not rename it.
+
+Business profile:
+${profileLines || "(limited profile provided)"}
+
+${AI_FACT_RULES}
+
+${AI_FEATURE_RULES}
+
+Return ONLY a JSON object (no prose, no code fences) with keys:
+- category: one of ${METRIC_CATEGORIES.join(", ")}
+- why: one sentence on what it tells them and what data records it (max ~16 words)
+- churn: one sentence on how it signals churn (max ~16 words)
+- reason: why it matters for this business (max ~14 words)
+- direction: "higher" if more of this is good for the business, "lower" if fewer/less is good`;
+
+    try {
+      const ai = getAiProvider();
+      const res = await ai.generateRecommendations({
+        operation: "enrichMetric",
+        model: MODEL,
+        instructions: prompt,
+        context: "",
+      });
+      if (!res.ok) {
+        console.error(`[enrichMetric] provider call failed: ${res.message ?? "no message"}`);
+        return { enrichment: null, error: res.message ?? "The AI service did not respond." };
+      }
+      const enrichment = parseMetricEnrichment(res.text);
+      if (!enrichment) {
+        console.error(`[enrichMetric] unreadable reply (first 400 chars): ${res.text.slice(0, 400)}`);
+        return { enrichment: null, error: "The AI service replied, but its answer couldn't be read." };
+      }
+      return { enrichment };
+    } catch (err) {
+      console.error("[enrichMetric] threw:", err);
+      return { enrichment: null, error: "The AI service did not respond." };
+    }
+  });

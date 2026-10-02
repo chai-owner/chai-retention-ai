@@ -19,15 +19,22 @@ export function isElapsedMetric(metric: PlannerMetric): boolean {
 }
 
 /**
- * Direction of "good" for a metric. Explicit display anchors win; otherwise it
- * is inferred from the category and wording — elapsed-time, cost, complaint and
+ * Direction of "good" for a metric, in priority order: reference values
+ * (valueAt0/valueAt100) → the explicit direction set by ChAi or the owner →
+ * inference from the category and wording (elapsed-time, cost, complaint and
  * transaction-recency language means lower is better, while engagement and
- * retention language means higher is better.
+ * retention language means higher is better).
  */
 export function metricDirection(metric: PlannerMetric): "higher" | "lower" {
   if (metric.valueAt0 != null && metric.valueAt100 != null) {
     return metric.valueAt0 > metric.valueAt100 ? "lower" : "higher";
   }
+  if (metric.direction === "higher" || metric.direction === "lower") return metric.direction;
+  return inferredMetricDirection(metric);
+}
+
+/** Wording/category inference only — what ChAi guesses with no explicit direction. */
+export function inferredMetricDirection(metric: PlannerMetric): "higher" | "lower" {
   const text = metricText(metric);
   const category = (metric.category ?? "").toLowerCase();
   if (isElapsedMetric(metric)) return "lower";

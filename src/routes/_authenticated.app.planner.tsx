@@ -7,6 +7,14 @@ import { IMPORTANCE_LABELS, metricActualValue } from "@/lib/mock-data";
 import { useActiveMetrics, useMetricWeights, useScoredData } from "@/lib/use-scored-data";
 import { useSignedIn } from "@/lib/use-auth-state";
 import { useProfile } from "@/lib/profile-store";
+import { useDataCoverage } from "@/lib/use-scored-data";
+import { metricsWithoutData } from "@/lib/data-coverage";
+import { metricDirection } from "@/lib/metric-direction";
+import { DIRECTION_LABELS } from "@/lib/user-metric";
+import { useOrgRole } from "@/lib/use-team";
+import { canManageMembers } from "@/lib/organisations";
+import { useSetMetricDirection } from "@/lib/use-set-metric-direction";
+import type { MetricDirection } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/app/planner")({
   head: () => ({ meta: [{ title: "Intelligence Planner — ChAi" }] }),
@@ -49,6 +57,14 @@ function Planner() {
   const plannerMetrics =
     signedIn === true ? (profile?.metrics ?? []) : activeMetrics;
   const { customers } = useScoredData();
+  const coverage = useDataCoverage();
+  const noData = useMemo(
+    () => new Set(signedIn === true ? metricsWithoutData(coverage, plannerMetrics).map((m) => m.name) : []),
+    [coverage, plannerMetrics, signedIn],
+  );
+  const role = useOrgRole(signedIn === true);
+  const canEditDirection = signedIn === true && canManageMembers(role);
+  const setDirection = useSetMetricDirection();
 
   const total = plannerMetrics.length;
 
@@ -110,6 +126,29 @@ function Planner() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-semibold">{m.name}</h3>
                   <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">{m.category}</span>
+                  {noData.has(m.name) && (
+                    <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning-foreground">No data yet</span>
+                  )}
+                </div>
+                <div className="mt-2 flex items-center gap-2 text-[11px]">
+                  <span className="font-medium text-muted-foreground">Direction</span>
+                  {canEditDirection && !(m.valueAt0 != null && m.valueAt100 != null) ? (
+                    <select
+                      aria-label={`Direction for ${m.name}`}
+                      value={m.direction ?? ""}
+                      onChange={(e) => setDirection(m.name, (e.target.value || null) as MetricDirection | null)}
+                      className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[11px]"
+                    >
+                      <option value="">{DIRECTION_LABELS[metricDirection({ ...m, direction: undefined })]} (ChAi's guess)</option>
+                      <option value="higher">{DIRECTION_LABELS.higher}</option>
+                      <option value="lower">{DIRECTION_LABELS.lower}</option>
+                    </select>
+                  ) : (
+                    <span className="text-foreground">
+                      {DIRECTION_LABELS[metricDirection(m)]}
+                      {!m.direction && !(m.valueAt0 != null && m.valueAt100 != null) && " (ChAi's guess)"}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-[11px] font-medium text-muted-foreground">Weight</span>
