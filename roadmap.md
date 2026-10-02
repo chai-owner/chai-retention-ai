@@ -1,6 +1,6 @@
 # Roadmap
 
-- [x] Dashboard revenue zero captions: distinguish incomplete data from a true zero; test and verify SecureNest/Chai; do not publish.
+- [x] Dashboard revenue zero captions: distinguish incomplete data from a true zero; test, verify SecureNest/Chai, and publish.
 
 - [x] Add server-enforced impersonation expiry and audit reasons
 - [x] Make impersonation state memory-only and restore admin automatically
@@ -36,6 +36,6 @@
 - [ ] Read-only accuracy check of /integrations/zoho-crm page claims
 - [x] Combine Identity Resolution saved matches into per-customer cards, preserving orphaned and ignored rules; test without publishing
 - [ ] Apply the approved Identity Resolution help-article wording only when publishing is approved
-- [ ] Data currency (USD/ZAR): setting, shared formatter, shared foreign-currency rule in both scoring paths (amount measures only), QuickBooks fallback fix, stored "$" text audit, uploads capture currency, Xero multi-org base currency, switch confirmation (owner/admin, audit), onboarding choice, formatting details, Ask ChAi rule, help/copy audit
-- [ ] Data currency verification: USD regression before/after on all accounts, SecureNest ZAR simulation, tests incl. no-stray-$ guard, self-review search — DO NOT publish
-- [x] Data currency — build, checks and verification done; awaiting publish approval.
+- [x] Data currency (USD/ZAR): setting, shared formatter, shared foreign-currency rule in both scoring paths (amount measures only), QuickBooks fallback fix, stored "$" text audit, uploads capture currency, Xero multi-org base currency, switch confirmation (owner/admin, audit), onboarding choice, formatting details, Ask ChAi rule, help/copy audit
+- [x] Data currency verification: USD regression before/after on all accounts, SecureNest ZAR simulation, tests incl. no-stray-$ guard, self-review search
+- [x] Data currency — build, checks, verification, and publication done.
