@@ -1,4 +1,5 @@
-import { currencySymbol, formatMoney, normalizeDataCurrency } from "@/lib/money";
+import { formatMoney, normalizeDataCurrency } from "@/lib/money";
+import { AI_FACT_RULES, AI_FEATURE_RULES, currencyRule, sanitizeAiTip } from "@/lib/ai-rules";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getAiProvider, DEFAULT_AI_MODEL, resolveAiCredentials } from "./ai-provider.server";
@@ -84,7 +85,7 @@ export const checkAiConfig = createServerFn({ method: "POST" })
 const FALLBACK_REPLY =
   "I couldn't reach the analysis service just now. In the meantime, check the Risk Center for your highest-risk accounts and the Data Quality page for gaps worth filling.";
 
-// What ChAi can actually do — the only features Ask ChAi may recommend.
+// Ask ChAi = answer shape + the shared fact/feature rules used by every AI prompt.
 export const ASK_CHAI_STYLE_RULES = `Answer in plain, friendly language for a non-technical business owner. No jargon.
 
 ANSWER SHAPE (markdown):
@@ -94,19 +95,9 @@ ANSWER SHAPE (markdown):
 - Keep it under about 120 words unless the user asks for detail. No tables, no HTML.
 - Write page names exactly as listed below so they become links.
 
-FACTS: use only numbers that appear in the workspace context, data coverage or business profile below. Never invent or estimate figures, revenue, percentages or counts. If a customer's revenue is "unknown", do not call them high- or low-revenue. If a number isn't given, say you don't have it.
+${AI_FACT_RULES} If a customer's revenue is "unknown", do not mention revenue.
 
-FEATURES: only recommend things ChAi actually has:
-- Today page: a daily brief of what needs attention.
-- Dashboard: overall health, at-risk count and revenue at risk.
-- Customer Risk Center: every customer ranked riskiest first, with health, churn risk and the reasons behind it; open a customer for their profile.
-- Churned & Win-back: customers who have left.
-- Data Quality: gaps and stale data to fix.
-- Identity Resolution: link the same customer across different tools.
-- Insights & Benchmarks: patterns across groups of customers.
-- Data Uploads & Integrations: connect QuickBooks, Xero, FreshBooks, Zendesk, Intercom, Zoho, HubSpot or upload files.
-- Business Profile: tell ChAi about the business.
-ChAi does NOT send emails, create tasks, set alerts, automate check-ins or trigger actions at a score threshold. When a useful action needs something ChAi doesn't do, phrase it as something the user does themselves (e.g. "**Email Northstar Legal this week**"), never as a ChAi setting.`;
+${AI_FEATURE_RULES}`;
 
 // ---------------------------------------------------------------------------
 
@@ -118,12 +109,7 @@ const ChatMessage = z.object({
   text: z.string(),
 });
 
-/** Currency instruction shared by every prompt that sees money. */
-export function currencyRule(currency: unknown): string {
-  const c = normalizeDataCurrency(currency);
-  const sym = currencySymbol(c);
-  return `CURRENCY: all amounts are in ${c}. Write money with "${sym}" exactly as given (e.g. ${formatMoney(12500, c)}); never use another currency symbol or code, never convert, and never add amounts in different currencies together.`;
-}
+export { currencyRule };
 
 const AskChAiInput = z.object({
   messages: z.array(ChatMessage).min(1),
