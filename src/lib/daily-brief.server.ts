@@ -107,6 +107,7 @@ export async function loadCustomerNames(
 export async function aiHeadlineFor(brief: DailyBrief): Promise<string> {
   try {
     const { getAiProvider } = await import("@/lib/ai-provider.server");
+    const { AI_FACT_RULES, AI_FEATURE_RULES } = await import("@/lib/ai-rules");
     const facts = [
       `total scored customers: ${brief.totalScored}`,
       `at risk: ${brief.atRiskCount}`,
@@ -125,8 +126,8 @@ export async function aiHeadlineFor(brief: DailyBrief): Promise<string> {
       operation: "dailyBriefHeadline",
       instructions:
         "You write the one-line headline of a business owner's daily customer brief. " +
-        "Return ONE warm, plain-English sentence of at most 16 words summarising the state of the customer base. " +
-        "Use only the numbers given, never invent any. No markdown, no quotes.",
+        "Return ONE warm, plain-English sentence of at most 16 words summarising the state of the customer base. No markdown, no quotes.\n\n" +
+        `${AI_FACT_RULES}\n\n${AI_FEATURE_RULES}`,
       content: facts,
     });
     if (!result.ok) return brief.headline;

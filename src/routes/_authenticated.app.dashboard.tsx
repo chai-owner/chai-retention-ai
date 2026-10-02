@@ -56,6 +56,7 @@ import { Button } from "@/components/ui/button";
 import { ingestedStore } from "@/lib/ingested-data-store";
 import { atRiskHint } from "@/lib/at-risk-hint";
 import { revenueZeroHint } from "@/lib/revenue-zero-hint";
+import { selectNeedsAttention, needsAttentionEmpty } from "@/lib/needs-attention";
 
 export const Route = createFileRoute("/_authenticated/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ChAi" }] }),
@@ -81,7 +82,7 @@ const PERIOD_FACTORS: Record<Period, number> = {
 
 function Dashboard() {
   const { customers, executive: baseExecutive, healthDistribution, segmentRevenue, sortedByRisk } = useScoredData();
-  const topRisk = sortedByRisk.filter((c) => !c.notEnoughData).slice(0, 5);
+  const topRisk = useMemo(() => selectNeedsAttention(sortedByRisk), [sortedByRisk]);
   const notEnoughDataCount = sortedByRisk.filter((c) => c.notEnoughData).length;
   const uploads = useUploads();
   const [period, setPeriod] = useState<Period>("30d");
@@ -408,6 +409,19 @@ function Dashboard() {
             <span>{refreshReceipt}</span>
           </p>
         )}
+        {topRisk.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            {needsAttentionEmpty(notEnoughDataCount).text}
+            {needsAttentionEmpty(notEnoughDataCount).linkToDataQuality && (
+              <>
+                {" "}
+                <Link to="/app/data-quality" className="font-medium text-primary hover:underline">
+                  Go to Data Quality
+                </Link>
+              </>
+            )}
+          </p>
+        ) : (
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {topRisk.map((c) => (
             <Link
@@ -419,7 +433,7 @@ function Dashboard() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{c.name}</p>
-                  <p className="text-xs text-muted-foreground">{formatCurrency(c.revenue)} · {c.churnProbability}% churn risk</p>
+                  <p className="text-xs text-muted-foreground">{formatCurrency(c.revenue, dataCurrency)} · {c.churnProbability}% churn risk</p>
                 </div>
                 <HealthBadge category={categoryFromHealth(c.health)} />
               </div>
@@ -432,6 +446,7 @@ function Dashboard() {
             </Link>
           ))}
         </div>
+        )}
       </Card>
     </div>
   );
