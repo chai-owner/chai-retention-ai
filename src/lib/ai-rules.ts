@@ -48,3 +48,37 @@ export function sanitizeAiTip(text: unknown, currency: DataCurrency | string | u
   if (foreign.test(t)) return null;
   return t;
 }
+
+export interface RiskTipCustomer {
+  id: string;
+  name: string;
+  churnProbability: number;
+  revenue: number;
+  health: number;
+  factors: string[];
+}
+
+/** Prompt for the dashboard "Needs attention now" one-line tips. */
+export function buildRiskTipPrompt(customers: RiskTipCustomer[], currency: unknown): string {
+  const c = normalizeDataCurrency(currency);
+  const lines = customers
+    .map(
+      (x) =>
+        `- id ${x.id}: ${x.name}, ${x.churnProbability}% churn risk, health ${x.health}/100, ${
+          x.revenue > 0 ? `revenue ${formatMoney(x.revenue, c)}` : "revenue unknown"
+        }. Risk reasons: ${x.factors.length ? x.factors.join("; ") : "none recorded"}`,
+    )
+    .join("\n");
+  return `You are ChAi, a customer-retention analyst. For each customer below, write ONE short plain-language sentence (max ~16 words) that names the actual reason they are at risk (from their risk reasons, in everyday words) and one action the user does themselves, e.g. "Payments are slipping — call Northstar Legal this week."
+
+${AI_FACT_RULES}
+
+${AI_FEATURE_RULES}
+
+${currencyRule(c)}
+
+Customers:
+${lines}
+
+Return ONLY a JSON object (no markdown, no code fences) mapping each customer id to its one-sentence tip.`;
+}
