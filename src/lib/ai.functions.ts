@@ -1,4 +1,5 @@
-import { currencySymbol, formatMoney, normalizeDataCurrency } from "@/lib/money";
+import { formatMoney, normalizeDataCurrency } from "@/lib/money";
+import { AI_FACT_RULES, AI_FEATURE_RULES, buildRiskTipPrompt, currencyRule, sanitizeAiTip } from "@/lib/ai-rules";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getAiProvider, DEFAULT_AI_MODEL, resolveAiCredentials } from "./ai-provider.server";
@@ -84,7 +85,7 @@ export const checkAiConfig = createServerFn({ method: "POST" })
 const FALLBACK_REPLY =
   "I couldn't reach the analysis service just now. In the meantime, check the Risk Center for your highest-risk accounts and the Data Quality page for gaps worth filling.";
 
-// What ChAi can actually do — the only features Ask ChAi may recommend.
+// Ask ChAi = answer shape + the shared fact/feature rules used by every AI prompt.
 export const ASK_CHAI_STYLE_RULES = `Answer in plain, friendly language for a non-technical business owner. No jargon.
 
 ANSWER SHAPE (markdown):
@@ -94,19 +95,9 @@ ANSWER SHAPE (markdown):
 - Keep it under about 120 words unless the user asks for detail. No tables, no HTML.
 - Write page names exactly as listed below so they become links.
 
-FACTS: use only numbers that appear in the workspace context, data coverage or business profile below. Never invent or estimate figures, revenue, percentages or counts. If a customer's revenue is "unknown", do not call them high- or low-revenue. If a number isn't given, say you don't have it.
+${AI_FACT_RULES} If a customer's revenue is "unknown", do not mention revenue.
 
-FEATURES: only recommend things ChAi actually has:
-- Today page: a daily brief of what needs attention.
-- Dashboard: overall health, at-risk count and revenue at risk.
-- Customer Risk Center: every customer ranked riskiest first, with health, churn risk and the reasons behind it; open a customer for their profile.
-- Churned & Win-back: customers who have left.
-- Data Quality: gaps and stale data to fix.
-- Identity Resolution: link the same customer across different tools.
-- Insights & Benchmarks: patterns across groups of customers.
-- Data Uploads & Integrations: connect QuickBooks, Xero, FreshBooks, Zendesk, Intercom, Zoho, HubSpot or upload files.
-- Business Profile: tell ChAi about the business.
-ChAi does NOT send emails, create tasks, set alerts, automate check-ins or trigger actions at a score threshold. When a useful action needs something ChAi doesn't do, phrase it as something the user does themselves (e.g. "**Email Northstar Legal this week**"), never as a ChAi setting.`;
+${AI_FEATURE_RULES}`;
 
 // ---------------------------------------------------------------------------
 
@@ -118,12 +109,7 @@ const ChatMessage = z.object({
   text: z.string(),
 });
 
-/** Currency instruction shared by every prompt that sees money. */
-export function currencyRule(currency: unknown): string {
-  const c = normalizeDataCurrency(currency);
-  const sym = currencySymbol(c);
-  return `CURRENCY: all amounts are in ${c}. Write money with "${sym}" exactly as given (e.g. ${formatMoney(12500, c)}); never use another currency symbol or code, never convert, and never add amounts in different currencies together.`;
-}
+export { currencyRule };
 
 const AskChAiInput = z.object({
   messages: z.array(ChatMessage).min(1),
@@ -236,25 +222,7 @@ export const summarizeRiskReasons = createServerFn({ method: "POST" })
   .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => RiskSummaryInput.parse(input))
   .handler(async ({ data }): Promise<Record<string, string>> => {
-    const lines = data.customers
-      .map(
-        (c) =>
-          `- id ${c.id}: ${c.name}, ${c.churnProbability}% churn risk, health ${c.health}/100, ${
-            c.revenue > 0 ? `${formatMoney(c.revenue, normalizeDataCurrency(data.currency))} revenue` : "revenue unknown"
-          }. Factors: ${
-            c.factors.length ? c.factors.join("; ") : "none recorded"
-          }`,
-      )
-      .join("\n");
-
-    const prompt = `You are a B2B SaaS retention analyst. For each account below, write ONE short plain-language sentence (max ~14 words) explaining why it needs attention and the single best next step.
-
-${currencyRule(data.currency)}
-
-Accounts:
-${lines}
-
-Return ONLY a JSON object (no markdown, no code fences) mapping each account id to its one-sentence summary string.`;
+    const prompt = buildRiskTipPrompt(data.customers, data.currency);
 
     const result = await getAiProvider().generateSummary({
       operation: "summarizeRiskReasons",
@@ -266,7 +234,13 @@ Return ONLY a JSON object (no markdown, no code fences) mapping each account id 
 
     const jsonText = result.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
     try {
-      return z.record(z.string(), z.string()).parse(JSON.parse(jsonText));
+      const raw = z.record(z.string(), z.string()).parse(JSON.parse(jsonText));
+      const out: Record<string, string> = {};
+      for (const [id, tip] of Object.entries(raw)) {
+        const clean = sanitizeAiTip(tip, data.currency);
+        if (clean) out[id] = clean;
+      }
+      return out;
     } catch {
       return {};
     }
@@ -287,7 +261,11 @@ export const generateCollectiveInsights = createServerFn({ method: "POST" })
   .middleware([requireConnectedAuth])
   .inputValidator((input: unknown) => CollectiveInsightsInput.parse(input))
   .handler(async ({ data }): Promise<{ insights: string[] }> => {
-    const prompt = `You are ChAi, a customer-retention analyst. Based on the workspace analysis below, write the TOP 5 most interesting, high-level collective insights a business owner would most want to know about their customer base and retention. Each insight is ONE punchy plain-language sentence (max ~18 words), specific and useful. Do not invent precise numbers that aren't given.
+    const prompt = `You are ChAi, a customer-retention analyst. Based on the workspace analysis below, write the TOP 5 most interesting, high-level collective insights a business owner would most want to know about their customer base and retention. Each insight is ONE punchy plain-language sentence (max ~18 words), specific and useful.
+
+${AI_FACT_RULES}
+
+${AI_FEATURE_RULES}
 
 Use only the currency symbol that appears in the analysis; never convert or mix currencies.
 
