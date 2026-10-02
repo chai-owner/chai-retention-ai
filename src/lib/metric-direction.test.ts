@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { metricDirection } from "@/lib/metric-direction";
 import { scoreCustomers } from "@/lib/customer-scoring";
 import { buildRealDataset } from "@/lib/real-scoring";
-import { makeProfile } from "@/test/fixtures";
+import { daysAgo, makeProfile } from "@/test/fixtures";
 import type { IngestedData } from "@/lib/ingested-data-store";
 import type { PlannerMetric } from "@/lib/mock-data";
 
@@ -19,8 +19,8 @@ const openCounts: Record<string, number> = { A: 0, B: 1, C: 2, D: 3, E: 4 };
 const data = {
   customers: customers.map((c) => ({ customer_id: c, name: c })),
   support: customers.flatMap((c) => [
-    ...[1, 2, 3].map((n) => ({ ticket_id: `${c}-r${n}`, customer_id: c, status: "solved", created_date: `2026-09-0${n}` })),
-    ...Array.from({ length: openCounts[c]! }, (_, i) => ({ ticket_id: `${c}-${i}`, customer_id: c, status: "open", created_date: "2026-09-01" })),
+    ...[1, 2, 3].map((n) => ({ ticket_id: `${c}-r${n}`, customer_id: c, status: "solved", created_date: daysAgo(n) })),
+    ...Array.from({ length: openCounts[c]! }, (_, i) => ({ ticket_id: `${c}-${i}`, customer_id: c, status: "open", created_date: daysAgo(1) })),
   ]),
 } as unknown as IngestedData;
 
