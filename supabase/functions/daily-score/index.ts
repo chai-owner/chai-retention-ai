@@ -1,16 +1,21 @@
-// Ported from src/routes/api/public/hooks/daily-score.ts to a standalone
-// Supabase Edge Function. Pure internal computation — no third-party or
-// Lovable dependency at all. Logic is unchanged from the original.
+// Nightly scoring trigger. pg_cron calls this function; it forwards to the
+// app's /api/public/hooks/daily-score route, which runs the real scoring code
+// from src/lib. There is deliberately no scoring logic here any more: the old
+// hand-ported copy (still in _shared/customer-scoring.ts, now unused by this
+// function) had drifted from the app, so nightly scores missed scoring fixes.
 //
-// Auth: same shared-secret scheme as the original — pg_cron sends
-// CRON_SECRET in the x-cron-secret header.
+// Auth in:  pg_cron's CRON_SECRET in the x-cron-secret header (unchanged).
+// Auth out: the project's service-role key as a Bearer token, plus the same
+//           x-cron-secret, so either matching secret on the app side works.
 import { timingSafeEqual } from "node:crypto";
 import { Buffer } from "node:buffer";
-import { getSupabaseAdmin } from "../_shared/client.ts";
-import { scoreCustomers } from "../_shared/customer-scoring.ts";
-import { INGEST_COLUMNS, INGEST_PAGE, normalizeIngestRow, batchSource } from "../_shared/ingest-row-normalize.ts";
-import type { IngestedData, PlannerMetric } from "../_shared/types.ts";
-import type { HistoryPoint } from "../_shared/customer-scoring.ts";
+
+const APP_BASE_URL = (Deno.env.get("APP_BASE_URL") ?? "https://app.askchai.tech").replace(/\/+$/, "");
+const TARGET = `${APP_BASE_URL}/api/public/hooks/daily-score`;
+const TIMEOUT_MS = 140_000;
+
+const json = (body: unknown, status: number) =>
+  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
 function authorized(req: Request): boolean {
   const expected = Deno.env.get("CRON_SECRET") ?? "";
@@ -24,134 +29,32 @@ function authorized(req: Request): boolean {
 }
 
 Deno.serve(async (req) => {
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "method not allowed" }), { status: 405, headers: { "Content-Type": "application/json" } });
-  }
-  if (!authorized(req)) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
-  }
+  if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+  if (!authorized(req)) return json({ error: "unauthorized" }, 401);
 
-  const supabaseAdmin = await getSupabaseAdmin();
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
 
-  const logRun = async (userId: string, ok: boolean, error?: string) => {
-    try {
-      await supabaseAdmin.from("ai_usage_log").insert({
-        user_id: userId,
-        operation: "daily_customer_scoring",
-        model: "internal-scoring",
-        provider: "internal",
-        success: ok,
-        error_message: error ?? null,
-        input_tokens: 0,
-        output_tokens: 0,
-        total_tokens: 0,
-      });
-    } catch {
-      // Logging must never fail the run.
+  try {
+    const res = await fetch(TARGET, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "x-cron-secret": cronSecret,
+      },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      console.error(`[daily-score] app returned ${res.status}: ${text.slice(0, 500)}`);
+      return json({ ok: false, forwarded_to: TARGET, app_status: res.status, app_body: text.slice(0, 2000) }, 502);
     }
-  };
-
-  const readAll = async (table: string, select: string, userId: string, activeOnly = false) => {
-    const out: Array<Record<string, unknown>> = [];
-    for (let from = 0; ; from += INGEST_PAGE) {
-      // deno-lint-ignore no-explicit-any
-      let query = supabaseAdmin.from(table as any).select(select).eq("user_id", userId);
-      if (activeOnly) query = query.eq("paused", false);
-      const { data, error } = await query.order("id", { ascending: true }).range(from, from + INGEST_PAGE - 1);
-      if (error) throw new Error(`${table}: ${error.message}`);
-      const page = (data ?? []) as unknown as Array<Record<string, unknown>>;
-      out.push(...page);
-      if (page.length < INGEST_PAGE) break;
-    }
-    return out;
-  };
-
-  const { data: profiles, error: profileError } = await supabaseAdmin.from("profiles").select("id, metrics, cadence, lifespan");
-  if (profileError) {
-    return new Response(JSON.stringify({ error: profileError.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+    console.log(`[daily-score] app ok: ${text.slice(0, 500)}`);
+    return new Response(text, { status: 200, headers: { "Content-Type": "application/json" } });
+  } catch (err) {
+    const message = (err as Error).message;
+    console.error(`[daily-score] forward failed: ${message}`);
+    return json({ ok: false, forwarded_to: TARGET, error: message }, 502);
   }
-
-  type Summary = { user_id: string; ok: boolean; customers?: number; error?: string };
-  const results: Summary[] = [];
-
-  for (const profile of profiles ?? []) {
-    const userId = profile.id as string;
-    const metrics = (Array.isArray(profile.metrics) ? profile.metrics : []) as unknown as PlannerMetric[];
-    if (metrics.length === 0) continue;
-
-    try {
-      const [customers, transactions, support, usage, surveys, batchRows] = await Promise.all([
-        readAll("ingested_customers", "id, data, customer_id, batch_id", userId, true),
-        readAll("ingested_transactions", "id, data, transaction_id, customer_id, amount, occurred_at, batch_id", userId),
-        readAll("ingested_support", "id, data, ticket_id, customer_id, batch_id", userId),
-        readAll("ingested_usage", "id, data, customer_id, occurred_at, batch_id", userId),
-        readAll("ingested_surveys", "id, data, customer_id, submitted_at, batch_id", userId),
-        supabaseAdmin
-          .from("ingest_batches")
-          .select("id, source_kind, source_provider")
-          .eq("user_id", userId)
-          .then((r) => (r.data ?? []) as Array<{ id: string; source_kind: string; source_provider: string }>),
-      ]);
-
-      const sourceByBatch = new Map(batchRows.map((b) => [b.id, batchSource(b.source_kind, b.source_provider)]));
-      const fallback = (row: Record<string, unknown>) => sourceByBatch.get(String(row["batch_id"] ?? "")) ?? undefined;
-      const normalize = (rows: Array<Record<string, unknown>>, key: string) =>
-        rows.map((row) => normalizeIngestRow(row, INGEST_COLUMNS[key]!, fallback(row)));
-
-      const data: IngestedData = {
-        customers: normalize(customers, "customers"),
-        transactions: normalize(transactions, "transactions"),
-        support: normalize(support, "support"),
-        usage: normalize(usage, "usage"),
-        surveys: normalize(surveys, "surveys"),
-      };
-
-      const since = new Date(Date.now() - 90 * 86_400_000).toISOString();
-      const { data: historyRows } = await supabaseAdmin
-        .from("customer_scores")
-        .select("customer_id, scored_at, score_breakdown")
-        .eq("user_id", userId)
-        .gte("scored_at", since);
-
-      const history: HistoryPoint[] = [];
-      for (const row of historyRows ?? []) {
-        const at = Date.parse(String(row.scored_at));
-        if (!Number.isFinite(at)) continue;
-        const entries = Array.isArray(row.score_breakdown) ? row.score_breakdown : [];
-        for (const raw of entries) {
-          const entry = raw as { metric?: unknown; value?: unknown };
-          const value = Number(entry.value);
-          if (typeof entry.metric !== "string" || !Number.isFinite(value)) continue;
-          history.push({ customer_id: String(row.customer_id), metric: entry.metric, value, scored_at: at });
-        }
-      }
-
-      const scores = scoreCustomers(metrics, data, {
-        history,
-        cadence: (profile.cadence as string | null) ?? undefined,
-        lifespan: (profile.lifespan as string | null) ?? undefined,
-      });
-      if (scores.length === 0) {
-        results.push({ user_id: userId, ok: true, customers: 0 });
-        await logRun(userId, true);
-        continue;
-      }
-
-      const { error: rpcError } = await supabaseAdmin.rpc("replace_customer_scores", {
-        p_user_id: userId,
-        // deno-lint-ignore no-explicit-any
-        p_rows: scores as unknown as any,
-      });
-      if (rpcError) throw new Error(rpcError.message);
-
-      results.push({ user_id: userId, ok: true, customers: scores.length });
-      await logRun(userId, true);
-    } catch (err) {
-      const message = (err as Error).message;
-      results.push({ user_id: userId, ok: false, error: message });
-      await logRun(userId, false, message);
-    }
-  }
-
-  return new Response(JSON.stringify({ ok: true, ran_at: new Date().toISOString(), results }), { status: 200, headers: { "Content-Type": "application/json" } });
 });
