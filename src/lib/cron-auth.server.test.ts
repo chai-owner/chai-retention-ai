@@ -74,7 +74,18 @@ describe("daily-score endpoint", () => {
   it("returns 401 for an unauthorized caller", async () => {
     const res = await POST({ request: req({ "x-cron-secret": "nope" }) });
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ error: "unauthorized" });
+    const body = await res.json();
+    expect(body.error).toBe("unauthorized");
+    // Diagnostics say what exists, never the values.
+    expect(body.check).toEqual({
+      server_has_cron_secret: true,
+      server_has_service_role: true,
+      sent_cron_header: true,
+      sent_bearer: false,
+      cron_secret_length_matches: false,
+    });
+    expect(JSON.stringify(body)).not.toContain(CRON);
+    expect(JSON.stringify(body)).not.toContain(ROLE);
   });
 
   it("runs for the Edge Function's Bearer token", async () => {

@@ -27,18 +27,48 @@ function bearerToken(request: Request): string {
   return match ? match[1]!.trim() : "";
 }
 
-export async function isCronAuthorized(request: Request): Promise<boolean> {
+export interface CronAuthCheck {
+  ok: boolean;
+  /** Safe-to-share diagnostics: which secrets exist and were sent. Never values. */
+  check: {
+    server_has_cron_secret: boolean;
+    server_has_service_role: boolean;
+    sent_cron_header: boolean;
+    sent_bearer: boolean;
+    cron_secret_length_matches: boolean;
+  };
+}
+
+export async function checkCronAuth(request: Request): Promise<CronAuthCheck> {
   const [cronSecret, serviceRoleKey] = await Promise.all([
     readServerEnvAsync("CRON_SECRET"),
     readServerEnvAsync("SUPABASE_SERVICE_ROLE_KEY"),
   ]);
-  if (safeEqual(request.headers.get("x-cron-secret") ?? "", cronSecret)) return true;
-  return safeEqual(bearerToken(request), serviceRoleKey);
+  const sentCron = request.headers.get("x-cron-secret") ?? "";
+  const sentBearer = bearerToken(request);
+  const ok = safeEqual(sentCron, cronSecret) || safeEqual(sentBearer, serviceRoleKey);
+  return {
+    ok,
+    check: {
+      server_has_cron_secret: Boolean(cronSecret),
+      server_has_service_role: Boolean(serviceRoleKey),
+      sent_cron_header: sentCron.length > 0,
+      sent_bearer: sentBearer.length > 0,
+      cron_secret_length_matches: Boolean(cronSecret) && sentCron.length === cronSecret!.length,
+    },
+  };
 }
 
-export function unauthorizedResponse(): Response {
-  return new Response(JSON.stringify({ error: "unauthorized" }), {
-    status: 401,
-    headers: { "Content-Type": "application/json" },
-  });
+export async function isCronAuthorized(request: Request): Promise<boolean> {
+  return (await checkCronAuth(request)).ok;
+}
+
+export function unauthorizedResponse(check?: CronAuthCheck["check"]): Response {
+  return new Response(
+    JSON.stringify(check ? { error: "unauthorized", check } : { error: "unauthorized" }),
+    {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 }

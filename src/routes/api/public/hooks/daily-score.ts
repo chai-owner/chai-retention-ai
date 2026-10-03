@@ -10,13 +10,14 @@
 // Auth (cron-auth.server.ts): CRON_SECRET in `x-cron-secret`, or the
 // service-role key as a Bearer token (what the Edge Function sends).
 import { createFileRoute } from "@tanstack/react-router";
-import { isCronAuthorized, unauthorizedResponse } from "@/lib/cron-auth.server";
+import { checkCronAuth, unauthorizedResponse } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/daily-score")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!(await isCronAuthorized(request))) return unauthorizedResponse();
+        const auth = await checkCronAuth(request);
+        if (!auth.ok) return unauthorizedResponse(auth.check);
 
         const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
         const supabaseAdmin = await getSupabaseAdmin();
