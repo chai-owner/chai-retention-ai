@@ -5,8 +5,8 @@
 // function) had drifted from the app, so nightly scores missed scoring fixes.
 //
 // Auth in:  pg_cron's CRON_SECRET in the x-cron-secret header (unchanged).
-// Auth out: the project's service-role key as a Bearer token, plus the same
-//           x-cron-secret, so either matching secret on the app side works.
+// Auth out: x-cron-secret = APP_CRON_SECRET (same value as the app's CRON_SECRET),
+//           plus the service-role key as a Bearer token; either one matching works.
 import { timingSafeEqual } from "node:crypto";
 import { Buffer } from "node:buffer";
 
@@ -33,7 +33,9 @@ Deno.serve(async (req) => {
   if (!authorized(req)) return json({ error: "unauthorized" }, 401);
 
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
+  // APP_CRON_SECRET must equal CRON_SECRET in the app's (Lovable) secrets.
+  // Falls back to this project's own CRON_SECRET if not set.
+  const cronSecret = Deno.env.get("APP_CRON_SECRET") ?? Deno.env.get("CRON_SECRET") ?? "";
 
   try {
     const res = await fetch(TARGET, {
