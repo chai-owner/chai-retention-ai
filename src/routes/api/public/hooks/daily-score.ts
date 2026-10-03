@@ -3,27 +3,20 @@
 // account's ingested data, scores every customer 0–100, and atomically swaps
 // the stored `customer_scores` snapshot for that account.
 //
-// Auth: pg_cron sends the server-only CRON_SECRET in the `x-cron-secret`
-// header, exactly as the daily integration sync does.
+// This is the single source of truth for nightly scoring. The Supabase Edge
+// Function `daily-score` (run by pg_cron) only forwards here, so scoring
+// changes made in src/lib reach the nightly run without a separate port.
+//
+// Auth (cron-auth.server.ts): CRON_SECRET in `x-cron-secret`, or the
+// service-role key as a Bearer token (what the Edge Function sends).
 import { createFileRoute } from "@tanstack/react-router";
-import { timingSafeEqual } from "crypto";
+import { isCronAuthorized, unauthorizedResponse } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/daily-score")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.CRON_SECRET ?? "";
-        const provided = request.headers.get("x-cron-secret") ?? "";
-        if (
-          !expected ||
-          provided.length !== expected.length ||
-          !timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
-        ) {
-          return new Response(JSON.stringify({ error: "unauthorized" }), {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+        if (!(await isCronAuthorized(request))) return unauthorizedResponse();
 
         const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
         const supabaseAdmin = await getSupabaseAdmin();
